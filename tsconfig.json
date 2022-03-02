@@ -1,0 +1,22 @@
+{
+  "compilerOptions": {
+    "allowJs": true,
+    "esModuleInterop": true,
+    "lib": ["es2017", "esnext", "dom", "es7"],
+    "declaration": true,
+    "module": "commonjs",
+    "moduleResolution": "node",
+    "outDir": "./dist",
+    "rootDir": "./src",
+    "skipLibCheck": true,
+    "sourceMap": true,
+    "resolveJsonModule": false,
+    "noImplicitAny": false, //TODO set to true once all data has types
+    "target": "es2017",
+    "typeRoots": ["node_modules/@types", "node_modules/types", "src/ts-types"],
+    "experimentalDecorators": true,
+    "emitDecoratorMetadata": true,
+  },
+  "include": ["./src"],
+  "exclude": ["node_modules"]
+}
