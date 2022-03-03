@@ -36,7 +36,7 @@ class MyTradingBotApp extends IBApiNextApp {
 
     constructor() {
         super(DESCRIPTION_TEXT, USAGE_TEXT, OPTION_ARGUMENTS, EXAMPLE_TEXT);
-        this.boostrap();
+        // this.boostrap();
       };
 
     /**
@@ -47,7 +47,9 @@ class MyTradingBotApp extends IBApiNextApp {
       logger.debug(`Starting ${scriptName} script`);
       this.connect();
       this.api.setMarketDataType(MarketDataType.REALTIME);
-      (new UpdaterBot(this, this.api)).start();
+      initDB().then(() => {
+        (new UpdaterBot(this, this.api)).start();
+      });
     };
     
     /**
@@ -57,7 +59,7 @@ class MyTradingBotApp extends IBApiNextApp {
         this.exit();
     };
 
-    private async boostrap() {
+    public async boostrap() {
       // Connect to db
       await initDB();
     };
@@ -66,3 +68,7 @@ class MyTradingBotApp extends IBApiNextApp {
 
 // run the app
 new MyTradingBotApp().start();
+// const truc = new MyTradingBotApp()
+// truc.boostrap().then(() => {
+//   truc.start()
+// })
