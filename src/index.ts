@@ -36,7 +36,6 @@ class MyTradingBotApp extends IBApiNextApp {
 
     constructor() {
         super(DESCRIPTION_TEXT, USAGE_TEXT, OPTION_ARGUMENTS, EXAMPLE_TEXT);
-        // this.boostrap();
       };
 
     /**
@@ -59,16 +58,7 @@ class MyTradingBotApp extends IBApiNextApp {
         this.exit();
     };
 
-    // public async boostrap() {
-    //   // Connect to db
-    //   await initDB();
-    // };
-
 };
 
 // run the app
 new MyTradingBotApp().start();
-// const truc = new MyTradingBotApp()
-// truc.boostrap().then(() => {
-//   truc.start()
-// })
