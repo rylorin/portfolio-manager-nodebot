@@ -59,10 +59,10 @@ class MyTradingBotApp extends IBApiNextApp {
         this.exit();
     };
 
-    public async boostrap() {
-      // Connect to db
-      await initDB();
-    };
+    // public async boostrap() {
+    //   // Connect to db
+    //   await initDB();
+    // };
 
 };
 
