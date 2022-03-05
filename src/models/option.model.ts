@@ -24,9 +24,10 @@ export class Option extends Model {
   @BelongsTo(() => Stock, 'stock_id')
   public stock: Stock;
 
-  /** The asset symbol. */
   @Column({ type: DataType.DATEONLY, field: 'last_trade_date' })
   public lastTradeDate!: Date;
+  @Column({ type: DataType.INTEGER })
+  public expiration!: number;
 
   @Column({ type: DataType.FLOAT })
   public strike!: number;
