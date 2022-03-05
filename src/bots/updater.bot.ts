@@ -1,17 +1,18 @@
 import { EventEmitter } from 'events';
 import { Subscription } from "rxjs";
-import { IBApiNext, IBApiNextError, BarSizeSetting, IBApiTickType, IBApiNextTickType, SecType, ContractDetails } from "@stoqey/ib";
+import { IBApiNext, IBApiNextError, BarSizeSetting, IBApiTickType, IBApiNextTickType, SecType, ContractDetails, OptionType } from "@stoqey/ib";
 import { SecurityDefinitionOptionParameterType } from "@stoqey/ib/dist/api-next";
 import { IBApiNextApp } from "@stoqey/ib/dist/tools/common/ib-api-next-app";
 import { QueryTypes } from 'sequelize';
 import { sequelize, Contract, Stock, Option } from "../models";
 import { ITradingBot } from '.';
+import exp from 'constants';
 require('dotenv').config();
 
 const UPDATE_CONID_FREQ: number = parseInt(process.env.UPDATE_CONID_FREQ) || 10;
-const HISTORICAL_DATA_REFRESH_FREQ: number = parseInt(process.env.HISTORICAL_DATA_REFRESH_FREQ) || (60 * 12);
+const HISTORICAL_DATA_REFRESH_FREQ: number = parseInt(process.env.HISTORICAL_DATA_REFRESH_FREQ) || (12 * 60);
 const STOCKS_PRICES_REFRESH_FREQ: number = parseInt(process.env.STOCKS_PRICES_REFRESH_FREQ) || 20;
-const OPTIONS_LIST_BUILD_FREQ: number = parseInt(process.env.OPTIONS_LIST_BUILD_FREQ) || (60 * 12);
+const OPTIONS_LIST_BUILD_FREQ: number = parseInt(process.env.OPTIONS_LIST_BUILD_FREQ) || (24 * 60);
 const MAX_PARALLELS_UPDATES: number = parseInt(process.env.MAX_PARALLELS_UPDATES) || 1;
 
 export class UpdaterBot extends EventEmitter implements ITradingBot {
@@ -26,46 +27,30 @@ export class UpdaterBot extends EventEmitter implements ITradingBot {
   }
 
   public start(): void {
-    this.api
-    .getNextValidOrderId()
-    .then((id) => {
-      this.app.printText(`getNextValidOrderId: ${id}`);
-    })
-    .catch((err: IBApiNextError) => {
-      this.app.error(`getNextValidOrderId failed with '${err.error.message}'`);
-    });
+    // this.api
+    // .getNextValidOrderId()
+    // .then((id) => {
+    //   this.app.printText(`getNextValidOrderId: ${id}`);
+    // })
+    // .catch((err: IBApiNextError) => {
+    //   this.app.error(`getNextValidOrderId failed with '${err.error.message}'`);
+    // });
 
-    this.on('updateContractDetails', this.updateContractDetails);
+    this.on('updateStocksDetails', this.updateStocksDetails);
     this.on('updateHistoricalData', this.updateHistoricalData);
     this.on('updateStocksPrices', this.updateStocksPrices);
     this.on('buildOptionsList', this.buildOptionsList);
 
-    setTimeout(() => this.emit('updateContractDetails'), 1000);
-    setTimeout(() => this.emit('updateHistoricalData'), 2000);
-    setTimeout(() => this.emit('updateStocksPrices'), 3000);
-    setTimeout(() => this.emit('buildOptionsList'), 4000);
+    setTimeout(() => this.emit('updateStocksDetails'), 1000);
+    // setTimeout(() => this.emit('updateHistoricalData'), 2000);
+    // setTimeout(() => this.emit('updateStocksPrices'), 3000);
+    // setTimeout(() => this.emit('buildOptionsList'), 4000);
   };
 
   public stop(): void {};
 
-  protected concurrentRuns = 0;
-
-  public run(): void {
-    console.log('concurrentRuns:', ++this.concurrentRuns, 'out of', MAX_PARALLELS_UPDATES)
-    // this.processNextUpdate();
-  };
-
-  protected pushRun(): void {
-    setTimeout(() => this.emit('run'), 1000);
-  }
-
-  protected runDone(): void {
-    console.log('concurrentRuns:', --this.concurrentRuns)
-    this.pushRun();
-  }
-
-  private updateContractDetails(): void {
-    console.log('updateContractDetails');
+  private updateStocksDetails(): void {
+    console.log('updateStocksDetails');
 
     sequelize.query(`
       SELECT
@@ -94,24 +79,29 @@ export class UpdaterBot extends EventEmitter implements ITradingBot {
               currency: contract.currency,
             })
             .then((detailstab) => {
-              let details: ContractDetails = detailstab[0];
-              // this.app.printObject(details);
-              Contract.update(
-                {
-                  conId: details.contract.conId,
-                  symbol: details.contract.symbol,
-                  secType: details.contract.secType,
-                  exchange: details.contract.exchange,
-                  currency: details.contract.currency,
-                  name: details.longName,
-                } as Contract, {
-                where: {
-                  id: contract.id
+              if (detailstab.length == 1) {
+                let details: ContractDetails = detailstab[0];
+                // this.app.printObject(details);
+                Contract.update(
+                  {
+                    conId: details.contract.conId,
+                    symbol: details.contract.symbol,
+                    secType: details.contract.secType,
+                    exchange: details.contract.exchange,
+                    currency: details.contract.currency,
+                    name: details.longName,
+                  } as Contract, {
+                  where: {
+                    id: contract.id
+                  }
+                })
+                  .then(() => {
+                    console.log('getContractDetails succeeded for contract:', contract.symbol);
+                  });
+                } else {
+                this.app.printObject(detailstab);
+                this.app.error(`ambigous results from getContractDetails! ${detailstab.length} results`)
                 }
-              })
-                .then(() => {
-                  console.log('getContractDetails succeeded for contract:', contract.symbol);
-                });
             })
             .catch((err: IBApiNextError) => {
               console.log(`getContractDetails failed for ${contract.symbol} with '${err.error.message}'`);
@@ -121,8 +111,8 @@ export class UpdaterBot extends EventEmitter implements ITradingBot {
         })
       });
 
-    console.log('updateContractDetails done');
-    setTimeout(() => this.emit('updateContractDetails'), UPDATE_CONID_FREQ * 60000);
+    console.log('updateStocksDetails done');
+    setTimeout(() => this.emit('updateStocksDetails'), UPDATE_CONID_FREQ * 60000);
   };
 
   private updateHistoricalData(): void {
@@ -275,7 +265,7 @@ export class UpdaterBot extends EventEmitter implements ITradingBot {
     sequelize.query(`
         SELECT
           (julianday('now') - MAX(julianday(option.createdAt))) options_age,
-          contract.symbol, contract.con_id conId
+          contract.symbol, contract.con_id conId, contract.id id, contract.currency currency
         FROM option, contract, trading_parameters
         WHERE contract.id = option.stock_id
           AND trading_parameters.stock_id = option.stock_id
@@ -283,21 +273,20 @@ export class UpdaterBot extends EventEmitter implements ITradingBot {
         `,
       {
         model: Contract,
-        // Set this to true if you don't have a model definition for your query.
         raw: true,
         logging: console.log,
         type: QueryTypes.SELECT,
-      }).then((contracts) => {
-        contracts.forEach((contract) => {
+      }).then((stocks) => {
+        stocks.forEach((stock) => {
           // console.log('contract:', JSON.stringify(contract, null, 2));
-          if (contract['options_age'] > (OPTIONS_LIST_BUILD_FREQ / 1440)) {
-            console.log('getSecDefOptParams:', contract.symbol);
+          if (stock['options_age'] > (OPTIONS_LIST_BUILD_FREQ / 1440 / 2)) {
+            console.log('getSecDefOptParams:', stock.symbol);
             this.api
               .getSecDefOptParams(
-                contract.symbol as string,
-                '', // SMART ?
+                stock.symbol,
+                '', // exchange but only empty string returns results
                 'STK' as SecType,
-                contract.conId
+                stock.conId
               )
               .then((details) => {
                 details.forEach((detail: SecurityDefinitionOptionParameterType) => {
@@ -306,6 +295,76 @@ export class UpdaterBot extends EventEmitter implements ITradingBot {
                     detail.expirations.forEach((expiration) => {
                       detail.strikes.forEach((strike) => {
                         // check or create option
+                        let expstr: string = expiration;
+                        let exp: Date = new Date(
+                          parseInt(expstr.substring(0, 4)),
+                          parseInt(expstr.substring(4, 6)) - 1,
+                          parseInt(expstr.substring(6, 8)),
+                        );
+                        // console.log(expstr, parseInt(expstr.substring(0, 4)),
+                        //   parseInt(expstr.substring(4, 6)) - 1,
+                        //   parseInt(expstr.substring(6, 8)), exp);
+                        // this.app.error(`buildOptionsList please examine results`);
+                        Option.findOne({
+                          where: {
+                            stock_id: stock.id,
+                            lastTradeDate: exp,
+                            strike: strike,
+                          }
+                        }).then((result) => {
+                          if (result == null) {
+                            console.log(`buildOptionsList: ${stock.symbol} ${expiration} ${strike}`);
+                            Contract.create({
+                              secType: 'OPT',
+                              symbol: `${stock.symbol} ${expstr} ${strike} P`,
+                              currency: stock.currency,
+                            }).then((contract) => {
+                              Option.create({
+                                id: contract.id,
+                                stock_id: stock.id,
+                                lastTradeDate: exp,
+                                expiration: expiration,
+                                strike: strike,
+                                callOrPut: 'P',
+                              }).then((option) => {
+                                // this.app.printObject(option);
+                                this.api.getContractDetails({
+                                  symbol: stock.symbol,
+                                  secType: 'OPT' as SecType,
+                                  // exchange: contract.exchange,
+                                  currency: stock.currency,
+                                  strike: strike,
+                                  right: 'P' as OptionType,
+                                })
+                                  .then((detailstab) => {
+                                    if (detailstab.length > 1) {
+                                      this.app.printObject(detailstab);
+                                      console.log(`ambigous results from getContractDetails! ${detailstab.length} results`)
+                                    }
+                                    let details: ContractDetails = detailstab[0];
+                                    // this.app.printObject(details);
+                                    Contract.update(
+                                      {
+                                        conId: details.contract.conId,
+                                        symbol: details.contract.localSymbol,
+                                        secType: details.contract.secType,
+                                        exchange: details.contract.exchange,
+                                        currency: details.contract.currency,
+                                        name: details.longName,
+                                      } as Contract, {
+                                      where: {
+                                        id: contract.id
+                                      }
+                                    })
+                                      .then(() => {
+                                        console.log('getContractDetails succeeded for contract:', contract.symbol);
+                                        this.app.error(`buildOptionsList please examine results`);
+                                      });
+                                  })
+                              })
+                            })
+                          }
+                        });
                       })
                     });
                   }
