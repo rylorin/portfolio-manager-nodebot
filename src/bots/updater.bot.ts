@@ -49,68 +49,63 @@ export class UpdaterBot extends EventEmitter implements ITradingBot {
 
   public stop(): void {};
 
-  private updateStocksDetails(): void {
-    console.log('updateStocksDetails');
-
-    sequelize.query(`
+  private findStocksWithoutConId(): Promise<Contract[]> {
+    return sequelize.query(`
       SELECT
-          contract.*
-        FROM contract
-        WHERE contract.con_id ISNULL
-          AND contract.secType = 'STK'
-        `,
+        contract.*
+      FROM contract
+      WHERE contract.con_id ISNULL
+        AND contract.secType = 'STK'
+      `,
       {
         model: Contract,
         mapToModel: true, // pass true here if you have any mapped fields
         logging: console.log,
-      }).then((contracts) => {
-        contracts.forEach(async (contract) => {
-          // console.log('contract:', JSON.stringify(contract, null, 2));
-          let promises: Array<Promise<any>> = [];
+      }
+    );
+  }
 
-          // get contract details
+  private updateContractDetails(id: number, detailstab: ContractDetails[]): Promise<any> {
+    if (detailstab.length > 1) {
+      this.app.printObject(detailstab);
+      this.app.error(`ambigous results from getContractDetails! ${detailstab.length} results`)
+    }
+
+    let details: ContractDetails = detailstab[0];
+    // this.app.printObject(details);
+    return Contract.update(
+      {
+        conId: details.contract.conId,
+        symbol: details.contract.symbol,
+        secType: details.contract.secType,
+        exchange: details.contract.exchange,
+        currency: details.contract.currency,
+        name: details.longName,
+      } as Contract, {
+      where: {
+        id: id,
+      }
+    });
+  }
+
+  private async updateStocksDetails(): Promise<void> {
+    console.log('updateStocksDetails begin');
+    await this.findStocksWithoutConId().then((contracts) => {
+        contracts.forEach(async (contract) => {
           console.log(`getContractDetails for ${contract.symbol}`);
-          // this.app.printObject(contract);
-          promises.push(this.api
+          await this.api
             .getContractDetails({
               symbol: contract.symbol as string,
               secType: contract.secType as SecType,
               exchange: contract.exchange,
               currency: contract.currency,
             })
-            .then((detailstab) => {
-              if (detailstab.length == 1) {
-                let details: ContractDetails = detailstab[0];
-                // this.app.printObject(details);
-                Contract.update(
-                  {
-                    conId: details.contract.conId,
-                    symbol: details.contract.symbol,
-                    secType: details.contract.secType,
-                    exchange: details.contract.exchange,
-                    currency: details.contract.currency,
-                    name: details.longName,
-                  } as Contract, {
-                  where: {
-                    id: contract.id
-                  }
-                })
-                  .then(() => {
-                    console.log('getContractDetails succeeded for contract:', contract.symbol);
-                  });
-                } else {
-                this.app.printObject(detailstab);
-                this.app.error(`ambigous results from getContractDetails! ${detailstab.length} results`)
-                }
-            })
+            .then((detailstab) => this.updateContractDetails(contract.id, detailstab))
             .catch((err: IBApiNextError) => {
               console.log(`getContractDetails failed for ${contract.symbol} with '${err.error.message}'`);
-            }))
-
-          const res = await Promise.all(promises);
+            })
         })
       });
-
     console.log('updateStocksDetails done');
     setTimeout(() => this.emit('updateStocksDetails'), UPDATE_CONID_FREQ * 60000);
   };
