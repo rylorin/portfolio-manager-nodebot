@@ -68,9 +68,8 @@ export class UpdaterBot extends EventEmitter implements ITradingBot {
   private updateContractDetails(id: number, detailstab: ContractDetails[]): Promise<[affectedCount: number]> {
     if (detailstab.length > 1) {
       this.app.printObject(detailstab);
-      this.app.error(`ambigous results from getContractDetails! ${detailstab.length} results`)
+      console.log(`Ambigous results from getContractDetails! ${detailstab.length} results for ${detailstab[0].contract.symbol}`)
     }
-
     let details: ContractDetails = detailstab[0];
     // this.app.printObject(details);
     return Contract.update(
@@ -78,7 +77,7 @@ export class UpdaterBot extends EventEmitter implements ITradingBot {
         conId: details.contract.conId,
         symbol: details.contract.symbol,
         secType: details.contract.secType,
-        exchange: details.contract.exchange,
+        exchange: details.contract.primaryExch,
         currency: details.contract.currency,
         name: details.longName,
       } as Contract, {
@@ -98,33 +97,30 @@ export class UpdaterBot extends EventEmitter implements ITradingBot {
       });
   }
 
-  private iterateContractsForDetails(contracts: Contract[]): Promise<any> {
-    // let promise = new Promise((resolv, _reject) => {
-    //   contracts.forEach(async (contract) => {
-    //     console.log(`getContractDetails for ${contract.symbol}`);
-    //     await this.requestContractDetails(contract)
-    //       .then((detailstab) => this.updateContractDetails(contract.id, detailstab))
-    //       .catch((err: IBApiNextError) => {
-    //         console.log(`getContractDetails failed for ${contract.symbol} with '${err.error.message}'`);
-    //       })
-    //   })
-    //   resolv('done' as string);
-    // })
-    // return promise;
-
+  private XiterateContractsForDetails(contracts: Contract[]): Promise<any> {
       var p: Promise<any> = Promise.resolve(); // Q() in q
-    
       contracts.forEach(contract =>
           p = p.then(() => this.requestContractDetails(contract)
-          .then((detailstab) => this.updateContractDetails(contract.id, detailstab))
-          .catch((err: IBApiNextError) => {
-            console.log(`getContractDetails failed for ${contract.symbol} with '${err.error.message}'`);
-          }) )
+            .then((detailstab) => this.updateContractDetails(contract.id, detailstab))
+            .catch((err: IBApiNextError) => {
+              console.log(`getContractDetails failed for ${contract.symbol} with '${err.error.message}'`);
+            })
+          )
       );
       return p;
   }
 
-  private async updateStocksDetails(): Promise<void> {
+  private iterateContractsForDetails(contracts: Contract[]): Promise<any> {
+    return contracts.reduce((p, contract) => {
+      return p.then(() => this.requestContractDetails(contract)
+        .then((detailstab) => this.updateContractDetails(contract.id, detailstab))
+        .catch((err: IBApiNextError) => {
+          console.log(`getContractDetails failed for ${contract.symbol} with '${err.error.message}'`);
+        }));
+    }, Promise.resolve()); // initial
+  }
+
+private async updateStocksDetails(): Promise<void> {
     console.log('updateStocksDetails begin');
     await this
       .findStocksWithoutConId()
