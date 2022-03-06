@@ -88,24 +88,32 @@ export class UpdaterBot extends EventEmitter implements ITradingBot {
     });
   }
 
+  private iterateContractsForDetails(contracts: Contract[]): Promise<any> {
+    let promise = new Promise((resolv, _reject) => {
+      contracts.forEach(async (contract) => {
+        console.log(`getContractDetails for ${contract.symbol}`);
+        await this.api
+          .getContractDetails({
+            symbol: contract.symbol as string,
+            secType: contract.secType as SecType,
+            exchange: contract.exchange,
+            currency: contract.currency,
+          })
+          .then((detailstab) => this.updateContractDetails(contract.id, detailstab))
+          .catch((err: IBApiNextError) => {
+            console.log(`getContractDetails failed for ${contract.symbol} with '${err.error.message}'`);
+          })
+      })
+      resolv('done' as string);
+    })
+    return promise;
+  }
+
   private async updateStocksDetails(): Promise<void> {
     console.log('updateStocksDetails begin');
-    await this.findStocksWithoutConId().then((contracts) => {
-        contracts.forEach(async (contract) => {
-          console.log(`getContractDetails for ${contract.symbol}`);
-          await this.api
-            .getContractDetails({
-              symbol: contract.symbol as string,
-              secType: contract.secType as SecType,
-              exchange: contract.exchange,
-              currency: contract.currency,
-            })
-            .then((detailstab) => this.updateContractDetails(contract.id, detailstab))
-            .catch((err: IBApiNextError) => {
-              console.log(`getContractDetails failed for ${contract.symbol} with '${err.error.message}'`);
-            })
-        })
-      });
+    await this
+      .findStocksWithoutConId()
+      .then((contracts) => this.iterateContractsForDetails(contracts));
     console.log('updateStocksDetails done');
     setTimeout(() => this.emit('updateStocksDetails'), UPDATE_CONID_FREQ * 60000);
   };
