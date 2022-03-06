@@ -65,7 +65,7 @@ export class UpdaterBot extends EventEmitter implements ITradingBot {
     );
   }
 
-  private updateContractDetails(id: number, detailstab: ContractDetails[]): Promise<any> {
+  private updateContractDetails(id: number, detailstab: ContractDetails[]): Promise<[affectedCount: number]> {
     if (detailstab.length > 1) {
       this.app.printObject(detailstab);
       this.app.error(`ambigous results from getContractDetails! ${detailstab.length} results`)
@@ -88,25 +88,40 @@ export class UpdaterBot extends EventEmitter implements ITradingBot {
     });
   }
 
+  private requestContractDetails(contract: Contract): Promise<ContractDetails[]> {
+    return this.api
+      .getContractDetails({
+        symbol: contract.symbol as string,
+        secType: contract.secType as SecType,
+        exchange: contract.exchange,
+        currency: contract.currency,
+      });
+  }
+
   private iterateContractsForDetails(contracts: Contract[]): Promise<any> {
-    let promise = new Promise((resolv, _reject) => {
-      contracts.forEach(async (contract) => {
-        console.log(`getContractDetails for ${contract.symbol}`);
-        await this.api
-          .getContractDetails({
-            symbol: contract.symbol as string,
-            secType: contract.secType as SecType,
-            exchange: contract.exchange,
-            currency: contract.currency,
-          })
+    // let promise = new Promise((resolv, _reject) => {
+    //   contracts.forEach(async (contract) => {
+    //     console.log(`getContractDetails for ${contract.symbol}`);
+    //     await this.requestContractDetails(contract)
+    //       .then((detailstab) => this.updateContractDetails(contract.id, detailstab))
+    //       .catch((err: IBApiNextError) => {
+    //         console.log(`getContractDetails failed for ${contract.symbol} with '${err.error.message}'`);
+    //       })
+    //   })
+    //   resolv('done' as string);
+    // })
+    // return promise;
+
+      var p: Promise<any> = Promise.resolve(); // Q() in q
+    
+      contracts.forEach(contract =>
+          p = p.then(() => this.requestContractDetails(contract)
           .then((detailstab) => this.updateContractDetails(contract.id, detailstab))
           .catch((err: IBApiNextError) => {
             console.log(`getContractDetails failed for ${contract.symbol} with '${err.error.message}'`);
-          })
-      })
-      resolv('done' as string);
-    })
-    return promise;
+          }) )
+      );
+      return p;
   }
 
   private async updateStocksDetails(): Promise<void> {
