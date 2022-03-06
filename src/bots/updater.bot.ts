@@ -2,6 +2,7 @@ import { EventEmitter } from 'events';
 import { Subscription } from "rxjs";
 import { IBApiNext, IBApiNextError, BarSizeSetting, IBApiTickType, IBApiNextTickType, SecType, ContractDetails, OptionType, Bar } from "@stoqey/ib";
 import { SecurityDefinitionOptionParameterType } from "@stoqey/ib/dist/api-next";
+import { MutableMarketData } from "@stoqey/ib/dist/core/api-next/api/market/mutable-market-data";
 import { IBApiNextApp } from "@stoqey/ib/dist/tools/common/ib-api-next-app";
 import { QueryTypes } from 'sequelize';
 import { sequelize, Contract, Stock, Option } from "../models";
@@ -34,7 +35,7 @@ export class UpdaterBot extends EventEmitter implements ITradingBot {
 
     setTimeout(() => this.emit('updateStocksDetails'), 1000);
     setTimeout(() => this.emit('updateHistoricalData'), 2000);
-    // setTimeout(() => this.emit('updateStocksPrices'), 3000);
+    setTimeout(() => this.emit('updateStocksPrices'), 3000);
     // setTimeout(() => this.emit('buildOptionsList'), 4000);
   };
 
@@ -85,6 +86,10 @@ export class UpdaterBot extends EventEmitter implements ITradingBot {
         secType: contract.secType as SecType,
         exchange: contract.exchange,
         currency: contract.currency,
+      })
+      .catch((err: IBApiNextError) => {
+        console.log(`getContractDetails failed for ${contract.symbol} with '${err.error.message}'`);
+        throw err;
       });
   }
 
@@ -93,7 +98,7 @@ export class UpdaterBot extends EventEmitter implements ITradingBot {
       return p.then(() => this.requestContractDetails(contract)
         .then((detailstab) => this.updateContractDetails(contract.id, detailstab))
         .catch((err: IBApiNextError) => {
-          console.log(`getContractDetails failed for ${contract.symbol} with '${err.error.message}'`);
+          // console.log(`getContractDetails failed for ${contract.symbol} with '${err.error.message}'`);
         }));
     }, Promise.resolve()); // initial
   }
@@ -127,8 +132,8 @@ private async updateStocksDetails(): Promise<void> {
       });
   }
 
-  private updateHistoricalVolatility(id: number, bars: Bar[]) {
-    console.log(`updateHistoricalVolatility got data for contract id ${id}`)
+  private updateHistoricalVolatility(id: number, bars: Bar[]): Promise<[affectedCount: number]> {
+    // console.log(`updateHistoricalVolatility got data for contract id ${id}`)
     return Stock.update({
         historicalVolatility: bars[bars.length-1].close
       }, {
@@ -152,7 +157,10 @@ private async updateStocksDetails(): Promise<void> {
       '', "2 D", BarSizeSetting.DAYS_ONE,
       "HISTORICAL_VOLATILITY",
       0, 1
-    )
+    ).catch((err: IBApiNextError) => {
+      console.log(`getHistoricalData failed with '${err.error.message}'`);
+      throw err;
+    })
   }
 
   private iterateContractsForHistoricalVolatility(contracts: Contract[]): Promise<any> {
@@ -160,7 +168,7 @@ private async updateStocksDetails(): Promise<void> {
       return p.then(() => this.requestHistoricalVolatility(contract)
         .then((bars) => this.updateHistoricalVolatility(contract.id, bars))
         .catch((err: IBApiNextError) => {
-          this.app.error(`getHistoricalData failed with '${err.error.message}'`);
+          // this.app.error(`getHistoricalData failed with '${err.error.message}'`);
         }));
     }, Promise.resolve()); // initial
   }
@@ -172,11 +180,9 @@ private async updateStocksDetails(): Promise<void> {
     console.log('updateHistoricalData done');
     setTimeout(() => this.emit('updateHistoricalData'), HISTORICAL_DATA_REFRESH_FREQ * 60000);
   };
-
-  private updateStocksPrices(): void {
-    console.log('updateStocksPrices');
-
-    sequelize.query(`
+  
+  private findStocksNeedingPriceUpdate(): Promise<Contract[]> {
+    return sequelize.query(`
       SELECT
           DISTINCT(contract.symbol), SUM(trading_parameters.nav_ratio) nav_ratio_sum,
           stock.historical_volatility,
@@ -194,65 +200,60 @@ private async updateStocksDetails(): Promise<void> {
         mapToModel: true, // pass true here if you have any mapped fields
         replacements: [STOCKS_PRICES_REFRESH_FREQ/1440/2],
         logging: console.log,
-      }).then((contracts) => {
-        contracts.forEach(async (contract) => {
-          console.log('getMarketDataSingle:', contract.symbol);
-          let promises: Array<Promise<any>> = [];
-  
-          // get price
-          promises.push(this.api
-            .getMarketDataSingle(
-              {
-                conId: contract.conId as number ?? undefined,
-                symbol: contract.symbol as string,
-                secType: contract.secType as SecType,
-                exchange: 'SMART',
-                currency: contract.currency as string,
-              },
-              '', false)
-            .then((marketData) => {
-              const dataWithTickNames = new Map<string, number>();
-              marketData.forEach((tick, type) => {
-                if (type > IBApiNextTickType.API_NEXT_FIRST_TICK_ID) {
-                  dataWithTickNames.set(
-                    IBApiNextTickType[type],
-                    tick.value
-                  );
-                } else {
-                  dataWithTickNames.set(
-                    IBApiTickType[type],
-                    tick.value
-                  );
-                }
-              });
-              Contract.update(
-                {
-                  price: marketData['last'],
-                  ask: marketData['ask'],
-                  bid: marketData['bid'],
-                  updated: new Date(),
-                } as Contract, {
-                where: {
-                  id: contract.id
-                }
-              })
-                .then(() => {
-                  console.log(`getMarketDataSingle succeeded for ${contract.symbol}`);
-                  // this.app.printObject(dataWithTickNames);
-                });
-            })
-            .catch((err: IBApiNextError) => {
-              this.app.error(`getMarketDataSingle failed with '${err.error.message}'`);
-            })
-          );
-
-          const res = await Promise.all(promises);
-        })
       });
+  }
 
-      console.log('updateStocksPrices done');
-      setTimeout(() => this.emit('updateStocksPrices'), STOCKS_PRICES_REFRESH_FREQ * 60000 / 2);
-    };
+  private iterateStocksForPriceUpdate(contracts: Contract[]): Promise<any> {
+    return contracts.reduce((p, contract) => {
+      return p.then(() => this.requestStockPrice(contract)
+        .then((marketData) => this.updateContratPrice(contract.id, marketData))
+        .catch((err: IBApiNextError) => {
+          // this.app.error(`getMarketDataSingle failed with '${err.error.message}'`);
+        }));
+      }, Promise.resolve()); // initial
+  }
+
+  private requestStockPrice(contract: Contract): Promise<MutableMarketData> {
+    return this.api
+      .getMarketDataSingle(
+        {
+          conId: contract.conId as number ?? undefined,
+          symbol: contract.symbol as string,
+          secType: contract.secType as SecType,
+          exchange: 'SMART',
+          currency: contract.currency as string,
+        },
+        '', false)
+      .catch((err: IBApiNextError) => {
+          console.log(`getMarketDataSingle failed with '${err.error.message}'`);
+          throw err;
+      });
+  }
+
+  private updateContratPrice(id: number, marketData: MutableMarketData): Promise<[affectedCount: number]> {
+    // console.log(`updateContratPrice got data for contract id ${id}`)
+    return Contract.update(
+      {
+        price: marketData['last'],
+        ask: marketData['ask'],
+        bid: marketData['bid'],
+        updated: new Date(),
+      } as Contract, {
+      where: {
+        id: id
+      }
+    });
+  }
+
+  private async updateStocksPrices(): Promise<void> {
+    console.log('updateStocksPrices');
+
+    await this.findStocksNeedingPriceUpdate()
+      .then((contracts) => this.iterateStocksForPriceUpdate(contracts));
+
+    console.log('updateStocksPrices done');
+    setTimeout(() => this.emit('updateStocksPrices'), STOCKS_PRICES_REFRESH_FREQ * 60000 / 2);
+  };
 
   private buildOptionsList(): void {
     console.log('buildOptionsList');
