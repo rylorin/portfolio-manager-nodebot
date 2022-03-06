@@ -1,6 +1,6 @@
 import { EventEmitter } from 'events';
 import { Subscription } from "rxjs";
-import { IBApiNext, IBApiNextError, BarSizeSetting, IBApiTickType, IBApiNextTickType, SecType, ContractDetails, OptionType } from "@stoqey/ib";
+import { IBApiNext, IBApiNextError, BarSizeSetting, IBApiTickType, IBApiNextTickType, SecType, ContractDetails, OptionType, Bar } from "@stoqey/ib";
 import { SecurityDefinitionOptionParameterType } from "@stoqey/ib/dist/api-next";
 import { IBApiNextApp } from "@stoqey/ib/dist/tools/common/ib-api-next-app";
 import { QueryTypes } from 'sequelize';
@@ -27,22 +27,13 @@ export class UpdaterBot extends EventEmitter implements ITradingBot {
   }
 
   public start(): void {
-    // this.api
-    // .getNextValidOrderId()
-    // .then((id) => {
-    //   this.app.printText(`getNextValidOrderId: ${id}`);
-    // })
-    // .catch((err: IBApiNextError) => {
-    //   this.app.error(`getNextValidOrderId failed with '${err.error.message}'`);
-    // });
-
     this.on('updateStocksDetails', this.updateStocksDetails);
     this.on('updateHistoricalData', this.updateHistoricalData);
     this.on('updateStocksPrices', this.updateStocksPrices);
     this.on('buildOptionsList', this.buildOptionsList);
 
     setTimeout(() => this.emit('updateStocksDetails'), 1000);
-    // setTimeout(() => this.emit('updateHistoricalData'), 2000);
+    setTimeout(() => this.emit('updateHistoricalData'), 2000);
     // setTimeout(() => this.emit('updateStocksPrices'), 3000);
     // setTimeout(() => this.emit('buildOptionsList'), 4000);
   };
@@ -66,12 +57,12 @@ export class UpdaterBot extends EventEmitter implements ITradingBot {
   }
 
   private updateContractDetails(id: number, detailstab: ContractDetails[]): Promise<[affectedCount: number]> {
+    console.log(`updateContractDetails got data for contract id ${id}`)
     if (detailstab.length > 1) {
       this.app.printObject(detailstab);
       console.log(`Ambigous results from getContractDetails! ${detailstab.length} results for ${detailstab[0].contract.symbol}`)
     }
     let details: ContractDetails = detailstab[0];
-    // this.app.printObject(details);
     return Contract.update(
       {
         conId: details.contract.conId,
@@ -97,19 +88,6 @@ export class UpdaterBot extends EventEmitter implements ITradingBot {
       });
   }
 
-  private XiterateContractsForDetails(contracts: Contract[]): Promise<any> {
-      var p: Promise<any> = Promise.resolve(); // Q() in q
-      contracts.forEach(contract =>
-          p = p.then(() => this.requestContractDetails(contract)
-            .then((detailstab) => this.updateContractDetails(contract.id, detailstab))
-            .catch((err: IBApiNextError) => {
-              console.log(`getContractDetails failed for ${contract.symbol} with '${err.error.message}'`);
-            })
-          )
-      );
-      return p;
-  }
-
   private iterateContractsForDetails(contracts: Contract[]): Promise<any> {
     return contracts.reduce((p, contract) => {
       return p.then(() => this.requestContractDetails(contract)
@@ -129,10 +107,8 @@ private async updateStocksDetails(): Promise<void> {
     setTimeout(() => this.emit('updateStocksDetails'), UPDATE_CONID_FREQ * 60000);
   };
 
-  private updateHistoricalData(): void {
-    console.log('updateHistoricalData');
-
-    sequelize.query(`
+  private findStocksNeedingHistoricalData(): Promise<Contract[]> {
+    return sequelize.query(`
       SELECT
           DISTINCT(contract.symbol), SUM(trading_parameters.nav_ratio) nav_ratio_sum,
           stock.historical_volatility,
@@ -148,49 +124,54 @@ private async updateStocksDetails(): Promise<void> {
         model: Contract,
         mapToModel: true, // pass true here if you have any mapped fields
         logging: console.log,
-      }).then((contracts) => {
-        contracts.forEach(async (contract) => {
-          // console.log('contract:', JSON.stringify(contract, null, 2));
-          let promises: Array<Promise<any>> = [];
-  
-          // get historical volatility
-          console.log(`getHistoricalData for ${contract.symbol}`);
-          promises.push(this.api
-            .getHistoricalData(
-              {
-                conId: contract.conId as number ?? undefined,
-                symbol: contract.symbol as string,
-                secType: contract.secType as SecType,
-                exchange: 'SMART',
-                currency: contract.currency as string,
-              },
-              '', "2 D", BarSizeSetting.DAYS_ONE,
-              "HISTORICAL_VOLATILITY",
-              0, 1
-            )
-            .then((bars) => {
-              console.log(`getHistoricalData historicalVolatility(${contract.symbol}): ${bars[bars.length-1].close}`);
-              Stock.update({
-                  historicalVolatility: bars[bars.length-1].close
-                }, {
-                  where: {
-                    id: contract.id
-                  }
-                }
-              );
-            })
-            .catch((err: IBApiNextError) => {
-              this.app.error(`getHistoricalData failed with '${err.error.message}'`);
-            })
-          );
-
-          const res = await Promise.all(promises);
-        })
       });
+  }
 
-      console.log('updateHistoricalData done');
-      setTimeout(() => this.emit('updateHistoricalData'), HISTORICAL_DATA_REFRESH_FREQ * 60000);
-    };
+  private updateHistoricalVolatility(id: number, bars: Bar[]) {
+    console.log(`updateHistoricalVolatility got data for contract id ${id}`)
+    return Stock.update({
+        historicalVolatility: bars[bars.length-1].close
+      }, {
+        where: {
+          id: id
+        }
+      }
+    );
+  }
+
+  private requestHistoricalVolatility(contract: Contract): Promise<any> {
+    return this.api
+    .getHistoricalData(
+      {
+        conId: contract.conId as number ?? undefined,
+        symbol: contract.symbol as string,
+        secType: contract.secType as SecType,
+        exchange: 'SMART',
+        currency: contract.currency as string,
+      },
+      '', "2 D", BarSizeSetting.DAYS_ONE,
+      "HISTORICAL_VOLATILITY",
+      0, 1
+    )
+  }
+
+  private iterateContractsForHistoricalVolatility(contracts: Contract[]): Promise<any> {
+    return contracts.reduce((p, contract) => {
+      return p.then(() => this.requestHistoricalVolatility(contract)
+        .then((bars) => this.updateHistoricalVolatility(contract.id, bars))
+        .catch((err: IBApiNextError) => {
+          this.app.error(`getHistoricalData failed with '${err.error.message}'`);
+        }));
+    }, Promise.resolve()); // initial
+  }
+
+  private async updateHistoricalData(): Promise<void> {
+    console.log('updateHistoricalData');
+    await this.findStocksNeedingHistoricalData()
+      .then((contracts) => this.iterateContractsForHistoricalVolatility(contracts));
+    console.log('updateHistoricalData done');
+    setTimeout(() => this.emit('updateHistoricalData'), HISTORICAL_DATA_REFRESH_FREQ * 60000);
+  };
 
   private updateStocksPrices(): void {
     console.log('updateStocksPrices');
