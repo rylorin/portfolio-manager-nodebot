@@ -9,6 +9,7 @@ import {
   BelongsTo,
   ForeignKey
 } from "sequelize-typescript";
+import { OptionType } from "@stoqey/ib";
 
 import { Contract, Stock } from '.';
 
@@ -33,7 +34,7 @@ export class Option extends Model {
   public strike!: number;
 
   @Column({ type: DataType.ENUM('C', 'P'), field: 'call_or_put' })
-  public callOrPut!: string;
+  public callOrPut!: OptionType;
 
   @Column({ type: DataType.INTEGER, defaultValue: 100 })
   public multiplier: number;

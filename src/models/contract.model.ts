@@ -9,6 +9,7 @@ import {
   BelongsTo,
   ForeignKey
 } from "sequelize-typescript";
+import { SecType } from "@stoqey/ib";
 
 @Table({ tableName: "contract", timestamps: false, createdAt: false, updatedAt: false })
 export class Contract extends Model {
@@ -23,7 +24,7 @@ export class Contract extends Model {
 
   /** The security type   */
   @Column({ type: DataType.ENUM('STK', 'OPT') })
-  public secType!: string;
+  public secType!: SecType /*string */ ;
 
   /** The destination exchange. */
   @Column({ type: DataType.STRING })
