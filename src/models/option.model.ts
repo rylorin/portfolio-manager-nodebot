@@ -25,6 +25,7 @@ export class Option extends Model {
   @BelongsTo(() => Stock, 'stock_id')
   public stock: Stock;
 
+  // we could change DATEONLY to DATE when offset with timezone
   @Column({ type: DataType.DATEONLY, field: 'last_trade_date' })
   public lastTradeDate!: Date;
   @Column({ type: DataType.INTEGER })
