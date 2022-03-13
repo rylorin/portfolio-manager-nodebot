@@ -47,7 +47,7 @@ export class UpdaterBot extends EventEmitter implements ITradingBot {
     // setTimeout(() => this.emit('updateOptionsConId'), 2000);
     // setTimeout(() => this.emit('updateHistoricalData'), 3000);
     // setTimeout(() => this.emit('updateStocksPrices'), 4000);
-    // setTimeout(() => this.emit('buildOptionsList'), 5000);
+    setTimeout(() => this.emit('buildOptionsList'), 5000);
   };
 
   public stop(): void {};
@@ -80,9 +80,19 @@ export class UpdaterBot extends EventEmitter implements ITradingBot {
     return this.api
       .getContractDetails(contract)
       .catch((err: IBApiNextError) => {
-        console.log(`-- getContractDetails failed for ${contract.symbol} with '${err.error.message}'`);
+        // console.log(`-- getContractDetails failed for ${contract.symbol} with '${err.error.message}'`);
         throw err;
       });
+  }
+
+  private async requestContractDetailsX(contract: IbContract): Promise<ContractDetails[]> {
+    // console.log(`requestContractDetails for contract ${contract.symbol}`){}
+    try {
+      return await this.api.getContractDetails(contract)
+    } catch (err) {
+      console.log(`-- getContractDetails failed for ${contract.symbol} with '${err.error.message}'`);
+      throw err;
+    }
   }
 
   private iterateContractsForDetails(contracts: Contract[]): Promise<any> {
@@ -91,6 +101,7 @@ export class UpdaterBot extends EventEmitter implements ITradingBot {
         .then((detailstab) => this.updateContractDetails(contract.id, detailstab))
         .catch((err) => {
           // silently ignore any error
+          if (err instanceof Error) {}
         }));
     }, Promise.resolve()); // initial
   }
@@ -111,14 +122,30 @@ export class UpdaterBot extends EventEmitter implements ITradingBot {
     );
   }
 
+  private async toto(): Promise<any> {
+    console.log('toto debut')
+    const result = this.findStocksWithoutConId()
+    console.log('toto fin')
+    return result
+  }
+
+  private async tata(): Promise<void> {
+    console.log('tata debug')
+    const tt = this.toto()
+    console.log('tata end')
+    //await tt.then(result => console.log(result))
+    const result = await tt
+    console.log('fin')
+  }
+
   private async updateStocksConId(): Promise<void> {
       console.log('updateStocksConId begin');
-      await this
-        .findStocksWithoutConId()
-        .then((contracts) => this.iterateContractsForDetails(contracts));
+      const contracts = await this.findStocksWithoutConId()
+      await this.iterateContractsForDetails(contracts)
+        // .then((contracts) => this.iterateContractsForDetails(contracts));
       console.log('updateStocksConId done');
       setTimeout(() => this.emit('updateStocksConId'), UPDATE_CONID_FREQ * 60000);
-      return Promise.resolve();
+      //return Promise.resolve();
   };
 
   private updateOptionDetails(id: number, detailstab: ContractDetails[], right: OptionType): Promise<[affectedCount: number]> {
@@ -137,7 +164,7 @@ export class UpdaterBot extends EventEmitter implements ITradingBot {
     return Contract.update(
       {
         conId: details.contract.conId,
-        symbol: `${details.contract.symbol} ${details.contract.lastTradeDateOrContractMonth} ${details.contract.strike} ${right}`,
+        symbol: `${details.contract.symbol} ${details.contract.lastTradeDateOrContractMonth} ${details.contract.strike} ${details.contract.right}`,
         secType: details.contract.secType,
         exchange: details.contract.exchange,
         currency: details.contract.currency,
@@ -365,106 +392,118 @@ export class UpdaterBot extends EventEmitter implements ITradingBot {
     console.log('updateStocksPrices done');
     setTimeout(() => this.emit('updateStocksPrices'), STOCKS_PRICES_REFRESH_FREQ * 60000 / 2);
   };
-
-  private createOptionContract(stock: Contract, expstr: string, strike: number, callOrPut: string): Promise<Option> {
-    let exp: Date = new Date(
-      parseInt(expstr.substring(0, 4)),
-      parseInt(expstr.substring(4, 6)) - 1,
-      parseInt(expstr.substring(6, 8)),
-    );
+  
+  private createOptionContractFromDetails(stock: Contract, expstr: string, strike: number, right: OptionType, detailstab: ContractDetails[]): Promise<Option> {
+    const details: ContractDetails = detailstab[0];
+    console.log('createOptionContractFromDetails', details.contract.symbol, details.realExpirationDate, details.contract.strike, details.contract.right);
     return Contract.create({
-      secType: 'OPT',
-      symbol: `${stock.symbol} ${expstr} ${strike} P`,
-      currency: stock.currency,
-    }).then((contract) => {
-      return Option.create({
-        id: contract.id,
-        stock_id: stock.id,
-        lastTradeDate: exp,
-        expiration: expstr,
-        strike: strike,
-        callOrPut: 'P',
-      })
-    })
-  }
-
-  private findOrCreateOptionContract(stock: Contract, expstr: string, strike: number, callOrPut: string): Promise<Option> {
-    console.log(`findOrCreateOptionContract ${stock.symbol} ${expstr} ${strike} ${callOrPut}`)
-    let exp: Date = new Date(
-      parseInt(expstr.substring(0, 4)),
-      parseInt(expstr.substring(4, 6)) - 1,
-      parseInt(expstr.substring(6, 8)),
-    );
-    return Option.findOne({
-        where: {
-          stock_id: stock.id,
-          lastTradeDate: exp,
-          strike: strike,
-          right: callOrPut,
-        }
-      })
-      // .then((result) => {
-      //   if (result == null) {
-      //     return this.createOptionContract(stock, expstr, strike);
-      //   } else
-      //     return result;
-      // });
-  }
-
-  private iterateSecDefOptParamsForStrikes(stock: Contract, expiration: string, strikes: number[]): Promise<any> {
-    return strikes.reduce((p, strike) => {
-      return p.then(() => {
-        console.log(`iterateSecDefOptParamsForStrikes ${stock.symbol} ${expiration} ${strike} P`)
-        return this.requestContractDetails({
-            symbol: stock.symbol,
-            secType: 'OPT' as SecType,
-            currency: stock.currency,
-            lastTradeDateOrContractMonth: expiration,
-            strike: strike,
-            right: 'P' as OptionType,
-          })
-          // .then((detailstab) => this.findOrCreateOptionContract(stock, expiration, strike, 'P'))
-          // .then((option) => this.updateContractDetails(option.id, detailstab))
-          .catch((err: IBApiNextError) => {
-              console.log(`getMarketDataSingle failed with '${err.error.message}'`);
-              // throw err;
-              return Promise.resolve();
-          })
-        })
-      }, Promise.resolve()); // initial
-  }
-
-  private iterateSecDefOptParamsForExpStrikes(stock: Contract, expirations: string[], strikes: number[]): Promise<any> {
-    return expirations.reduce((p, expiration) => {
-        return p.then(() => {
-          console.log(`iterateSecDefOptParamsForExpStrikes: ${stock.symbol} ${expiration} for ${strikes.length} strikes`)
-          return this.iterateSecDefOptParamsForStrikes(stock, expiration, strikes)
-            .catch((err) => {
-              // silently ignore error
-              return Promise.resolve();
-            })
-      })
-      }, Promise.resolve()); // initial
-  }
-
-  private iterateSecDefOptParams(stock: Contract, details: SecurityDefinitionOptionParameterType[]): Promise<any> {
-    console.log(`iterateSecDefOptParams: ${stock.symbol} ${details.length} items`)
-    return details.reduce((p, detail: SecurityDefinitionOptionParameterType) => {
-      return p.then(() => {
-        let promise: Promise<any>;
-        if (detail.exchange == 'SMART') {
-          // this.app.printObject(detail);
-          promise = this.iterateSecDefOptParamsForExpStrikes(stock, detail.expirations, detail.strikes)
+        conId: details.contract.conId,
+        secType: details.contract.secType,
+        // could use localSymbol as well
+        symbol: `${details.contract.symbol} ${details.realExpirationDate} ${details.contract.strike} ${details.contract.right}`,
+        currency: details.contract.currency,
+        exchange: details.contract.exchange,
+        name: details.longName,
+      }).then((contract) => {
+        // this.app.printObject(details);
+        // this.app.printObject(contract);
+        // caveat: need to offset according to timezone details.timeZoneId
+        let lastTradeDate: Date;
+        if (details.contract.lastTradeDateOrContractMonth.length > 8) {
+          lastTradeDate = new Date(
+            parseInt(details.contract.lastTradeDateOrContractMonth.substring(0, 4)),
+            parseInt(details.contract.lastTradeDateOrContractMonth.substring(4, 6)) - 1,
+            parseInt(details.contract.lastTradeDateOrContractMonth.substring(6, 8)),
+            parseInt(details.contract.lastTradeDateOrContractMonth.substring(9, 11)),
+            parseInt(details.contract.lastTradeDateOrContractMonth.substring(12, 14)),
+          );
         } else {
-          promise = Promise.resolve();
+          lastTradeDate = new Date(
+            parseInt(details.contract.lastTradeDateOrContractMonth.substring(0, 4)),
+            parseInt(details.contract.lastTradeDateOrContractMonth.substring(4, 6)) - 1,
+            parseInt(details.contract.lastTradeDateOrContractMonth.substring(6, 8)),
+            16,
+            30
+          );
         }
-        return promise;
+        // console.log('lastTradeDate', lastTradeDate);
+        return Option.create({
+          id: contract.id,
+          stock_id: stock.id,
+          lastTradeDate: lastTradeDate,
+          expiration: details.realExpirationDate,
+          strike: details.contract.strike,
+          callOrPut: details.contract.right,
+        })
+      })
+  }
+
+  private async buildOneOptionContract(stock: Contract, expstr: string, strike: number, right: OptionType): Promise<Option> {
+    const option = await Option.findOne({
+      where: {
+        stock_id: stock.id,
+        expiration: parseInt(expstr),
+        strike: strike,
+        call_or_put: right,
       }
-      )}, Promise.resolve()); // initial
+    });
+    if (option === null) {
+      return this.requestContractDetails({
+        symbol: stock.symbol,
+        currency: stock.currency,
+        secType: 'OPT' as SecType,
+        lastTradeDateOrContractMonth: expstr,
+        strike: strike,
+        right: right,
+      })
+      .catch((err: IBApiNextError) => {
+          console.log(`buildOneOptionContract ${stock.symbol} ${expstr} ${strike} ${right} failed with '${err.error.message}'`);
+          throw err;
+      })
+      .then((detailstab) => this.createOptionContractFromDetails(stock, expstr, strike, right, detailstab));
+    } else {
+      // console.log(`contract ${stock.symbol} ${expstr} ${strike} ${right} already exists`);
+      return option;
+    }
+  }
+
+  private async iterateSecDefOptParamsForExpStrikes(stock: Contract, expirations: string[], strikes: number[]): Promise<void> {
+    // this.app.printObject(stock);
+    for (const expstr of expirations) {
+      for (const strike of strikes) {
+        // console.log('iterateSecDefOptParamsForExpStrikes', stock.symbol, expstr, strike);
+        let put = this.buildOneOptionContract(stock, expstr, strike, OptionType.Put)
+          .catch((err) => { /* silently ignore any error */ });
+        let call = this.buildOneOptionContract(stock, expstr, strike, OptionType.Call)
+          .catch((err) => { /* silently ignore any error */ });
+        await Promise.all([put, call]);
+      } 
+    }
+    return Promise.resolve();
+  }
+
+  private async iterateSecDefOptParamsX(stock: Contract, details: SecurityDefinitionOptionParameterType[]): Promise<void> {
+    console.log(`iterateSecDefOptParams: ${stock.symbol} ${details.length} items ${details[0].exchange}`)
+    // it seems that SMART is always first item, therefore this could be reduced to parent's calling iterateSecDefOptParamsForExpStrikes with first item of details array
+    for (const detail of details) {
+      if (detail.exchange == 'SMART') {
+        await this.iterateSecDefOptParamsForExpStrikes(stock, detail.expirations, detail.strikes)
+      } 
+    }
+  }
+
+  private iterateSecDefOptParams(stock: Contract, details: SecurityDefinitionOptionParameterType[]): Promise<void> {
+    console.log(`iterateSecDefOptParams: ${stock.symbol} ${details.length}`)
+    // use details associated to SMART exchange or first one if SMART not present
+    let idx: number;
+    for (idx = 0; idx < details.length; idx++) {
+      if (details[idx].exchange == 'SMART') break;
+    }
+    return this.iterateSecDefOptParamsForExpStrikes(stock, details[idx].expirations, details[idx].strikes);
   }
 
   private requestSecDefOptParams(stock: Contract): Promise<SecurityDefinitionOptionParameterType[]> {
-    console.log(`requestSecDefOptParams: ${stock.symbol}`)
+    // console.log(`requestSecDefOptParams: ${stock.symbol}`);
     return this.api
       .getSecDefOptParams(
           stock.symbol,
@@ -482,20 +521,12 @@ export class UpdaterBot extends EventEmitter implements ITradingBot {
     console.log(`iterateToBuildOptionList ${contracts.length} items`)
     return contracts.reduce((p, stock) => {
       return p.then(() => {
-        let promise: Promise<any>;
         if (stock['options_age'] > (OPTIONS_LIST_BUILD_FREQ / 1440 / 2)) {
           console.log(`iterateToBuildOptionList ${stock.symbol} ${stock['options_age']}`)
-          promise = this.requestSecDefOptParams(stock)
-            .then((params) => this.iterateSecDefOptParams(stock, params))
-            .catch((err: IBApiNextError) => {
-              // silently ignore any error
-              console.log(`iterateToBuildOptionList error '${err.error.message}'`);
-              return Promise.resolve();
-            })
-        } else {
-          promise = Promise.resolve();
+          return this.requestSecDefOptParams(stock)
+            .then((params) => this.iterateSecDefOptParams(stock, params));
         }
-        return promise;
+        return Promise.resolve();
       })
     }, Promise.resolve()); // initial
   }
