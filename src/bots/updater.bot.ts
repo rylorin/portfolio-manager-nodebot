@@ -9,10 +9,10 @@ import {
   ContractDetails,
   OptionType,
   Bar,
+  TickType,
 } from "@stoqey/ib";
-import { TickType } from "@stoqey/ib/dist/api/market/tickType";
-
-import { SecurityDefinitionOptionParameterType } from "@stoqey/ib/dist/api-next";
+import { TickType as IBApiTickType } from "@stoqey/ib/dist/api/market/tickType";
+import { SecurityDefinitionOptionParameterType, IBApiNextTickType } from "@stoqey/ib/dist/api-next";
 import { MutableMarketData } from "@stoqey/ib/dist/core/api-next/api/market/mutable-market-data";
 import { IBApiNextApp } from "@stoqey/ib/dist/tools/common/ib-api-next-app";
 import { sequelize, Contract, Stock, Option } from "../models";
@@ -25,9 +25,10 @@ const HISTORICAL_DATA_REFRESH_FREQ: number = parseInt(process.env.HISTORICAL_DAT
 const STOCKS_PRICES_REFRESH_FREQ: number = parseInt(process.env.STOCKS_PRICES_REFRESH_FREQ) || 20;
 const OPTIONS_LIST_BUILD_FREQ: number = parseInt(process.env.OPTIONS_LIST_BUILD_FREQ) || (24 * 60);
 const BATCH_SIZE_OPTIONS_PRICE: number = parseInt(process.env.BATCH_SIZE_OPTIONS_PRICE) || 95;
-const OPTIONS_PRICE_DTE_FREQ: number = parseInt(process.env.OPTIONS_PRICE_DTE_FREQ) || (10 * 60);
-const OPTIONS_PRICE_WEEK_FREQ: number = parseInt(process.env.OPTIONS_PRICE_WEEK_FREQ) || (20 * 60);
-const OPTIONS_PRICE_OTHER_FREQ: number = parseInt(process.env.OPTIONS_PRICE_OTHER_FREQ) || (60 * 60);
+const OPTIONS_PRICE_DTE_FREQ: number = parseInt(process.env.OPTIONS_PRICE_DTE_FREQ) || 10;      // mins
+const OPTIONS_PRICE_WEEK_FREQ: number = parseInt(process.env.OPTIONS_PRICE_WEEK_FREQ) || 20;    // mins
+const OPTIONS_PRICE_OTHER_FREQ: number = parseInt(process.env.OPTIONS_PRICE_OTHER_FREQ) || 60;  // mins
+const OPTIONS_PRICE_TIMEFRAME: number = parseInt(process.env.OPTIONS_PRICE_TIMEFRAME) || 70;    // days
 
 export class UpdaterBot extends EventEmitter implements ITradingBot {
 
@@ -45,15 +46,15 @@ export class UpdaterBot extends EventEmitter implements ITradingBot {
     this.on('updateOptionsConId', this.updateOptionsConId);
     this.on('updateHistoricalData', this.updateHistoricalData);
     this.on('updateStocksPrices', this.updateStocksPrices);
-    this.on('buildOptionsList', this.buildOptionsList);
     this.on('updateOptionsPrice', this.updateOptionsPrice);
+    this.on('buildOptionsList', this.buildOptionsList);
 
-    // setTimeout(() => this.emit('updateStocksConId'), 1000);
-    // setTimeout(() => this.emit('updateOptionsConId'), 2000);
-    // setTimeout(() => this.emit('updateHistoricalData'), 3000);
-    // setTimeout(() => this.emit('updateStocksPrices'), 4000);
-    // setTimeout(() => this.emit('buildOptionsList'), 5000);
-    setTimeout(() => this.emit('updateOptionsPrice'), 6000);
+    setTimeout(() => this.emit('updateStocksConId'), 1000);
+    setTimeout(() => this.emit('updateOptionsConId'), 2000);
+    setTimeout(() => this.emit('updateHistoricalData'), 3000);
+    setTimeout(() => this.emit('updateStocksPrices'), 4000);
+    setTimeout(() => this.emit('updateOptionsPrice'), 5000);
+    // setTimeout(() => this.emit('buildOptionsList'), 6000);
   };
 
   public stop(): void {};
@@ -309,18 +310,12 @@ export class UpdaterBot extends EventEmitter implements ITradingBot {
     return Promise.resolve();
   };
   
-  private requestStockPrice(contract: Contract): Promise<MutableMarketData> {
-    console.log(`requestStockPrice for contract ${contract.symbol}`);
+  private requestContractsPrice(contract: Contract): Promise<MutableMarketData> {
+    console.log(`requestContractsPrice for ${contract.secType} contract ${contract.symbol} ${contract.exchange} id ${contract.id}`);
+    // nothing except SMART seems to work
+    contract.exchange = 'SMART';
     return this.api
-      .getMarketDataSingle(contract
-/*        {
-          conId: contract.conId as number ?? undefined,
-          symbol: contract.symbol as string,
-          secType: contract.secType as SecType,
-          currency: contract.currency as string,
-          exchange: 'SMART',
-        }*/,
-        '', false)
+      .getMarketDataSingle(contract, '', false)
       .catch((err: IBApiNextError) => {
           console.log(`getMarketDataSingle failed with '${err.error.message}'`);
           this.app.printObject(contract);
@@ -328,40 +323,101 @@ export class UpdaterBot extends EventEmitter implements ITradingBot {
       });
   }
 
-  private updateContratPrice(id: number, marketData: MutableMarketData): Promise<[affectedCount: number]> {
+  private updateContratPrice(contract: Contract, marketData: MutableMarketData): Promise<[affectedCount: number]> {
+    console.log(`updateContratPrice got data for ${contract.secType} contract ${contract.symbol} id ${contract.id}`);
     // this.app.printObject(marketData);
-    let dataset = {} as any;
+    let dataset = {
+      price: null,
+      updated: new Date(),
+    } as any;
+    let optdataset = {} as any;
     marketData.forEach((tick, type: TickType) => {
-      if (type == TickType.BID) {
-        dataset.bid = tick.value;
+      if (type == IBApiTickType.BID) {
+        dataset.bid = tick.value > 0 ? tick.value : null;
         dataset.bidDate = new Date(tick.ingressTm);
-      } else if (type == TickType.ASK) {
-        dataset.ask = tick.value;
+      } else if (type == IBApiTickType.ASK) {
+        dataset.ask = tick.value > 0 ? tick.value : null;
         dataset.askDate = new Date(tick.ingressTm);
-      } else if (type == TickType.LAST) {
-        dataset.price = tick.value;
+      } else if (type == IBApiTickType.LAST) {
+        dataset.price = tick.value > 0 ? tick.value : null;
         dataset.updated = new Date(tick.ingressTm);
-      } else if (type == TickType.CLOSE) {
-        dataset.previousClosePrice = tick.value;
+      } else if (type == IBApiTickType.CLOSE) {
+        dataset.previousClosePrice = tick.value > 0 ? tick.value : null;
+      } else if ([ IBApiTickType.BID_SIZE, IBApiTickType.ASK_SIZE, IBApiTickType.LAST_SIZE, IBApiTickType.OPEN,
+        IBApiTickType.HIGH, IBApiTickType.LOW, IBApiTickType.VOLUME, IBApiTickType.HALTED ].includes(type as IBApiTickType)) {
+        // siliently ignore
+        // console.log('silently ignored', type, tick);
+      } else if ((type == IBApiNextTickType.LAST_OPTION_PRICE) && (dataset.price == undefined)) {
+        dataset.price = tick.value > 0 ? tick.value : null;
+        dataset.updated = new Date(tick.ingressTm);
+      } else if (type == IBApiNextTickType.OPTION_PV_DIVIDEND) {
+        optdataset.pv_dividend = tick.value;
+      } else if (type == IBApiNextTickType.LAST_OPTION_DELTA) {
+        optdataset.delta = tick.value || optdataset.delta;
+      } else if (type == IBApiNextTickType.LAST_OPTION_GAMMA) {
+        optdataset.gamma = tick.value || optdataset.gamma;
+      } else if (type == IBApiNextTickType.LAST_OPTION_VEGA) {
+        optdataset.vega = tick.value || optdataset.vega;
+      } else if (type == IBApiNextTickType.LAST_OPTION_THETA) {
+        optdataset.theta = tick.value || optdataset.theta;
+      } else if (type == IBApiNextTickType.LAST_OPTION_IV) {
+        optdataset.implied_volatility = tick.value || optdataset.implied_volatility;
+      } else if ((type == IBApiNextTickType.MODEL_OPTION_IV) && (optdataset.implied_volatility == undefined)) {
+        optdataset.implied_volatility = tick.value ? tick.value : null;
+      } else if ((type == IBApiNextTickType.MODEL_OPTION_PRICE) && (dataset.price == undefined)) {
+        dataset.price = tick.value > 0 ? tick.value : null;
+        dataset.updated = new Date(tick.ingressTm);
+      } else if ((type == IBApiNextTickType.MODEL_OPTION_DELTA) && (optdataset.delta == undefined)) {
+        optdataset.delta = tick.value ? tick.value : null;
+      } else if ((type == IBApiNextTickType.MODEL_OPTION_GAMMA) && (optdataset.gamma == undefined)) {
+        optdataset.gamma = tick.value ? tick.value : null;
+      } else if ((type == IBApiNextTickType.MODEL_OPTION_VEGA) && (optdataset.vega == undefined)) {
+        optdataset.vega = tick.value ? tick.value : null;
+      } else if ((type == IBApiNextTickType.MODEL_OPTION_THETA) && (optdataset.theta == undefined)) {
+        optdataset.theta = tick.value ? tick.value : null;
+      } else if ([ IBApiNextTickType.OPTION_UNDERLYING,
+// would be interesting to use OPTION_UNDERLYING to update underlying
+        IBApiNextTickType.BID_OPTION_IV, IBApiNextTickType.BID_OPTION_PRICE, IBApiNextTickType.BID_OPTION_DELTA, IBApiNextTickType.BID_OPTION_GAMMA, IBApiNextTickType.BID_OPTION_VEGA, IBApiNextTickType.BID_OPTION_THETA,
+        IBApiNextTickType.DELAYED_BID_OPTION_IV, IBApiNextTickType.DELAYED_BID_OPTION_PRICE, IBApiNextTickType.DELAYED_BID_OPTION_DELTA, IBApiNextTickType.DELAYED_BID_OPTION_GAMMA, IBApiNextTickType.DELAYED_BID_OPTION_VEGA, IBApiNextTickType.DELAYED_BID_OPTION_THETA,
+        IBApiNextTickType.ASK_OPTION_IV, IBApiNextTickType.ASK_OPTION_PRICE, IBApiNextTickType.ASK_OPTION_DELTA, IBApiNextTickType.ASK_OPTION_GAMMA, IBApiNextTickType.ASK_OPTION_VEGA, IBApiNextTickType.ASK_OPTION_THETA,
+        IBApiNextTickType.DELAYED_ASK_OPTION_IV,IBApiNextTickType.DELAYED_ASK_OPTION_PRICE, IBApiNextTickType.DELAYED_ASK_OPTION_DELTA, IBApiNextTickType.DELAYED_ASK_OPTION_GAMMA, IBApiNextTickType.DELAYED_ASK_OPTION_VEGA, IBApiNextTickType.DELAYED_ASK_OPTION_THETA,
+        IBApiNextTickType.DELAYED_LAST_OPTION_IV,IBApiNextTickType.DELAYED_LAST_OPTION_PRICE, IBApiNextTickType.DELAYED_LAST_OPTION_DELTA, IBApiNextTickType.DELAYED_LAST_OPTION_GAMMA, IBApiNextTickType.DELAYED_LAST_OPTION_VEGA, IBApiNextTickType.DELAYED_LAST_OPTION_THETA,
+        ].includes(type as IBApiNextTickType)) {
+        // siliently ignore
+        // console.log('silently ignored', type, tick);
       } else {
         console.log('ignored', type, tick);
       }
     });
-    console.log(`updateContratPrice got data for contract id ${id}`);
-    this.app.printObject(dataset);
     return Contract.update(
-      dataset,
-      {
-        where: {
-          id: id
-      }
-    });
+        dataset,
+        {
+          where: {
+            id: contract.id,
+          }
+        }
+      ).then((affectedCount) => {
+        if (contract.secType == 'OPT') {
+          this.app.printObject(dataset);
+          this.app.printObject(optdataset);
+          return Option.update(
+            optdataset,
+            {
+              where: {
+                id: contract.id,
+              }
+            }
+          );
+        } else {
+          return affectedCount;
+        }
+      });
   }
 
   private iterateStocksForPriceUpdate(contracts: Contract[]): Promise<any> {
     return contracts.reduce((p, contract) => {
-      return p.then(() => this.requestStockPrice(contract)
-        .then((marketData) => this.updateContratPrice(contract.id, marketData))
+      return p.then(() => this.requestContractsPrice(contract)
+        .then((marketData) => this.updateContratPrice(contract, marketData))
         .catch((err) => {
           // silently ignore any error
         })
@@ -406,7 +462,8 @@ export class UpdaterBot extends EventEmitter implements ITradingBot {
         conId: details.contract.conId,
         secType: details.contract.secType,
         // could use localSymbol as well
-        symbol: `${details.contract.symbol} ${details.realExpirationDate} ${details.contract.strike} ${details.contract.right}`,
+        // symbol: `${details.contract.symbol} ${details.realExpirationDate} ${details.contract.strike} ${details.contract.right}`,
+        symbol: details.contract.localSymbol,
         currency: details.contract.currency,
         exchange: details.contract.exchange,
         name: details.longName,
@@ -488,15 +545,6 @@ export class UpdaterBot extends EventEmitter implements ITradingBot {
     return Promise.resolve();
   }
 
-  private async iterateSecDefOptParamsX(stock: Contract, details: SecurityDefinitionOptionParameterType[]): Promise<void> {
-    console.log(`iterateSecDefOptParams: ${stock.symbol} ${details.length} items ${details[0].exchange}`)
-    for (const detail of details) {
-      if (detail.exchange == 'SMART') {
-        await this.iterateSecDefOptParamsForExpStrikes(stock, detail.expirations, detail.strikes)
-      } 
-    }
-  }
-
   private iterateSecDefOptParams(stock: Contract, details: SecurityDefinitionOptionParameterType[]): Promise<void> {
     console.log(`iterateSecDefOptParams: ${stock.symbol} ${details.length}`)
     // use details associated to SMART exchange or first one if SMART not present
@@ -514,14 +562,14 @@ export class UpdaterBot extends EventEmitter implements ITradingBot {
     // console.log(`requestSecDefOptParams: ${stock.symbol}`);
     return this.api
       .getSecDefOptParams(
-          stock.symbol,
-          '', // exchange but only empty string returns results
-          'STK' as SecType,
-          stock.conId
-        )
+        stock.symbol,
+        '', // exchange but only empty string returns results
+        'STK' as SecType,
+        stock.conId
+      )
       .catch((err: IBApiNextError) => {
-          console.log(`getSecDefOptParams failed with '${err.error.message}'`);
-          throw err;
+        console.log(`getSecDefOptParams failed with '${err.error.message}'`);
+        throw err;
       });
   }
 
@@ -589,7 +637,7 @@ export class UpdaterBot extends EventEmitter implements ITradingBot {
   private findOptionsToUpdatePrice(dte: number, age: number): Promise<Contract[]> {
     return sequelize.query(`
       SELECT
-        (julianday('now') - julianday(contract.updated)) options_age,
+        (julianday('now') - julianday(ifnull(contract.updated, '2022-01-01'))) options_age,
         (julianday(option.last_trade_date) + 1 - julianday('now')) options_dte,
         contract.id, contract.con_id, contract.secType, contract.currency, contract.exchange, stock.symbol, strftime('%Y%m%d', option.last_trade_date) lastTradeDateOrContractMonth, option.strike, option.call_or_put 'right'
       FROM contract, option, trading_parameters, contract stock
@@ -600,7 +648,7 @@ export class UpdaterBot extends EventEmitter implements ITradingBot {
         AND option.expiration >= strftime('%Y%m%d', 'now') 
         AND options_dte < ?
         AND options_age > ?
-      ORDER BY options_age DESC
+      ORDER BY options_dte, options_age DESC
       LIMIT ?
       `,
     {
@@ -616,11 +664,12 @@ export class UpdaterBot extends EventEmitter implements ITradingBot {
     let promises: Promise<any>[] = [];
     for (const contract of contracts) {
       promises.push(
-        this.requestStockPrice(contract)
-        // .then((marketData) => console.log(contract.id, marketData))
-        .then((marketData) => this.updateContratPrice(contract.id, marketData))
+        this.requestContractsPrice(contract)
+        .then((marketData) => { console.log(contract.id, marketData); return marketData; })
+        .then((marketData) => this.updateContratPrice(contract, marketData))
         .catch((err) => {
           // silently ignore any error
+          console.log('fetchOptionContractsPrices error ignored', err);
         })
       );
     }
@@ -628,26 +677,26 @@ export class UpdaterBot extends EventEmitter implements ITradingBot {
   }
 
   private async updateOptionsPrice(): Promise<void> {
-    console.log('updateOptionsPrice');
+    console.log('updateOptionsPrice', new Date());
     let contracts: Contract[];
     contracts = await this.findOptionsToUpdatePrice(1, OPTIONS_PRICE_DTE_FREQ);
     if (contracts.length > 0) {
-      console.log(contracts.length, '0 day items');
+      console.log(contracts.length, 'zero day items');
       // this.app.printObject(contracts);
     } else {
       contracts = await this.findOptionsToUpdatePrice(7, OPTIONS_PRICE_WEEK_FREQ);
       if (contracts.length > 0) {
-        console.log(contracts.length, '1 week items');
-        this.app.printObject(contracts);
+        console.log(contracts.length, 'one week items');
+        // this.app.printObject(contracts);
       } else {
-        contracts = await this.findOptionsToUpdatePrice(36, OPTIONS_PRICE_OTHER_FREQ);
+        contracts = await this.findOptionsToUpdatePrice(OPTIONS_PRICE_TIMEFRAME, OPTIONS_PRICE_OTHER_FREQ);
         console.log(contracts.length, 'other items');
         // this.app.printObject(contracts);
       }
     }
     await this.fetchOptionContractsPrices(contracts);
-    console.log('updateOptionsPrice done');
-    // setTimeout(() => this.emit('updateOptionsPrice'), 1000);
+    console.log('updateOptionsPrice done', new Date());
+    setTimeout(() => this.emit('updateOptionsPrice'), 1 * 1000);
   };
   
 };
