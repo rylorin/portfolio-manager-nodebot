@@ -46,6 +46,7 @@ class MyTradingBotApp extends IBApiNextApp {
       logger.debug(`Starting ${scriptName} script`);
       this.connect();
       this.api.setMarketDataType(MarketDataType.REALTIME);
+      this.api.setMarketDataType(MarketDataType.FROZEN);
       initDB().then(() => {
         (new UpdaterBot(this, this.api)).start();
       });
