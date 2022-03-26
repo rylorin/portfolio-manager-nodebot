@@ -7,7 +7,7 @@ import logger from "@stoqey/ib/dist/common/logger";
 import { IBApiNextApp } from "@stoqey/ib/dist/tools/common/ib-api-next-app";
 import { MarketDataType } from "@stoqey/ib";
 import { initDB } from "./models";
-import { UpdaterBot } from "./bots";
+import { UpdaterBot, AccountBot } from "./bots";
 
 /////////////////////////////////////////////////////////////////////////////////
 // The help text                                                               //
@@ -16,17 +16,9 @@ import { UpdaterBot } from "./bots";
 const DESCRIPTION_TEXT = "Print real time market data of a given contract id.";
 const USAGE_TEXT = "Usage: market-data.js <options>";
 const OPTION_ARGUMENTS: [string, string][] = [
-    ["conid=<number>", "Contract ID (conId) of the contract."],
-    ["symbol=<name>", "The symbol name."],
-    [
-        "sectype=<type>",
-        "The security type. Valid values: STK, OPT, FUT, IND, FOP, CFD, CASH, BAG, BOND, CMDTY, NEWS and FUND",
-    ],
-    ["exchange=<name>", "The destination exchange name."],
-    ["currency=<currency>", "The contract currency."],
 ];
 const EXAMPLE_TEXT =
-  path.basename(__filename) + "market-data-single.js -symbol=AAPL -conid=265598 -sectype=STK -exchange=SMART";
+  path.basename(__filename) + "market-data-single.js -port=7497 -host=localhost ";
  
 //////////////////////////////////////////////////////////////////////////////
 // The App code                                                             //
@@ -48,7 +40,8 @@ class MyTradingBotApp extends IBApiNextApp {
       this.api.setMarketDataType(MarketDataType.REALTIME);
       this.api.setMarketDataType(MarketDataType.FROZEN);
       initDB().then(() => {
-        (new UpdaterBot(this, this.api)).start();
+        // (new UpdaterBot(this, this.api)).start();
+        (new AccountBot(this, this.api)).start();
       });
     };
     

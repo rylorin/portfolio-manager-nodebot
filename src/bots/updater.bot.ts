@@ -25,8 +25,8 @@ const HISTORICAL_DATA_REFRESH_FREQ: number = parseInt(process.env.HISTORICAL_DAT
 const STOCKS_PRICES_REFRESH_FREQ: number = parseInt(process.env.STOCKS_PRICES_REFRESH_FREQ) || 20;  // mins
 const OPTIONS_LIST_BUILD_FREQ: number = parseInt(process.env.OPTIONS_LIST_BUILD_FREQ) || (24 * 60);
 const BATCH_SIZE_OPTIONS_PRICE: number = parseInt(process.env.BATCH_SIZE_OPTIONS_PRICE) || 95;
-const OPTIONS_PRICE_DTE_FREQ: number = parseInt(process.env.OPTIONS_PRICE_DTE_FREQ) || 10;      // mins
-const OPTIONS_PRICE_WEEK_FREQ: number = parseInt(process.env.OPTIONS_PRICE_WEEK_FREQ) || 30;    // mins
+const OPTIONS_PRICE_DTE_FREQ: number = parseInt(process.env.OPTIONS_PRICE_DTE_FREQ) || 15;      // mins
+const OPTIONS_PRICE_WEEK_FREQ: number = parseInt(process.env.OPTIONS_PRICE_WEEK_FREQ) || 45;    // mins
 const OPTIONS_PRICE_OTHER_FREQ: number = parseInt(process.env.OPTIONS_PRICE_OTHER_FREQ) || 90;  // mins
 const OPTIONS_PRICE_TIMEFRAME: number = parseInt(process.env.OPTIONS_PRICE_TIMEFRAME) || 90;    // days
 
@@ -39,7 +39,7 @@ export class UpdaterBot extends EventEmitter implements ITradingBot {
     super();
     this.app = app;
     this.api = api;
-  }
+  };
 
   public start(): void {
     this.on('updateStocksConId', this.updateStocksConId);
@@ -54,7 +54,7 @@ export class UpdaterBot extends EventEmitter implements ITradingBot {
     setTimeout(() => this.emit('updateHistoricalData'), 3000);
     setTimeout(() => this.emit('updateStocksPrices'), 4000);
     setTimeout(() => this.emit('updateOptionsPrice'), 5000);
-    setTimeout(() => this.emit('buildOptionsList'), 6000);
+    setTimeout(() => this.emit('buildOptionsList'), 600000);
   };
 
   public stop(): void {};
@@ -149,10 +149,9 @@ export class UpdaterBot extends EventEmitter implements ITradingBot {
       console.log('updateStocksConId begin');
       const contracts = await this.findStocksWithoutConId()
       await this.iterateContractsForDetails(contracts)
-        // .then((contracts) => this.iterateContractsForDetails(contracts));
       console.log('updateStocksConId done');
       setTimeout(() => this.emit('updateStocksConId'), UPDATE_CONID_FREQ * 60000);
-      //return Promise.resolve();
+      return Promise.resolve();
   };
 
   private updateOptionDetails(id: number, detailstab: ContractDetails[], right: OptionType): Promise<[affectedCount: number]> {
@@ -162,12 +161,6 @@ export class UpdaterBot extends EventEmitter implements ITradingBot {
       // console.log(`Ambigous results from getContractDetails! ${detailstab.length} results for ${detailstab[0].contract.symbol}`)
     }
     const details: ContractDetails = detailstab[0];
-    // this.app.printObject(details);
-    // let exchange: string = undefined;
-    // details.validExchanges.split(',').forEach((exch) => {
-    //   if (exchange == undefined) exchange = exch;
-    //   if (exchange == 'SMART') exchange = exch;
-    // })
     return Contract.update(
       {
         conId: details.contract.conId,
@@ -310,15 +303,14 @@ export class UpdaterBot extends EventEmitter implements ITradingBot {
     return Promise.resolve();
   };
   
-  private requestContractsPrice(contract: Contract): Promise<MutableMarketData> {
-    console.log(`requestContractsPrice for ${contract.secType} contract ${contract.symbol} ${contract.exchange} id ${contract.id}`);
-    // nothing except SMART seems to work
-    if (contract.currency == 'USD') contract.exchange = 'SMART';
+  private requestContractPrice(contract: Contract): Promise<MutableMarketData> {
+    // console.log(`requestContractPrice for ${contract.secType} contract ${contract.symbol} ${contract.exchange} id ${contract.id}`);
+    if (contract.currency == 'USD') contract.exchange = 'SMART';  // nothing except SMART seems to work
     return this.api
       .getMarketDataSingle(contract, '', false)
       .catch((err: IBApiNextError) => {
-          console.log(`getMarketDataSingle failed with '${err.error.message}'`);
-          this.app.printObject(contract);
+          console.log(`getMarketDataSingle failed for contract ${contract.secType} ${contract.symbol} with ${err.code}: '${err.error.message}'`);
+          // this.app.printObject(contract);
           throw err;
       });
   }
@@ -357,15 +349,26 @@ export class UpdaterBot extends EventEmitter implements ITradingBot {
         //   console.log('updateContratPrice LAST_OPTION_PRICE ignored', dataset.price, tick.value);
         }
       } else if (type == IBApiNextTickType.LAST_OPTION_DELTA) {
-        optdataset.delta = tick.value || optdataset.delta;
+        if (tick.value) {
+          optdataset.delta = tick.value;
+        }
+        // console.log('delta (last):', optdataset.delta, tick.value);
       } else if (type == IBApiNextTickType.LAST_OPTION_GAMMA) {
-        optdataset.gamma = tick.value || optdataset.gamma;
+        if (tick.value) {
+          optdataset.gamma = tick.value;
+        }
       } else if (type == IBApiNextTickType.LAST_OPTION_VEGA) {
-        optdataset.vega = tick.value || optdataset.vega;
+        if (tick.value) {
+          optdataset.vega = tick.value;
+        }
       } else if (type == IBApiNextTickType.LAST_OPTION_THETA) {
-        optdataset.theta = tick.value || optdataset.theta;
+        if (tick.value) {
+          optdataset.theta = tick.value;
+        }
       } else if (type == IBApiNextTickType.LAST_OPTION_IV) {
-        optdataset.implied_volatility = tick.value || optdataset.implied_volatility;
+        if (tick.value) {
+          optdataset.implied_volatility = tick.value;
+        }
       } else if (type == IBApiNextTickType.MODEL_OPTION_PRICE) {
         if (!dataset.price) {
           dataset.price = tick.value > 0 ? tick.value : null;
@@ -379,19 +382,20 @@ export class UpdaterBot extends EventEmitter implements ITradingBot {
         }
       } else if (type == IBApiNextTickType.MODEL_OPTION_DELTA) {
         if (!optdataset.delta) {
-          optdataset.delta = tick.value > 0 ? tick.value : null;
+          optdataset.delta = tick.value ? tick.value : null;
         }
+        // console.log('delta (model):', optdataset.delta, tick.value);
       } else if (type == IBApiNextTickType.MODEL_OPTION_GAMMA) {
         if (!optdataset.gamma) {
-          optdataset.gamma = tick.value > 0 ? tick.value : null;
+          optdataset.gamma = tick.value ? tick.value : null;
         }
       } else if (type == IBApiNextTickType.MODEL_OPTION_VEGA) {
         if (!optdataset.vega) {
-          optdataset.vega = tick.value > 0 ? tick.value : null;
+          optdataset.vega = tick.value ? tick.value : null;
         }
       } else if (type == IBApiNextTickType.MODEL_OPTION_THETA) {
         if (!optdataset.theta) {
-          optdataset.theta = tick.value > 0 ? tick.value : null;
+          optdataset.theta = tick.value ? tick.value : null;
         }
       } else if ([ IBApiNextTickType.OPTION_UNDERLYING,
 // would be interesting to use OPTION_UNDERLYING to update underlying
@@ -432,13 +436,14 @@ export class UpdaterBot extends EventEmitter implements ITradingBot {
       });
   }
 
-  private iterateStocksForPriceUpdate(contracts: Contract[]): Promise<any> {
+  private iterateContractssForPriceUpdate(contracts: Contract[]): Promise<any> {
     return contracts.reduce((p, contract) => {
-      return p.then(() => this.requestContractsPrice(contract)
+      return p.then(() => this.requestContractPrice(contract)
         // .then((marketData) => { console.log(marketData); return marketData; })
         .then((marketData) => this.updateContratPrice(contract, marketData))
         .catch((err) => {
           // silently ignore any error
+          return Promise.resolve();
         })
       );
     }, Promise.resolve()); // initial
@@ -486,12 +491,36 @@ export class UpdaterBot extends EventEmitter implements ITradingBot {
       });
   }
 
+  private findPortfolioStocksNeedingPriceUpdate(): Promise<Contract[]> {
+    return sequelize.query(`
+      SELECT
+        DISTINCT(stock.symbol),
+        (julianday('now') - julianday(stock.updated)) age,
+        stock.*
+      FROM position, option, contract, contract stock
+      WHERE position.contract_id = option.id
+        AND option.id = contract.id
+        AND option.stock_id = stock.id
+        AND age > ?
+      GROUP BY stock.symbol
+      ORDER BY contract.updated
+      `,
+      {
+        model: Contract,
+        mapToModel: true, // pass true here if you have any mapped fields
+        replacements: [STOCKS_PRICES_REFRESH_FREQ / 1440],
+        // logging: console.log,
+      });
+  }
+
   private async updateStocksPrices(): Promise<void> {
     console.log('updateStocksPrices');
+    await this.findPortfolioStocksNeedingPriceUpdate()
+      .then((contracts) => this.iterateContractssForPriceUpdate(contracts));
     await this.findPortfolioContractsNeedingPriceUpdate()
-      .then((contracts) => this.iterateStocksForPriceUpdate(contracts));
+      .then((contracts) => this.iterateContractssForPriceUpdate(contracts));
     await this.findStocksNeedingPriceUpdate()
-      .then((contracts) => this.iterateStocksForPriceUpdate(contracts));
+      .then((contracts) => this.iterateContractssForPriceUpdate(contracts));
     console.log('updateStocksPrices done');
     setTimeout(() => this.emit('updateStocksPrices'), STOCKS_PRICES_REFRESH_FREQ * 60000 / 2);
   };
@@ -629,7 +658,7 @@ export class UpdaterBot extends EventEmitter implements ITradingBot {
     console.log(`iterateToBuildOptionList ${contracts.length} items`)
     return contracts.reduce((p, stock) => {
       return p.then(() => {
-        if (stock['options_age'] > (OPTIONS_LIST_BUILD_FREQ / 1440 / 2)) {
+        if (stock['options_age'] > (OPTIONS_LIST_BUILD_FREQ / 1440)) {
           console.log(`iterateToBuildOptionList ${stock.symbol} ${stock['options_age']}`)
           return this.requestSecDefOptParams(stock)
             .then((params) => this.iterateSecDefOptParams(stock, params));
@@ -700,7 +729,7 @@ export class UpdaterBot extends EventEmitter implements ITradingBot {
         AND option.expiration >= strftime('%Y%m%d', 'now') 
         AND options_dte < ?
         AND options_age > ?
-      ORDER BY options_dte, options_age DESC
+      ORDER BY options_age DESC
       LIMIT ?
       `,
     {
@@ -714,14 +743,23 @@ export class UpdaterBot extends EventEmitter implements ITradingBot {
 
   private fetchOptionContractsPrices(contracts: Contract[]): Promise<any[]> {
     let promises: Promise<any>[] = [];
+    let count = 0;
     for (const contract of contracts) {
+      count++;
       promises.push(
-        this.requestContractsPrice(contract)
+        this.requestContractPrice(contract)
         // .then((marketData) => { console.log(contract.id, marketData); return marketData; })
         .then((marketData) => this.updateContratPrice(contract, marketData))
         .catch((err) => {
           // silently ignore any error
-          console.log('fetchOptionContractsPrices error ignored', err);
+          if (err.code == 10091) {  // 'Part of requested market data requires additional subscription for API. See link in 'Market Data Connections' dialog for more details.Delayed market data is not available.SPY ARCA/TOP/ALL'
+            console.log(`requestContractPrice failed for ${contract.symbol} with ${err.code}: '${err.error.message}'`);
+          } else
+            console.log('fetchOptionContractsPrices error ignored', err);
+          return Promise.resolve();
+        })
+        .finally((): void => {
+          if (--count == 0) console.log('fetchOptionContractsPrices all done');
         })
       );
     }
@@ -734,16 +772,18 @@ export class UpdaterBot extends EventEmitter implements ITradingBot {
     contracts = await this.findOptionsToUpdatePrice(1, OPTIONS_PRICE_DTE_FREQ);
     if (contracts.length > 0) {
       console.log(contracts.length, 'zero day items');
-      // this.app.printObject(contracts);
     } else {
       contracts = await this.findOptionsToUpdatePrice(7, OPTIONS_PRICE_WEEK_FREQ);
       if (contracts.length > 0) {
         console.log(contracts.length, 'one week items');
-        // this.app.printObject(contracts);
       } else {
-        contracts = await this.findOptionsToUpdatePrice(OPTIONS_PRICE_TIMEFRAME, OPTIONS_PRICE_OTHER_FREQ);
-        console.log(contracts.length, 'other items');
-        // this.app.printObject(contracts);
+        contracts = await this.findOptionsToUpdatePrice(31, OPTIONS_PRICE_OTHER_FREQ);
+        if (contracts.length > 0) {
+          console.log(contracts.length, 'one month items');
+        } else {
+          contracts = await this.findOptionsToUpdatePrice(OPTIONS_PRICE_TIMEFRAME, 999);
+          console.log(contracts.length, 'other items');
+        }
       }
     }
     await this.fetchOptionContractsPrices(contracts);

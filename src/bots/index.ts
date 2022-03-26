@@ -4,3 +4,4 @@ export interface ITradingBot {
 }
 
 export { UpdaterBot } from './updater.bot';
+export { AccountBot } from './account.bot';
