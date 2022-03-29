@@ -2,6 +2,7 @@ import { Sequelize } from "sequelize-typescript";
 import { Contract } from './contract.model';
 import { Stock } from './stock.model';
 import { Option } from './option.model';
+import { OpenOrder } from './openorder.model';
 
 require('dotenv').config();
 
@@ -22,4 +23,4 @@ export const initDB = async () => {
     await sequelize.sync({ alter: false });
 };
 
-export { Sequelize, sequelize, Contract, Stock, Option };
+export { Sequelize, sequelize, Contract, Stock, Option, OpenOrder };

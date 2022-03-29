@@ -29,7 +29,7 @@
     "typescript": "^4.2.4"
   },
   "dependencies": {
-    "@stoqey/ib": "^1.2.18",
+    "@stoqey/ib": "^1.2.25",
     "reflect-metadata": "^0.1.13",
     "sequelize": "^6.17.0",
     "sequelize-typescript": "^2.1.3",

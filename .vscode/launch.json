@@ -15,6 +15,38 @@
             "outFiles": [
                 "${workspaceFolder}/**/*.js"
             ]
-        }
-    ]
+        },
+        {
+            "type": "pwa-node",
+            "request": "launch",
+            "name": "Launch tool",
+            "skipFiles": [
+                "<node_internals>/**"
+            ],
+            "program": "${workspaceFolder}/node_modules/@stoqey/ib/dist/tools/open-orders.js",
+            "outFiles": [
+                "${workspaceFolder}/**/*.js"
+            ]
+        },
+        {
+            "type": "node",
+            "request": "launch",
+            "name": "Tool: open-orders",
+            "skipFiles": [
+              "<node_internals>/**"
+            ],
+            "runtimeArgs": [
+              "--trace-warnings"
+            ],
+            "program": "${workspaceFolder}/node_modules/@stoqey/ib/dist/tools/open-orders.js",
+            "outFiles": [
+              "${workspaceFolder}/**/*.js"
+            ],
+            "outputCapture": "std",
+            "resolveSourceMapLocations": [
+              "${workspaceFolder}/**",
+              "!**/node_modules/**"
+            ]
+          },
+          ]
 }

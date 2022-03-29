@@ -538,8 +538,6 @@ export class UpdaterBot extends EventEmitter implements ITradingBot {
         exchange: details.contract.exchange,
         name: details.longName,
       }).then((contract) => {
-        // this.app.printObject(details);
-        // this.app.printObject(contract);
         // caveat: need to offset according to timezone details.timeZoneId
         let lastTradeDate: Date;
         if (details.contract.lastTradeDateOrContractMonth.length > 8) {

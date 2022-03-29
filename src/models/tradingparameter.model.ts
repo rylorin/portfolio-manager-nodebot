@@ -21,7 +21,7 @@ export class TradingParameter extends Model {
   @BelongsTo(() => Stock, 'stock_id')
   public underlying: Stock;
 
-  @Column({ type: DataType.FLOAT, field: 'nav_raio' })
+  @Column({ type: DataType.FLOAT, field: 'nav_ratio' })
   public navRatio: number;
 
 };
