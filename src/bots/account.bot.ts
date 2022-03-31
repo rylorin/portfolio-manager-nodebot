@@ -11,7 +11,7 @@ import {
   OptionType,
   Bar,
   TickType,
-  OpenOrder,
+  OpenOrder as IbOpenOrder,
 } from "@stoqey/ib";
 import { TickType as IBApiTickType } from "@stoqey/ib/dist/api/market/tickType";
 import { SecurityDefinitionOptionParameterType, IBApiNextTickType } from "@stoqey/ib/dist/api-next";
@@ -22,7 +22,7 @@ import {
   Contract,
   Stock,
   Option,
-  OpenOrder as OpenOrderRepository
+  OpenOrder as OpenOrder
 } from "../models";
 import { ITradingBot } from '.';
 
@@ -61,11 +61,11 @@ export class AccountBot implements ITradingBot {
 
     private async findOrCreateContract(ibContract: IbContract): Promise<Contract> {
       // find contract by ib id
-      let contract = await Contract.findOne({
+      let contract: Contract = await Contract.findOne({
           where: { conId: ibContract.conId }
       });
       if (contract === null) {  // not found
-        if (ibContract.secType == 'STK') {
+        if (ibContract.secType == SecType.STK) {
           // find stock contract by data
           contract = await Contract.findOne({
             where: {
@@ -93,7 +93,7 @@ export class AccountBot implements ITradingBot {
             return Contract.update({ conId: ibContract.conId }, { where: { id: contract.id }})
               .then(() => contract)
           }
-        } else if (ibContract.secType == 'OPT') {
+        } else if (ibContract.secType == SecType.OPT) {
           const stock = await this.findOrCreateContract({
             secType: 'STK' as SecType,
             symbol: ibContract.symbol,
@@ -110,7 +110,10 @@ export class AccountBot implements ITradingBot {
             }
           });
           if (option !== null) {
-            contract = await Contract.findByPk(option.id);
+            contract = await Contract.findByPk(option.id)
+              // update ib con id
+              .then((contract) => Contract.update({ conId: ibContract.conId }, { where: { id: contract.id }}))
+              .then(() => contract);
           } else {
             // Create option contrat
             contract = await Contract.create({
@@ -122,24 +125,40 @@ export class AccountBot implements ITradingBot {
             })
             .then((contract) => Option.create({
                 id: contract.id,
-                stock: stock,
+                stock_id: stock.id,
                 lastTradeDate: lastTradeDate,
                 strike: ibContract.strike,
                 callOrPut: ibContract.right,
             }))
             .then(() => contract)
           }
+        } else if (ibContract.secType == SecType.BAG) {
+          // create it
+          contract = await Contract.create({
+            conId: ibContract.conId,
+            secType: ibContract.secType,
+            symbol: `${ibContract.tradingClass}-${ibContract.localSymbol}`,
+            currency: ibContract.currency,
+            exchange: ibContract.exchange,
+          }) /* we should create a BAD child here .then((contract) => Stock.create({
+              id: contract.id,
+            }).then(() => {
+                  return contract;
+            })
+          ) */
         }
-        this.app.error('contract not found, please check results');
+        this.app.error('contract created, please check results');
         this.app.printObject(ibContract);
+      } else {
+        console.log('findOrCreateContract got contract by conId');
       }
+      // this.app.printObject(contract);
       return contract;
     }
     
-    protected updateOpenOrders(orders: OpenOrder[]): void {
-      orders.forEach((order) => {
-        console.log('updateOpenOrders', order.order.permId);
-        OpenOrderRepository.update({
+    protected updateOpenOrder(order: IbOpenOrder): Promise<void> {
+        // console.log('updateOpenOrders', order.order.permId);
+        return OpenOrder.update({
           actionType: order.order.action,
           totalQty: order.order.totalQuantity,
           cashQty: order.order.cashQty,
@@ -148,46 +167,75 @@ export class AccountBot implements ITradingBot {
           status: order.orderState.status,
           remainingQty: order.orderStatus?.remaining,
         },{
-          where: { perm_Id: order.order.permId }
+          where: { perm_Id: order.order.permId },
+          // logging: console.log,
         }).then((result) => {
           if (result[0] == 0) {
             // order not existing, create it
-            this.findOrCreateContract(order.contract);
+            return this.findOrCreateContract(order.contract)
+            // .then((contract) => {
+            //   this.app.printObject(contract);
+            //   return contract
+            // })
+            .then((contract) =>
+              OpenOrder.create({
+                permId: order.order.permId,
+                accountId: 26,
+                contract_id: contract.id,
+                actionType: order.order.action,
+                totalQty: order.order.totalQuantity,
+                cashQty: order.order.cashQty,
+                lmtPrice: order.order.lmtPrice,
+                auxPrice: order.order.auxPrice,
+                status: order.orderState.status,
+                remainingQty: order.orderStatus?.remaining,
+              },{
+                // logging: console.log,
+              })
+            ).then(() => Promise.resolve());
+          } else {
+            return Promise.resolve();
           }
         })
-      });
     }
 
-    public start(): void {
-      this.api.getAllOpenOrders().then(async (orders) => {
-        const now = Date.now();
-        this.updateOpenOrders(orders);
-        await OpenOrderRepository.destroy({
-          where: {
-            account_id: 26,
-            updatedAt: { [Op.lt]: new Date(now - 0.1) }
-          },
-          logging: console.log,
+    private iterateOpenOrdersForUpdate(orders: IbOpenOrder[]): Promise<void> {
+      return orders.reduce((p, order) => {
+        return p.then(() => this.updateOpenOrder(order))
+      }, Promise.resolve()); // initial
+    }
+  
+    public async start(): Promise<void> {
+      const now = Date.now();
+      await this.api.getAllOpenOrders().then((orders) => 
+        this.iterateOpenOrdersForUpdate(orders)
+          .then(() => OpenOrder.destroy({
+            where: {
+              account_id: 26,
+              updatedAt: { [Op.lt]: new Date(now - 0.1) }
+            },
+            // logging: console.log,
+          }))
+      );
+      this.subscription$ = this.api
+        .getOpenOrders()
+        .subscribe({
+            next: async (data) => {
+                // this.app.printObject(data);
+                console.log('got next event', data.all.length, 'open orders');
+                console.log(`${data.added?.length} orders added, ${data.changed?.length} changed`);
+                await this.iterateOpenOrdersForUpdate([...data.added, ...data.changed])
+                console.log('next event done.')
+            },
+            error: (err: IBApiNextError) => {
+                this.app.error(
+                    `getOpenOrders failed with '${err.error.message}'`
+                );
+            },
+            complete: () => {
+                console.log('getOpenOrders completed.');
+            }
         });
-        this.subscription$ = this.api
-          .getOpenOrders()
-          .subscribe({
-              next: (data) => {
-                  // this.app.printObject(data);
-                  console.log('got', data.all.length, 'open orders');
-                  if (data.added) this.updateOpenOrders(data.added);
-                  if (data.changed) this.updateOpenOrders(data.changed);
-              },
-              error: (err: IBApiNextError) => {
-                  this.app.error(
-                      `getOpenOrders failed with '${err.error.message}'`
-                  );
-              },
-              complete: () => {
-                  console.log('getOpenOrders completed.');
-              }
-          });
-      });
 
       this.subscription$ = this.api
         .getAccountSummary(

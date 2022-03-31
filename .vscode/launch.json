@@ -11,7 +11,15 @@
             "skipFiles": [
                 "<node_internals>/**"
             ],
+            "runtimeArgs": [
+              "--trace-warnings"
+            ],
             "program": "${workspaceFolder}/dist/index.js",
+            "args": [
+              "-watch",
+              "-clientId=0",
+              "-account"
+            ],
             "outFiles": [
                 "${workspaceFolder}/**/*.js"
             ]

@@ -92,16 +92,6 @@ export class UpdaterBot extends EventEmitter implements ITradingBot {
       });
   }
 
-  private async requestContractDetailsX(contract: IbContract): Promise<ContractDetails[]> {
-    // console.log(`requestContractDetails for contract ${contract.symbol}`){}
-    try {
-      return await this.api.getContractDetails(contract)
-    } catch (err) {
-      console.log(`-- getContractDetails failed for ${contract.symbol} with '${err.error.message}'`);
-      throw err;
-    }
-  }
-
   private iterateContractsForDetails(contracts: Contract[]): Promise<any> {
     return contracts.reduce((p, contract) => {
       return p.then(() => this.requestContractDetails(contract)
@@ -127,22 +117,6 @@ export class UpdaterBot extends EventEmitter implements ITradingBot {
         // logging: console.log,
       }
     );
-  }
-
-  private async toto(): Promise<any> {
-    console.log('toto debut')
-    const result = this.findStocksWithoutConId()
-    console.log('toto fin')
-    return result
-  }
-
-  private async tata(): Promise<void> {
-    console.log('tata debug')
-    const tt = this.toto()
-    console.log('tata end')
-    //await tt.then(result => console.log(result))
-    const result = await tt
-    console.log('fin')
   }
 
   private async updateStocksConId(): Promise<void> {
@@ -690,28 +664,6 @@ export class UpdaterBot extends EventEmitter implements ITradingBot {
     console.log('buildOptionsList done');
     setTimeout(() => this.emit('buildOptionsList'), OPTIONS_LIST_BUILD_FREQ * 60000 / 2);
   };
-
-  private testDB1(): void {
-    Option.findAll({ limit: 2 }).then((options) => {
-      options.forEach(async (option) => {
-        const promA = option.$get('contract');
-        const promB = new Promise((resolv, _reject) => {
-          option.$get('stock').then((stock) => {
-            stock.$get('contract').then((contract) => {
-              resolv({stock, contract});
-            });
-          });
-        });
-        const res = await Promise.all([promA, promB]);
-        const resA: Contract = res[0];
-        const resB: {stock: Stock, contract: Contract} = res[1] as any;
-        console.log('option:', JSON.stringify(option, null, 2));
-        console.log('contract:', JSON.stringify(resA, null, 2));
-        console.log('stock:', JSON.stringify(resB['stock'], null, 2));
-        console.log('contract:', JSON.stringify(resB.contract, null, 2));
-      });
-    });
-  }
 
   private findOptionsToUpdatePrice(dte: number, age: number): Promise<Contract[]> {
     return sequelize.query(`

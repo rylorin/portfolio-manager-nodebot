@@ -13,16 +13,16 @@ import {
   
   import { Contract } from '.';
   
-  @Table({ tableName: "open_order", timestamps: true, deletedAt: false, updatedAt: true })
+  @Table({ tableName: "open_order", timestamps: true, createdAt: false, updatedAt: true, deletedAt: false })
   export class OpenOrder extends Model {
   
-    @Column({ type: DataType.INTEGER })
+    @Column({ type: DataType.INTEGER, field: 'perm_id' })
     public permId!: number;
   
-    @Column({ type: DataType.INTEGER })
+    @Column({ type: DataType.INTEGER, field: 'account_id' })
     public accountId!: number;
 
-    @BelongsTo(() => Contract, 'id')
+    @BelongsTo(() => Contract, 'contract_id')
     public contract!: Contract;
   
     @Column({ type: DataType.STRING(4), field: 'action_type' })
