@@ -35,15 +35,61 @@ const DEFAULT_GROUP = "All";
 const DEFAULT_TAGS = "";
 // const DEFAULT_TAGS = "NetLiquidation,TotalCashValue,GrossPositionValue";
 
-export class AccountBot implements ITradingBot {
+const serialize = (fn: any) => {
+  let queue = Promise.resolve();
+  return (...args: any[]) => {
+    const res = queue.then(() => fn(...args));
+    queue = res.catch(() => {});
+    return res;
+  };
+};
+
+// class QueulizeX {
+//   private callback: (arg0: any) => any;
+//   private items: any[] = [];
+//   private running = 0;
+
+//   constructor(fn) {
+//     this.callback = fn;
+//   }
+
+//   public enqueue(item: any) {
+//     let found = false;
+//     for (let i in this.items) {
+//       if (i == item) found = true;
+//     }
+//     if (!found) this.items.push(item);
+//     this.process();
+//   }
+  
+//   public dequeue(): any {
+//     return this.items.shift();
+//   }
+
+//   private async process(): Promise<void> {
+//     if (this.running < 1) {
+//       this.running++;
+//       const item = this.dequeue();
+//       await this.callback(item);
+//       --this.running;
+//       return this.process();
+//     }
+//   }
+
+// }
+
+export class AccountBot extends EventEmitter implements ITradingBot {
 
     protected app: IBApiNextApp;
     protected api: IBApiNext;
+    private orderq: IbOpenOrder[] = [];
+    private orderqProcessing: number = 0;
 
     /** The [[Subscription]] on the account summary. */
     private subscription$: Subscription;
   
     constructor(app: IBApiNextApp, api: IBApiNext) {
+      super();
       this.app = app;
       this.api = api;
     };
@@ -59,6 +105,31 @@ export class AccountBot implements ITradingBot {
       return lastTradeDate;
     }
 
+    public enqueueOrder(item: IbOpenOrder): void {
+      const orderIndex = this.orderq.findIndex(
+        (p) => p.order.permId == item.order.permId
+      );
+      if (orderIndex !== -1) {
+        this.orderq.splice(orderIndex, 1);
+      }
+      this.orderq.push(item);
+      // this.processOrderQueue();
+      setTimeout(() => this.emit('processOrderQueue'), 100);
+    }
+
+    private async processOrderQueue(): Promise<void> {
+      if ((this.orderqProcessing < 1) && (this.orderq.length > 0)) {
+        console.log(`processOrderQueue ${this.orderq.length} elements`)
+        this.orderqProcessing++;
+        const item = this.orderq.shift();
+        await this.updateOpenOrder(item);
+        --this.orderqProcessing;
+        console.log('processOrderQueue done')
+        // return this.processOrderQueue();
+      }
+      if (this.orderq.length > 0) setTimeout(() => this.emit('processOrderQueue'), 100);
+    }
+    
     private async findOrCreateContract(ibContract: IbContract): Promise<Contract> {
       // find contract by ib id
       let contract: Contract = await Contract.findOne({
@@ -199,32 +270,42 @@ export class AccountBot implements ITradingBot {
         })
     }
 
-    private iterateOpenOrdersForUpdate(orders: IbOpenOrder[]): Promise<void> {
+/*
+     private iterateOpenOrdersForUpdate(orders: IbOpenOrder[]): Promise<void> {
       return orders.reduce((p, order) => {
         return p.then(() => this.updateOpenOrder(order))
       }, Promise.resolve()); // initial
     }
-  
+ */  
+    private iterateOpenOrdersForUpdate(orders: IbOpenOrder[]): void {
+      for (let order of orders) {
+        this.enqueueOrder(order);
+      };
+    }
+
     public async start(): Promise<void> {
+
       const now = Date.now();
-      await this.api.getAllOpenOrders().then((orders) => 
-        this.iterateOpenOrdersForUpdate(orders)
-          .then(() => OpenOrder.destroy({
+      this.on('processOrderQueue', this.processOrderQueue);
+      await this.api.getAllOpenOrders().then((orders) => {
+        this.iterateOpenOrdersForUpdate(orders);
+        return OpenOrder.destroy({
             where: {
               account_id: 26,
               updatedAt: { [Op.lt]: new Date(now - 0.1) }
             },
             // logging: console.log,
-          }))
-      );
+          });
+        });
+
       this.subscription$ = this.api
         .getOpenOrders()
         .subscribe({
-            next: async (data) => {
-                // this.app.printObject(data);
+            next: (data) => {
                 console.log('got next event', data.all.length, 'open orders');
                 console.log(`${data.added?.length} orders added, ${data.changed?.length} changed`);
-                await this.iterateOpenOrdersForUpdate([...data.added, ...data.changed])
+                if (data.added?.length > 0) this.iterateOpenOrdersForUpdate(data.added);
+                if (data.changed?.length > 0) this.iterateOpenOrdersForUpdate(data.changed);
                 console.log('next event done.')
             },
             error: (err: IBApiNextError) => {
@@ -236,7 +317,8 @@ export class AccountBot implements ITradingBot {
                 console.log('getOpenOrders completed.');
             }
         });
-
+        // setTimeout(() => this.emit('processOrderQueue'), 1000);
+    
       this.subscription$ = this.api
         .getAccountSummary(
           DEFAULT_GROUP,
