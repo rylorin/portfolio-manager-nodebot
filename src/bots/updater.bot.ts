@@ -30,16 +30,7 @@ const OPTIONS_PRICE_WEEK_FREQ: number = parseInt(process.env.OPTIONS_PRICE_WEEK_
 const OPTIONS_PRICE_OTHER_FREQ: number = parseInt(process.env.OPTIONS_PRICE_OTHER_FREQ) || 90;  // mins
 const OPTIONS_PRICE_TIMEFRAME: number = parseInt(process.env.OPTIONS_PRICE_TIMEFRAME) || 90;    // days
 
-export class UpdaterBot extends EventEmitter implements ITradingBot {
-
-  protected app: IBApiNextApp;
-  protected api: IBApiNext;
-
-  constructor(app: IBApiNextApp, api: IBApiNext) {
-    super();
-    this.app = app;
-    this.api = api;
-  };
+export class ContractsUpdaterBot extends ITradingBot {
 
   public start(): void {
     this.on('updateStocksConId', this.updateStocksConId);
@@ -513,24 +504,25 @@ export class UpdaterBot extends EventEmitter implements ITradingBot {
         name: details.longName,
       }).then((contract) => {
         // caveat: need to offset according to timezone details.timeZoneId
-        let lastTradeDate: Date;
-        if (details.contract.lastTradeDateOrContractMonth.length > 8) {
-          lastTradeDate = new Date(
-            parseInt(details.contract.lastTradeDateOrContractMonth.substring(0, 4)),
-            parseInt(details.contract.lastTradeDateOrContractMonth.substring(4, 6)) - 1,
-            parseInt(details.contract.lastTradeDateOrContractMonth.substring(6, 8)),
-            parseInt(details.contract.lastTradeDateOrContractMonth.substring(9, 11)),
-            parseInt(details.contract.lastTradeDateOrContractMonth.substring(12, 14)),
-          );
-        } else {
-          lastTradeDate = new Date(
-            parseInt(details.contract.lastTradeDateOrContractMonth.substring(0, 4)),
-            parseInt(details.contract.lastTradeDateOrContractMonth.substring(4, 6)) - 1,
-            parseInt(details.contract.lastTradeDateOrContractMonth.substring(6, 8)),
-            16,
-            30
-          );
-        }
+        // let lastTradeDate: Date;
+        // if (details.contract.lastTradeDateOrContractMonth.length > 8) {
+        //   lastTradeDate = new Date(
+        //     parseInt(details.contract.lastTradeDateOrContractMonth.substring(0, 4)),
+        //     parseInt(details.contract.lastTradeDateOrContractMonth.substring(4, 6)) - 1,
+        //     parseInt(details.contract.lastTradeDateOrContractMonth.substring(6, 8)),
+        //     parseInt(details.contract.lastTradeDateOrContractMonth.substring(9, 11)),
+        //     parseInt(details.contract.lastTradeDateOrContractMonth.substring(12, 14)),
+        //   );
+        // } else {
+        //   lastTradeDate = new Date(
+        //     parseInt(details.contract.lastTradeDateOrContractMonth.substring(0, 4)),
+        //     parseInt(details.contract.lastTradeDateOrContractMonth.substring(4, 6)) - 1,
+        //     parseInt(details.contract.lastTradeDateOrContractMonth.substring(6, 8)),
+        //     16,
+        //     30
+        //   );
+        // }
+        const lastTradeDate = ITradingBot.expirationToDate(details.contract.lastTradeDateOrContractMonth);
         // console.log('lastTradeDate', lastTradeDate);
         return Option.create({
           id: contract.id,

@@ -3,8 +3,10 @@ import { Contract } from './contract.model';
 import { Stock } from './stock.model';
 import { Option } from './option.model';
 import { OpenOrder } from './openorder.model';
+import { Portfolio } from './portfolio.model';
+import { Position } from './position.model';
 
-require('dotenv').config();
+// require('dotenv').config();
 
 const sequelize = new Sequelize(
     {
@@ -23,4 +25,4 @@ export const initDB = async () => {
     await sequelize.sync({ alter: false });
 };
 
-export { Sequelize, sequelize, Contract, Stock, Option, OpenOrder };
+export { Sequelize, sequelize, Contract, Stock, Option, OpenOrder, Portfolio, Position };

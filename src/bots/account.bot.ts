@@ -12,6 +12,7 @@ import {
   Bar,
   TickType,
   OpenOrder as IbOpenOrder,
+  Position as IbPosition,
 } from "@stoqey/ib";
 import { TickType as IBApiTickType } from "@stoqey/ib/dist/api/market/tickType";
 import { SecurityDefinitionOptionParameterType, IBApiNextTickType } from "@stoqey/ib/dist/api-next";
@@ -22,7 +23,9 @@ import {
   Contract,
   Stock,
   Option,
-  OpenOrder as OpenOrder
+  OpenOrder,
+  Portfolio,
+  Position,
 } from "../models";
 import { ITradingBot } from '.';
 
@@ -78,33 +81,18 @@ const serialize = (fn: any) => {
 
 // }
 
-export class AccountBot extends EventEmitter implements ITradingBot {
+export class AccountUpdateBot extends ITradingBot {
 
-    protected app: IBApiNextApp;
-    protected api: IBApiNext;
     private orderq: IbOpenOrder[] = [];
     private orderqProcessing: number = 0;
+    private positionq: IbPosition[] = [];
+    private positionqProcessing: number = 0;
 
-    /** The [[Subscription]] on the account summary. */
-    private subscription$: Subscription;
+    private ordersSubscription$: Subscription;
+    private positionsSubscription$: Subscription;
+
+    private portfolio: Portfolio = undefined;
   
-    constructor(app: IBApiNextApp, api: IBApiNext) {
-      super();
-      this.app = app;
-      this.api = api;
-    };
-
-    private expirationToDate(lastTradeDateOrContractMonth: string): Date {
-      const lastTradeDate = new Date(
-        parseInt(lastTradeDateOrContractMonth.substring(0, 4)),
-        parseInt(lastTradeDateOrContractMonth.substring(4, 6)) - 1,
-        parseInt(lastTradeDateOrContractMonth.substring(6, 8)),
-        16,
-        30
-      );
-      return lastTradeDate;
-    }
-
     public enqueueOrder(item: IbOpenOrder): void {
       const orderIndex = this.orderq.findIndex(
         (p) => p.order.permId == item.order.permId
@@ -130,6 +118,31 @@ export class AccountBot extends EventEmitter implements ITradingBot {
       if (this.orderq.length > 0) setTimeout(() => this.emit('processOrderQueue'), 100);
     }
     
+    public enqueuePosition(item: IbPosition): void {
+      const itemIndex = this.positionq.findIndex(
+        (p) => p.contract.conId == item.contract.conId
+      );
+      if (itemIndex !== -1) {
+        this.positionq.splice(itemIndex, 1);
+      }
+      this.positionq.push(item);
+      // this.processOrderQueue();
+      setTimeout(() => this.emit('processPositionQueue'), 100);
+    }
+
+    private async processPositionQueue(): Promise<void> {
+      if ((this.positionqProcessing < 1) && (this.positionq.length > 0)) {
+        console.log(`processPositionQueue ${this.positionq.length} elements`)
+        this.positionqProcessing++;
+        const item = this.positionq.shift();
+        await this.updatePosition(item);
+        --this.positionqProcessing;
+        console.log('processPositionQueue done')
+        // return this.processOrderQueue();
+      }
+      if (this.positionq.length > 0) setTimeout(() => this.emit('processPositionQueue'), 100);
+    }
+
     private async findOrCreateContract(ibContract: IbContract): Promise<Contract> {
       // find contract by ib id
       let contract: Contract = await Contract.findOne({
@@ -171,7 +184,7 @@ export class AccountBot extends EventEmitter implements ITradingBot {
             currency: ibContract.currency,
           });
           // find option contract by data
-          const lastTradeDate = this.expirationToDate(ibContract.lastTradeDateOrContractMonth);
+          const lastTradeDate = ITradingBot.expirationToDate(ibContract.lastTradeDateOrContractMonth);
           let option = await Option.findOne({
             where: {
               stock_id: stock.id,
@@ -221,7 +234,7 @@ export class AccountBot extends EventEmitter implements ITradingBot {
         this.app.error('contract created, please check results');
         this.app.printObject(ibContract);
       } else {
-        console.log('findOrCreateContract got contract by conId');
+        // console.log('findOrCreateContract got contract by conId');
       }
       // this.app.printObject(contract);
       return contract;
@@ -251,7 +264,7 @@ export class AccountBot extends EventEmitter implements ITradingBot {
             .then((contract) =>
               OpenOrder.create({
                 permId: order.order.permId,
-                accountId: 26,
+                accountId: this.portfolio.id,
                 contract_id: contract.id,
                 actionType: order.order.action,
                 totalQty: order.order.totalQuantity,
@@ -282,23 +295,64 @@ export class AccountBot extends EventEmitter implements ITradingBot {
         this.enqueueOrder(order);
       };
     }
+    protected async updatePosition(pos: IbPosition): Promise<void> {
+      await this.findOrCreateContract(pos.contract)
+        .then((contract) => Position.update(
+          {
+            portfolio_id: this.portfolio.id,
+            contract_id: contract.id,
+            quantity: pos.pos,
+            cost: pos.avgCost,
+          }, {
+            where: { contract_id: contract.id }
+          })
+          .then((result): Promise<any> => {
+            if (!result[0] && pos.pos) {
+              return Position.create({
+                portfolio_id: this.portfolio.id,
+                contract_id: contract.id,
+                quantity: pos.pos,
+                cost: pos.avgCost,
+              });
+            } else {
+              return Promise.resolve();
+            }
+        }))
+    }
+
+    private cleanPositions(now): void {
+      OpenOrder.destroy({
+        where: {
+          account_id: this.portfolio.id,
+          updatedAt: { [Op.lt]: new Date(now - 0.1) }
+        },
+        // logging: console.log,
+      });
+    }
 
     public async start(): Promise<void> {
-
-      const now = Date.now();
       this.on('processOrderQueue', this.processOrderQueue);
+      this.on('processPositionQueue', this.processPositionQueue);
+      const now = Date.now();
+
+      await Portfolio.findOne({
+        where: {
+          account: this.accountNumber,
+        }
+      }).then((portfolio) => this.portfolio = portfolio);
+
       await this.api.getAllOpenOrders().then((orders) => {
         this.iterateOpenOrdersForUpdate(orders);
         return OpenOrder.destroy({
             where: {
-              account_id: 26,
+              account_id: this.portfolio.id,
               updatedAt: { [Op.lt]: new Date(now - 0.1) }
             },
             // logging: console.log,
           });
         });
 
-      this.subscription$ = this.api
+      this.ordersSubscription$ = this.api
         .getOpenOrders()
         .subscribe({
             next: (data) => {
@@ -319,24 +373,35 @@ export class AccountBot extends EventEmitter implements ITradingBot {
         });
         // setTimeout(() => this.emit('processOrderQueue'), 1000);
     
-      this.subscription$ = this.api
-        .getAccountSummary(
-          DEFAULT_GROUP,
-          DEFAULT_TAGS
-        )
+      this.positionsSubscription$ = this.api
+        .getPositions()
         .subscribe({
-          next: (summaries) => {
-            this.app.printObject(summaries);
+          next: (data) => {
+            console.log('got next position event');
+            data.added?.forEach((v, k) => {
+              // console.log(k, this.accountNumber);
+              if (k == this.accountNumber) v.forEach((p) => this.enqueuePosition(p));
+            });
+            data.changed?.forEach((v, k) => {
+              if (k == this.accountNumber) v.forEach((p) => this.enqueuePosition(p));
+            });
+            console.log('next event done.')
           },
           error: (err: IBApiNextError) => {
-            this.app.error(`getAccountSummary failed with '${err.error.message}'`);
+              this.app.error(
+                  `getPositions failed with '${err.error.message}'`
+              );
           },
-        });
-        
+          complete: () => {
+              console.log('getPositions completed.');
+          }
+      });
+      setTimeout(() => this.cleanPositions(now), 20000);      // clean old positions after 20 secs  
     };
 
     public stop(): void {
-        this.subscription$?.unsubscribe();
+        this.ordersSubscription$?.unsubscribe();
+        this.positionsSubscription$?.unsubscribe();
     };
 
 }
