@@ -26,6 +26,7 @@ import {
   OpenOrder,
   Portfolio,
   Position,
+  Cash,
 } from "../models";
 import { ITradingBot } from '.';
 
@@ -145,9 +146,9 @@ export class AccountUpdateBot extends ITradingBot {
 
     private async findOrCreateContract(ibContract: IbContract): Promise<Contract> {
       // find contract by ib id
-      let contract: Contract = await Contract.findOne({
+      let contract: Contract = ibContract.conId ? await Contract.findOne({
           where: { conId: ibContract.conId }
-      });
+      }) : null;
       if (contract === null) {  // not found
         if (ibContract.secType == SecType.STK) {
           // find stock contract by data
@@ -168,9 +169,7 @@ export class AccountUpdateBot extends ITradingBot {
               exchange: ibContract.exchange,
             }).then((contract) => Stock.create({
                 id: contract.id,
-              }).then(() => {
-                    return contract;
-              })
+              }).then(() => contract)
             )
           } else {
             // update conId for this contract
@@ -178,44 +177,56 @@ export class AccountUpdateBot extends ITradingBot {
               .then(() => contract)
           }
         } else if (ibContract.secType == SecType.OPT) {
+          // find option contract by data
+          const lastTradeDate = ITradingBot.expirationToDate(ibContract.lastTradeDateOrContractMonth);
           const stock = await this.findOrCreateContract({
             secType: 'STK' as SecType,
             symbol: ibContract.symbol,
             currency: ibContract.currency,
           });
-          // find option contract by data
-          const lastTradeDate = ITradingBot.expirationToDate(ibContract.lastTradeDateOrContractMonth);
-          let option = await Option.findOne({
+          contract = await Option.findOne({
             where: {
               stock_id: stock.id,
               lastTradeDate: lastTradeDate,
               strike: ibContract.strike,
               callOrPut: ibContract.right,
             }
-          });
-          if (option !== null) {
-            contract = await Contract.findByPk(option.id)
-              // update ib con id
-              .then((contract) => Contract.update({ conId: ibContract.conId }, { where: { id: contract.id }}))
-              .then(() => contract);
-          } else {
-            // Create option contrat
-            contract = await Contract.create({
-              conId: ibContract.conId,
-              secType: ibContract.secType,
-              symbol: ibContract.localSymbol,
-              currency: ibContract.currency,
-              exchange: ibContract.exchange,
-            })
-            .then((contract) => Option.create({
-                id: contract.id,
-                stock_id: stock.id,
-                lastTradeDate: lastTradeDate,
-                strike: ibContract.strike,
-                callOrPut: ibContract.right,
-            }))
-            .then(() => contract)
-          }
+          }).then((option) => {
+            if (option !== null) {
+              return Contract.findByPk(option.id)
+                // update ib con id
+                .then((contract) => Contract.update({ conId: ibContract.conId }, { where: { id: contract.id }}))
+                .then(() => contract);
+            } else {
+              // Create option contrat
+              return Contract.create({
+                conId: ibContract.conId,
+                secType: ibContract.secType,
+                symbol: ibContract.localSymbol,
+                currency: ibContract.currency,
+                exchange: ibContract.exchange,
+              }).then((contract) => Option.create({
+                  id: contract.id,
+                  stock_id: stock.id,
+                  lastTradeDate: lastTradeDate,
+                  strike: ibContract.strike,
+                  callOrPut: ibContract.right,
+                }).then(() => contract)
+              )
+            }
+          })
+        } else if (ibContract.secType == SecType.CASH) {
+          // create it
+          contract = await Contract.create({
+            conId: ibContract.conId,
+            secType: ibContract.secType,
+            symbol: ibContract.localSymbol,
+            currency: ibContract.currency,
+            name: ibContract.localSymbol,
+          }).then((contract) => Cash.create({
+            id: contract.id,
+          }).then(() => contract)
+        )
         } else if (ibContract.secType == SecType.BAG) {
           // create it
           contract = await Contract.create({
@@ -224,19 +235,18 @@ export class AccountUpdateBot extends ITradingBot {
             symbol: `${ibContract.tradingClass}-${ibContract.localSymbol}`,
             currency: ibContract.currency,
             exchange: ibContract.exchange,
-          }) /* we should create a BAD child here .then((contract) => Stock.create({
+          }) /* we should create a BAG child here .then((contract) => Stock.create({
               id: contract.id,
             }).then(() => {
                   return contract;
             })
           ) */
         }
-        this.app.error('contract created, please check results');
+        this.app.error('findOrCreateContract: contract created, please check results');
         this.app.printObject(ibContract);
       } else {
         // console.log('findOrCreateContract got contract by conId');
       }
-      // this.app.printObject(contract);
       return contract;
     }
     
@@ -300,7 +310,7 @@ export class AccountUpdateBot extends ITradingBot {
         .then((contract) => Position.update(
           {
             portfolio_id: this.portfolio.id,
-            contract_id: contract.id,
+            // contract_id: contract.id,
             quantity: pos.pos,
             cost: pos.avgCost,
           }, {
@@ -313,6 +323,7 @@ export class AccountUpdateBot extends ITradingBot {
                 contract_id: contract.id,
                 quantity: pos.pos,
                 cost: pos.avgCost,
+                openDate: new Date(),
               });
             } else {
               return Promise.resolve();
@@ -320,11 +331,14 @@ export class AccountUpdateBot extends ITradingBot {
         }))
     }
 
-    private cleanPositions(now): void {
+    private cleanPositions(now: number): void {
       OpenOrder.destroy({
         where: {
           account_id: this.portfolio.id,
-          updatedAt: { [Op.lt]: new Date(now - 0.1) }
+          [Op.or]: [
+            {updatedAt: { [Op.lt]: new Date(now - 0.1) }},
+            {updatedAt: null},
+          ]
         },
         // logging: console.log,
       });
@@ -346,7 +360,10 @@ export class AccountUpdateBot extends ITradingBot {
         return OpenOrder.destroy({
             where: {
               account_id: this.portfolio.id,
-              updatedAt: { [Op.lt]: new Date(now - 0.1) }
+              [Op.or]: [
+                {updatedAt: { [Op.lt]: new Date(now - 0.1) }},
+                {updatedAt: null},
+              ]
             },
             // logging: console.log,
           });
