@@ -28,8 +28,6 @@ export class Option extends Model {
   // we could change DATEONLY to DATE when offset with timezone
   @Column({ type: DataType.DATEONLY, field: 'last_trade_date' })
   public lastTradeDate!: Date;
-  // @Column({ type: DataType.INTEGER })
-  // public expiration!: number;
 
   @Column({ type: DataType.FLOAT })
   public strike!: number;

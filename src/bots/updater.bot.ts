@@ -704,13 +704,14 @@ export class ContractsUpdaterBot extends ITradingBot {
       contracts = contracts.concat(c);
     }
     if (contracts.length < BATCH_SIZE_OPTIONS_PRICE) {
-      const c = await this.findOptionsToUpdatePrice(OPTIONS_PRICE_TIMEFRAME, 1440, BATCH_SIZE_OPTIONS_PRICE - contracts.length);
+      const c = await this.findOptionsToUpdatePrice(OPTIONS_PRICE_TIMEFRAME, 770, BATCH_SIZE_OPTIONS_PRICE - contracts.length);
       console.log(c.length, 'other items');
       contracts = contracts.concat(c);
     }
     await this.fetchOptionContractsPrices(contracts);
     console.log('updateOptionsPrice done', new Date());
-    setTimeout(() => this.emit('updateOptionsPrice'), 1 * 1000);
+    const pause = contracts.length ? 1 : 30;
+    setTimeout(() => this.emit('updateOptionsPrice'), pause * 1000);
   };
   
 };

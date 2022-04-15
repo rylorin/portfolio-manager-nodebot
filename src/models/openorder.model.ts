@@ -19,8 +19,8 @@ import {
     @Column({ type: DataType.INTEGER, field: 'perm_id' })
     public permId!: number;
   
-    @Column({ type: DataType.INTEGER, field: 'account_id' })
-    public accountId!: number;
+    @Column({ type: DataType.INTEGER, field: 'portfolio_id' })
+    public portfolioId!: number;
 
     @BelongsTo(() => Contract, 'contract_id')
     public contract!: Contract;

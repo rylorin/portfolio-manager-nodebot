@@ -48,40 +48,6 @@ const serialize = (fn: any) => {
   };
 };
 
-// class QueulizeX {
-//   private callback: (arg0: any) => any;
-//   private items: any[] = [];
-//   private running = 0;
-
-//   constructor(fn) {
-//     this.callback = fn;
-//   }
-
-//   public enqueue(item: any) {
-//     let found = false;
-//     for (let i in this.items) {
-//       if (i == item) found = true;
-//     }
-//     if (!found) this.items.push(item);
-//     this.process();
-//   }
-  
-//   public dequeue(): any {
-//     return this.items.shift();
-//   }
-
-//   private async process(): Promise<void> {
-//     if (this.running < 1) {
-//       this.running++;
-//       const item = this.dequeue();
-//       await this.callback(item);
-//       --this.running;
-//       return this.process();
-//     }
-//   }
-
-// }
-
 export class AccountUpdateBot extends ITradingBot {
 
     private orderq: IbOpenOrder[] = [];
@@ -274,7 +240,7 @@ export class AccountUpdateBot extends ITradingBot {
             .then((contract) =>
               OpenOrder.create({
                 permId: order.order.permId,
-                accountId: this.portfolio.id,
+                portfolioId: this.portfolio.id,
                 contract_id: contract.id,
                 actionType: order.order.action,
                 totalQty: order.order.totalQuantity,
@@ -293,13 +259,6 @@ export class AccountUpdateBot extends ITradingBot {
         })
     }
 
-/*
-     private iterateOpenOrdersForUpdate(orders: IbOpenOrder[]): Promise<void> {
-      return orders.reduce((p, order) => {
-        return p.then(() => this.updateOpenOrder(order))
-      }, Promise.resolve()); // initial
-    }
- */  
     private iterateOpenOrdersForUpdate(orders: IbOpenOrder[]): void {
       for (let order of orders) {
         this.enqueueOrder(order);
@@ -312,7 +271,7 @@ export class AccountUpdateBot extends ITradingBot {
             portfolio_id: this.portfolio.id,
             // contract_id: contract.id,
             quantity: pos.pos,
-            cost: pos.avgCost,
+            cost: pos.avgCost * pos.pos,
           }, {
             where: { contract_id: contract.id }
           })
@@ -322,7 +281,7 @@ export class AccountUpdateBot extends ITradingBot {
                 portfolio_id: this.portfolio.id,
                 contract_id: contract.id,
                 quantity: pos.pos,
-                cost: pos.avgCost,
+                cost: pos.avgCost * pos.pos,
                 openDate: new Date(),
               });
             } else {
@@ -332,11 +291,11 @@ export class AccountUpdateBot extends ITradingBot {
     }
 
     private cleanPositions(now: number): void {
-      OpenOrder.destroy({
+      Position.destroy({
         where: {
-          account_id: this.portfolio.id,
+          portfolio_id: this.portfolio.id,
           [Op.or]: [
-            {updatedAt: { [Op.lt]: new Date(now - 0.1) }},
+            {updatedAt: { [Op.lt]: new Date(now) }},
             {updatedAt: null},
           ]
         },
@@ -347,7 +306,7 @@ export class AccountUpdateBot extends ITradingBot {
     public async start(): Promise<void> {
       this.on('processOrderQueue', this.processOrderQueue);
       this.on('processPositionQueue', this.processPositionQueue);
-      const now = Date.now();
+      const now = Date.now() - 0.01;
 
       await Portfolio.findOne({
         where: {
@@ -359,9 +318,9 @@ export class AccountUpdateBot extends ITradingBot {
         this.iterateOpenOrdersForUpdate(orders);
         return OpenOrder.destroy({
             where: {
-              account_id: this.portfolio.id,
+              portfolio_id: this.portfolio.id,
               [Op.or]: [
-                {updatedAt: { [Op.lt]: new Date(now - 0.1) }},
+                {updatedAt: { [Op.lt]: new Date(now) }},
                 {updatedAt: null},
               ]
             },
@@ -388,7 +347,6 @@ export class AccountUpdateBot extends ITradingBot {
                 console.log('getOpenOrders completed.');
             }
         });
-        // setTimeout(() => this.emit('processOrderQueue'), 1000);
     
       this.positionsSubscription$ = this.api
         .getPositions()
@@ -413,7 +371,7 @@ export class AccountUpdateBot extends ITradingBot {
               console.log('getPositions completed.');
           }
       });
-      setTimeout(() => this.cleanPositions(now), 20000);      // clean old positions after 20 secs  
+      setTimeout(() => this.cleanPositions(now), 5000);      // clean old positions after 5 secs  
     };
 
     public stop(): void {

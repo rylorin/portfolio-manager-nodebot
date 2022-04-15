@@ -24,6 +24,7 @@ const DESCRIPTION_TEXT = "Print real time market data of a given contract id.";
 const USAGE_TEXT = "Usage: market-data.js <options>";
 const OPTION_ARGUMENTS: [string, string][] = [
   [ "clientId=<number>", "Client id of current IB connection. Default is 0" ],
+  [ 'watch', 'should be moved to stoqey base' ],
   [ 'portfolio=<string>', 'IB account number' ],
   [ 'updater', 'start option contracts updater bot' ],
   [ 'account', 'start account info update bot' ],
