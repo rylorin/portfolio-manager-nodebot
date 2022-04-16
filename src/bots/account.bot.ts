@@ -57,8 +57,6 @@ export class AccountUpdateBot extends ITradingBot {
 
     private ordersSubscription$: Subscription;
     private positionsSubscription$: Subscription;
-
-    private portfolio: Portfolio = undefined;
   
     public enqueueOrder(item: IbOpenOrder): void {
       const orderIndex = this.orderq.findIndex(

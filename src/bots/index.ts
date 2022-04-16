@@ -14,12 +14,24 @@ import {
     OptionType,
     Bar,
     TickType,
-  } from "@stoqey/ib";
+} from "@stoqey/ib";
+import {
+    sequelize,
+    Contract,
+    Stock, 
+    Option, 
+    Position, 
+    OpenOrder, 
+    Parameter,
+    Portfolio,
+} from "../models";
   
 export class ITradingBot extends EventEmitter {
     protected app: IBApiNextApp;
     protected api: IBApiNext;
     protected accountNumber: string = undefined;
+    protected portfolio: Portfolio = undefined;
+
 
     constructor(app: IBApiNextApp, api: IBApiNext, account?: string) {
         super();
@@ -29,6 +41,7 @@ export class ITradingBot extends EventEmitter {
       };
 
     public start(): void {};
+
     public stop(): void {};
 
     /**
@@ -54,12 +67,12 @@ export class ITradingBot extends EventEmitter {
         return lastTradeDate;
     }
 
-    protected static OptionComboContract(underlying: string, buyleg: number, sellleg: number): IbContract {
+    protected static OptionComboContract(underlying: Contract, buyleg: number, sellleg: number): IbContract {
         let contract: IbContract = {
-            symbol: underlying,
+            symbol: underlying.symbol,
             secType: "BAG" as SecType,
-            currency: "USD",
-            exchange: "SMART",
+            currency: underlying.currency,
+            exchange: underlying.exchange,
         };
         let leg1: ComboLeg = {
             conId: buyleg,

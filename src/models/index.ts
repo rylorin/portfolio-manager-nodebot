@@ -6,6 +6,7 @@ import { OpenOrder } from './openorder.model';
 import { Portfolio } from './portfolio.model';
 import { Position } from './position.model';
 import { Cash } from './cash.model';
+import { Parameter } from './parameter.model';
 
 // require('dotenv').config();
 
@@ -26,4 +27,4 @@ export const initDB = async () => {
     await sequelize.sync({ alter: false });
 };
 
-export { Sequelize, sequelize, Contract, Stock, Option, OpenOrder, Portfolio, Position, Cash };
+export { Sequelize, sequelize, Contract, Stock, Option, OpenOrder, Portfolio, Position, Cash, Parameter };

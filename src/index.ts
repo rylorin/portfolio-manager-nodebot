@@ -64,9 +64,9 @@ class MyTradingBotApp extends IBApiNextApp {
         if (this.cmdLineArgs.updater) (new ContractsUpdaterBot(this, this.api)).start();
         if (this.cmdLineArgs.account) (new AccountUpdateBot(this, this.api, portfolio)).start();
         if (this.cmdLineArgs.cash) (new CashManagementBot(this, this.api)).start();
-        if (this.cmdLineArgs.cc) (new SellCoveredCallsBot(this, this.api)).start();
+        if (this.cmdLineArgs.cc) (new SellCoveredCallsBot(this, this.api, portfolio)).start();
         if (this.cmdLineArgs.csp) (new SellCashSecuredPutBot(this, this.api)).start();
-        if (this.cmdLineArgs.roll) (new RollOptionPositionsBot(this, this.api)).start();
+        if (this.cmdLineArgs.roll) (new RollOptionPositionsBot(this, this.api, portfolio)).start();
       });
     };
     
