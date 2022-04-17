@@ -54,7 +54,7 @@ export class SellCoveredCallsBot extends ITradingBot {
     private async process(): Promise<void> {
         console.log('process begin');
         await this.listStockPostitions().then((result) => this.iteratePositions(result));
-        setTimeout(() => this.emit('process'), 60000);
+        setTimeout(() => this.emit('process'), 6000);
         console.log('process end');
     };
 

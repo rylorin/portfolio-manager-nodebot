@@ -9,7 +9,6 @@ import {
   BelongsTo,
   ForeignKey
 } from "sequelize-typescript";
-
 import { Contract } from '.';
 
 @Table({ tableName: "stock", timestamps: false, createdAt: false, updatedAt: false })
