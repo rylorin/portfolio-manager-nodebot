@@ -25,4 +25,13 @@ export class Portfolio extends Model {
   @Column({ type: DataType.STRING(3), field: 'base_currency' })
   public baseCurrency: string;
 
+  @Column({ type: DataType.FLOAT, field: 'put_ratio' })
+  public putRatio: number;
+
+  @Column({ type: DataType.FLOAT, field: 'naked_put_win_ratio' })
+  public cspWinRatio: number;
+
+  @Column({ type: DataType.FLOAT, field: 'min_premium' })
+  public minPremium: number;
+
 };

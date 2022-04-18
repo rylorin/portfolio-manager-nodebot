@@ -32,7 +32,7 @@ export class ITradingBot extends EventEmitter {
     protected api: IBApiNext;
     protected accountNumber: string = undefined;
     protected portfolio: Portfolio = undefined;
-
+    protected base_rates: number[][] = [];
 
     constructor(app: IBApiNextApp, api: IBApiNext, account?: string) {
         super();
@@ -73,7 +73,7 @@ export class ITradingBot extends EventEmitter {
             symbol: underlying.symbol,
             secType: "BAG" as SecType,
             currency: underlying.currency,
-            exchange: underlying.exchange,
+            exchange: (underlying.currency == 'USD') ? 'SMART' : (underlying.exchange ?? 'SMART'),
         };
         let leg1: ComboLeg = {
             conId: buyleg,
@@ -87,9 +87,23 @@ export class ITradingBot extends EventEmitter {
             action: "SELL",
             exchange: "SMART",
         };
-        contract.comboLegs = [];
-        contract.comboLegs.push(leg1);
-        contract.comboLegs.push(leg2);
+        contract.comboLegs = [ leg1, leg2];
+        return contract;
+    }
+
+    protected static CspContract(underlying: Option): IbContract {
+        const expiry = new Date(underlying.lastTradeDate);
+        let contract: IbContract = {
+            secType: underlying.contract.secType as SecType,
+            symbol: underlying.stock.contract.symbol,
+            currency: underlying.contract.currency,
+            exchange: underlying.contract.exchange ?? 'SMART',
+            conId: underlying.contract.conId,
+            strike: underlying.strike,
+            right: underlying.callOrPut,
+            lastTradeDateOrContractMonth: expiry.toISOString().substring(0,10).replaceAll('-', ''),
+            multiplier: underlying.multiplier,
+        };
         return contract;
     }
 
@@ -102,6 +116,36 @@ export class ITradingBot extends EventEmitter {
             transmit: false,
         }
         return order;
+    }
+
+    protected static CspOrder(action: OrderAction, quantity: number, limitPrice: number): IbOrder {
+        const order: IbOrder = {
+            action: action,
+            orderType: OrderType.LMT,
+            totalQuantity: quantity,
+            lmtPrice: limitPrice,
+            transmit: false,
+        }
+        return order;
+    }
+
+    protected init(): Promise<void> {
+        return Portfolio.findOne({
+            where: {
+              account: this.accountNumber,
+            },
+            include: {
+                model: Contract,
+            },
+            // logging: console.log, 
+        }).then((portfolio) => {
+            this.portfolio = portfolio;
+            return Currency.findAll({
+                where: { base: portfolio.baseCurrency },
+            });
+        }).then((currencies) => {
+            for (const currency of currencies) this.base_rates[currency.currency] = currency.rate;
+        });
     }
 
     protected getContractPositionValueInBase(benchmark: Contract): Promise<number> {

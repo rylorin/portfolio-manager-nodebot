@@ -107,7 +107,7 @@ export class SellCashSecuredPutBot extends ITradingBot {
         console.log('stock_sell_orders_amount:', stock_sell_orders);
         const put_positions_amount = await this.getOptionPositionsValueInBase(parameter.underlying.id, 'P' as OptionType);
         console.log('put_positions value in base:', put_positions_amount);
-        const put_sell_orders = await this.getOptionOrdersValueInBase(parameter.underlying.id, 'P' as OptionType, OrderAction.SELL);
+        const put_sell_orders = -(await this.getOptionOrdersValueInBase(parameter.underlying.id, 'P' as OptionType, OrderAction.SELL));
         console.log('put_sell_orders value in base:', put_sell_orders);
         const max_engaged = stock_positions - stock_sell_orders - put_positions_amount - put_sell_orders;
         console.log('max engaged:', max_engaged);
@@ -115,42 +115,81 @@ export class SellCashSecuredPutBot extends ITradingBot {
         console.log('max for this symbol:', max_for_this_symbol);
         const free_for_this_symbol = max_for_this_symbol - max_engaged;
         console.log('free_for_this_symbol in base:', free_for_this_symbol);
-        const currency = await Currency.findOne({
-            where: {
-                base: this.portfolio.baseCurrency,
-                currency: parameter.underlying.currency,
-            }
-        });
-        console.log('free_for_this_symbol in currency:', free_for_this_symbol * currency.rate);
-        const opt = await Option.findAll({
+        console.log('parameter.underlying.price:', parameter.underlying.price);
+        console.log('free_for_this_symbol in currency:', free_for_this_symbol * this.base_rates[parameter.underlying.currency]);
+        // RULE 7: stock price is lower than previous close
+        const opt = (parameter.underlying.price > parameter.underlying.previousClosePrice) ? [] : await Option.findAll({
             where: {
                 stock_id: parameter.underlying.id,
-                strike : { [Op.lt]: (free_for_this_symbol / 100) },
+                strike : {
+                    [Op.lt]: Math.min(parameter.underlying.price, (free_for_this_symbol / 100)),    // RULE 2 & 5: strike < cours (OTM) & max ratio per symbol
+                },
                 lastTradeDate: { [Op.gt]: new Date() },
-            }
+                callOrPut: 'P',
+                delta: {
+                    [Op.gt]: (this.portfolio.cspWinRatio - 1),  // RULE 3: delta >= -0.2
+                },
+            },
+            include: [{
+                required: true,
+                model: Contract,
+                where: {
+                    bid: {
+                        [Op.gte]: this.portfolio.minPremium,    // RULE 4: premium (bid) >= 0.25$
+                    },
+                },
+            }, {
+                required: true,
+                model: Stock,
+                // include: Contract,
+            }],
+            logging: console.log, 
         });
+        // if (opt.length > 0) this.printObject(opt[0]);
         return { symbol: parameter.underlying.symbol, engaged: max_engaged, options: opt};
     }
 
     private async iterateParameters(parameters: Parameter[]): Promise<void> {
+        const now = new Date();
         let result = [];
         for (const parameter of parameters) {
             result.push(await this.processOneParamaeter(parameter));
         }
         const total_engaged = result.reduce((p, v) => (p + v.engaged), 0);
+        const max_for_all_symbols = ((await this.getContractPositionValueInBase(this.portfolio.benchmark)) * this.portfolio.putRatio) - total_engaged;
+        console.log('max_for_all_symbols:', max_for_all_symbols, total_engaged);
         let all_options: Option[] = result.reduce((p, v) => [...p, ...v.options], []);
-        // filter out too expensive strikes
         let filtered_options: Option[] = [];
         for (const option of all_options) {
-            
+            // RULE 6: check overall margin space
+            if ((option.strike * option.multiplier * this.base_rates[option.contract.currency]) < max_for_all_symbols) {
+                if (option.impliedVolatility > option.stock.historicalVolatility) { // RULE 1: implied volatility > historical volatility
+                    const expiry: Date = new Date(option.lastTradeDate);
+                    const diffDays = Math.ceil((expiry.getTime() - now.getTime()) / (1000 * 3600 * 24));
+                    option['yield'] = option.contract.bid / option.strike / diffDays * 360;
+                    option.stock.contract = await Contract.findByPk(option.stock.id);
+                    filtered_options.push(option);
+                }
+            }
         }
         // order by yield
+        filtered_options.sort((a: any, b: any) => b.yield - a.yield);
+        if (filtered_options.length > 0) {
+            console.log('filtered_options:', filtered_options.length);
+            console.log(filtered_options[0]['yield']);
+            this.printObject(filtered_options[0]);
+            await this.api.placeNewOrder(
+                ITradingBot.CspContract(filtered_options[0]),
+                ITradingBot.CspOrder(OrderAction.SELL, 1, filtered_options[0].contract.ask)).then((orderId: number) => {
+                console.log('orderid:', orderId.toString());
+            });
+        }
     }
     
     private listParameters(): Promise<Parameter[]> {
         return Parameter.findAll(({
             where: {
-                navRatio: { [Op.and]: {
+                cspStrategy: { [Op.and]: {
                     [Op.not]: null,
                     [Op.gt]: 0,
                 }},
@@ -158,6 +197,7 @@ export class SellCashSecuredPutBot extends ITradingBot {
             include: {
                 model: Contract,
             },
+            logging: console.log, 
         }));
     }
 
@@ -167,22 +207,13 @@ export class SellCashSecuredPutBot extends ITradingBot {
         this.printObject(this.portfolio);
         console.log('benchmark_amount:', await this.getContractPositionValueInBase(this.portfolio.benchmark));
         await this.listParameters().then((result) => this.iterateParameters(result));
-        setTimeout(() => this.emit('process'), CSP_FREQ * 1000);
+        setTimeout(() => this.emit('process'), CSP_FREQ * 60 * 1000);
         console.log('process end');
     };
 
     public async start(): Promise<void> {
-        await Portfolio.findOne({
-            where: {
-              account: this.accountNumber,
-            },
-            include: {
-                model: Contract,
-            },
-            // logging: console.log, 
-        }).then((portfolio) => this.portfolio = portfolio);
         this.on('process', this.process);
-        setTimeout(() => this.emit('process'), 6000);
+        this.init().then(() => setTimeout(() => this.emit('process'), 6000));
     };
 
 }

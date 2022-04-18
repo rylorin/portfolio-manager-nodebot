@@ -23,6 +23,9 @@ export class Parameter extends Model {
   @BelongsTo(() => Contract, 'stock_id')
   public underlying: Contract;
 
+  @Column({ type: DataType.SMALLINT, field: 'csp_strategy' })
+  public cspStrategy: number;
+
   @Column({ type: DataType.FLOAT, field: 'nav_ratio' })
   public navRatio: number;
 

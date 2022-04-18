@@ -282,10 +282,7 @@ export class ContractsUpdaterBot extends ITradingBot {
   private updateContratPrice(contract: Contract, marketData: MutableMarketData): Promise<[affectedCount: number]> {
     // console.log(`updateContratPrice got data for ${contract.secType} contract ${contract.symbol} id ${contract.id}`);
     // this.app.printObject(marketData);
-    let dataset = {
-      price: null,
-      // updated: new Date(),
-    } as any;
+    let dataset = {} as any;
     let optdataset = {} as any;
     marketData.forEach((tick, type: TickType) => {
       if (type == IBApiTickType.BID) {
@@ -296,7 +293,6 @@ export class ContractsUpdaterBot extends ITradingBot {
         dataset.askDate = new Date(tick.ingressTm);
       } else if (type == IBApiTickType.LAST) {
         dataset.price = tick.value > 0 ? tick.value : null;
-        // dataset.updated = new Date(tick.ingressTm);
       } else if (type == IBApiTickType.CLOSE) {
         dataset.previousClosePrice = tick.value > 0 ? tick.value : null;
       } else if ([ IBApiTickType.BID_SIZE, IBApiTickType.ASK_SIZE, IBApiTickType.LAST_SIZE, IBApiTickType.OPEN,

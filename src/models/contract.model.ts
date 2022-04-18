@@ -60,14 +60,11 @@ export class Contract extends Model {
   @Column({ type: DataType.FLOAT(6, 2) })
   public ask : number;
 
-  @Column({ type: DataType.DATE, field: 'bid_date' })
-  public bidDate : Date;
+  // @Column({ type: DataType.DATE, field: 'bid_date' })
+  // public bidDate : Date;
 
-  @Column({ type: DataType.DATE, field: 'ask_date' })
-  public askDate : Date;
-
-  // @Column({ type: DataType.DATE })
-  // public updated : Date;
+  // @Column({ type: DataType.DATE, field: 'ask_date' })
+  // public askDate : Date;
 
   @Column({ type: DataType.FLOAT, field: 'previous_close_price' })
   public previousClosePrice : number;

@@ -12,6 +12,8 @@ import {
 import { QueryTypes, Op } from 'sequelize';
 import { OrderAction } from "@stoqey/ib";
 
+const ROLL_FREQ: number = parseInt(process.env.ROLL_FREQ) || 10;  // mins
+
 export class RollOptionPositionsBot extends ITradingBot {
 
     private async processOnePosition(position: Position): Promise<void> {
@@ -30,14 +32,15 @@ export class RollOptionPositionsBot extends ITradingBot {
                         [Op.gt]: 0,
                     }},
                 },
-                // include: {
-                //     model: Contract,
-                // },
+                include: {
+                    model: Contract,
+                    required: true,
+                },
             });
             if ((parameter !== null) && (parameter.rollStrategy > 0)) {
                 console.log('stock:');
                 this.printObject(stock);
-                if (option.callOrPut == 'P') {
+                if (option.callOrPut == 'P') {                                          // PUT
                     let rolllist = await Option.findAll({
                         where: {
                             stock_id: option.stock.id,
@@ -52,7 +55,8 @@ export class RollOptionPositionsBot extends ITradingBot {
                                     [Op.not]: null,
                                     [Op.gt]: position.contract.ask,
                                 }},
-                            }
+                            },
+                            required: true,
                         },
                         logging: console.log,
                     }).then((result) => result.sort((a, b) => {
@@ -62,43 +66,43 @@ export class RollOptionPositionsBot extends ITradingBot {
                     }));
                     // this.printObject(rolllist);
                     if (rolllist.length > 0) {
-                        let selected: Option = undefined;   // default or selected by strategy
                         let defensive: Option = undefined;  // lowest delta
                         let agressive: Option = undefined;  // first OTM
                         for (const opt of rolllist) {
-                            if (!selected) selected = opt;
-                            if (!defensive) defensive = opt;
                             if (!agressive && (opt.strike < stock.price)) agressive = opt;
-                            if (opt.delta < defensive.delta) defensive = opt;
+                            if (!defensive && (opt.delta !== null)) defensive = opt;
+                            if ((opt.delta !== null) && (opt.delta > defensive.delta)) defensive = opt;
                         }
-                        if (!agressive) agressive = selected ?? rolllist[0];
+                        // this.printObject(rolllist);
                         console.log('option contract for defensive strategy:')
                         this.printObject(defensive);
-                        const defensive_price = defensive.contract.bid - position.contract.ask;
-                        console.log('price:', defensive_price);
                         console.log('option contract for agressive strategy:')
                         this.printObject(agressive);
-                        const agressive_price = agressive.contract.price - position.contract.price;
-                        console.log('price:', agressive_price);
-                        let price = undefined;
-                        if (parameter.rollStrategy == 1) {
-                            selected = agressive;
-                            price = defensive.contract.bid - position.contract.ask;
-                        } else if (parameter.rollStrategy == 2) {
+                        let selected: Option = undefined;
+                        let price: number = undefined;
+                        if ((parameter.rollStrategy == 1) && defensive) {
                             selected = defensive;
-                            price = agressive.contract.price - position.contract.price;
+                            price = position.contract.ask - defensive.contract.bid;
+                        } else if ((parameter.rollStrategy == 2) && agressive) {
+                            selected = agressive;
+                            price = position.contract.ask - agressive.contract.bid;
+                        // } else {
+                        //     selected = rolllist[0];
+                        //     price = selected.contract.bid - position.contract.ask;
                         }
                         if (price) {
-                            this.api.placeNewOrder(
+                            await this.api.placeNewOrder(
                                 ITradingBot.OptionComboContract(stock, position.contract.conId, selected.contract.conId),
-                                ITradingBot.ComboLimitOrder(OrderAction.BUY, position.quantity, agressive_price)).then((orderId: number) => {
+                                ITradingBot.ComboLimitOrder(OrderAction.BUY, -position.quantity, price)).then((orderId: number) => {
                                 console.log('orderid:', orderId.toString());
                             });
-                        }
+                        } else {
+                            this.error('warning: can not roll contract');
+                        };
                     } else {
                         this.error('warning: can not roll contract');
                     }
-                } else if (option.callOrPut == 'C') {
+                } else if (option.callOrPut == 'C') {                                           // CALL
                     const rolllist = await Option.findAll({
                         where: {
                             stock_id: option.stock.id,
@@ -122,39 +126,39 @@ export class RollOptionPositionsBot extends ITradingBot {
                     }));
                     // this.printObject(rolllist);
                     if (rolllist.length > 0) {
-                        let selected: Option = undefined;   // default or selected by strategy
                         let defensive: Option = undefined;  // lowest delta
                         let agressive: Option = undefined;  // first OTM
                         for (const opt of rolllist) {
-                            if (!selected && (opt.strike > option.strike)) selected = opt;
                             if (!agressive && (opt.strike > stock.price)) agressive = opt;
-                            if (!defensive) defensive = opt;
-                            if (opt.delta < defensive.delta) defensive = opt;
+                            if (!defensive && (opt.delta !== null)) defensive = opt;
+                            if ((opt.delta !== null) && (opt.delta < defensive.delta)) defensive = opt;
                         }
-                        if (!agressive) agressive = selected ?? rolllist[0];
+                        // this.printObject(rolllist);
                         console.log('option contract for defensive strategy:')
                         this.printObject(defensive);
-                        const defensive_price = defensive.contract.bid - position.contract.ask;
-                        console.log('price:', defensive_price);
                         console.log('option contract for agressive strategy:')
                         this.printObject(agressive);
-                        const agressive_price = agressive.contract.price - position.contract.price;
-                        console.log('price:', agressive_price);
-                        let price = undefined;
-                        if (parameter.rollStrategy == 1) {
-                            selected = agressive;
-                            price = defensive.contract.bid - position.contract.ask;
-                        } else if (parameter.rollStrategy == 2) {
+                        let selected: Option = undefined;
+                        let price: number = undefined;
+                        if ((parameter.rollStrategy == 1) && defensive) {
                             selected = defensive;
-                            price = agressive.contract.price - position.contract.price;
+                            price = position.contract.ask - defensive.contract.bid;
+                        } else if ((parameter.rollStrategy == 2) && agressive) {
+                            selected = agressive;
+                            price = position.contract.ask - agressive.contract.bid;
+                        // } else {
+                        //     selected = rolllist[0];
+                        //     price = selected.contract.bid - position.contract.ask;
                         }
                         if (price) {
-                            this.api.placeNewOrder(
+                            await this.api.placeNewOrder(
                                 ITradingBot.OptionComboContract(stock, position.contract.conId, selected.contract.conId),
-                                ITradingBot.ComboLimitOrder(OrderAction.BUY, position.quantity, price))
+                                ITradingBot.ComboLimitOrder(OrderAction.BUY, -position.quantity, price))
                                 .then((orderId: number) => {
                                     console.log('orderid:', orderId.toString());
                             });
+                        } else {
+                            this.error('warning: can not roll contract');
                         }
                     } else {
                         this.error('warning: can not roll contract');
@@ -206,7 +210,7 @@ export class RollOptionPositionsBot extends ITradingBot {
     public async process(): Promise<void> {
         console.log('process begin');
         await this.listItmOptionPostitions().then((result) => this.iteratePositions(result));
-        setTimeout(() => this.emit('process'), 60000);
+        setTimeout(() => this.emit('process'), ROLL_FREQ * 60000);
         console.log('process end');
     };
   
