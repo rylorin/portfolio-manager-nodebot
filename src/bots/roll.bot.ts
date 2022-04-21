@@ -13,6 +13,8 @@ import { QueryTypes, Op } from 'sequelize';
 import { OrderAction } from "@stoqey/ib";
 
 const ROLL_FREQ: number = parseInt(process.env.ROLL_FREQ) || 10;  // mins
+const DEFENSIVE_ROLL_DAYS: number = parseInt(process.env.DEFENSIVE_ROLL_DAYS) || 6;  // days
+const AGRESSIVE_ROLL_DAYS: number = parseInt(process.env.AGRESSIVE_ROLL_DAYS) || 0;  // days
 
 export class RollOptionPositionsBot extends ITradingBot {
 
@@ -37,10 +39,12 @@ export class RollOptionPositionsBot extends ITradingBot {
                     required: true,
                 },
             });
-            if ((parameter !== null) && (parameter.rollStrategy > 0)) {
+            if (parameter !== null) {
+                const expiry: Date = new Date(option.lastTradeDate);
+                const diffDays = Math.ceil((expiry.getTime() - Date.now()) / (1000 * 3600 * 24));
                 console.log('stock:');
                 this.printObject(stock);
-                if (option.callOrPut == 'P') {                                          // PUT
+                if (option.callOrPut == 'P') {                                                  // PUT
                     let rolllist = await Option.findAll({
                         where: {
                             stock_id: option.stock.id,
@@ -73,6 +77,11 @@ export class RollOptionPositionsBot extends ITradingBot {
                             if (!defensive && (opt.delta !== null)) defensive = opt;
                             if ((opt.delta !== null) && (opt.delta > defensive.delta)) defensive = opt;
                         }
+                        if ((!defensive) && (!agressive)) {
+                            defensive = rolllist[0];
+                            agressive = rolllist[0];
+                        } else if (!defensive) defensive = agressive;
+                        else if (!agressive) agressive = defensive;
                         // this.printObject(rolllist);
                         console.log('option contract for defensive strategy:')
                         this.printObject(defensive);
@@ -80,15 +89,15 @@ export class RollOptionPositionsBot extends ITradingBot {
                         this.printObject(agressive);
                         let selected: Option = undefined;
                         let price: number = undefined;
-                        if ((parameter.rollStrategy == 1) && defensive) {
+                        if (((parameter.rollPutStrategy == 1) && (diffDays > DEFENSIVE_ROLL_DAYS))
+                        || ((parameter.rollPutStrategy == 2) && (diffDays > AGRESSIVE_ROLL_DAYS))) {
+                            console.log('too early to roll contract:', diffDays, 'days before exipiration');
+                        } else if ((parameter.rollPutStrategy == 1) && defensive) {
                             selected = defensive;
                             price = position.contract.ask - defensive.contract.bid;
-                        } else if ((parameter.rollStrategy == 2) && agressive) {
+                        } else if ((parameter.rollPutStrategy == 2) && agressive) {
                             selected = agressive;
                             price = position.contract.ask - agressive.contract.bid;
-                        // } else {
-                        //     selected = rolllist[0];
-                        //     price = selected.contract.bid - position.contract.ask;
                         }
                         if (price) {
                             await this.api.placeNewOrder(
@@ -117,7 +126,7 @@ export class RollOptionPositionsBot extends ITradingBot {
                                     [Op.not]: null,
                                     [Op.gt]: position.contract.ask,
                                 }},
-                            }
+                            },
                         },
                     }).then((result) => result.sort((a, b) => {
                             if (a.lastTradeDate > b.lastTradeDate) return 1;
@@ -132,7 +141,12 @@ export class RollOptionPositionsBot extends ITradingBot {
                             if (!agressive && (opt.strike > stock.price)) agressive = opt;
                             if (!defensive && (opt.delta !== null)) defensive = opt;
                             if ((opt.delta !== null) && (opt.delta < defensive.delta)) defensive = opt;
-                        }
+                        };
+                        if ((!defensive) && (!agressive)) {
+                            defensive = rolllist[0];
+                            agressive = rolllist[0];
+                        } else if (!defensive) defensive = agressive;
+                        else if (!agressive) agressive = defensive;
                         // this.printObject(rolllist);
                         console.log('option contract for defensive strategy:')
                         this.printObject(defensive);
@@ -140,15 +154,15 @@ export class RollOptionPositionsBot extends ITradingBot {
                         this.printObject(agressive);
                         let selected: Option = undefined;
                         let price: number = undefined;
-                        if ((parameter.rollStrategy == 1) && defensive) {
+                        if (((parameter.rollCallStrategy == 1) && (diffDays > DEFENSIVE_ROLL_DAYS))
+                        || ((parameter.rollCallStrategy == 2) && (diffDays > AGRESSIVE_ROLL_DAYS))) {
+                            console.log('too early to roll contract:', diffDays, 'days before exipiration');
+                        } else if ((parameter.rollCallStrategy == 1) && defensive) {
                             selected = defensive;
                             price = position.contract.ask - defensive.contract.bid;
-                        } else if ((parameter.rollStrategy == 2) && agressive) {
+                        } else if ((parameter.rollCallStrategy == 2) && agressive) {
                             selected = agressive;
                             price = position.contract.ask - agressive.contract.bid;
-                        // } else {
-                        //     selected = rolllist[0];
-                        //     price = selected.contract.bid - position.contract.ask;
                         }
                         if (price) {
                             await this.api.placeNewOrder(
@@ -165,7 +179,7 @@ export class RollOptionPositionsBot extends ITradingBot {
                     }
                 }
             } else {
-                console.log('ignored (roll strategy set to off)');
+                console.log('ignored: no parameters for underlying');
             }
         } else {
             console.log('ignored (already in open orders list)');

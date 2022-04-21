@@ -150,7 +150,7 @@ export class SellCashSecuredPutBot extends ITradingBot {
     }
 
     private async iterateParameters(parameters: Parameter[]): Promise<void> {
-        const now = new Date();
+        // const now = new Date();
         let result = [];
         for (const parameter of parameters) {
             result.push(await this.processOneParamaeter(parameter));
@@ -165,7 +165,7 @@ export class SellCashSecuredPutBot extends ITradingBot {
             if ((option.strike * option.multiplier * this.base_rates[option.contract.currency]) < max_for_all_symbols) {
                 if (option.impliedVolatility > option.stock.historicalVolatility) { // RULE 1: implied volatility > historical volatility
                     const expiry: Date = new Date(option.lastTradeDate);
-                    const diffDays = Math.ceil((expiry.getTime() - now.getTime()) / (1000 * 3600 * 24));
+                    const diffDays = Math.ceil((expiry.getTime() - Date.now()) / (1000 * 3600 * 24));
                     option['yield'] = option.contract.bid / option.strike / diffDays * 360;
                     option.stock.contract = await Contract.findByPk(option.stock.id);
                     filtered_options.push(option);

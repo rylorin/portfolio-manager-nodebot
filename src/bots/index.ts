@@ -32,7 +32,7 @@ export class ITradingBot extends EventEmitter {
     protected api: IBApiNext;
     protected accountNumber: string = undefined;
     protected portfolio: Portfolio = undefined;
-    protected base_rates: number[][] = [];
+    protected base_rates: number[] = [];
 
     constructor(app: IBApiNextApp, api: IBApiNext, account?: string) {
         super();
@@ -145,6 +145,7 @@ export class ITradingBot extends EventEmitter {
             });
         }).then((currencies) => {
             for (const currency of currencies) this.base_rates[currency.currency] = currency.rate;
+            this.base_rates[this.portfolio.baseCurrency] = 1.0;
         });
     }
 

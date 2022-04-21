@@ -29,8 +29,11 @@ export class Parameter extends Model {
   @Column({ type: DataType.FLOAT, field: 'nav_ratio' })
   public navRatio: number;
 
-  @Column({ type: DataType.SMALLINT, field: 'roll_strategy' })
-  public rollStrategy: number;
+  @Column({ type: DataType.SMALLINT, field: 'roll_put_strategy' })
+  public rollPutStrategy: number;
+
+  @Column({ type: DataType.SMALLINT, field: 'roll_call_strategy' })
+  public rollCallStrategy: number;
 
   @Column({ type: DataType.SMALLINT, field: 'cc_strategy' })
   public ccStrategy: number;

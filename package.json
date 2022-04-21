@@ -19,7 +19,7 @@
     "doc": "typedoc --excludeInternal",
     "doc:dev": "typedoc --out ./doc-dev",
     "tsc": "./node_modules/.bin/tsc",
-    "start": "node ./dist/index.js -watch -clientId=0 -account -log=warn",
+    "start": "node ./dist/index.js -watch -clientId=1 -log=warn",
     "startX": "node ./dist/index.js -watch -clientId=0 -log=warn -updater -account -roll"
   },
   "engines": {

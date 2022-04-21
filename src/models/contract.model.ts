@@ -53,6 +53,9 @@ export class Contract extends Model {
     }
     return result;
   }
+  set price(value: number) {
+    this.setDataValue('price', value);
+  }
 
   @Column({ type: DataType.FLOAT(6, 2) })
   public bid : number;

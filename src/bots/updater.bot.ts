@@ -48,8 +48,6 @@ export class ContractsUpdaterBot extends ITradingBot {
     setTimeout(() => this.emit('buildOptionsList'), 600000);
   };
 
-  public stop(): void {};
-
   private updateContractDetails(id: number, detailstab: ContractDetails[]): Promise<[affectedCount: number]> {
     console.log(`updateContractDetails got data for contract id ${id}`)
     if (detailstab.length > 1) {
@@ -270,7 +268,10 @@ export class ContractsUpdaterBot extends ITradingBot {
   
   private requestContractPrice(contract: Contract): Promise<MutableMarketData> {
     // console.log(`requestContractPrice for ${contract.secType} contract ${contract.symbol} ${contract.exchange} id ${contract.id}`);
-    if (contract.currency == 'USD') contract.exchange = 'SMART';  // nothing except SMART seems to work for USD
+    if (contract.secType == 'CASH') {
+      contract.exchange = 'IDEALPRO';    // nothing except IDEALPRO seems to work for CASH
+      if (contract.symbol.length == 7) contract.symbol.substring(0, 3);
+    } else if (contract.currency == 'USD') contract.exchange = 'SMART';  // nothing except SMART seems to work for USD
     return this.api
       .getMarketDataSingle(contract, '', false)
       .catch((err: IBApiNextError) => {
@@ -282,15 +283,15 @@ export class ContractsUpdaterBot extends ITradingBot {
   private updateContratPrice(contract: Contract, marketData: MutableMarketData): Promise<[affectedCount: number]> {
     // console.log(`updateContratPrice got data for ${contract.secType} contract ${contract.symbol} id ${contract.id}`);
     // this.app.printObject(marketData);
-    let dataset = {} as any;
-    let optdataset = {} as any;
+    let dataset: Contract = {} as any;
+    let optdataset: Option = {} as any;
     marketData.forEach((tick, type: TickType) => {
       if (type == IBApiTickType.BID) {
         dataset.bid = tick.value > 0 ? tick.value : null;
-        dataset.bidDate = new Date(tick.ingressTm);
+        // dataset.bidDate = new Date(tick.ingressTm);
       } else if (type == IBApiTickType.ASK) {
         dataset.ask = tick.value > 0 ? tick.value : null;
-        dataset.askDate = new Date(tick.ingressTm);
+        // dataset.askDate = new Date(tick.ingressTm);
       } else if (type == IBApiTickType.LAST) {
         dataset.price = tick.value > 0 ? tick.value : null;
       } else if (type == IBApiTickType.CLOSE) {
@@ -300,7 +301,7 @@ export class ContractsUpdaterBot extends ITradingBot {
         // siliently ignore
         // console.log('silently ignored', type, tick);
       } else if (type == IBApiNextTickType.OPTION_PV_DIVIDEND) {
-        optdataset.pv_dividend = tick.value;
+        optdataset.pvDividend = tick.value;
       } else if (type == IBApiNextTickType.LAST_OPTION_PRICE) {
         if (!dataset.price) {
           dataset.price = tick.value > 0 ? tick.value : null;
@@ -327,7 +328,7 @@ export class ContractsUpdaterBot extends ITradingBot {
         }
       } else if (type == IBApiNextTickType.LAST_OPTION_IV) {
         if (tick.value) {
-          optdataset.implied_volatility = tick.value;
+          optdataset.impliedVolatility = tick.value;
         }
       } else if (type == IBApiNextTickType.MODEL_OPTION_PRICE) {
         if (!dataset.price) {
@@ -337,8 +338,8 @@ export class ContractsUpdaterBot extends ITradingBot {
         //   console.log('updateContratPrice MODEL_OPTION_PRICE ignored', dataset.price, tick.value);
         }
       } else if (type == IBApiNextTickType.MODEL_OPTION_IV) {
-        if (!optdataset.implied_volatility) {
-          optdataset.implied_volatility = tick.value > 0 ? tick.value : null;
+        if (!optdataset.impliedVolatility) {
+          optdataset.impliedVolatility = tick.value > 0 ? tick.value : null;
         }
       } else if (type == IBApiNextTickType.MODEL_OPTION_DELTA) {
         if (!optdataset.delta) {
@@ -545,9 +546,9 @@ export class ContractsUpdaterBot extends ITradingBot {
   private async iterateSecDefOptParamsForExpStrikes(stock: Contract, expirations: string[], strikes: number[]): Promise<void> {
     // this.app.printObject(stock);
     for (const expstr of expirations) {
-      const now = Date.now();
+      // const now = Date.now();
       const expdate = ITradingBot.expirationToDate(expstr);
-      const days = (expdate.getTime() - now) / 60000 / 1440;
+      const days = (expdate.getTime() - Date.now()) / 60000 / 1440;
       // console.log(now, expdate, days, 'days');
       if (days < OPTIONS_PRICE_TIMEFRAME) {
         for (const strike of strikes) {

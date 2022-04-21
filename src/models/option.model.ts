@@ -13,7 +13,7 @@ import { OptionType } from "@stoqey/ib";
 
 import { Contract, Stock } from '.';
 
-@Table({ tableName: "option", timestamps: true, deletedAt: false, updatedAt: false })
+@Table({ tableName: "option", timestamps: true, deletedAt: false })
 export class Option extends Model {
 
   @BelongsTo(() => Contract, 'id')
@@ -38,10 +38,22 @@ export class Option extends Model {
   @Column({ type: DataType.INTEGER, defaultValue: 100 })
   public multiplier: number;
 
-  @Column({ type: DataType.FLOAT, field: 'implied_volatility' })
+  @Column({ type: DataType.FLOAT(1, 3), field: 'implied_volatility' })
   public impliedVolatility: number;
 
-  @Column({ type: DataType.FLOAT })
+  @Column({ type: DataType.FLOAT, field: 'pv_dividend' })
+  public pvDividend: number;
+
+  @Column({ type: DataType.FLOAT(1, 3) })
   public delta: number; 
+
+  @Column({ type: DataType.FLOAT })
+  public gamma: number; 
+
+  @Column({ type: DataType.FLOAT })
+  public vega: number; 
+
+  @Column({ type: DataType.FLOAT })
+  public theta: number; 
 
 };

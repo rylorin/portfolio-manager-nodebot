@@ -205,6 +205,14 @@ export class AccountUpdateBot extends ITradingBot {
                   return contract;
             })
           ) */
+          .then(async (result) => {
+            for (const leg of ibContract.comboLegs) {
+              await this.findOrCreateContract({
+                conId: leg.conId,
+              });
+            }
+            return result;
+          })
         }
         this.app.error('findOrCreateContract: contract created, please check results');
         this.app.printObject(ibContract);
@@ -214,47 +222,87 @@ export class AccountUpdateBot extends ITradingBot {
       return contract;
     }
     
-    protected updateOpenOrder(order: IbOpenOrder): Promise<void> {
+    protected async updateOpenOrder(order: IbOpenOrder): Promise<void | any[]> {
         // console.log('updateOpenOrders', order.order.permId);
-        return OpenOrder.update({
-          actionType: order.order.action,
-          totalQty: order.order.totalQuantity,
-          cashQty: order.order.cashQty,
-          lmtPrice: order.order.lmtPrice,
-          auxPrice: order.order.auxPrice,
-          status: order.orderState.status,
-          remainingQty: order.orderStatus?.remaining,
-        },{
-          where: { perm_Id: order.order.permId },
-          // logging: console.log,
-        }).then((result) => {
-          if (result[0] == 0) {
-            // order not existing, create it
-            return this.findOrCreateContract(order.contract)
-            // .then((contract) => {
-            //   this.app.printObject(contract);
-            //   return contract
-            // })
-            .then((contract) =>
-              OpenOrder.create({
-                permId: order.order.permId,
-                portfolioId: this.portfolio.id,
-                contract_id: contract.id,
-                actionType: order.order.action,
-                totalQty: order.order.totalQuantity,
-                cashQty: order.order.cashQty,
-                lmtPrice: order.order.lmtPrice,
-                auxPrice: order.order.auxPrice,
-                status: order.orderState.status,
-                remainingQty: order.orderStatus?.remaining,
-              },{
-                // logging: console.log,
-              })
-            ).then(() => Promise.resolve());
-          } else {
-            return Promise.resolve();
-          }
+        const contract = await this.findOrCreateContract(order.contract);
+        const result = await OpenOrder.update({
+            actionType: order.order.action,
+            totalQty: order.order.totalQuantity,
+            cashQty: order.order.cashQty,
+            lmtPrice: order.order.lmtPrice,
+            auxPrice: order.order.auxPrice,
+            status: order.orderState.status,
+            remainingQty: order.orderStatus?.remaining,
+          },{
+            where: {
+              perm_Id: order.order.permId,
+              contract_id: contract.id,
+            },
+            // logging: console.log,
         })
+        if (result[0] > 0) {
+          if (order.contract.secType == 'BAG') {
+            let promises: Promise<void>[] = [];
+            for (const leg of order.contract.comboLegs) {
+              promises.push(this.findOrCreateContract({conId: leg.conId})
+                .then((contract) => OpenOrder.update({
+                  actionType: (order.order.action == leg.action) ? 'BUY' : 'SELL',
+                  totalQty: order.order.totalQuantity * leg.ratio,
+                  cashQty: order.order.cashQty * leg.ratio,
+                  // lmtPrice: order.order.lmtPrice,
+                  // auxPrice: order.order.auxPrice,
+                  status: order.orderState.status,
+                  remainingQty: order.orderStatus?.remaining * leg.ratio,
+                },{
+                  where: {
+                    perm_Id: order.order.permId,
+                    contract_id: contract.id,
+                  },
+                  // logging: console.log,
+                }))
+                .then(() => {}))
+            }
+            return Promise.all(promises);
+          }
+        } else {
+          // order not existing, create it
+          return OpenOrder.create({
+              permId: order.order.permId,
+              portfolioId: this.portfolio.id,
+              contract_id: contract.id,
+              actionType: order.order.action,
+              totalQty: order.order.totalQuantity,
+              cashQty: order.order.cashQty,
+              lmtPrice: order.order.lmtPrice,
+              auxPrice: order.order.auxPrice,
+              status: order.orderState.status,
+              remainingQty: order.orderStatus?.remaining,
+            },{
+              // logging: console.log,
+            }
+          ).then((value: OpenOrder) => {
+            if (order.contract.secType == 'BAG') {
+              let promises: Promise<void>[] = [];
+              for (const leg of order.contract.comboLegs) {
+                promises.push(this.findOrCreateContract({conId: leg.conId})
+                  .then((contract) => OpenOrder.create({
+                    permId: order.order.permId,
+                    portfolioId: this.portfolio.id,
+                    contract_id: contract.id,
+                    actionType: (order.order.action == leg.action) ? 'BUY' : 'SELL',
+                    totalQty: order.order.totalQuantity * leg.ratio,
+                    cashQty: order.order.cashQty * leg.ratio,
+                    // lmtPrice: order.order.lmtPrice,
+                    // auxPrice: order.order.auxPrice,
+                    status: order.orderState.status,
+                    remainingQty: order.orderStatus?.remaining * leg.ratio,
+                  }))
+                  .then(() => {}))
+              }
+              return Promise.all(promises);
+            }
+          });
+        }
     }
 
     private iterateOpenOrdersForUpdate(orders: IbOpenOrder[]): void {
