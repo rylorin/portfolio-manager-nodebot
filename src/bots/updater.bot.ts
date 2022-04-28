@@ -23,12 +23,12 @@ require('dotenv').config();
 const UPDATE_CONID_FREQ: number = parseInt(process.env.UPDATE_CONID_FREQ) || 10;
 const HISTORICAL_DATA_REFRESH_FREQ: number = parseInt(process.env.HISTORICAL_DATA_REFRESH_FREQ) || (12 * 60);
 const STOCKS_PRICES_REFRESH_FREQ: number = parseInt(process.env.STOCKS_PRICES_REFRESH_FREQ) || 20;  // mins
-const OPTIONS_LIST_BUILD_FREQ: number = parseInt(process.env.OPTIONS_LIST_BUILD_FREQ) || (24 * 60);
-const BATCH_SIZE_OPTIONS_PRICE: number = parseInt(process.env.BATCH_SIZE_OPTIONS_PRICE) || 95;
-const OPTIONS_PRICE_DTE_FREQ: number = parseInt(process.env.OPTIONS_PRICE_DTE_FREQ) || 15;      // mins
-const OPTIONS_PRICE_WEEK_FREQ: number = parseInt(process.env.OPTIONS_PRICE_WEEK_FREQ) || 60;    // mins
-const OPTIONS_PRICE_OTHER_FREQ: number = parseInt(process.env.OPTIONS_PRICE_OTHER_FREQ) || 90;  // mins
-const OPTIONS_PRICE_TIMEFRAME: number = parseInt(process.env.OPTIONS_PRICE_TIMEFRAME) || 90;    // days
+const OPTIONS_LIST_BUILD_FREQ: number = parseInt(process.env.OPTIONS_LIST_BUILD_FREQ) || 12;        // hours
+const BATCH_SIZE_OPTIONS_PRICE: number = parseInt(process.env.BATCH_SIZE_OPTIONS_PRICE) || 95;      // units
+const OPTIONS_PRICE_DTE_FREQ: number = parseInt(process.env.OPTIONS_PRICE_DTE_FREQ) || 15;          // mins
+const OPTIONS_PRICE_WEEK_FREQ: number = parseInt(process.env.OPTIONS_PRICE_WEEK_FREQ) || 60;        // mins
+const OPTIONS_PRICE_OTHER_FREQ: number = parseInt(process.env.OPTIONS_PRICE_OTHER_FREQ) || 90;      // mins
+const OPTIONS_PRICE_TIMEFRAME: number = parseInt(process.env.OPTIONS_PRICE_TIMEFRAME) || 90;        // days
 
 export class ContractsUpdaterBot extends ITradingBot {
 
@@ -45,7 +45,7 @@ export class ContractsUpdaterBot extends ITradingBot {
     setTimeout(() => this.emit('updateHistoricalData'), 3000);
     setTimeout(() => this.emit('updateStocksPrices'), 4000);
     setTimeout(() => this.emit('updateOptionsPrice'), 5000);
-    setTimeout(() => this.emit('buildOptionsList'), 600000);
+    setTimeout(() => this.emit('buildOptionsList'), 60000);
   };
 
   private updateContractDetails(id: number, detailstab: ContractDetails[]): Promise<[affectedCount: number]> {
@@ -493,7 +493,7 @@ export class ContractsUpdaterBot extends ITradingBot {
   
   private createOptionContractFromDetails(stock: Contract, expstr: string, strike: number, right: OptionType, detailstab: ContractDetails[]): Promise<Option> {
     const details: ContractDetails = detailstab[0];
-    console.log('createOptionContractFromDetails', details.contract.symbol, details.realExpirationDate, details.contract.strike, details.contract.right);
+    // console.log('createOptionContractFromDetails', details.contract.symbol, details.realExpirationDate, details.contract.strike, details.contract.right);
     return Contract.create({
         conId: details.contract.conId,
         secType: details.contract.secType,
@@ -518,12 +518,14 @@ export class ContractsUpdaterBot extends ITradingBot {
     const option = await Option.findOne({
       where: {
         stock_id: stock.id,
-        expiration: parseInt(expstr),
+        lastTradeDate: ITradingBot.expirationToDate(expstr),
         strike: strike,
-        call_or_put: right,
-      }
+        callOrPut: right,
+      },
+      // logging: console.log,
     });
     if (option === null) {
+      // console.log(`buildOneOptionContract ${stock.symbol} ${expstr} ${strike} ${right}`);
       return this.requestContractDetails({
         symbol: stock.symbol,
         currency: stock.currency,
@@ -538,19 +540,19 @@ export class ContractsUpdaterBot extends ITradingBot {
       })
       .then((detailstab) => this.createOptionContractFromDetails(stock, expstr, strike, right, detailstab));
     } else {
-      // console.log(`contract ${stock.symbol} ${expstr} ${strike} ${right} already exists`);
+      console.log(`contract ${stock.symbol} ${expstr} ${strike} ${right} already exists`);
       return option;
     }
   }
 
   private async iterateSecDefOptParamsForExpStrikes(stock: Contract, expirations: string[], strikes: number[]): Promise<void> {
-    // this.app.printObject(stock);
+    console.log(`iterateSecDefOptParamsForExpStrikes for ${stock.symbol}, ${expirations.length} exp, ${strikes.length} strikes`)
     for (const expstr of expirations) {
       // const now = Date.now();
       const expdate = ITradingBot.expirationToDate(expstr);
       const days = (expdate.getTime() - Date.now()) / 60000 / 1440;
-      // console.log(now, expdate, days, 'days');
       if (days < OPTIONS_PRICE_TIMEFRAME) {
+        console.log(expstr, days, 'days');
         for (const strike of strikes) {
           // console.log('iterateSecDefOptParamsForExpStrikes', stock.symbol, expstr, strike);
           let put = this.buildOneOptionContract(stock, expstr, strike, OptionType.Put)
@@ -565,7 +567,7 @@ export class ContractsUpdaterBot extends ITradingBot {
   }
 
   private iterateSecDefOptParams(stock: Contract, details: SecurityDefinitionOptionParameterType[]): Promise<void> {
-    console.log(`iterateSecDefOptParams: ${stock.symbol} ${details.length}`)
+    // console.log(`iterateSecDefOptParams: ${stock.symbol} ${details.length} details`)
     // use details associated to SMART exchange or first one if SMART not present
     let idx: number = 0;
     for (let i = 0; i < details.length; i++) {
@@ -578,12 +580,12 @@ export class ContractsUpdaterBot extends ITradingBot {
   }
 
   private requestSecDefOptParams(stock: Contract): Promise<SecurityDefinitionOptionParameterType[]> {
-    // console.log(`requestSecDefOptParams: ${stock.symbol}`);
+    console.log(`requestSecDefOptParams: ${stock.symbol}`);
     return this.api
       .getSecDefOptParams(
         stock.symbol,
         '', // exchange but only empty string returns results
-        'STK' as SecType,
+        stock.secType as SecType,
         stock.conId
       )
       .catch((err: IBApiNextError) => {
@@ -596,8 +598,9 @@ export class ContractsUpdaterBot extends ITradingBot {
     console.log(`iterateToBuildOptionList ${contracts.length} items`)
     return contracts.reduce((p, stock) => {
       return p.then(() => {
-        if (stock['options_age'] > (OPTIONS_LIST_BUILD_FREQ / 1440)) {
-          console.log(`iterateToBuildOptionList ${stock.symbol} ${stock['options_age']}`)
+        console.log(`iterateToBuildOptionList ${stock.symbol} ${stock['options_age']*24} vs ${OPTIONS_LIST_BUILD_FREQ}`)
+        if ((stock['options_age'] * 24) > OPTIONS_LIST_BUILD_FREQ) {
+          console.log(`iterateToBuildOptionList: option contracts list need refreshing`)
           return this.requestSecDefOptParams(stock)
             .then((params) => this.iterateSecDefOptParams(stock, params));
         }
@@ -608,19 +611,21 @@ export class ContractsUpdaterBot extends ITradingBot {
 
   private findStocksToListOptions(): Promise<Contract[]> {
     return sequelize.query(`
-      SELECT
-        (julianday('now') - MAX(julianday(option.createdAt))) options_age,
-        contract.symbol, contract.con_id conId, contract.id id, contract.currency currency
-      FROM option, contract, trading_parameters
-      WHERE contract.id = option.stock_id
-        AND trading_parameters.stock_id = option.stock_id
-      GROUP BY option.stock_id
+    SELECT
+      (julianday('now') - MAX(julianday(IFNULL(option.createdAt, datetime('now'))))) options_age,
+      contract.symbol, contract.con_id conId, contract.id id, contract.currency currency, contract.secType secType,
+      option.createdAt
+    FROM option, contract, trading_parameters
+    WHERE contract.id = option.stock_id
+      AND trading_parameters.stock_id =  option.stock_id
+    GROUP BY option.stock_id
+    ORDER BY contract.symbol
       `,
     {
       model: Contract,
       raw: true,
-      // logging: console.log,
       type: QueryTypes.SELECT,
+      logging: console.log,
     });
   }
 
@@ -628,7 +633,7 @@ export class ContractsUpdaterBot extends ITradingBot {
     console.log('buildOptionsList');
     await this.findStocksToListOptions().then((stocks) => this.iterateToBuildOptionList(stocks));
     console.log('buildOptionsList done');
-    setTimeout(() => this.emit('buildOptionsList'), OPTIONS_LIST_BUILD_FREQ * 60000 / 2);
+    setTimeout(() => this.emit('buildOptionsList'), 3600 * 1000);
   };
 
   private findOptionsToUpdatePrice(dte: number, age: number, limit: number): Promise<Contract[]> {

@@ -39,7 +39,7 @@ export class Contract extends Model {
   @Column({ type: DataType.STRING })
   public name: string;
 
-  @Column({ type: DataType.FLOAT(6, 2) })
+  @Column({ type: DataType.FLOAT(6, 3) })
   // public price : number;
   get price(): number {
     let result = undefined;

@@ -21,7 +21,14 @@ export class RollOptionPositionsBot extends ITradingBot {
     private async processOnePosition(position: Position): Promise<void> {
         console.log('processing position:');
         this.printObject(position);
-        const order = await OpenOrder.findOne({where: {contract_id: position.contract.id}});
+        const order = await OpenOrder.findOne({
+            where: {
+                contract_id: position.contract.id,
+                status: { [Op.in]: [
+                    'Submitted', 'PreSubmitted',
+                ]},
+            },
+        });
         if (order === null) {
             const option = await Option.findByPk(position.contract.id, {include: Stock});
             const stock: Contract = await Contract.findByPk(option.stock.id);
@@ -29,10 +36,10 @@ export class RollOptionPositionsBot extends ITradingBot {
                 where: { 
                     portfolio_id: this.portfolio.id, 
                     stock_id: option.stock.id,
-                    rollStrategy: { [Op.and]: {
-                        [Op.not]: null,
-                        [Op.gt]: 0,
-                    }},
+                    // rollStrategy: { [Op.and]: {
+                    //     [Op.not]: null,
+                    //     [Op.gt]: 0,
+                    // }},
                 },
                 include: {
                     model: Contract,
@@ -62,7 +69,7 @@ export class RollOptionPositionsBot extends ITradingBot {
                             },
                             required: true,
                         },
-                        logging: console.log,
+                        // logging: console.log,
                     }).then((result) => result.sort((a, b) => {
                         if (a.lastTradeDate > b.lastTradeDate) return 1;
                         else if (a.lastTradeDate < b.lastTradeDate) return -1;
@@ -101,8 +108,8 @@ export class RollOptionPositionsBot extends ITradingBot {
                         }
                         if (price) {
                             await this.api.placeNewOrder(
-                                ITradingBot.OptionComboContract(stock, position.contract.conId, selected.contract.conId),
-                                ITradingBot.ComboLimitOrder(OrderAction.BUY, -position.quantity, price)).then((orderId: number) => {
+                                ITradingBot.OptionComboContract(stock, selected.contract.conId, position.contract.conId),
+                                ITradingBot.ComboLimitOrder(OrderAction.SELL, Math.abs(position.quantity), -price)).then((orderId: number) => {
                                 console.log('orderid:', orderId.toString());
                             });
                         } else {
@@ -166,8 +173,8 @@ export class RollOptionPositionsBot extends ITradingBot {
                         }
                         if (price) {
                             await this.api.placeNewOrder(
-                                ITradingBot.OptionComboContract(stock, position.contract.conId, selected.contract.conId),
-                                ITradingBot.ComboLimitOrder(OrderAction.BUY, -position.quantity, price))
+                                ITradingBot.OptionComboContract(stock, selected.contract.conId, position.contract.conId),
+                                ITradingBot.ComboLimitOrder(OrderAction.SELL, Math.abs(position.quantity), -price))
                                 .then((orderId: number) => {
                                     console.log('orderid:', orderId.toString());
                             });
