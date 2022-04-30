@@ -99,24 +99,22 @@ export class RollOptionPositionsBot extends ITradingBot {
                         if (((parameter.rollPutStrategy == 1) && (diffDays > DEFENSIVE_ROLL_DAYS))
                         || ((parameter.rollPutStrategy == 2) && (diffDays > AGRESSIVE_ROLL_DAYS))) {
                             console.log('too early to roll contract:', diffDays, 'days before exipiration');
-                        } else if ((parameter.rollPutStrategy == 1) && defensive) {
-                            selected = defensive;
-                            price = position.contract.ask - defensive.contract.bid;
-                        } else if ((parameter.rollPutStrategy == 2) && agressive) {
-                            selected = agressive;
-                            price = position.contract.ask - agressive.contract.bid;
-                        }
-                        if (price) {
+                        } else {
+                            if ((parameter.rollPutStrategy == 1) && defensive) {
+                                selected = defensive;
+                                price = position.contract.ask - defensive.contract.bid;
+                            } else if ((parameter.rollPutStrategy == 2) && agressive) {
+                                selected = agressive;
+                                price = position.contract.ask - agressive.contract.bid;
+                            }
                             await this.api.placeNewOrder(
                                 ITradingBot.OptionComboContract(stock, selected.contract.conId, position.contract.conId),
                                 ITradingBot.ComboLimitOrder(OrderAction.SELL, Math.abs(position.quantity), -price)).then((orderId: number) => {
                                 console.log('orderid:', orderId.toString());
                             });
-                        } else {
-                            this.error('warning: can not roll contract');
-                        };
+                        }
                     } else {
-                        this.error('warning: can not roll contract');
+                        this.error('can not roll contract: empty list');
                     }
                 } else if (option.callOrPut == 'C') {                                           // CALL
                     const rolllist = await Option.findAll({
@@ -164,25 +162,23 @@ export class RollOptionPositionsBot extends ITradingBot {
                         if (((parameter.rollCallStrategy == 1) && (diffDays > DEFENSIVE_ROLL_DAYS))
                         || ((parameter.rollCallStrategy == 2) && (diffDays > AGRESSIVE_ROLL_DAYS))) {
                             console.log('too early to roll contract:', diffDays, 'days before exipiration');
-                        } else if ((parameter.rollCallStrategy == 1) && defensive) {
-                            selected = defensive;
-                            price = position.contract.ask - defensive.contract.bid;
-                        } else if ((parameter.rollCallStrategy == 2) && agressive) {
-                            selected = agressive;
-                            price = position.contract.ask - agressive.contract.bid;
-                        }
-                        if (price) {
+                        } else {
+                            if ((parameter.rollCallStrategy == 1) && defensive) {
+                                selected = defensive;
+                                price = position.contract.ask - defensive.contract.bid;
+                            } else if ((parameter.rollCallStrategy == 2) && agressive) {
+                                selected = agressive;
+                                price = position.contract.ask - agressive.contract.bid;
+                            }
                             await this.api.placeNewOrder(
                                 ITradingBot.OptionComboContract(stock, selected.contract.conId, position.contract.conId),
                                 ITradingBot.ComboLimitOrder(OrderAction.SELL, Math.abs(position.quantity), -price))
                                 .then((orderId: number) => {
                                     console.log('orderid:', orderId.toString());
                             });
-                        } else {
-                            this.error('warning: can not roll contract');
                         }
                     } else {
-                        this.error('warning: can not roll contract');
+                        this.error('can not roll contract: empty list');
                     }
                 }
             } else {

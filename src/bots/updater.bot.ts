@@ -28,7 +28,7 @@ const BATCH_SIZE_OPTIONS_PRICE: number = parseInt(process.env.BATCH_SIZE_OPTIONS
 const OPTIONS_PRICE_DTE_FREQ: number = parseInt(process.env.OPTIONS_PRICE_DTE_FREQ) || 15;          // mins
 const OPTIONS_PRICE_WEEK_FREQ: number = parseInt(process.env.OPTIONS_PRICE_WEEK_FREQ) || 60;        // mins
 const OPTIONS_PRICE_OTHER_FREQ: number = parseInt(process.env.OPTIONS_PRICE_OTHER_FREQ) || 90;      // mins
-const OPTIONS_PRICE_TIMEFRAME: number = parseInt(process.env.OPTIONS_PRICE_TIMEFRAME) || 90;        // days
+const OPTIONS_PRICE_TIMEFRAME: number = parseInt(process.env.OPTIONS_PRICE_TIMEFRAME) || 100;       // days
 
 export class ContractsUpdaterBot extends ITradingBot {
 
@@ -40,12 +40,12 @@ export class ContractsUpdaterBot extends ITradingBot {
     this.on('updateOptionsPrice', this.updateOptionsPrice);
     this.on('buildOptionsList', this.buildOptionsList);
 
-    setTimeout(() => this.emit('updateStocksConId'), 1000);
-    setTimeout(() => this.emit('updateOptionsConId'), 2000);
-    setTimeout(() => this.emit('updateHistoricalData'), 3000);
-    setTimeout(() => this.emit('updateStocksPrices'), 4000);
-    setTimeout(() => this.emit('updateOptionsPrice'), 5000);
-    setTimeout(() => this.emit('buildOptionsList'), 60000);
+    setTimeout(() => this.emit('updateStocksConId'), 1 * 1000);     // start after 1 sec 
+    setTimeout(() => this.emit('updateOptionsConId'), 2 * 1000);    // start after 2 secs
+    setTimeout(() => this.emit('updateHistoricalData'), 3 * 1000);  // start after 3 secs
+    setTimeout(() => this.emit('updateStocksPrices'), 4 * 1000);    // start after 4 secs
+    setTimeout(() => this.emit('updateOptionsPrice'), 5 * 1000);    // start after 5 secs
+    setTimeout(() => this.emit('buildOptionsList'), 3600 * 1000);   // start after 1 hour
   };
 
   private updateContractDetails(id: number, detailstab: ContractDetails[]): Promise<[affectedCount: number]> {
@@ -535,18 +535,18 @@ export class ContractsUpdaterBot extends ITradingBot {
         right: right,
       })
       .catch((err: IBApiNextError) => {
-          console.log(`buildOneOptionContract ${stock.symbol} ${expstr} ${strike} ${right} failed with '${err.error.message}'`);
+          // console.log(`buildOneOptionContract ${stock.symbol} ${expstr} ${strike} ${right} failed with '${err.error.message}'`);
           throw err;
       })
       .then((detailstab) => this.createOptionContractFromDetails(stock, expstr, strike, right, detailstab));
     } else {
-      console.log(`contract ${stock.symbol} ${expstr} ${strike} ${right} already exists`);
+      // console.log(`contract ${stock.symbol} ${expstr} ${strike} ${right} already exists`);
       return option;
     }
   }
 
   private async iterateSecDefOptParamsForExpStrikes(stock: Contract, expirations: string[], strikes: number[]): Promise<void> {
-    console.log(`iterateSecDefOptParamsForExpStrikes for ${stock.symbol}, ${expirations.length} exp, ${strikes.length} strikes`)
+    // console.log(`iterateSecDefOptParamsForExpStrikes for ${stock.symbol}, ${expirations.length} exp, ${strikes.length} strikes`)
     for (const expstr of expirations) {
       // const now = Date.now();
       const expdate = ITradingBot.expirationToDate(expstr);
@@ -625,7 +625,7 @@ export class ContractsUpdaterBot extends ITradingBot {
       model: Contract,
       raw: true,
       type: QueryTypes.SELECT,
-      logging: console.log,
+      // logging: console.log,
     });
   }
 

@@ -87,7 +87,7 @@ export class ITradingBot extends EventEmitter {
             action: "SELL",
             exchange: "SMART",
         };
-        contract.comboLegs = [ leg1, leg2];
+        contract.comboLegs = [ leg2, leg1];
         return contract;
     }
 
