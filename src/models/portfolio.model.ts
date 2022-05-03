@@ -31,6 +31,9 @@ export class Portfolio extends Model {
   @Column({ type: DataType.FLOAT, field: 'naked_put_win_ratio' })
   public cspWinRatio: number;
 
+  @Column({ type: DataType.FLOAT, field: 'naked_call_win_ratio' })
+  public ccWinRatio: number;
+
   @Column({ type: DataType.FLOAT, field: 'min_premium' })
   public minPremium: number;
 

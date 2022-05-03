@@ -548,11 +548,10 @@ export class ContractsUpdaterBot extends ITradingBot {
   private async iterateSecDefOptParamsForExpStrikes(stock: Contract, expirations: string[], strikes: number[]): Promise<void> {
     // console.log(`iterateSecDefOptParamsForExpStrikes for ${stock.symbol}, ${expirations.length} exp, ${strikes.length} strikes`)
     for (const expstr of expirations) {
-      // const now = Date.now();
       const expdate = ITradingBot.expirationToDate(expstr);
       const days = (expdate.getTime() - Date.now()) / 60000 / 1440;
       if (days < OPTIONS_PRICE_TIMEFRAME) {
-        console.log(expstr, days, 'days');
+        console.log(stock.symbol, expstr, days, 'days');
         for (const strike of strikes) {
           // console.log('iterateSecDefOptParamsForExpStrikes', stock.symbol, expstr, strike);
           let put = this.buildOneOptionContract(stock, expstr, strike, OptionType.Put)
@@ -612,7 +611,7 @@ export class ContractsUpdaterBot extends ITradingBot {
   private findStocksToListOptions(): Promise<Contract[]> {
     return sequelize.query(`
     SELECT
-      (julianday('now') - MAX(julianday(IFNULL(option.createdAt, datetime('now'))))) options_age,
+      (julianday('now') - MAX(julianday(IFNULL(option.createdAt, '2022-01-01')))) options_age,
       contract.symbol, contract.con_id conId, contract.id id, contract.currency currency, contract.secType secType,
       option.createdAt
     FROM option, contract, trading_parameters
@@ -633,7 +632,7 @@ export class ContractsUpdaterBot extends ITradingBot {
     console.log('buildOptionsList');
     await this.findStocksToListOptions().then((stocks) => this.iterateToBuildOptionList(stocks));
     console.log('buildOptionsList done');
-    setTimeout(() => this.emit('buildOptionsList'), 3600 * 1000);
+    setTimeout(() => this.emit('buildOptionsList'), 3600 * 1000); // come back after 1 hour and check again
   };
 
   private findOptionsToUpdatePrice(dte: number, age: number, limit: number): Promise<Contract[]> {

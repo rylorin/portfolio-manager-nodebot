@@ -55,52 +55,6 @@ export class SellCashSecuredPutBot extends ITradingBot {
     private async processOneParamaeter(parameter: Parameter): Promise<{ symbol: string; engaged: number; options: Option[]; }> {
         console.log('processing parameter:');
         this.printObject(parameter);
-        // const stock_positions: number = await Position.findAll({
-        //     include: {
-        //         model: Contract,
-        //         where: {
-        //             id: parameter.underlying.id,
-        //         },
-        //     }
-        // }).then((positions: Position[]) => positions.reduce((p, position) => (p + position.quantity), 0));
-        // const stock_sell_orders: number = await OpenOrder.findAll({
-        //     where: {
-        //         actionType: OrderAction.SELL,
-        //     },
-        //     include: {
-        //         model: Contract,
-        //         where: {
-        //             id: parameter.underlying.id,
-        //         },
-        //     }
-        // }).then((orders: OpenOrder[]) => orders.reduce((p, order) => (p - order.remainingQty), 0));
-        // const put_positions_amount: number = await Position.findAll({
-        //     include: {
-        //         model: Contract,
-        //         where: {
-        //             secType: 'OPT',
-        //         },
-        //     }
-        // }).then((positions: Position[]) => this.sumOptionsPositionsAmount(positions, parameter.underlying.id, 'P' as OptionType));
-        // const call_positions_amount: number = await Position.findAll({
-        //     include: {
-        //         model: Contract,
-        //         where: {
-        //             secType: 'OPT',
-        //         },
-        //     }
-        // }).then((positions: Position[]) => this.sumOptionsPositionsAmount(positions, parameter.underlying.id, 'C' as OptionType));
-        // const put_sell_orders: number = await OpenOrder.findAll({
-        //     where: {
-        //         actionType: OrderAction.SELL,
-        //     },
-        //     include: {
-        //         model: Contract,
-        //         where: {
-        //             secType: 'OPT',
-        //         },
-        //     }
-        // }).then((orders: OpenOrder[]) => this.sumOptionsOrders(orders, parameter.underlying.id, 'P' as OptionType));
         const stock_positions = await this.getContractPositionValueInBase(parameter.underlying);
         console.log('stock_positions_amount:', stock_positions);
         const stock_sell_orders = await this.getContractOrderValueInBase(parameter.underlying, OrderAction.SELL);
@@ -196,6 +150,7 @@ export class SellCashSecuredPutBot extends ITradingBot {
             },
             include: {
                 model: Contract,
+                required: true,
             },
             logging: console.log, 
         }));
