@@ -27,7 +27,8 @@ const OPTIONS_LIST_BUILD_FREQ: number = parseInt(process.env.OPTIONS_LIST_BUILD_
 const BATCH_SIZE_OPTIONS_PRICE: number = parseInt(process.env.BATCH_SIZE_OPTIONS_PRICE) || 95;      // units
 const OPTIONS_PRICE_DTE_FREQ: number = parseInt(process.env.OPTIONS_PRICE_DTE_FREQ) || 15;          // mins
 const OPTIONS_PRICE_WEEK_FREQ: number = parseInt(process.env.OPTIONS_PRICE_WEEK_FREQ) || 60;        // mins
-const OPTIONS_PRICE_OTHER_FREQ: number = parseInt(process.env.OPTIONS_PRICE_OTHER_FREQ) || 90;      // mins
+const OPTIONS_PRICE_MONTH_FREQ: number = parseInt(process.env.OPTIONS_PRICE_MONTH_FREQ) || 90;      // mins
+const OPTIONS_PRICE_OTHER_FREQ: number = parseInt(process.env.OPTIONS_PRICE_OTHER_FREQ) || 120;     // mins
 const OPTIONS_PRICE_TIMEFRAME: number = parseInt(process.env.OPTIONS_PRICE_TIMEFRAME) || 100;       // days
 
 export class ContractsUpdaterBot extends ITradingBot {
@@ -275,7 +276,7 @@ export class ContractsUpdaterBot extends ITradingBot {
     return this.api
       .getMarketDataSingle(contract, '', false)
       .catch((err: IBApiNextError) => {
-          console.log(`getMarketDataSingle failed for contract ${contract.secType} ${contract.symbol} with ${err.code}: '${err.error.message}'`);
+          console.log(`getMarketDataSingle failed for contract ${contract.conId} ${contract.secType} ${contract.symbol} with ${err.code}: '${err.error.message}'`);
           throw err;
       });
   }
@@ -288,10 +289,8 @@ export class ContractsUpdaterBot extends ITradingBot {
     marketData.forEach((tick, type: TickType) => {
       if (type == IBApiTickType.BID) {
         dataset.bid = tick.value > 0 ? tick.value : null;
-        // dataset.bidDate = new Date(tick.ingressTm);
       } else if (type == IBApiTickType.ASK) {
         dataset.ask = tick.value > 0 ? tick.value : null;
-        // dataset.askDate = new Date(tick.ingressTm);
       } else if (type == IBApiTickType.LAST) {
         dataset.price = tick.value > 0 ? tick.value : null;
       } else if (type == IBApiTickType.CLOSE) {
@@ -305,9 +304,6 @@ export class ContractsUpdaterBot extends ITradingBot {
       } else if (type == IBApiNextTickType.LAST_OPTION_PRICE) {
         if (!dataset.price) {
           dataset.price = tick.value > 0 ? tick.value : null;
-          // dataset.updated = new Date(tick.ingressTm);
-        // } else {
-        //   console.log('updateContratPrice LAST_OPTION_PRICE ignored', dataset.price, tick.value);
         }
       } else if (type == IBApiNextTickType.LAST_OPTION_DELTA) {
         if (tick.value) {
@@ -333,9 +329,6 @@ export class ContractsUpdaterBot extends ITradingBot {
       } else if (type == IBApiNextTickType.MODEL_OPTION_PRICE) {
         if (!dataset.price) {
           dataset.price = tick.value > 0 ? tick.value : null;
-          // dataset.updated = new Date(tick.ingressTm);
-        // } else {
-        //   console.log('updateContratPrice MODEL_OPTION_PRICE ignored', dataset.price, tick.value);
         }
       } else if (type == IBApiNextTickType.MODEL_OPTION_IV) {
         if (!optdataset.impliedVolatility) {
@@ -636,28 +629,33 @@ export class ContractsUpdaterBot extends ITradingBot {
   };
 
   private findOptionsToUpdatePrice(dte: number, age: number, limit: number): Promise<Contract[]> {
-    return sequelize.query(`
-      SELECT
-        (julianday('now') - julianday(ifnull(contract.updatedAt, '2022-01-01'))) options_age,
-        (julianday(option.last_trade_date) + 1 - julianday('now')) options_dte,
-        contract.id, contract.con_id, contract.secType, contract.currency, contract.exchange, stock.symbol, strftime('%Y%m%d', option.last_trade_date) lastTradeDateOrContractMonth, option.strike, option.call_or_put 'right'
-      FROM contract, option, trading_parameters, contract stock
-      WHERE contract.secType = 'OPT'
-        AND contract.id = option.id
-        AND stock.id = option.stock_id
-        AND trading_parameters.stock_id = option.stock_id
-        AND options_dte < ? AND options_dte > 0
-        AND options_age > ?
-      ORDER BY options_age DESC
-      LIMIT ?
-      `,
-    {
-      // model: Contract,
-      raw: true,
-      // logging: console.log,
-      type: QueryTypes.SELECT,
-      replacements: [dte, age / 1400, limit ],
-    });
+    // console.log('findOptionsToUpdatePrice', dte, age/1400, limit);
+    if (limit > 0) {
+      return sequelize.query(`
+        SELECT
+          (julianday('now') - julianday(ifnull(contract.updatedAt, '2022-01-01'))) options_age,
+          (julianday(option.last_trade_date) + 1 - julianday('now')) options_dte,
+          contract.id, contract.con_id, contract.secType, contract.currency, contract.exchange, stock.symbol, strftime('%Y%m%d', option.last_trade_date) lastTradeDateOrContractMonth, option.strike, option.call_or_put 'right'
+        FROM contract, option, trading_parameters, contract stock
+        WHERE contract.secType = 'OPT'
+          AND contract.id = option.id
+          AND stock.id = option.stock_id
+          AND trading_parameters.stock_id = option.stock_id
+          AND options_dte < ? AND options_dte > 0
+          AND options_age > ?
+        ORDER BY options_age DESC
+        LIMIT ?
+        `,
+      {
+        // model: Contract,
+        raw: true,
+        // logging: console.log,
+        type: QueryTypes.SELECT,
+        replacements: [dte, age / 1400, limit ],
+      });
+    } else {
+      return Promise.resolve([] as Contract[]);
+    }
   }
 
   private fetchOptionContractsPrices(contracts: Contract[]): Promise<any[]> {
@@ -691,27 +689,30 @@ export class ContractsUpdaterBot extends ITradingBot {
 
   private async updateOptionsPrice(): Promise<void> {
     console.log('updateOptionsPrice', new Date());
-    let contracts: Contract[];
-    contracts = await this.findOptionsToUpdatePrice(1, OPTIONS_PRICE_DTE_FREQ, BATCH_SIZE_OPTIONS_PRICE);
-    console.log(contracts.length, 'one day items');
+    let contracts: Contract[] = [];
+    if (contracts.length < BATCH_SIZE_OPTIONS_PRICE) {
+      const c = await this.findOptionsToUpdatePrice(1, OPTIONS_PRICE_DTE_FREQ, BATCH_SIZE_OPTIONS_PRICE - contracts.length);
+      console.log(c.length, 'one day items');
+      contracts = contracts.concat(c);
+    }
     if (contracts.length < BATCH_SIZE_OPTIONS_PRICE) {
       const c = await this.findOptionsToUpdatePrice(7, OPTIONS_PRICE_WEEK_FREQ, BATCH_SIZE_OPTIONS_PRICE - contracts.length);
       console.log(c.length, 'one week items');
       contracts = contracts.concat(c);
     }
     if (contracts.length < BATCH_SIZE_OPTIONS_PRICE) {
-      const c = await this.findOptionsToUpdatePrice(31, OPTIONS_PRICE_OTHER_FREQ, BATCH_SIZE_OPTIONS_PRICE - contracts.length);
+      const c = await this.findOptionsToUpdatePrice(31, OPTIONS_PRICE_MONTH_FREQ, BATCH_SIZE_OPTIONS_PRICE - contracts.length);
       console.log(c.length, 'one month items');
       contracts = contracts.concat(c);
     }
     if (contracts.length < BATCH_SIZE_OPTIONS_PRICE) {
-      const c = await this.findOptionsToUpdatePrice(OPTIONS_PRICE_TIMEFRAME, 770, BATCH_SIZE_OPTIONS_PRICE - contracts.length);
+      const c = await this.findOptionsToUpdatePrice(OPTIONS_PRICE_TIMEFRAME, OPTIONS_PRICE_OTHER_FREQ, BATCH_SIZE_OPTIONS_PRICE - contracts.length);
       console.log(c.length, 'other items');
       contracts = contracts.concat(c);
     }
     await this.fetchOptionContractsPrices(contracts);
     console.log('updateOptionsPrice done', new Date());
-    const pause = contracts.length ? 1 : 30;
+    const pause = (contracts.length > 0) ? 1 : 30;
     setTimeout(() => this.emit('updateOptionsPrice'), pause * 1000);
   };
   
