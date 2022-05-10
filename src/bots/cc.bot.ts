@@ -15,8 +15,19 @@ import { OrderAction, OptionType } from "@stoqey/ib";
 export class SellCoveredCallsBot extends ITradingBot {
 
     private async processOnePosition(position: Position): Promise<void> {
-        const order = await OpenOrder.findOne({where: {contract_id: position.contract.id}});
-        if (order === null) {
+        console.log('processing position:');
+        this.printObject(position);
+        const stock_positions = position.quantity;
+        console.log('stock_positions:', stock_positions);
+        const stock_sell_orders = await this.getContractOrdersQuantity(position.contract, OrderAction.SELL);
+        console.log('stock_sell_orders:', stock_sell_orders);
+        const call_positions = await this.getOptionsPositionsQuantity(position.contract, 'C' as OptionType);
+        console.log('call_positions:', call_positions);
+        const call_sell_orders = -(await this.getOptionsOrdersQuantity(position.contract, 'C' as OptionType, OrderAction.SELL));
+        console.log('call_sell_orders:', call_sell_orders);
+        const free_for_this_symbol = stock_positions + call_positions + stock_sell_orders + call_sell_orders;
+        console.log('free_for_this_symbol in base:', free_for_this_symbol);
+        if (free_for_this_symbol > 0) {
             const parameter = await Parameter.findOne({
                 where: { 
                     portfolio_id: this.portfolio.id, 
@@ -34,14 +45,12 @@ export class SellCoveredCallsBot extends ITradingBot {
             if ((parameter !== null) && (parameter.ccStrategy > 0)
                 // RULE : stock price is higher than previous close
                 && (parameter.underlying.price > parameter.underlying.previousClosePrice)) {
-                console.log('processing position:');
-                this.printObject(position);
                 this.printObject(parameter);
                 const options = await Option.findAll({
                     where: {
                         stock_id: parameter.underlying.id,
                         strike : {
-                            [Op.gt]: parameter.underlying.price,    // RULE : strike > cours (OTM)
+                            [Op.gt]: Math.max(parameter.underlying.price, position.cost / position.quantity), // RULE : strike > cours (OTM) & strike > position avg price
                         },
                         lastTradeDate: { [Op.gt]: new Date() },
                         callOrPut: 'C',
@@ -78,8 +87,8 @@ export class SellCoveredCallsBot extends ITradingBot {
                     // }
                     const option = options[0];
                     await this.api.placeNewOrder(
-                        ITradingBot.CspContract(option),
-                        ITradingBot.CspOrder(OrderAction.SELL, 1, option.contract.ask)).then((orderId: number) => {
+                        ITradingBot.OptionToIbContract(option),
+                        ITradingBot.CcOrder(OrderAction.SELL, Math.floor(free_for_this_symbol / option.multiplier), option.contract.ask)).then((orderId: number) => {
                         console.log('orderid:', orderId.toString());
                     });
                 }
