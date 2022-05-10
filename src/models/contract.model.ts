@@ -40,21 +40,20 @@ export class Contract extends Model {
   public name: string;
 
   @Column({ type: DataType.FLOAT(6, 3) })
-  // public price : number;
   get price(): number {
-    let result = undefined;
+    let value = undefined;
     if ((this.getDataValue('ask') !== null)
       && (this.getDataValue('bid') !== null)) {
-        result = (this.getDataValue('ask') + this.getDataValue('bid')) / 2;
+        value = (this.getDataValue('ask') + this.getDataValue('bid')) / 2;
     } else if (this.getDataValue('price') !== null) {
-      result = this.getDataValue('price');
+      value = this.getDataValue('price');
     } else {
-      result = this.getDataValue('previousClosePrice');
+      value = this.getDataValue('previousClosePrice');
     }
-    return result;
+    return (Math.round(value * 1000) / 1000);
   }
   set price(value: number) {
-    this.setDataValue('price', value);
+    this.setDataValue('price', (Math.round(value * 1000) / 1000));
   }
 
   @Column({ type: DataType.FLOAT(6, 2) })

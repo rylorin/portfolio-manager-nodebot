@@ -39,21 +39,57 @@ export class Option extends Model {
   public multiplier: number;
 
   @Column({ type: DataType.FLOAT(1, 3), field: 'implied_volatility' })
-  public impliedVolatility: number;
+  // public impliedVolatility: number;
+  get impliedVolatility(): number {
+    return this.getDataValue('impliedVolatility');
+  }
+  set impliedVolatility(value: number) {
+    this.setDataValue('impliedVolatility', (Math.round(value * 1000) / 1000));
+  }
 
   @Column({ type: DataType.FLOAT, field: 'pv_dividend' })
-  public pvDividend: number;
+  // public pvDividend: number;
+  get pvDividend(): number {
+    return this.getDataValue('pvDividend');
+  }
+  set pvDividend(value: number) {
+    this.setDataValue('pvDividend', (Math.round(value * 1000) / 1000));
+  }
 
-  @Column({ type: DataType.FLOAT(1, 3) })
-  public delta: number; 
+  @Column({ type: DataType.FLOAT(1, 3), defaultValue: 0 })
+  // public delta: number; 
+  get delta(): number {
+    return this.getDataValue('delta');
+  }
+  set delta(value: number) {
+    this.setDataValue('delta', (Math.round(value * 1000) / 1000));
+  }
 
   @Column({ type: DataType.FLOAT })
-  public gamma: number; 
+  // public gamma: number;
+  get gamma(): number {
+    return this.getDataValue('gamma');
+  }
+  set gamma(value: number) {
+    this.setDataValue('gamma', (Math.round(value * 1000) / 1000));
+  }
 
   @Column({ type: DataType.FLOAT })
-  public vega: number; 
+  // public vega: number;
+  get vega(): number {
+    return this.getDataValue('vega');
+  }
+  set vega(value: number) {
+    this.setDataValue('vega', (Math.round(value * 1000) / 1000));
+  }
 
   @Column({ type: DataType.FLOAT })
-  public theta: number; 
+  // public theta: number; 
+  get theta(): number {
+    return this.getDataValue('theta');
+  }
+  set theta(value: number) {
+    this.setDataValue('theta', (Math.round(value * 1000) / 1000));
+  }
 
 };

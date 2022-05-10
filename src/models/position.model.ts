@@ -22,7 +22,7 @@ export class Position extends Model {
     @BelongsTo(() => Portfolio, 'portfolio_id')
     public portfolio!: Portfolio;
 
-    /** cost */
+    /** cost basis */
     @Column({ type: DataType.FLOAT })
     public cost: number;
 
@@ -30,6 +30,11 @@ export class Position extends Model {
     @Column({ type: DataType.FLOAT })
     public quantity: number;
 
+    @Column({ type: DataType.FLOAT })
+    get averagePrice(): number {
+      return (this.getDataValue('cost') / this.getDataValue('quantity'));
+    }
+  
     // /** open_date */
     // @Column({ type: DataType.DATE, field: 'open_date' })
     // public openDate: Date;
