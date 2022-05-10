@@ -133,7 +133,7 @@ export class SellCashSecuredPutBot extends ITradingBot {
             console.log(filtered_options[0]['yield']);
             this.printObject(filtered_options[0]);
             await this.api.placeNewOrder(
-                ITradingBot.CspContract(filtered_options[0]),
+                ITradingBot.OptionToIbContract(filtered_options[0]),
                 ITradingBot.CspOrder(OrderAction.SELL, 1, filtered_options[0].contract.ask)).then((orderId: number) => {
                 console.log('orderid:', orderId.toString());
             });
