@@ -13,7 +13,7 @@ import {
   
   import { Contract } from '.';
   
-  @Table({ tableName: "open_order", timestamps: true, createdAt: false, updatedAt: true, deletedAt: false })
+  @Table({ tableName: "open_order", timestamps: true, createdAt: true, updatedAt: true, deletedAt: false })
   export class OpenOrder extends Model {
   
     @Column({ type: DataType.INTEGER, field: 'perm_id' })

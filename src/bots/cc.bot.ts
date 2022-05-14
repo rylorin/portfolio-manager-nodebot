@@ -120,8 +120,8 @@ export class SellCoveredCallsBot extends ITradingBot {
         console.log('cc bot process end');
     };
 
-    public async start(): Promise<void> {
-        await this.init().then(() => {
+    public start() {
+        this.init().then(() => {
             this.on('process', this.process);
             setTimeout(() => this.emit('process'), 60 * 1000);
         });

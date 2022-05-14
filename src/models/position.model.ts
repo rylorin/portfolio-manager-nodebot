@@ -30,13 +30,8 @@ export class Position extends Model {
     @Column({ type: DataType.FLOAT })
     public quantity: number;
 
-    @Column({ type: DataType.FLOAT })
     get averagePrice(): number {
       return (this.getDataValue('cost') / this.getDataValue('quantity'));
     }
   
-    // /** open_date */
-    // @Column({ type: DataType.DATE, field: 'open_date' })
-    // public openDate: Date;
-
 };
