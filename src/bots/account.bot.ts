@@ -66,22 +66,9 @@ export class AccountUpdateBot extends ITradingBot {
         this.orderq.splice(orderIndex, 1);
       }
       this.orderq.push(item);
-      setTimeout(() => this.emit('processOrderQueue'), 100);
+      setTimeout(() => this.emit('processQueue'), 100);
     }
 
-    private async processOrderQueue(): Promise<void> {
-      if ((this.orderqProcessing < 1) && (this.orderq.length > 0)) {
-        console.log(`processOrderQueue ${this.orderq.length} elements`)
-        this.orderqProcessing++;
-        const item = this.orderq.shift();
-        await this.updateOpenOrder(item);
-        --this.orderqProcessing;
-        console.log('processOrderQueue done')
-        // return this.processOrderQueue();
-      }
-      if (this.orderq.length > 0) setTimeout(() => this.emit('processOrderQueue'), 100);
-    }
-    
     public enqueuePosition(item: IbPosition): void {
       const itemIndex = this.positionq.findIndex(
         (p) => p.contract.conId == item.contract.conId
@@ -90,21 +77,26 @@ export class AccountUpdateBot extends ITradingBot {
         this.positionq.splice(itemIndex, 1);
       }
       this.positionq.push(item);
-      // this.processOrderQueue();
-      setTimeout(() => this.emit('processPositionQueue'), 100);
+      setTimeout(() => this.emit('processQueue'), 100);
     }
 
-    private async processPositionQueue(): Promise<void> {
-      if ((this.positionqProcessing < 1) && (this.positionq.length > 0)) {
+    private async processQueue(): Promise<void> {
+      if ((this.orderqProcessing < 1) && (this.orderq.length > 0)) {
+        console.log(`processOrderQueue ${this.orderq.length} elements`)
+        this.orderqProcessing++;
+        const item = this.orderq.shift();
+        await this.updateOpenOrder(item);
+        --this.orderqProcessing;
+        console.log('processOrderQueue done')
+      } else if ((this.positionqProcessing < 1) && (this.positionq.length > 0)) {
         console.log(`processPositionQueue ${this.positionq.length} elements`)
         this.positionqProcessing++;
         const item = this.positionq.shift();
         await this.updatePosition(item);
         --this.positionqProcessing;
         console.log('processPositionQueue done')
-        // return this.processOrderQueue();
       }
-      if (this.positionq.length > 0) setTimeout(() => this.emit('processPositionQueue'), 100);
+      if ((this.orderq.length > 0) || (this.positionq.length > 0)) setTimeout(() => this.emit('processQueue'), 100);
     }
 
     private async findOrCreateContract(ibContract: IbContract): Promise<Contract> {
@@ -331,15 +323,10 @@ export class AccountUpdateBot extends ITradingBot {
     }
 
     public async start(): Promise<void> {
-      this.on('processOrderQueue', this.processOrderQueue);
-      this.on('processPositionQueue', this.processPositionQueue);
+      this.on('processQueue', this.processQueue);
       const now = Date.now() - 0.01;
 
-      await Portfolio.findOne({
-        where: {
-          account: this.accountNumber,
-        }
-      }).then((portfolio) => this.portfolio = portfolio);
+      await this.init();
 
       await this.api.getAllOpenOrders().then((orders) => {
         this.iterateOpenOrdersForUpdate(orders);
