@@ -15,11 +15,11 @@ import { Contract, Portfolio } from ".";
 export class Position extends Model {
 
     /** contract */
-    @BelongsTo(() => Contract, 'contract_id')
+    @BelongsTo(() => Contract, "contract_id")
     public contract!: Contract;
       
     /** portfolio */
-    @BelongsTo(() => Portfolio, 'portfolio_id')
+    @BelongsTo(() => Portfolio, "portfolio_id")
     public portfolio!: Portfolio;
 
     /** cost basis */
@@ -31,7 +31,7 @@ export class Position extends Model {
     public quantity: number;
 
     get averagePrice(): number {
-      return (this.getDataValue('cost') / this.getDataValue('quantity'));
+      return (this.getDataValue("cost") / this.getDataValue("quantity"));
     }
   
-};
+}

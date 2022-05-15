@@ -1,4 +1,4 @@
-import { QueryTypes, Op } from 'sequelize';
+import { QueryTypes, Op } from "sequelize";
 import { ITradingBot } from ".";
 import {
     sequelize,
@@ -15,18 +15,18 @@ import { OrderAction, OptionType } from "@stoqey/ib";
 export class SellCoveredCallsBot extends ITradingBot {
 
     private async processOnePosition(position: Position): Promise<void> {
-        console.log('processing position:');
+        console.log("processing position:");
         this.printObject(position);
         const stock_positions = position.quantity;
-        console.log('stock_positions:', stock_positions);
+        console.log("stock_positions:", stock_positions);
         const stock_sell_orders = await this.getContractOrdersQuantity(position.contract, OrderAction.SELL);
-        console.log('stock_sell_orders:', stock_sell_orders);
-        const call_positions = await this.getOptionsPositionsQuantity(position.contract, 'C' as OptionType);
-        console.log('call_positions:', call_positions);
-        const call_sell_orders = -(await this.getOptionsOrdersQuantity(position.contract, 'C' as OptionType, OrderAction.SELL));
-        console.log('call_sell_orders:', call_sell_orders);
+        console.log("stock_sell_orders:", stock_sell_orders);
+        const call_positions = await this.getOptionsPositionsQuantity(position.contract, "C" as OptionType);
+        console.log("call_positions:", call_positions);
+        const call_sell_orders = -(await this.getOptionsOrdersQuantity(position.contract, "C" as OptionType, OrderAction.SELL));
+        console.log("call_sell_orders:", call_sell_orders);
         const free_for_this_symbol = stock_positions + call_positions + stock_sell_orders + call_sell_orders;
-        console.log('free_for_this_symbol in base:', free_for_this_symbol);
+        console.log("free_for_this_symbol in base:", free_for_this_symbol);
         if (free_for_this_symbol > 0) {
             const parameter = await Parameter.findOne({
                 where: { 
@@ -53,7 +53,7 @@ export class SellCoveredCallsBot extends ITradingBot {
                             [Op.gt]: Math.max(parameter.underlying.price, position.cost / position.quantity), // RULE : strike > cours (OTM) & strike > position avg price
                         },
                         lastTradeDate: { [Op.gt]: new Date() },
-                        callOrPut: 'C',
+                        callOrPut: "C",
                         delta: {
                             [Op.lt]: (1 - this.portfolio.ccWinRatio),  // RULE : delta < 0.25
                         },
@@ -77,19 +77,19 @@ export class SellCoveredCallsBot extends ITradingBot {
                     for (const option of options) {
                         const expiry: Date = new Date(option.lastTradeDate);
                         const diffDays = Math.ceil((expiry.getTime() - Date.now()) / (1000 * 3600 * 24));
-                        option['yield'] = option.contract.bid / option.strike / diffDays * 360;
+                        option["yield"] = option.contract.bid / option.strike / diffDays * 360;
                         option.stock.contract = await Contract.findByPk(option.stock.id);    
                     }
                     options.sort((a: any, b: any) => b.yield - a.yield);
                     // for (const option of options) {
-                    //     console.log('yield of contract', option['yield']);
+                    //     console.log("yield of contract", option["yield"]);
                     //     this.printObject(option);
                     // }
                     const option = options[0];
                     await this.api.placeNewOrder(
                         ITradingBot.OptionToIbContract(option),
                         ITradingBot.CcOrder(OrderAction.SELL, Math.floor(free_for_this_symbol / option.multiplier), option.contract.ask)).then((orderId: number) => {
-                        console.log('orderid:', orderId.toString());
+                        console.log("orderid:", orderId.toString());
                     });
                 }
             }
@@ -98,7 +98,7 @@ export class SellCoveredCallsBot extends ITradingBot {
 
     private iteratePositions(positions: Position[]): Promise<void> {
         return positions.reduce((p, position) => {
-            return p.then(() => this.processOnePosition(position))
+            return p.then(() => this.processOnePosition(position));
         }, Promise.resolve()); // initial
     }
     
@@ -107,24 +107,24 @@ export class SellCoveredCallsBot extends ITradingBot {
             include: {
                 model: Contract,
                 where: {
-                    secType: 'STK',
+                    secType: "STK",
                 }
             },
         }));
     }
 
     private async process(): Promise<void> {
-        console.log('cc bot process begin');
+        console.log("cc bot process begin");
         await this.listStockPostitions().then((result) => this.iteratePositions(result));
-        setTimeout(() => this.emit('process'), 60 * 1000);
-        console.log('cc bot process end');
-    };
+        setTimeout(() => this.emit("process"), 60 * 1000);
+        console.log("cc bot process end");
+    }
 
     public start() {
         this.init().then(() => {
-            this.on('process', this.process);
-            setTimeout(() => this.emit('process'), 60 * 1000);
+            this.on("process", this.process);
+            setTimeout(() => this.emit("process"), 60 * 1000);
         });
-    };
+    }
 
-};
+}

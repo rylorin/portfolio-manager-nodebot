@@ -1,4 +1,4 @@
-import { QueryTypes, Op } from 'sequelize';
+import { QueryTypes, Op } from "sequelize";
 import { ITradingBot } from ".";
 import {
     sequelize,
@@ -14,7 +14,7 @@ import {
 export class CashManagementBot extends ITradingBot {
 
     private async processOnePosition(position: Position): Promise<void> {
-        console.log('processing position:');
+        console.log("processing position:");
         this.printObject(position);
         const order = await OpenOrder.findOne({where: {contract_id: position.contract.id}});
         if (order === null) {
@@ -36,7 +36,7 @@ export class CashManagementBot extends ITradingBot {
 
     private iteratePositions(positions: Position[]): Promise<void> {
         return positions.reduce((p, position) => {
-            return p.then(() => this.processOnePosition(position))
+            return p.then(() => this.processOnePosition(position));
         }, Promise.resolve()); // initial
     }
     
@@ -45,18 +45,18 @@ export class CashManagementBot extends ITradingBot {
             include: {
                 model: Contract,
                 where: {
-                    secType: 'STK',
+                    secType: "STK",
                 }
             },
         }));
     }
 
     private async process(): Promise<void> {
-        console.log('process begin');
+        console.log("process begin");
         await this.listStockPostitions().then((result) => this.iteratePositions(result));
-        setTimeout(() => this.emit('process'), 60000);
-        console.log('process end');
-    };
+        setTimeout(() => this.emit("process"), 60000);
+        console.log("process end");
+    }
 
     public async start(): Promise<void> {
         await Portfolio.findOne({
@@ -64,8 +64,8 @@ export class CashManagementBot extends ITradingBot {
               account: this.accountNumber,
             }
           }).then((portfolio) => this.portfolio = portfolio);
-            this.on('process', this.process);
-        setTimeout(() => this.emit('process'), 6000);
-    };
+            this.on("process", this.process);
+        setTimeout(() => this.emit("process"), 6000);
+    }
 
 }

@@ -1,6 +1,5 @@
-import { EventEmitter } from 'events';
 import { Subscription } from "rxjs";
-import { QueryTypes, Op } from 'sequelize';
+import { QueryTypes, Op } from "sequelize";
 import {
   Contract as IbContract,
   IBApiNext,
@@ -28,9 +27,7 @@ import {
   Position,
   Cash,
 } from "../models";
-import { ITradingBot } from '.';
-
-require('dotenv').config();
+import { ITradingBot } from ".";
 
 /** Default group if no -group argument is on command line. */
 const DEFAULT_GROUP = "All";
@@ -39,21 +36,12 @@ const DEFAULT_GROUP = "All";
 const DEFAULT_TAGS = "";
 // const DEFAULT_TAGS = "NetLiquidation,TotalCashValue,GrossPositionValue";
 
-const serialize = (fn: any) => {
-  let queue = Promise.resolve();
-  return (...args: any[]) => {
-    const res = queue.then(() => fn(...args));
-    queue = res.catch(() => {});
-    return res;
-  };
-};
-
 export class AccountUpdateBot extends ITradingBot {
 
     private orderq: IbOpenOrder[] = [];
-    private orderqProcessing: number = 0;
+    private orderqProcessing = 0;
     private positionq: IbPosition[] = [];
-    private positionqProcessing: number = 0;
+    private positionqProcessing = 0;
 
     private ordersSubscription$: Subscription;
     private positionsSubscription$: Subscription;
@@ -66,7 +54,7 @@ export class AccountUpdateBot extends ITradingBot {
         this.orderq.splice(orderIndex, 1);
       }
       this.orderq.push(item);
-      setTimeout(() => this.emit('processQueue'), 100);
+      setTimeout(() => this.emit("processQueue"), 100);
     }
 
     public enqueuePosition(item: IbPosition): void {
@@ -77,26 +65,26 @@ export class AccountUpdateBot extends ITradingBot {
         this.positionq.splice(itemIndex, 1);
       }
       this.positionq.push(item);
-      setTimeout(() => this.emit('processQueue'), 100);
+      setTimeout(() => this.emit("processQueue"), 100);
     }
 
     private async processQueue(): Promise<void> {
       if ((this.orderqProcessing < 1) && (this.orderq.length > 0)) {
-        console.log(`processOrderQueue ${this.orderq.length} elements`)
+        console.log(`processOrderQueue ${this.orderq.length} elements`);
         this.orderqProcessing++;
         const item = this.orderq.shift();
         await this.updateOpenOrder(item);
         --this.orderqProcessing;
-        console.log('processOrderQueue done')
+        console.log("processOrderQueue done");
       } else if ((this.positionqProcessing < 1) && (this.positionq.length > 0)) {
-        console.log(`processPositionQueue ${this.positionq.length} elements`)
+        console.log(`processPositionQueue ${this.positionq.length} elements`);
         this.positionqProcessing++;
         const item = this.positionq.shift();
         await this.updatePosition(item);
         --this.positionqProcessing;
-        console.log('processPositionQueue done')
+        console.log("processPositionQueue done");
       }
-      if ((this.orderq.length > 0) || (this.positionq.length > 0)) setTimeout(() => this.emit('processQueue'), 100);
+      if ((this.orderq.length > 0) || (this.positionq.length > 0)) setTimeout(() => this.emit("processQueue"), 100);
     }
 
     private async findOrCreateContract(ibContract: IbContract): Promise<Contract> {
@@ -109,7 +97,7 @@ export class AccountUpdateBot extends ITradingBot {
           // find stock contract by data
           contract = await Contract.findOne({
             where: {
-              secType: 'STK',
+              secType: "STK",
               symbol: ibContract.symbol,
               currency: ibContract.currency,
             }
@@ -125,17 +113,17 @@ export class AccountUpdateBot extends ITradingBot {
             }).then((contract) => Stock.create({
                 id: contract.id,
               }).then(() => contract)
-            )
+            );
           } else {
             // update conId for this contract
             return Contract.update({ conId: ibContract.conId }, { where: { id: contract.id }})
-              .then(() => contract)
+              .then(() => contract);
           }
         } else if (ibContract.secType == SecType.OPT) {
           // find option contract by data
           const lastTradeDate = ITradingBot.expirationToDate(ibContract.lastTradeDateOrContractMonth);
           const stock = await this.findOrCreateContract({
-            secType: 'STK' as SecType,
+            secType: "STK" as SecType,
             symbol: ibContract.symbol,
             currency: ibContract.currency,
           });
@@ -167,9 +155,9 @@ export class AccountUpdateBot extends ITradingBot {
                   strike: ibContract.strike,
                   callOrPut: ibContract.right,
                 }).then(() => contract)
-              )
+              );
             }
-          })
+          });
         } else if (ibContract.secType == SecType.CASH) {
           // create it
           contract = await Contract.create({
@@ -181,7 +169,7 @@ export class AccountUpdateBot extends ITradingBot {
           }).then((contract) => Cash.create({
             id: contract.id,
           }).then(() => contract)
-          )
+          );
         } else if (ibContract.secType == SecType.BAG) {
           // create it
           contract = await Contract.create({
@@ -203,22 +191,22 @@ export class AccountUpdateBot extends ITradingBot {
               });
             }
             return result;
-          })
+          });
         }
-        // this.app.error('findOrCreateContract: contract created, please check results');
+        // this.app.error("findOrCreateContract: contract created, please check results");
         // this.app.printObject(ibContract);
       } else {
-        // console.log('findOrCreateContract got contract by conId');
+        // console.log("findOrCreateContract got contract by conId");
       }
       return contract;
     }
     
     private createLegs(order: IbOpenOrder) {
-      let promises: Promise<void>[] = [];
+      const promises: Promise<void>[] = [];
       for (const leg of order.contract.comboLegs) {
         promises.push(this.findOrCreateContract({conId: leg.conId})
           .then((contract) => (contract != null) ? OpenOrder.update({
-            actionType: (order.order.action == leg.action) ? 'BUY' : 'SELL',
+            actionType: (order.order.action == leg.action) ? "BUY" : "SELL",
             totalQty: order.order.totalQuantity * leg.ratio,
             cashQty: order.order.cashQty * leg.ratio,
             // lmtPrice: order.order.lmtPrice,
@@ -232,7 +220,7 @@ export class AccountUpdateBot extends ITradingBot {
             },
             // logging: console.log,
           }) : {})
-          .then(() => {}))
+          .then());
       }
       return Promise.all(promises);
     }
@@ -253,9 +241,9 @@ export class AccountUpdateBot extends ITradingBot {
               contract_id: contract.id,
             },
             // logging: console.log,
-        })
+        });
         if (result[0] > 0) {
-          if (order.contract.secType == 'BAG') this.createLegs(order);
+          if (order.contract.secType == "BAG") this.createLegs(order);
         } else {
           // order not existing, create it
           return OpenOrder.create({
@@ -273,15 +261,15 @@ export class AccountUpdateBot extends ITradingBot {
               // logging: console.log,
             }
           ).then((value: OpenOrder) => {
-            if (order.contract.secType == 'BAG') this.createLegs(order);
+            if (order.contract.secType == "BAG") this.createLegs(order);
           });
         }
     }
 
     private iterateOpenOrdersForUpdate(orders: IbOpenOrder[]): void {
-      for (let order of orders) {
+      for (const order of orders) {
         this.enqueueOrder(order);
-      };
+      }
     }
     protected async updatePosition(pos: IbPosition): Promise<void> {
       await this.findOrCreateContract(pos.contract)
@@ -306,7 +294,7 @@ export class AccountUpdateBot extends ITradingBot {
             } else {
               return Promise.resolve();
             }
-        }))
+        }));
     }
 
     private cleanPositions(now: number): void {
@@ -323,7 +311,7 @@ export class AccountUpdateBot extends ITradingBot {
     }
 
     public async start(): Promise<void> {
-      this.on('processQueue', this.processQueue);
+      this.on("processQueue", this.processQueue);
       const now = Date.now() - 0.01;
 
       await this.init();
@@ -346,11 +334,11 @@ export class AccountUpdateBot extends ITradingBot {
         .getOpenOrders()
         .subscribe({
             next: (data) => {
-                console.log('got next event', data.all.length, 'open orders');
+                console.log("got next event", data.all.length, "open orders");
                 console.log(`${data.added?.length} orders added, ${data.changed?.length} changed`);
                 if (data.added?.length > 0) this.iterateOpenOrdersForUpdate(data.added);
                 if (data.changed?.length > 0) this.iterateOpenOrdersForUpdate(data.changed);
-                console.log('next event done.')
+                console.log("next event done.");
             },
             error: (err: IBApiNextError) => {
                 this.app.error(
@@ -358,7 +346,7 @@ export class AccountUpdateBot extends ITradingBot {
                 );
             },
             complete: () => {
-                console.log('getOpenOrders completed.');
+                console.log("getOpenOrders completed.");
             }
         });
     
@@ -366,7 +354,7 @@ export class AccountUpdateBot extends ITradingBot {
         .getPositions()
         .subscribe({
           next: (data) => {
-            console.log('got next position event');
+            console.log("got next position event");
             data.added?.forEach((v, k) => {
               // console.log(k, this.accountNumber);
               if (k == this.accountNumber) v.forEach((p) => this.enqueuePosition(p));
@@ -374,7 +362,7 @@ export class AccountUpdateBot extends ITradingBot {
             data.changed?.forEach((v, k) => {
               if (k == this.accountNumber) v.forEach((p) => this.enqueuePosition(p));
             });
-            console.log('next event done.')
+            console.log("next event done.");
           },
           error: (err: IBApiNextError) => {
               this.app.error(
@@ -382,15 +370,15 @@ export class AccountUpdateBot extends ITradingBot {
               );
           },
           complete: () => {
-              console.log('getPositions completed.');
+              console.log("getPositions completed.");
           }
       });
       setTimeout(() => this.cleanPositions(now), 5000);      // clean old positions after 5 secs  
-    };
+    }
 
     public stop(): void {
         this.ordersSubscription$?.unsubscribe();
         this.positionsSubscription$?.unsubscribe();
-    };
+    }
 
 }

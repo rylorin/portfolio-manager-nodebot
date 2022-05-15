@@ -24,4 +24,4 @@ export class Currency extends Model {
   @Column({ type: DataType.FLOAT })
   public rate: number;
 
-};
+}

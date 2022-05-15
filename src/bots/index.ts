@@ -1,5 +1,5 @@
-import { IBApiNextApp } from '@stoqey/ib/dist/tools/common/ib-api-next-app';
-import EventEmitter from 'events';
+import { IBApiNextApp } from "@stoqey/ib/dist/tools/common/ib-api-next-app";
+import EventEmitter from "events";
 import {
     IBApiNext,
     Contract as IbContract,
@@ -39,11 +39,7 @@ export class ITradingBot extends EventEmitter {
         this.app = app;
         this.api = api;
         this.accountNumber = account;
-      };
-
-    public start(): void {};
-
-    public stop(): void {};
+    }
 
     /**
      * Print an object (JSON formatted) to console.
@@ -69,19 +65,19 @@ export class ITradingBot extends EventEmitter {
     }
 
     protected static OptionComboContract(underlying: Contract, buyleg: number, sellleg: number): IbContract {
-        let contract: IbContract = {
+        const contract: IbContract = {
             symbol: underlying.symbol,
             secType: "BAG" as SecType,
             currency: underlying.currency,
-            exchange: (underlying.currency == 'USD') ? 'SMART' : (underlying.exchange ?? 'SMART'),
+            exchange: (underlying.currency == "USD") ? "SMART" : (underlying.exchange ?? "SMART"),
         };
-        let leg1: ComboLeg = {
+        const leg1: ComboLeg = {
             conId: buyleg,
             ratio: 1,
             action: "BUY",
             exchange: "SMART",
         };
-        let leg2: ComboLeg = {
+        const leg2: ComboLeg = {
             conId: sellleg,
             ratio: 1,
             action: "SELL",
@@ -93,15 +89,15 @@ export class ITradingBot extends EventEmitter {
 
     protected static OptionToIbContract(underlying: Option): IbContract {
         const expiry = new Date(underlying.lastTradeDate);
-        let contract: IbContract = {
+        const contract: IbContract = {
             secType: underlying.contract.secType as SecType,
             symbol: underlying.stock.contract.symbol,
             currency: underlying.contract.currency,
-            exchange: underlying.contract.exchange ?? 'SMART',
+            exchange: underlying.contract.exchange ?? "SMART",
             conId: underlying.contract.conId,
             strike: underlying.strike,
             right: underlying.callOrPut,
-            lastTradeDateOrContractMonth: expiry.toISOString().substring(0,10).replaceAll('-', ''),
+            lastTradeDateOrContractMonth: expiry.toISOString().substring(0,10).replaceAll("-", ""),
             multiplier: underlying.multiplier,
         };
         return contract;
@@ -114,7 +110,7 @@ export class ITradingBot extends EventEmitter {
             totalQuantity: quantity,
             lmtPrice: limitPrice,
             transmit: false,
-        }
+        };
         return order;
     }
 
@@ -125,7 +121,7 @@ export class ITradingBot extends EventEmitter {
             totalQuantity: quantity,
             lmtPrice: limitPrice,
             transmit: false,
-        }
+        };
         return order;
     }
 
@@ -136,7 +132,7 @@ export class ITradingBot extends EventEmitter {
             totalQuantity: quantity,
             lmtPrice: limitPrice,
             transmit: false,
-        }
+        };
         return order;
     }
 
@@ -207,7 +203,7 @@ export class ITradingBot extends EventEmitter {
                 include: {
                     model: Contract,
                     where: {
-                        secType: 'OPT',
+                        secType: "OPT",
                     },
                 },
             }).then((positions: Position[]) => this.sumOptionsPositionsAmountInBase(positions, underlying, right));
@@ -240,7 +236,7 @@ export class ITradingBot extends EventEmitter {
                 include: {
                     model: Contract,
                     where: {
-                        secType: 'OPT',
+                        secType: "OPT",
                     },
                 },
             }).then((positions: Position[]) => this.sumOptionsPositionsQuantity(positions, underlying, right));
@@ -254,7 +250,7 @@ export class ITradingBot extends EventEmitter {
             return OpenOrder.findAll({
                 where: {
                     actionType: actionType,
-                    status: [ 'Submitted', 'PreSubmitted' ],
+                    status: [ "Submitted", "PreSubmitted" ],
                 },
                 include: {
                     model: Contract,
@@ -279,7 +275,7 @@ export class ITradingBot extends EventEmitter {
             return OpenOrder.findAll({
                 where: {
                     actionType: actionType,
-                    status: [ 'Submitted', 'PreSubmitted' ],
+                    status: [ "Submitted", "PreSubmitted" ],
                 },
                 include: {
                     model: Contract,
@@ -321,12 +317,12 @@ export class ITradingBot extends EventEmitter {
             return OpenOrder.findAll({
                 where: {
                     actionType: actionType,
-                    status: [ 'Submitted', 'PreSubmitted' ],
+                    status: [ "Submitted", "PreSubmitted" ],
                 },
                 include: {
                     model: Contract,
                     where: {
-                        secType: 'OPT',
+                        secType: "OPT",
                     },
                 }
             }).then((orders: OpenOrder[]) => this.sumOptionsOrdersInBase(orders, underlying, right as OptionType));
@@ -358,12 +354,12 @@ export class ITradingBot extends EventEmitter {
             return OpenOrder.findAll({
                 where: {
                     actionType: actionType,
-                    status: [ 'Submitted', 'PreSubmitted' ],
+                    status: [ "Submitted", "PreSubmitted" ],
                 },
                 include: {
                     model: Contract,
                     where: {
-                        secType: 'OPT',
+                        secType: "OPT",
                     },
                 }
             }).then((orders: OpenOrder[]) => this.sumOptionsOrdersQuantity(orders, underlying, right as OptionType));
@@ -372,11 +368,11 @@ export class ITradingBot extends EventEmitter {
         }
     }
 
-};
+}
 
-export { ContractsUpdaterBot } from './updater.bot';
-export { AccountUpdateBot } from './account.bot';
-export { CashManagementBot } from './cash.bot';
-export { SellCoveredCallsBot } from './cc.bot';
-export { SellCashSecuredPutBot } from './csp.bot';
-export { RollOptionPositionsBot } from './roll.bot';
+export { ContractsUpdaterBot } from "./updater.bot";
+export { AccountUpdateBot } from "./account.bot";
+export { CashManagementBot } from "./cash.bot";
+export { SellCoveredCallsBot } from "./cc.bot";
+export { SellCashSecuredPutBot } from "./csp.bot";
+export { RollOptionPositionsBot } from "./roll.bot";
