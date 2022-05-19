@@ -3,11 +3,6 @@ import {
   Table,
   Column,
   DataType,
-  HasMany,
-  HasOne,
-  BelongsToMany,
-  BelongsTo,
-  ForeignKey
 } from "sequelize-typescript";
 import { SecType } from "@stoqey/ib";
 
@@ -44,7 +39,7 @@ export class Contract extends Model {
     let value = undefined;
     if ((this.getDataValue("ask") !== null)
       && (this.getDataValue("bid") !== null)) {
-        value = (this.getDataValue("ask") + this.getDataValue("bid")) / 2;
+      value = (this.getDataValue("ask") + this.getDataValue("bid")) / 2;
     } else if (this.getDataValue("price") !== null) {
       value = this.getDataValue("price");
     } else {
@@ -57,13 +52,12 @@ export class Contract extends Model {
   }
 
   @Column({ type: DataType.FLOAT(6, 2) })
-  public bid : number;
+  public bid: number;
 
   @Column({ type: DataType.FLOAT(6, 2) })
-  public ask : number;
+  public ask: number;
 
   @Column({ type: DataType.FLOAT, field: "previous_close_price" })
-  public previousClosePrice : number;
+  public previousClosePrice: number;
 
 }
- 

@@ -1,13 +1,9 @@
 import {
-    Model,
-    Table,
-    Column,
-    DataType,
-    HasMany,
-    HasOne,
-    BelongsToMany,
-    BelongsTo,
-    ForeignKey
+  Model,
+  Table,
+  Column,
+  DataType,
+  BelongsTo,
 } from "sequelize-typescript";
 import { Contract } from ".";
 

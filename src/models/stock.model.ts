@@ -3,11 +3,7 @@ import {
   Table,
   Column,
   DataType,
-  HasMany,
-  HasOne,
-  BelongsToMany,
   BelongsTo,
-  ForeignKey
 } from "sequelize-typescript";
 import { Contract } from ".";
 

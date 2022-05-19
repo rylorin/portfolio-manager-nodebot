@@ -1,12 +1,11 @@
 import { QueryTypes, Op } from "sequelize";
 import { ITradingBot } from ".";
 import {
-    sequelize,
     Contract,
-    Stock, 
-    Option, 
-    Position, 
-    OpenOrder, 
+    Stock,
+    Option,
+    Position,
+    OpenOrder,
     Parameter,
     Portfolio,
 } from "../models";
@@ -29,13 +28,15 @@ export class SellCoveredCallsBot extends ITradingBot {
         console.log("free_for_this_symbol in base:", free_for_this_symbol);
         if (free_for_this_symbol > 0) {
             const parameter = await Parameter.findOne({
-                where: { 
-                    portfolio_id: this.portfolio.id, 
+                where: {
+                    portfolio_id: this.portfolio.id,
                     stock_id: position.contract.id,
-                    ccStrategy: { [Op.and]: {
-                        [Op.not]: null,
-                        [Op.gt]: 0,
-                    }},
+                    ccStrategy: {
+                        [Op.and]: {
+                            [Op.not]: null,
+                            [Op.gt]: 0,
+                        }
+                    },
                 },
                 include: {
                     model: Contract,
@@ -49,7 +50,7 @@ export class SellCoveredCallsBot extends ITradingBot {
                 const options = await Option.findAll({
                     where: {
                         stock_id: parameter.underlying.id,
-                        strike : {
+                        strike: {
                             [Op.gt]: Math.max(parameter.underlying.price, position.cost / position.quantity), // RULE : strike > cours (OTM) & strike > position avg price
                         },
                         lastTradeDate: { [Op.gt]: new Date() },
@@ -78,7 +79,7 @@ export class SellCoveredCallsBot extends ITradingBot {
                         const expiry: Date = new Date(option.lastTradeDate);
                         const diffDays = Math.ceil((expiry.getTime() - Date.now()) / (1000 * 3600 * 24));
                         option["yield"] = option.contract.bid / option.strike / diffDays * 360;
-                        option.stock.contract = await Contract.findByPk(option.stock.id);    
+                        option.stock.contract = await Contract.findByPk(option.stock.id);
                     }
                     options.sort((a: any, b: any) => b.yield - a.yield);
                     // for (const option of options) {
@@ -89,8 +90,8 @@ export class SellCoveredCallsBot extends ITradingBot {
                     await this.api.placeNewOrder(
                         ITradingBot.OptionToIbContract(option),
                         ITradingBot.CcOrder(OrderAction.SELL, Math.floor(free_for_this_symbol / option.multiplier), option.contract.ask)).then((orderId: number) => {
-                        console.log("orderid:", orderId.toString());
-                    });
+                            console.log("orderid:", orderId.toString());
+                        });
                 }
             }
         }
@@ -101,7 +102,7 @@ export class SellCoveredCallsBot extends ITradingBot {
             return p.then(() => this.processOnePosition(position));
         }, Promise.resolve()); // initial
     }
-    
+
     private listStockPostitions(): Promise<Position[]> {
         return Position.findAll(({
             include: {

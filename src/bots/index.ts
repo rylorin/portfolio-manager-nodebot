@@ -18,15 +18,15 @@ import {
 import {
     sequelize,
     Contract,
-    Stock, 
-    Option, 
-    Position, 
-    OpenOrder, 
+    Stock,
+    Option,
+    Position,
+    OpenOrder,
     Parameter,
     Portfolio,
     Currency,
 } from "../models";
-  
+
 export class ITradingBot extends EventEmitter {
     protected app: IBApiNextApp;
     protected api: IBApiNext;
@@ -44,14 +44,14 @@ export class ITradingBot extends EventEmitter {
     /**
      * Print an object (JSON formatted) to console.
      */
-     printObject(obj: unknown): void {
-         this.app.printObject(obj);
-     }
+    printObject(obj: unknown): void {
+        this.app.printObject(obj);
+    }
 
-     /**
-     * Print and error to console and exit the app with error code, unless -watch argument is present.
-     */
-     error(text: string): void {
+    /**
+    * Print and error to console and exit the app with error code, unless -watch argument is present.
+    */
+    error(text: string): void {
         this.app.error(text);
     }
 
@@ -83,7 +83,7 @@ export class ITradingBot extends EventEmitter {
             action: "SELL",
             exchange: "SMART",
         };
-        contract.comboLegs = [ leg2, leg1];
+        contract.comboLegs = [leg2, leg1];
         return contract;
     }
 
@@ -97,7 +97,7 @@ export class ITradingBot extends EventEmitter {
             conId: underlying.contract.conId,
             strike: underlying.strike,
             right: underlying.callOrPut,
-            lastTradeDateOrContractMonth: expiry.toISOString().substring(0,10).replaceAll("-", ""),
+            lastTradeDateOrContractMonth: expiry.toISOString().substring(0, 10).replaceAll("-", ""),
             multiplier: underlying.multiplier,
         };
         return contract;
@@ -139,7 +139,7 @@ export class ITradingBot extends EventEmitter {
     protected init(): Promise<void> {
         return Portfolio.findOne({
             where: {
-              account: this.accountNumber,
+                account: this.accountNumber,
             },
             include: {
                 model: Contract,
@@ -163,11 +163,11 @@ export class ITradingBot extends EventEmitter {
                     contract_id: benchmark.id,
                 },
             }).then((position) => Currency.findOne({
-                    where: {
-                        base: this.portfolio.baseCurrency,
-                        currency: benchmark.currency,
-                    },
-                }).then((currency) => ((position === null) || (currency === null)) ? 0 : (position.quantity * benchmark.price / currency.rate))
+                where: {
+                    base: this.portfolio.baseCurrency,
+                    currency: benchmark.currency,
+                },
+            }).then((currency) => ((position === null) || (currency === null)) ? 0 : (position.quantity * benchmark.price / currency.rate))
             );
         } else {
             return Promise.resolve(0);
@@ -177,7 +177,7 @@ export class ITradingBot extends EventEmitter {
     private async sumOptionsPositionsAmountInBase(positions: Position[], underlying: number, right: OptionType): Promise<number> {
         let result = 0;
         for (const position of positions) {
-            const opt = await Option.findOne(
+            await Option.findOne(
                 {
                     where: {
                         id: position.contract.id,
@@ -250,7 +250,7 @@ export class ITradingBot extends EventEmitter {
             return OpenOrder.findAll({
                 where: {
                     actionType: actionType,
-                    status: [ "Submitted", "PreSubmitted" ],
+                    status: ["Submitted", "PreSubmitted"],
                 },
                 include: {
                     model: Contract,
@@ -259,11 +259,11 @@ export class ITradingBot extends EventEmitter {
                     },
                 }
             }).then((orders: OpenOrder[]) => Currency.findOne({
-                    where: {
-                        base: this.portfolio.baseCurrency,
-                        currency: benchmark.currency,
-                    },
-                }).then((currency) => orders.reduce((p, order) => (p + (order.remainingQty * benchmark.price / currency.rate)), 0))
+                where: {
+                    base: this.portfolio.baseCurrency,
+                    currency: benchmark.currency,
+                },
+            }).then((currency) => orders.reduce((p, order) => (p + (order.remainingQty * benchmark.price / currency.rate)), 0))
             );
         } else {
             return Promise.resolve(0);
@@ -275,7 +275,7 @@ export class ITradingBot extends EventEmitter {
             return OpenOrder.findAll({
                 where: {
                     actionType: actionType,
-                    status: [ "Submitted", "PreSubmitted" ],
+                    status: ["Submitted", "PreSubmitted"],
                 },
                 include: {
                     model: Contract,
@@ -292,7 +292,7 @@ export class ITradingBot extends EventEmitter {
     private async sumOptionsOrdersInBase(orders: OpenOrder[], underlying: number, right: OptionType): Promise<number> {
         let result = 0;
         for (const order of orders) {
-            const opt = await Option.findOne(
+            await Option.findOne(
                 {
                     where: {
                         id: order.contract.id,
@@ -317,7 +317,7 @@ export class ITradingBot extends EventEmitter {
             return OpenOrder.findAll({
                 where: {
                     actionType: actionType,
-                    status: [ "Submitted", "PreSubmitted" ],
+                    status: ["Submitted", "PreSubmitted"],
                 },
                 include: {
                     model: Contract,
@@ -334,7 +334,7 @@ export class ITradingBot extends EventEmitter {
     private async sumOptionsOrdersQuantity(orders: OpenOrder[], underlying: Contract, right: OptionType): Promise<number> {
         let result = 0;
         for (const order of orders) {
-            const opt = await Option.findOne(
+            await Option.findOne(
                 {
                     where: {
                         id: order.contract.id,
@@ -354,7 +354,7 @@ export class ITradingBot extends EventEmitter {
             return OpenOrder.findAll({
                 where: {
                     actionType: actionType,
-                    status: [ "Submitted", "PreSubmitted" ],
+                    status: ["Submitted", "PreSubmitted"],
                 },
                 include: {
                     model: Contract,

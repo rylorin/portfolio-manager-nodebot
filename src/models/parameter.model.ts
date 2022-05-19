@@ -1,18 +1,12 @@
 import {
-    Model,
-    Table,
-    Column,
-    DataType,
-    HasMany,
-    HasOne,
-    BelongsToMany,
-    BelongsTo,
-    ForeignKey,
-    Default,
-    AllowNull
+  Model,
+  Table,
+  Column,
+  DataType,
+  BelongsTo,
 } from "sequelize-typescript";
-  
-import { Contract, Stock } from ".";
+
+import { Contract } from ".";
 
 @Table({ tableName: "trading_parameters" })
 export class Parameter extends Model {

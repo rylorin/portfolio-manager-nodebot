@@ -1,12 +1,11 @@
 import { QueryTypes, Op } from "sequelize";
 import { ITradingBot } from ".";
 import {
-    sequelize,
     Contract,
-    Stock, 
-    Option, 
-    Position, 
-    OpenOrder, 
+    Stock,
+    Option,
+    Position,
+    OpenOrder,
     Parameter,
     Portfolio,
     Currency,
@@ -74,7 +73,7 @@ export class SellCashSecuredPutBot extends ITradingBot {
         const opt = (parameter.underlying.price > parameter.underlying.previousClosePrice) ? [] : await Option.findAll({
             where: {
                 stock_id: parameter.underlying.id,
-                strike : {
+                strike: {
                     [Op.lt]: Math.min(parameter.underlying.price, (free_for_this_symbol / 100)),    // RULE 2 & 5: strike < cours (OTM) & max ratio per symbol
                 },
                 lastTradeDate: { [Op.gt]: new Date() },
@@ -96,10 +95,10 @@ export class SellCashSecuredPutBot extends ITradingBot {
                 model: Stock,
                 // include: Contract,
             }],
-            logging: console.log, 
+            logging: console.log,
         });
         // if (opt.length > 0) this.printObject(opt[0]);
-        return { symbol: parameter.underlying.symbol, engaged: max_engaged, options: opt};
+        return { symbol: parameter.underlying.symbol, engaged: max_engaged, options: opt };
     }
 
     private async iterateParameters(parameters: Parameter[]): Promise<void> {
@@ -134,24 +133,26 @@ export class SellCashSecuredPutBot extends ITradingBot {
             await this.api.placeNewOrder(
                 ITradingBot.OptionToIbContract(filtered_options[0]),
                 ITradingBot.CspOrder(OrderAction.SELL, 1, filtered_options[0].contract.ask)).then((orderId: number) => {
-                console.log("orderid:", orderId.toString());
-            });
+                    console.log("orderid:", orderId.toString());
+                });
         }
     }
-    
+
     private listParameters(): Promise<Parameter[]> {
         return Parameter.findAll(({
             where: {
-                cspStrategy: { [Op.and]: {
-                    [Op.not]: null,
-                    [Op.gt]: 0,
-                }},
+                cspStrategy: {
+                    [Op.and]: {
+                        [Op.not]: null,
+                        [Op.gt]: 0,
+                    }
+                },
             },
             include: {
                 model: Contract,
                 required: true,
             },
-            logging: console.log, 
+            logging: console.log,
         }));
     }
 

@@ -1,11 +1,10 @@
 import { ITradingBot } from ".";
 import {
-    sequelize,
     Contract,
-    Stock, 
-    Option, 
-    Position, 
-    OpenOrder, 
+    Stock,
+    Option,
+    Position,
+    OpenOrder,
     Parameter,
     Portfolio,
 } from "../models";
@@ -24,17 +23,19 @@ export class RollOptionPositionsBot extends ITradingBot {
         const order = await OpenOrder.findOne({
             where: {
                 contract_id: position.contract.id,
-                status: { [Op.in]: [
-                    "Submitted", "PreSubmitted",
-                ]},
+                status: {
+                    [Op.in]: [
+                        "Submitted", "PreSubmitted",
+                    ]
+                },
             },
         });
         if (order === null) {
-            const option = await Option.findByPk(position.contract.id, {include: Stock});
+            const option = await Option.findByPk(position.contract.id, { include: Stock });
             const stock: Contract = await Contract.findByPk(option.stock.id);
             const parameter = await Parameter.findOne({
-                where: { 
-                    portfolio_id: this.portfolio.id, 
+                where: {
+                    portfolio_id: this.portfolio.id,
                     stock_id: option.stock.id,
                     // rollStrategy: { [Op.and]: {
                     //     [Op.not]: null,
@@ -55,17 +56,19 @@ export class RollOptionPositionsBot extends ITradingBot {
                     const rolllist = await Option.findAll({
                         where: {
                             stock_id: option.stock.id,
-                            strike: { [Op.lte]: option.strike},
+                            strike: { [Op.lte]: option.strike },
                             lastTradeDate: { [Op.gt]: option.lastTradeDate },
                             callOrPut: option.callOrPut,
                         },
                         include: {
                             model: Contract,
                             where: {
-                                bid: { [Op.and]: {
-                                    [Op.not]: null,
-                                    [Op.gt]: position.contract.ask,
-                                }},
+                                bid: {
+                                    [Op.and]: {
+                                        [Op.not]: null,
+                                        [Op.gt]: position.contract.ask,
+                                    }
+                                },
                             },
                             required: true,
                         },
@@ -97,7 +100,7 @@ export class RollOptionPositionsBot extends ITradingBot {
                         let selected: Option = undefined;
                         let price: number = undefined;
                         if (((parameter.rollPutStrategy == 1) && (diffDays > DEFENSIVE_ROLL_DAYS))
-                        || ((parameter.rollPutStrategy == 2) && (diffDays > AGRESSIVE_ROLL_DAYS))) {
+                            || ((parameter.rollPutStrategy == 2) && (diffDays > AGRESSIVE_ROLL_DAYS))) {
                             console.log("too early to roll contract:", diffDays, "days before exipiration");
                         } else {
                             if ((parameter.rollPutStrategy == 1) && defensive) {
@@ -110,8 +113,8 @@ export class RollOptionPositionsBot extends ITradingBot {
                             await this.api.placeNewOrder(
                                 ITradingBot.OptionComboContract(stock, selected.contract.conId, position.contract.conId),
                                 ITradingBot.ComboLimitOrder(OrderAction.SELL, Math.abs(position.quantity), -price)).then((orderId: number) => {
-                                console.log("orderid:", orderId.toString());
-                            });
+                                    console.log("orderid:", orderId.toString());
+                                });
                         }
                     } else {
                         this.error("can not roll contract: empty list");
@@ -120,23 +123,25 @@ export class RollOptionPositionsBot extends ITradingBot {
                     const rolllist = await Option.findAll({
                         where: {
                             stock_id: option.stock.id,
-                            strike: { [Op.gte]: option.strike},
+                            strike: { [Op.gte]: option.strike },
                             lastTradeDate: { [Op.gt]: option.lastTradeDate },
                             callOrPut: option.callOrPut,
                         },
                         include: {
                             model: Contract,
                             where: {
-                                bid: { [Op.and]: {
-                                    [Op.not]: null,
-                                    [Op.gt]: position.contract.ask,
-                                }},
+                                bid: {
+                                    [Op.and]: {
+                                        [Op.not]: null,
+                                        [Op.gt]: position.contract.ask,
+                                    }
+                                },
                             },
                         },
                     }).then((result) => result.sort((a, b) => {
-                            if (a.lastTradeDate > b.lastTradeDate) return 1;
-                            else if (a.lastTradeDate < b.lastTradeDate) return -1;
-                            else return (a.strike - b.strike);
+                        if (a.lastTradeDate > b.lastTradeDate) return 1;
+                        else if (a.lastTradeDate < b.lastTradeDate) return -1;
+                        else return (a.strike - b.strike);
                     }));
                     // this.printObject(rolllist);
                     if (rolllist.length > 0) {
@@ -160,7 +165,7 @@ export class RollOptionPositionsBot extends ITradingBot {
                         let selected: Option = undefined;
                         let price: number = undefined;
                         if (((parameter.rollCallStrategy == 1) && (diffDays > DEFENSIVE_ROLL_DAYS))
-                        || ((parameter.rollCallStrategy == 2) && (diffDays > AGRESSIVE_ROLL_DAYS))) {
+                            || ((parameter.rollCallStrategy == 2) && (diffDays > AGRESSIVE_ROLL_DAYS))) {
                             console.log("too early to roll contract:", diffDays, "days before exipiration");
                         } else {
                             if ((parameter.rollCallStrategy == 1) && defensive) {
@@ -175,7 +180,7 @@ export class RollOptionPositionsBot extends ITradingBot {
                                 ITradingBot.ComboLimitOrder(OrderAction.SELL, Math.abs(position.quantity), -price))
                                 .then((orderId: number) => {
                                     console.log("orderid:", orderId.toString());
-                            });
+                                });
                         }
                     } else {
                         this.error("can not roll contract: empty list");
@@ -188,7 +193,7 @@ export class RollOptionPositionsBot extends ITradingBot {
             console.log("ignored (already in open orders list)");
         }
     }
-    
+
     private iteratePositions(positions: Position[]): Promise<void> {
         return positions.reduce((p, position) => {
             return p.then(() => this.processOnePosition(position));
@@ -196,27 +201,27 @@ export class RollOptionPositionsBot extends ITradingBot {
     }
 
     private listItmOptionPostitions(): Promise<Position[]> {
-        return Position.findAll(({include: Contract})).then(async (positions) => {
+        return Position.findAll(({ include: Contract })).then(async (positions) => {
             const result: Position[] = [];
             for (const position of positions) {
                 if ((position.contract.secType == "OPT")
-                && (position.quantity)) {
-                    const opt = await Option.findByPk(position.contract.id, {include: Stock});
+                    && (position.quantity)) {
+                    const opt = await Option.findByPk(position.contract.id, { include: Stock });
                     const stock: Contract = await Contract.findByPk(opt.stock.id, {});
                     const price = stock.price != null ? stock.price : stock.previousClosePrice;
                     // console.log(price);
                     if ((price != null)
                         && (opt.callOrPut == "P")
                         && (price < opt.strike)) {
-                            // this.printObject(opt);
-                            // this.printObject(stock);
-                            result.push(position);
+                        // this.printObject(opt);
+                        // this.printObject(stock);
+                        result.push(position);
                     } else if ((price != null)
                         && (opt.callOrPut == "C")
                         && (price > opt.strike)) {
-                            // this.printObject(opt);
-                            // this.printObject(stock);
-                            result.push(position);
+                        // this.printObject(opt);
+                        // this.printObject(stock);
+                        result.push(position);
                     }
                 }
             }
@@ -230,15 +235,15 @@ export class RollOptionPositionsBot extends ITradingBot {
         setTimeout(() => this.emit("process"), ROLL_FREQ * 60000);
         console.log("process end");
     }
-  
+
     public async start(): Promise<void> {
         await Portfolio.findOne({
             where: {
-              account: this.accountNumber,
+                account: this.accountNumber,
             }
-          }).then((portfolio) => this.portfolio = portfolio);
-            this.on("process", this.process);
+        }).then((portfolio) => this.portfolio = portfolio);
+        this.on("process", this.process);
         setTimeout(() => this.emit("process"), 6000);
     }
-    
+
 }

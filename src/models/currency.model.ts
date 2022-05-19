@@ -1,15 +1,8 @@
 import {
-    Model,
-    Table,
-    Column,
-    DataType,
-    HasMany,
-    HasOne,
-    BelongsToMany,
-    BelongsTo,
-    ForeignKey,
-    Default,
-    AllowNull
+  Model,
+  Table,
+  Column,
+  DataType,
 } from "sequelize-typescript";
 
 @Table({ tableName: "currency", timestamps: false })

@@ -1,12 +1,11 @@
 import { QueryTypes, Op } from "sequelize";
 import { ITradingBot } from ".";
 import {
-    sequelize,
     Contract,
-    Stock, 
-    Option, 
-    Position, 
-    OpenOrder, 
+    Stock,
+    Option,
+    Position,
+    OpenOrder,
     Parameter,
     Portfolio,
 } from "../models";
@@ -16,16 +15,18 @@ export class CashManagementBot extends ITradingBot {
     private async processOnePosition(position: Position): Promise<void> {
         console.log("processing position:");
         this.printObject(position);
-        const order = await OpenOrder.findOne({where: {contract_id: position.contract.id}});
+        const order = await OpenOrder.findOne({ where: { contract_id: position.contract.id } });
         if (order === null) {
             const parameter = await Parameter.findOne({
-                where: { 
-                    portfolio_id: this.portfolio.id, 
+                where: {
+                    portfolio_id: this.portfolio.id,
                     stock_id: position.contract.id,
-                    ccStrategy: { [Op.and]: {
-                        [Op.not]: null,
-                        [Op.gt]: 0,
-                    }},
+                    ccStrategy: {
+                        [Op.and]: {
+                            [Op.not]: null,
+                            [Op.gt]: 0,
+                        }
+                    },
                 },
             });
             if (parameter !== null) {
@@ -39,7 +40,7 @@ export class CashManagementBot extends ITradingBot {
             return p.then(() => this.processOnePosition(position));
         }, Promise.resolve()); // initial
     }
-    
+
     private listStockPostitions(): Promise<Position[]> {
         return Position.findAll(({
             include: {
@@ -61,10 +62,10 @@ export class CashManagementBot extends ITradingBot {
     public async start(): Promise<void> {
         await Portfolio.findOne({
             where: {
-              account: this.accountNumber,
+                account: this.accountNumber,
             }
-          }).then((portfolio) => this.portfolio = portfolio);
-            this.on("process", this.process);
+        }).then((portfolio) => this.portfolio = portfolio);
+        this.on("process", this.process);
         setTimeout(() => this.emit("process"), 6000);
     }
 
