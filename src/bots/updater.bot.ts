@@ -1,4 +1,4 @@
-import { QueryTypes } from "sequelize";
+import { QueryTypes, Op } from "sequelize";
 import {
   Contract as IbContract,
   IBApiNext,
@@ -14,7 +14,7 @@ import { TickType as IBApiTickType } from "@stoqey/ib/dist/api/market/tickType";
 import { SecurityDefinitionOptionParameterType, IBApiNextTickType } from "@stoqey/ib/dist/api-next";
 import { MutableMarketData } from "@stoqey/ib/dist/core/api-next/api/market/mutable-market-data";
 import { IBApiNextApp } from "@stoqey/ib/dist/tools/common/ib-api-next-app";
-import { sequelize, Contract, Stock, Option } from "../models";
+import { sequelize, Contract, Stock, Option, Currency } from "../models";
 import { ITradingBot } from ".";
 
 const UPDATE_CONID_FREQ: number = parseInt(process.env.UPDATE_CONID_FREQ) || 10;
@@ -57,11 +57,11 @@ export class ContractsUpdaterBot extends ITradingBot {
     return Contract.update(
       {
         conId: details.contract.conId,
-        symbol: details.contract.symbol,
+        symbol: (details.contract.secType == SecType.CASH) ? details.contract.localSymbol : details.contract.symbol,
         secType: details.contract.secType,
-        exchange: details.contract.primaryExch,
+        exchange: (details.contract.secType == SecType.CASH) ? details.contract.exchange : details.contract.primaryExch,
         currency: details.contract.currency,
-        name: details.longName,
+        name: (details.contract.secType == SecType.CASH) ? details.contract.localSymbol : details.longName,
       } as Contract, {
       where: {
         id: id,
@@ -71,6 +71,14 @@ export class ContractsUpdaterBot extends ITradingBot {
 
   private requestContractDetails(contract: IbContract): Promise<ContractDetails[]> {
     // console.log(`requestContractDetails for contract ${contract.symbol}`)
+    if (contract.secType == "CASH") {
+      contract.exchange = "IDEALPRO";    // nothing except IDEALPRO seems to work for CASH
+      // contract.localSymbol = contract.symbol;
+      if (contract.symbol.length == 7) {
+        contract.currency = contract.symbol.substring(4, 8);
+        contract.symbol = contract.symbol.substring(0, 3);
+      }
+    } else if (contract.currency == "USD") contract.exchange = "SMART";  // nothing except SMART seems to work for USD
     return this.api
       .getContractDetails(contract)
       .catch((err: IBApiNextError) => {
@@ -85,31 +93,30 @@ export class ContractsUpdaterBot extends ITradingBot {
         .then((detailstab) => this.updateContractDetails(contract.id, detailstab))
         .catch((err) => {
           // silently ignore any error
-          if (err instanceof Error) { }
+          console.log(`iterateContractsForDetails: error '${err}' for ${contract.id}`);
         }));
     }, Promise.resolve()); // initial
   }
 
-  private findStocksWithoutConId(): Promise<Contract[]> {
+  private findContractsWithoutConId(): Promise<Contract[]> {
     return sequelize.query(`
       SELECT
         contract.*
       FROM contract
-      WHERE contract.secType = 'STK'
+      WHERE contract.secType IN ('STK', 'CASH') 
         AND contract.con_id ISNULL
       `,
       {
         model: Contract,
         mapToModel: true, // pass true here if you have any mapped fields
-        // logging: console.log,
+        logging: console.log,
       }
     );
   }
 
   private async updateStocksConId(): Promise<void> {
     console.log("updateStocksConId begin");
-    const contracts = await this.findStocksWithoutConId();
-    await this.iterateContractsForDetails(contracts);
+    const contracts = await this.findContractsWithoutConId().then((contracts) => this.iterateContractsForDetails(contracts));
     console.log("updateStocksConId done");
     setTimeout(() => this.emit("updateStocksConId"), UPDATE_CONID_FREQ * 60000);
     return Promise.resolve();
@@ -268,17 +275,21 @@ export class ContractsUpdaterBot extends ITradingBot {
     // console.log(`requestContractPrice for ${contract.secType} contract ${contract.symbol} ${contract.exchange} id ${contract.id}`);
     if (contract.secType == "CASH") {
       contract.exchange = "IDEALPRO";    // nothing except IDEALPRO seems to work for CASH
-      if (contract.symbol.length == 7) contract.symbol.substring(0, 3);
+      // contract.localSymbol = contract.symbol;
+      if (contract.symbol.length == 7) {
+        contract.currency = contract.symbol.substring(4, 8);
+        contract.symbol = contract.symbol.substring(0, 3);
+      }
     } else if (contract.currency == "USD") contract.exchange = "SMART";  // nothing except SMART seems to work for USD
     return this.api
-      .getMarketDataSingle(contract, "", false)
+      .getMarketDataSnapshot(contract, "", false)
       .catch((err: IBApiNextError) => {
-        console.log(`getMarketDataSingle failed for contract ${contract.conId} ${contract.secType} ${contract.symbol} with ${err.code}: '${err.error.message}'`);
+        console.log(`getMarketDataSnapshot failed for contract ${contract.conId} ${contract.secType} ${contract.symbol} ${contract.currency} @ ${contract.exchange} with ${err.code}: '${err.error.message}'`);
         throw (err.error);
       });
   }
 
-  private updateContratPrice(contract: Contract, marketData: MutableMarketData): Promise<[affectedCount: number]> {
+  private updateContratPrice(contract: Contract, marketData: MutableMarketData): Promise<number> {
     // console.log(`updateContratPrice got data for ${contract.secType} contract ${contract.symbol} id ${contract.id}`);
     // this.app.printObject(marketData);
     const dataset: Contract = {} as any;
@@ -362,6 +373,7 @@ export class ContractsUpdaterBot extends ITradingBot {
         console.log("ignored", type, tick);
       }
     });
+    const price = dataset.price ?? dataset.previousClosePrice;
     return Contract.update(
       dataset,
       {
@@ -369,7 +381,7 @@ export class ContractsUpdaterBot extends ITradingBot {
           id: contract.id,
         }
       }
-    ).then((affectedCount) => {
+    ).then(() => {
       if (contract.secType == "OPT") {
         // this.app.printObject(dataset);
         // this.app.printObject(optdataset);
@@ -380,9 +392,9 @@ export class ContractsUpdaterBot extends ITradingBot {
               id: contract.id,
             }
           }
-        );
+        ).then(() => price);
       } else {
-        return affectedCount;
+        return price;
       }
     });
   }
@@ -684,7 +696,45 @@ export class ContractsUpdaterBot extends ITradingBot {
     return Promise.all(promises);
   }
 
+  private findCurrenciesToUpdatePrice(now: number) {
+    return Currency.findAll({
+      where: {
+        updatedAt: {
+          [Op.or]: {
+            [Op.lt]: new Date(now),
+            [Op.is]: null,
+          },
+        },
+      },
+      // logging: console.log,
+    });
+  }
+
+  private updateCurrenciesRate(currencies: Currency[]) {
+    const promises: Promise<any>[] = [];
+    for (const currency of currencies) {
+      promises.push(
+        this.findOrCreateContract({
+          symbol: `${currency.base}.${currency.currency}`,
+          secType: SecType.CASH,
+          currency: currency.currency,
+          exchange: "IDEALPRO",
+        }).then((contract) => this.requestContractPrice(contract)
+          // .then((marketData) => { console.log(contract.id, marketData); return marketData; })
+          .then((marketData) => this.updateContratPrice(contract, marketData))
+          .then((price) => Currency.update({ rate: price }, { where: { id: currency.id } })))
+          .catch((err) => {
+            // silently ignore any error
+            console.log("updateCurrenciesRate: error ignored", err);
+          })
+      );
+    }
+    return Promise.all(promises);
+  }
+
   private async updateOptionsPrice(): Promise<void> {
+    const now = Date.now() - 0.2;
+    await this.findCurrenciesToUpdatePrice(now).then((currencies) => this.updateCurrenciesRate(currencies));
     console.log("updateOptionsPrice", new Date());
     let contracts: Contract[] = [];
     if (contracts.length < BATCH_SIZE_OPTIONS_PRICE) {
