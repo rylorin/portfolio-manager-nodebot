@@ -27,6 +27,7 @@ import {
   Position,
   Cash,
   Balance,
+  Bag,
 } from "../models";
 import { ITradingBot } from ".";
 
@@ -98,120 +99,6 @@ export class AccountUpdateBot extends ITradingBot {
     if ((this.orderq.length > 0) || (this.positionq.length > 0) || (this.cashq.length > 0)) setTimeout(() => this.emit("processQueue"), 100);
   }
 
-  private async findOrCreateContract(ibContract: IbContract): Promise<Contract> {
-    // find contract by ib id
-    let contract: Contract = ibContract.conId ? await Contract.findOne({
-      where: { conId: ibContract.conId }
-    }) : null;
-    if (contract === null) {  // not found
-      if (ibContract.secType == SecType.STK) {
-        // find stock contract by data
-        contract = await Contract.findOne({
-          where: {
-            secType: "STK",
-            symbol: ibContract.symbol,
-            currency: ibContract.currency,
-          }
-        });
-        if (contract === null) {
-          // not found, create it
-          contract = await Contract.create({
-            conId: ibContract.conId,
-            secType: ibContract.secType,
-            symbol: ibContract.symbol,
-            currency: ibContract.currency,
-            exchange: ibContract.exchange,
-          }).then((contract) => Stock.create({
-            id: contract.id,
-          }).then(() => contract)
-          );
-        } else {
-          // update conId for this contract
-          return Contract.update({ conId: ibContract.conId }, { where: { id: contract.id } })
-            .then(() => contract);
-        }
-      } else if (ibContract.secType == SecType.OPT) {
-        // find option contract by data
-        const lastTradeDate = ITradingBot.expirationToDate(ibContract.lastTradeDateOrContractMonth);
-        const stock = await this.findOrCreateContract({
-          secType: "STK" as SecType,
-          symbol: ibContract.symbol,
-          currency: ibContract.currency,
-        });
-        contract = await Option.findOne({
-          where: {
-            stock_id: stock.id,
-            lastTradeDate: lastTradeDate,
-            strike: ibContract.strike,
-            callOrPut: ibContract.right,
-          }
-        }).then((option) => {
-          if (option !== null) {
-            return Contract.findByPk(option.id)
-              // update ib con id
-              .then((contract) => Contract.update({ conId: ibContract.conId }, { where: { id: contract.id } }))
-              .then(() => contract);
-          } else {
-            // Create option contrat
-            return Contract.create({
-              conId: ibContract.conId,
-              secType: ibContract.secType,
-              symbol: ibContract.localSymbol,
-              currency: ibContract.currency,
-              exchange: ibContract.exchange,
-            }).then((contract) => Option.create({
-              id: contract.id,
-              stock_id: stock.id,
-              lastTradeDate: lastTradeDate,
-              strike: ibContract.strike,
-              callOrPut: ibContract.right,
-            }).then(() => contract)
-            );
-          }
-        });
-      } else if (ibContract.secType == SecType.CASH) {
-        // create it
-        contract = await Contract.create({
-          conId: ibContract.conId,
-          secType: ibContract.secType,
-          symbol: ibContract.localSymbol,
-          currency: ibContract.currency,
-          name: ibContract.localSymbol,
-        }).then((contract) => Cash.create({
-          id: contract.id,
-        }).then(() => contract)
-        );
-      } else if (ibContract.secType == SecType.BAG) {
-        // create it
-        contract = await Contract.create({
-          conId: ibContract.conId,
-          secType: ibContract.secType,
-          symbol: `${ibContract.tradingClass}-${ibContract.localSymbol}`,
-          currency: ibContract.currency,
-          exchange: ibContract.exchange,
-        }) /* we should create a BAG child here .then((contract) => Stock.create({
-              id: contract.id,
-            }).then(() => {
-                  return contract;
-            })
-          ) */
-          .then(async (result) => {
-            for (const leg of ibContract.comboLegs) {
-              await this.findOrCreateContract({
-                conId: leg.conId,
-              });
-            }
-            return result;
-          });
-      }
-      // this.app.error("findOrCreateContract: contract created, please check results");
-      // this.app.printObject(ibContract);
-    } else {
-      // console.log("findOrCreateContract got contract by conId");
-    }
-    return contract;
-  }
-
   private createLegs(order: IbOpenOrder) {
     const promises: Promise<void>[] = [];
     for (const leg of order.contract.comboLegs) {
@@ -247,7 +134,7 @@ export class AccountUpdateBot extends ITradingBot {
     return Promise.all(promises);
   }
 
-  protected async updateOpenOrder(order: IbOpenOrder): Promise<void | any[]> {
+  protected async updateOpenOrder(order: IbOpenOrder): Promise<void> {
     const contract = await this.findOrCreateContract(order.contract);
     const result = await OpenOrder.update({
       actionType: order.order.action,
@@ -264,9 +151,7 @@ export class AccountUpdateBot extends ITradingBot {
       },
       // logging: console.log,
     });
-    if (result[0] > 0) {
-      if (order.contract.secType == "BAG") await this.createLegs(order);
-    } else {
+    if (result[0] == 0) {
       // order not existing, create it
       await OpenOrder.create({
         permId: order.order.permId,
@@ -282,9 +167,8 @@ export class AccountUpdateBot extends ITradingBot {
       }, {
         // logging: console.log,
       }
-      ).then((value: OpenOrder) => {
-        if (order.contract.secType == "BAG") return this.createLegs(order);
-      });
+      );
+      if (order.contract.secType == "BAG") await this.createLegs(order);
     }
   }
 
@@ -304,7 +188,7 @@ export class AccountUpdateBot extends ITradingBot {
         }, {
         where: { contract_id: contract.id }
       })
-        .then((result): Promise<any> => {
+        .then((result): Promise<Position> => {
           if (!result[0] && pos.pos) {
             return Position.create({
               portfolio_id: this.portfolio.id,
@@ -313,7 +197,7 @@ export class AccountUpdateBot extends ITradingBot {
               cost: pos.avgCost * pos.pos,
             });
           } else {
-            return Promise.resolve();
+            return Promise.resolve(null as Position);
           }
         }));
   }
@@ -437,7 +321,7 @@ export class AccountUpdateBot extends ITradingBot {
         if (data.changed?.value && data.changed?.value?.get(this.accountNumber) && data.changed?.value?.get(this.accountNumber).get("TotalCashBalance")) {
           for (const key of data.changed?.value?.get(this.accountNumber).get("TotalCashBalance").keys()) {
             const balance: number = parseFloat(data.changed?.value?.get(this.accountNumber).get("TotalCashBalance").get(key).value);
-            console.log('new cash balance:', key, balance);
+            console.log("new cash balance:", key, balance);
             if (key != "BASE") this.enqueueCashPostition(key, balance);
           }
         }

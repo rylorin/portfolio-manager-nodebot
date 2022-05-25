@@ -5,7 +5,7 @@ import {
   DataType,
 } from "sequelize-typescript";
 
-@Table({ tableName: "currency", timestamps: false })
+@Table({ tableName: "currency", timestamps: true })
 export class Currency extends Model {
 
   @Column({ type: DataType.STRING(3) })

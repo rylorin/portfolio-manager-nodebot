@@ -25,6 +25,8 @@ import {
     Parameter,
     Portfolio,
     Currency,
+    Bag,
+    Cash,
 } from "../models";
 
 export class ITradingBot extends EventEmitter {
@@ -366,6 +368,129 @@ export class ITradingBot extends EventEmitter {
         } else {
             return Promise.resolve(0);
         }
+    }
+
+    protected async findOrCreateContract(ibContract: IbContract): Promise<Contract> {
+        // find contract by ib id
+        let contract: Contract = ibContract.conId ? await Contract.findOne({
+            where: { conId: ibContract.conId }
+        }) : null;
+        if (contract === null) {  // not found
+            if (ibContract.secType == SecType.STK) {
+                // find stock contract by data
+                contract = await Contract.findOne({
+                    where: {
+                        secType: "STK",
+                        symbol: ibContract.symbol,
+                        currency: ibContract.currency,
+                    }
+                });
+                if (contract === null) {
+                    // not found, create it
+                    contract = await Contract.create({
+                        conId: ibContract.conId,
+                        secType: ibContract.secType,
+                        symbol: ibContract.symbol,
+                        currency: ibContract.currency,
+                        exchange: ibContract.exchange,
+                    }).then((contract) => Stock.create({
+                        id: contract.id,
+                    }).then(() => contract)
+                    );
+                } else {
+                    // update conId for this contract
+                    return Contract.update({ conId: ibContract.conId }, { where: { id: contract.id } })
+                        .then(() => contract);
+                }
+            } else if (ibContract.secType == SecType.OPT) {
+                // find option contract by data
+                const lastTradeDate = ITradingBot.expirationToDate(ibContract.lastTradeDateOrContractMonth);
+                const stock = await this.findOrCreateContract({
+                    secType: "STK" as SecType,
+                    symbol: ibContract.symbol,
+                    currency: ibContract.currency,
+                });
+                contract = await Option.findOne({
+                    where: {
+                        stock_id: stock.id,
+                        lastTradeDate: lastTradeDate,
+                        strike: ibContract.strike,
+                        callOrPut: ibContract.right,
+                    }
+                }).then((option) => {
+                    if (option !== null) {
+                        return Contract.findByPk(option.id)
+                            // update ib con id
+                            .then((contract) => Contract.update({ conId: ibContract.conId }, { where: { id: contract.id } }))
+                            .then(() => contract);
+                    } else {
+                        // Create option contrat
+                        return Contract.create({
+                            conId: ibContract.conId,
+                            secType: ibContract.secType,
+                            symbol: ibContract.localSymbol,
+                            currency: ibContract.currency,
+                            exchange: ibContract.exchange,
+                        }).then((contract) => Option.create({
+                            id: contract.id,
+                            stock_id: stock.id,
+                            lastTradeDate: lastTradeDate,
+                            strike: ibContract.strike,
+                            callOrPut: ibContract.right,
+                        }).then(() => contract)
+                        );
+                    }
+                });
+            } else if (ibContract.secType == SecType.CASH) {
+                // find stock by data
+                contract = await Contract.findOne({
+                    where: {
+                        secType: SecType.CASH,
+                        symbol: ibContract.symbol,
+                        currency: ibContract.currency,
+                    }
+                });
+                if (contract === null) {
+                    this.printObject(ibContract);
+                    // create it
+                    contract = await Contract.create({
+                        conId: ibContract.conId,
+                        secType: ibContract.secType,
+                        symbol: ibContract.localSymbol ?? ibContract.symbol,
+                        currency: ibContract.currency,
+                        name: ibContract.localSymbol ?? ibContract.symbol,
+                    }).then((contract) => Cash.create({
+                        id: contract.id,
+                    }).then(() => contract)
+                    );
+                } else {
+                    // update conId for this contract
+                    return Contract.update({ conId: ibContract.conId }, { where: { id: contract.id } })
+                        .then(() => contract);
+                }
+            } else if (ibContract.secType == SecType.BAG) {
+                // create it
+                contract = await Contract.create({
+                    conId: ibContract.conId,
+                    secType: ibContract.secType,
+                    symbol: `${ibContract.tradingClass}-${ibContract.localSymbol}`,
+                    currency: ibContract.currency,
+                    exchange: ibContract.exchange,
+                }).then((contract) => Bag.create({
+                    id: contract.id,
+                }).then(async () => {
+                    const p: Promise<Contract>[] = [];
+                    for (const leg of ibContract.comboLegs) {
+                        p.push(this.findOrCreateContract({
+                            conId: leg.conId,
+                        }));
+                    }
+                    await Promise.all(p);
+                    return contract;
+                }));
+            }
+        }
+        return contract;
     }
 
 }

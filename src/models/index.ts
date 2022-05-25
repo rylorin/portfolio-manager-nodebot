@@ -9,6 +9,7 @@ export { Cash } from "./cash.model";
 export { Parameter } from "./parameter.model";
 export { Currency } from "./currency.model";
 export { Balance } from "./balance.model";
+export { Bag } from "./bag.model";
 
 export const sequelize = new Sequelize(
     {
