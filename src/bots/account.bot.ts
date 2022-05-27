@@ -137,6 +137,7 @@ export class AccountUpdateBot extends ITradingBot {
   protected async updateOpenOrder(order: IbOpenOrder): Promise<void> {
     const contract = await this.findOrCreateContract(order.contract);
     const result = await OpenOrder.update({
+      contract_id: contract.id,
       actionType: order.order.action,
       totalQty: order.order.totalQuantity,
       cashQty: order.order.cashQty,
@@ -144,10 +145,11 @@ export class AccountUpdateBot extends ITradingBot {
       auxPrice: order.order.auxPrice,
       status: order.orderState.status,
       remainingQty: order.orderStatus?.remaining,
+      orderId: order.orderId,
+      clientId: order.order.clientId,
     }, {
       where: {
         perm_Id: order.order.permId,
-        contract_id: contract.id,
       },
       // logging: console.log,
     });
@@ -164,6 +166,8 @@ export class AccountUpdateBot extends ITradingBot {
         auxPrice: order.order.auxPrice,
         status: order.orderState.status,
         remainingQty: order.orderStatus?.remaining,
+        orderId: order.orderId,
+        clientId: order.order.clientId,
       }, {
         // logging: console.log,
       }
@@ -203,37 +207,50 @@ export class AccountUpdateBot extends ITradingBot {
   }
 
   protected async updateCashPosition(pos: { currency: string; balance: number; }): Promise<void> {
+    console.log(`updateCashPosition(${pos.currency}, ${pos.balance})`);
     const balance = await Balance.findOne({
       where: {
         portfolio_id: this.portfolio.id,
         currency: pos.currency,
       },
+      // logging: console.log,
     });
     if (balance != null) {
       await balance.update({
         quantity: pos.balance,
+      }, {
+        // logging: console.log,
       });
     } else {
       await Balance.create({
         portfolio_id: this.portfolio.id,
         currency: pos.currency,
         quantity: pos.balance,
+      }, {
+        // logging: console.log,
       });
     }
   }
 
-  private cleanPositions(now: number): void {
-    Position.destroy({
-      where: {
-        portfolio_id: this.portfolio.id,
-        [Op.or]: [
-          { updatedAt: { [Op.lt]: new Date(now) } },
-          { updatedAt: null },
-        ]
+  private async cleanPositions(now: number): Promise<[affectedRowCount: number]> {
+    return Position.update(
+      {
+        quantity: 0,
       },
-      // logging: console.log,
-    });
-    Balance.update(
+      {
+        where: {
+          portfolio_id: this.portfolio.id,
+          [Op.or]: [
+            { updatedAt: { [Op.lt]: new Date(now) } },
+            { updatedAt: null },
+          ]
+        },
+        // logging: console.log,
+      });
+  }
+
+  private cleanBalances(now: number): Promise<[affectedRowCount: number]> {
+    return Balance.update(
       {
         quantity: 0,
       },
@@ -251,8 +268,8 @@ export class AccountUpdateBot extends ITradingBot {
 
   public async start(): Promise<void> {
     this.on("processQueue", this.processQueue);
-    const now = Date.now() - 0.01;
-
+    const now = Date.now() - (60 * 1000); // 1 minute
+    // console.log(Date.now(), now);
     await this.init();
 
     await this.api.getAllOpenOrders().then((orders) => {
@@ -309,6 +326,8 @@ export class AccountUpdateBot extends ITradingBot {
         }
       });
 
+    // clean balances quantities first as if they are unchanged the updatedAt will be unchanged as well
+    await this.cleanBalances(now);
     this.accountSubscription$ = this.api.getAccountUpdates(this.accountNumber).subscribe({
       next: (data) => {
         // this.printObject(data);
@@ -334,7 +353,7 @@ export class AccountUpdateBot extends ITradingBot {
       },
     });
 
-    setTimeout(() => this.cleanPositions(now), 5000);      // clean old positions after 5 secs  
+    setTimeout(() => this.cleanPositions(now), 15 * 1000);      // clean old positions after 15 secs  
   }
 
   public stop(): void {

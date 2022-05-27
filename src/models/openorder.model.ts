@@ -15,6 +15,12 @@ export class OpenOrder extends Model {
   @Column({ type: DataType.INTEGER, field: "perm_id" })
   public permId!: number;
 
+  @Column({ type: DataType.INTEGER, field: "order_id" })
+  public orderId: number;
+
+  @Column({ type: DataType.INTEGER, field: "client_id" })
+  public clientId: number;
+
   @Column({ type: DataType.INTEGER, field: "portfolio_id" })
   public portfolioId!: number;
 
