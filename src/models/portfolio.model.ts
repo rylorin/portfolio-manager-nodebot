@@ -33,4 +33,7 @@ export class Portfolio extends Model {
   @Column({ type: DataType.FLOAT, field: "min_premium" })
   public minPremium: number;
 
+  @Column({ type: DataType.FLOAT, field: "cash_strategy" })
+  public cashStrategy: number;
+
 }
