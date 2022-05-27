@@ -138,6 +138,17 @@ export class ITradingBot extends EventEmitter {
         return order;
     }
 
+    protected static BenchmarkOrder(action: OrderAction, quantity: number): IbOrder {
+        const order: IbOrder = {
+            action: action,
+            orderType: OrderType.MOC,
+            // orderType: OrderType.MIDPRICE,
+            totalQuantity: quantity,
+            transmit: false,
+        };
+        return order;
+    }
+
     protected init(): Promise<void> {
         return Portfolio.findOne({
             where: {
@@ -162,6 +173,7 @@ export class ITradingBot extends EventEmitter {
         if ((this.portfolio !== null) && (benchmark !== null)) {
             return Position.findOne({
                 where: {
+                    portfolio_id: this.portfolio.id,
                     contract_id: benchmark.id,
                 },
             }).then((position) => Currency.findOne({
@@ -179,7 +191,7 @@ export class ITradingBot extends EventEmitter {
     private async sumOptionsPositionsAmountInBase(positions: Position[], underlying: number, right: OptionType): Promise<number> {
         let result = 0;
         for (const position of positions) {
-            await Option.findOne(
+            const opt = await Option.findOne(
                 {
                     where: {
                         id: position.contract.id,
@@ -187,28 +199,34 @@ export class ITradingBot extends EventEmitter {
                         stock_id: underlying,
                     },
                 },
-            ).then((opt) => Currency.findOne({
-                where: {
-                    base: this.portfolio.baseCurrency,
-                    currency: position.contract.currency,
-                },
-            }).then((currency) => {
-                if (opt !== null) result += position.quantity * opt.multiplier * opt.strike / currency.rate;
-            }));
+            );
+            this.printObject(opt);
+            if (
+                (opt != null)
+                && ((underlying == null) || ((underlying != null) && (opt.stock.id == underlying)))
+                && ((right == null) || ((right != null) && (opt.callOrPut == right)))
+            ) {
+                result += position.quantity * opt.multiplier * opt.strike / this.base_rates[position.contract.currency];
+            }
         }
+        console.log(`sumOptionsPositionsAmountInBase(${underlying}, ${right}): ${result}`);
         return result;
     }
 
     protected getOptionPositionsValueInBase(underlying: number, right: OptionType): Promise<number> {
-        if ((this.portfolio !== null) && (underlying !== null)) {
-            return Position.findAll({
-                include: {
-                    model: Contract,
+        if (this.portfolio !== null) {
+            return Position.findAll(
+                {
                     where: {
-                        secType: "OPT",
+                        portfolio_id: this.portfolio.id,
                     },
-                },
-            }).then((positions: Position[]) => this.sumOptionsPositionsAmountInBase(positions, underlying, right));
+                    include: {
+                        model: Contract,
+                        where: {
+                            secType: "OPT",
+                        },
+                    },
+                }).then((positions: Position[]) => this.sumOptionsPositionsAmountInBase(positions, underlying, right));
         } else {
             return Promise.resolve(0);
         }
@@ -234,14 +252,18 @@ export class ITradingBot extends EventEmitter {
 
     protected getOptionsPositionsQuantity(underlying: Contract, right: OptionType): Promise<number> {
         if (underlying !== null) {
-            return Position.findAll({
-                include: {
-                    model: Contract,
+            return Position.findAll(
+                {
                     where: {
-                        secType: "OPT",
+                        portfolio_id: this.portfolio.id,
                     },
-                },
-            }).then((positions: Position[]) => this.sumOptionsPositionsQuantity(positions, underlying, right));
+                    include: {
+                        model: Contract,
+                        where: {
+                            secType: "OPT",
+                        },
+                    },
+                }).then((positions: Position[]) => this.sumOptionsPositionsQuantity(positions, underlying, right));
         } else {
             return Promise.resolve(0);
         }
@@ -251,6 +273,7 @@ export class ITradingBot extends EventEmitter {
         if ((this.portfolio !== null) && (benchmark !== null)) {
             return OpenOrder.findAll({
                 where: {
+                    portfolio_id: this.portfolio.id,
                     actionType: actionType,
                     status: ["Submitted", "PreSubmitted"],
                 },
@@ -276,6 +299,7 @@ export class ITradingBot extends EventEmitter {
         if (benchmark !== null) {
             return OpenOrder.findAll({
                 where: {
+                    portfolio_id: this.portfolio.id,
                     actionType: actionType,
                     status: ["Submitted", "PreSubmitted"],
                 },
@@ -318,6 +342,7 @@ export class ITradingBot extends EventEmitter {
         if ((this.portfolio !== null) && (underlying !== null)) {
             return OpenOrder.findAll({
                 where: {
+                    portfolio_id: this.portfolio.id,
                     actionType: actionType,
                     status: ["Submitted", "PreSubmitted"],
                 },
@@ -355,6 +380,7 @@ export class ITradingBot extends EventEmitter {
         if (underlying !== null) {
             return OpenOrder.findAll({
                 where: {
+                    portfolio_id: this.portfolio.id,
                     actionType: actionType,
                     status: ["Submitted", "PreSubmitted"],
                 },

@@ -93,7 +93,7 @@ export class ContractsUpdaterBot extends ITradingBot {
         .then((detailstab) => this.updateContractDetails(contract.id, detailstab))
         .catch((err) => {
           // silently ignore any error
-          console.log(`iterateContractsForDetails: error '${err}' for ${contract.id}`);
+          console.log(`iterateContractsForDetails: error '${err}' for ${contract.id} ${contract.symbol}`);
         }));
     }, Promise.resolve()); // initial
   }
@@ -109,7 +109,7 @@ export class ContractsUpdaterBot extends ITradingBot {
       {
         model: Contract,
         mapToModel: true, // pass true here if you have any mapped fields
-        logging: console.log,
+        // logging: console.log,
       }
     );
   }
@@ -408,7 +408,7 @@ export class ContractsUpdaterBot extends ITradingBot {
         .then((marketData) => this.updateContratPrice(contract, marketData))
         .catch((err) =>
           Contract.update({
-            price: undefined, ask: undefined, ask_date: now, bid: undefined, bid_date: now
+            price: undefined, ask: undefined, bid: undefined,
           }, {
             where: { id: contract.id }
           })
@@ -681,7 +681,7 @@ export class ContractsUpdaterBot extends ITradingBot {
             if ((err.code == 10090)      // 'Part of requested market data is not subscribed. Subscription-independent ticks are still active.Delayed market data is not available.XLV ARCA/TOP/ALL'
               || (err.code == 10091)) {  // 'Part of requested market data requires additional subscription for API. See link in 'Market Data Connections' dialog for more details.Delayed market data is not available.SPY ARCA/TOP/ALL'
               Contract.update({
-                price: undefined, ask: undefined, ask_date: now, bid: undefined, bid_date: now
+                price: undefined, ask: undefined, bid: undefined,
               }, {
                 where: { id: contract.id },
                 logging: console.log,
@@ -733,7 +733,7 @@ export class ContractsUpdaterBot extends ITradingBot {
   }
 
   private async updateOptionsPrice(): Promise<void> {
-    const now = Date.now() - 0.2;
+    const now = Date.now() - (3660 * 1000); // 1 hour
     await this.findCurrenciesToUpdatePrice(now).then((currencies) => this.updateCurrenciesRate(currencies));
     console.log("updateOptionsPrice", new Date());
     let contracts: Contract[] = [];
