@@ -47,11 +47,14 @@ export class SellCoveredCallsBot extends ITradingBot {
                 // RULE : stock price is higher than previous close
                 && (parameter.underlying.price > parameter.underlying.previousClosePrice)) {
                 this.printObject(parameter);
+                // RULE defensive : strike > cours (OTM) & strike > position avg price
+                // RULE agressive : strike > cours (OTM)
+                const strike = (parameter.ccStrategy == 1) ? Math.max(parameter.underlying.price, position.averagePrice) : parameter.underlying.price;
                 const options = await Option.findAll({
                     where: {
                         stock_id: parameter.underlying.id,
                         strike: {
-                            [Op.gt]: Math.max(parameter.underlying.price, position.cost / position.quantity), // RULE : strike > cours (OTM) & strike > position avg price
+                            [Op.gt]: strike,
                         },
                         lastTradeDate: { [Op.gt]: new Date() },
                         callOrPut: "C",
@@ -117,7 +120,7 @@ export class SellCoveredCallsBot extends ITradingBot {
     private async process(): Promise<void> {
         console.log("cc bot process begin");
         await this.listStockPostitions().then((result) => this.iteratePositions(result));
-        setTimeout(() => this.emit("process"), 60 * 1000);
+        setTimeout(() => this.emit("process"), 3600 * 1000);
         console.log("cc bot process end");
     }
 
