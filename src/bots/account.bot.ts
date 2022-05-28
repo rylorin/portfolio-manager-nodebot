@@ -120,6 +120,7 @@ export class AccountUpdateBot extends ITradingBot {
             // logging: console.log,
           }).then(([affectedCount]): Promise<void> => (affectedCount == 0) ? OpenOrder.create({
             perm_Id: order.order.permId,
+            portfolioId: this.portfolio.id,
             contract_id: contract.id,
             actionType: (order.order.action == leg.action) ? "BUY" : "SELL",
             totalQty: order.order.totalQuantity * leg.ratio,
@@ -128,6 +129,8 @@ export class AccountUpdateBot extends ITradingBot {
             auxPrice: order.order.auxPrice,
             status: order.orderState.status,
             remainingQty: order.orderStatus?.remaining * leg.ratio,
+            orderId: order.orderId,
+            clientId: order.order.clientId,
           }).then(() => Promise.resolve()) : Promise.resolve()) : /* error: leg contract not found! */ Promise.resolve())
       );
     }
@@ -340,7 +343,7 @@ export class AccountUpdateBot extends ITradingBot {
         if (data.changed?.value && data.changed?.value?.get(this.accountNumber) && data.changed?.value?.get(this.accountNumber).get("TotalCashBalance")) {
           for (const key of data.changed?.value?.get(this.accountNumber).get("TotalCashBalance").keys()) {
             const balance: number = parseFloat(data.changed?.value?.get(this.accountNumber).get("TotalCashBalance").get(key).value);
-            console.log("new cash balance:", key, balance);
+            // console.log("new cash balance:", key, balance);
             if (key != "BASE") this.enqueueCashPostition(key, balance);
           }
         }

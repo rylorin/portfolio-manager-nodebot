@@ -6,7 +6,7 @@ import {
     DataType,
 } from "sequelize-typescript";
 
-import { Contract, Portfolio } from ".";
+import { Portfolio } from ".";
 
 @Table({ tableName: "balance", timestamps: true })
 export class Balance extends Model {

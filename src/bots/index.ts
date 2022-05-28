@@ -188,28 +188,101 @@ export class ITradingBot extends EventEmitter {
         }
     }
 
-    private async sumOptionsPositionsAmountInBase(positions: Position[], underlying: number, right: OptionType): Promise<number> {
+    private async sumOptionsPositionsEngagedInBase(positions: Position[], underlying: number, right: OptionType): Promise<number> {
         let result = 0;
+        const where: any = {};
+        if (underlying) where.stock_id = underlying;
+        if (right) where.callOrPut = right;
         for (const position of positions) {
+            where.id = position.contract.id;
             const opt = await Option.findOne(
                 {
-                    where: {
-                        id: position.contract.id,
-                        callOrPut: right,
-                        stock_id: underlying,
-                    },
+                    where: where,
                 },
             );
-            this.printObject(opt);
-            if (
-                (opt != null)
-                && ((underlying == null) || ((underlying != null) && (opt.stock.id == underlying)))
-                && ((right == null) || ((right != null) && (opt.callOrPut == right)))
-            ) {
+            if (opt != null) {
                 result += position.quantity * opt.multiplier * opt.strike / this.base_rates[position.contract.currency];
             }
         }
-        console.log(`sumOptionsPositionsAmountInBase(${underlying}, ${right}): ${result}`);
+        console.log(`sumOptionsPositionsEngagedInBase(${underlying}, ${right}): ${result}`);
+        return result;
+    }
+
+    protected getOptionPositionsEngagedInBase(underlying: number, right: OptionType): Promise<number> {
+        if (this.portfolio !== null) {
+            return Position.findAll(
+                {
+                    where: {
+                        portfolio_id: this.portfolio.id,
+                    },
+                    include: {
+                        model: Contract,
+                        where: {
+                            secType: "OPT",
+                        },
+                    },
+                }).then((positions: Position[]) => this.sumOptionsPositionsEngagedInBase(positions, underlying, right));
+        } else {
+            return Promise.resolve(0);
+        }
+    }
+
+    private async sumOptionsPositionsRiskInBase(positions: Position[], underlying: number, right: OptionType): Promise<number> {
+        let result = 0;
+        const where: any = {};
+        if (underlying) where.stock_id = underlying;
+        if (right) where.callOrPut = right;
+        for (const position of positions) {
+            where.id = position.contract.id;
+            const opt = await Option.findOne(
+                {
+                    where: where,
+                },
+            );
+            if (opt != null) {
+                result += position.quantity * opt.multiplier * opt.strike * opt.delta / this.base_rates[position.contract.currency];
+            }
+        }
+        console.log(`sumOptionsPositionsRiskInBase(${underlying}, ${right}): ${result}`);
+        return result;
+    }
+
+    protected getOptionPositionsRiskInBase(underlying: number, right: OptionType): Promise<number> {
+        if (this.portfolio !== null) {
+            return Position.findAll(
+                {
+                    where: {
+                        portfolio_id: this.portfolio.id,
+                    },
+                    include: {
+                        model: Contract,
+                        where: {
+                            secType: "OPT",
+                        },
+                    },
+                }).then((positions: Position[]) => this.sumOptionsPositionsRiskInBase(positions, underlying, right));
+        } else {
+            return Promise.resolve(0);
+        }
+    }
+
+    private async sumOptionsPositionsValueInBase(positions: Position[], underlying: number, right: OptionType): Promise<number> {
+        let result = 0;
+        const where: any = {};
+        if (underlying) where.stock_id = underlying;
+        if (right) where.callOrPut = right;
+        for (const position of positions) {
+            where.id = position.contract.id;
+            const opt = await Option.findOne(
+                {
+                    where: where,
+                },
+            );
+            if (opt != null) {
+                result += position.quantity * opt.multiplier * position.contract.price / this.base_rates[position.contract.currency];
+            }
+        }
+        console.log(`sumOptionsPositionsValueInBase(${underlying}, ${right}): ${result}`);
         return result;
     }
 
@@ -226,7 +299,7 @@ export class ITradingBot extends EventEmitter {
                             secType: "OPT",
                         },
                     },
-                }).then((positions: Position[]) => this.sumOptionsPositionsAmountInBase(positions, underlying, right));
+                }).then((positions: Position[]) => this.sumOptionsPositionsValueInBase(positions, underlying, right));
         } else {
             return Promise.resolve(0);
         }

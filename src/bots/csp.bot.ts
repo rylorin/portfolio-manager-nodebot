@@ -57,7 +57,7 @@ export class SellCashSecuredPutBot extends ITradingBot {
         console.log("stock_positions_amount:", stock_positions);
         const stock_sell_orders = await this.getContractOrderValueInBase(parameter.underlying, OrderAction.SELL);
         console.log("stock_sell_orders_amount:", stock_sell_orders);
-        const put_positions_amount = await this.getOptionPositionsValueInBase(parameter.underlying.id, "P" as OptionType);
+        const put_positions_amount = await this.getOptionPositionsEngagedInBase(parameter.underlying.id, OptionType.Put);
         console.log("put_positions value in base:", put_positions_amount);
         const put_sell_orders = -(await this.getOptionOrdersValueInBase(parameter.underlying.id, "P" as OptionType, OrderAction.SELL));
         console.log("put_sell_orders value in base:", put_sell_orders);
