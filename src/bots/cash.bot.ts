@@ -68,8 +68,10 @@ export class CashManagementBot extends ITradingBot {
             }).then((orders) => orders.reduce((p, order) => {
                 return p.then(() => this.api.cancelOrder(order.orderId));
             }, Promise.resolve()));
-            if ((units_to_buy - units_to_sell) < 0) await this.api.placeNewOrder(benchmark, ITradingBot.BenchmarkOrder(OrderAction.SELL, units_to_sell));
-            else if ((units_to_buy - units_to_sell) > 0) await this.api.placeNewOrder(benchmark, ITradingBot.BenchmarkOrder(OrderAction.BUY, units_to_buy));
+            if ((units_to_buy - units_to_sell) < 0) await this.api.placeNewOrder(benchmark, ITradingBot.BenchmarkOrder(OrderAction.SELL, units_to_sell))
+                .then((orderId: number) => { console.log("orderid:", orderId.toString()); });
+            else if ((units_to_buy - units_to_sell) > 0) await this.api.placeNewOrder(benchmark, ITradingBot.BenchmarkOrder(OrderAction.BUY, units_to_buy))
+                .then((orderId: number) => { console.log("orderid:", orderId.toString()); });
         }
         setTimeout(() => this.emit("process"), 3600 * 1000);    // wait 1 hour
         console.log("CashManagementBot process end");

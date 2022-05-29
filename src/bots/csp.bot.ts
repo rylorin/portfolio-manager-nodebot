@@ -102,13 +102,12 @@ export class SellCashSecuredPutBot extends ITradingBot {
     }
 
     private async iterateParameters(parameters: Parameter[]): Promise<void> {
-        // const now = new Date();
         const result = [];
         for (const parameter of parameters) {
             result.push(await this.processOneParamaeter(parameter));
         }
         const total_engaged = result.reduce((p, v) => (p + v.engaged), 0);
-        const max_for_all_symbols = ((await this.getContractPositionValueInBase(this.portfolio.benchmark)) * this.portfolio.putRatio) - total_engaged;
+        const max_for_all_symbols = ((await this.getContractPositionValueInBase(this.portfolio.benchmark) + (await this.getTotalBalanceInBase())) * this.portfolio.putRatio) - total_engaged;
         console.log("max_for_all_symbols:", max_for_all_symbols, total_engaged);
         const all_options: Option[] = result.reduce((p, v) => [...p, ...v.options], []);
         const filtered_options: Option[] = [];
@@ -132,9 +131,8 @@ export class SellCashSecuredPutBot extends ITradingBot {
             this.printObject(filtered_options[0]);
             await this.api.placeNewOrder(
                 ITradingBot.OptionToIbContract(filtered_options[0]),
-                ITradingBot.CspOrder(OrderAction.SELL, 1, filtered_options[0].contract.ask)).then((orderId: number) => {
-                    console.log("orderid:", orderId.toString());
-                });
+                ITradingBot.CspOrder(OrderAction.SELL, 1, filtered_options[0].contract.ask))
+                .then((orderId: number) => { console.log("orderid:", orderId.toString()); });
         }
     }
 
