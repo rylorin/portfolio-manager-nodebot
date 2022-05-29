@@ -27,6 +27,7 @@ import {
     Currency,
     Bag,
     Cash,
+    Balance,
 } from "../models";
 
 export class ITradingBot extends EventEmitter {
@@ -467,6 +468,28 @@ export class ITradingBot extends EventEmitter {
         } else {
             return Promise.resolve(0);
         }
+    }
+
+    protected getBalanceInBase(currency: string): Promise<number> {
+        return Balance.findOne(
+            {
+                where: {
+                    portfolio_id: this.portfolio.id,
+                    currency: currency,
+                }
+            }).then((balance) => {
+                return balance.quantity / this.base_rates[balance.currency];
+            });
+    }
+
+    protected getTotalBalanceInBase(): Promise<number> {
+        return Balance.findAll({ where: { portfolio_id: this.portfolio.id, }, })
+            .then((balances) => {
+                return balances.reduce((p, b) => {
+                    p.quantity += b.quantity / this.base_rates[b.currency];
+                    return p;
+                }, { quantity: 0, currency: "EUR" }).quantity;
+            });
     }
 
     protected async findOrCreateContract(ibContract: IbContract): Promise<Contract> {

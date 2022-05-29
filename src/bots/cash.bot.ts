@@ -19,24 +19,9 @@ export class CashManagementBot extends ITradingBot {
         await this.init();  // load parameters
         const benchmark = this.portfolio.benchmark;
         const benchmark_value = await this.getContractPositionValueInBase(benchmark);
-        let balance_in_base: number;
-        await Balance.findAll({ where: { portfolio_id: this.portfolio.id, }, })
-            .then((balances) => {
-                balance_in_base = balances.reduce((p, b) => {
-                    p.quantity += b.quantity / this.base_rates[b.currency];
-                    return p;
-                }, { quantity: 0, currency: "EUR" }).quantity;
-            });
-        let benchmark_balance_in_base: number;
-        await Balance.findOne(
-            {
-                where: {
-                    portfolio_id: this.portfolio.id,
-                    currency: benchmark.currency,
-                }
-            }).then((balance) => {
-                benchmark_balance_in_base = balance.quantity / this.base_rates[balance.currency];
-            });
+        let balance_in_base: number = await this.getTotalBalanceInBase();
+        let benchmark_balance_in_base: number = await this.getBalanceInBase(benchmark.currency);
+
         let extra_cash: number;
         if (this.portfolio.cashStrategy == 0) {
             extra_cash = 0;
@@ -62,13 +47,15 @@ export class CashManagementBot extends ITradingBot {
         let units_to_sell = 0;
         if (extra_cash < 0) {
             // we need to sell some benchmark units
-            if (-extra_cash > benchmark_balance_in_base) extra_cash = -benchmark_balance_in_base;
+            if (-extra_cash > benchmark_value) extra_cash = -benchmark_value;
             units_to_sell = Math.ceil(-extra_cash / benchmark.price);
         } else if (extra_cash > benchmark.price) {
             // we can buy some benchmark units
             if (extra_cash > benchmark_balance_in_base) extra_cash = benchmark_balance_in_base;
             units_to_buy = Math.floor(extra_cash / benchmark.price);
         }
+
+        console.log((`strategy ${this.portfolio.cashStrategy} extra_cash ${extra_cash} to buy ${units_to_buy} to sell ${units_to_sell}`));
         const benchmark_on_buy = await this.getContractOrdersQuantity(benchmark, OrderAction.BUY);
         const benchmark_on_sell = await this.getContractOrdersQuantity(benchmark, OrderAction.SELL);
         if ((this.portfolio.cashStrategy > 0) && ((benchmark_on_buy - benchmark_on_sell) != (units_to_buy - units_to_sell))) {

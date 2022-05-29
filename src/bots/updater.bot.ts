@@ -401,7 +401,6 @@ export class ContractsUpdaterBot extends ITradingBot {
 
   private iterateContractsForPriceUpdate(contracts: Contract[]): Promise<any> {
     // fetch all contracts one after the previous one
-    const now = new Date();
     return contracts.reduce((p, contract) => {
       return p.then(() => this.requestContractPrice(contract)
         // .then((marketData) => { console.log(marketData); return marketData; })
@@ -669,7 +668,6 @@ export class ContractsUpdaterBot extends ITradingBot {
 
   private fetchOptionContractsPrices(contracts: Contract[]): Promise<any[]> {
     // fetch all contracts in parallel
-    const now = new Date();
     const promises: Promise<any>[] = [];
     for (const contract of contracts) {
       promises.push(
