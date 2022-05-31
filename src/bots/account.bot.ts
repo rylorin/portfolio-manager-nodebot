@@ -99,9 +99,10 @@ export class AccountUpdateBot extends ITradingBot {
     if ((this.orderq.length > 0) || (this.positionq.length > 0) || (this.cashq.length > 0)) setTimeout(() => this.emit("processQueue"), 100);
   }
 
-  private createLegs(order: IbOpenOrder) {
+  private createLegs(order: IbOpenOrder): Promise<void[]> {
     const promises: Promise<void>[] = [];
     for (const leg of order.contract.comboLegs) {
+      // this.printObject(leg);
       promises.push(
         this.findOrCreateContract({ conId: leg.conId })
           .then((contract): Promise<void> => (contract != null) ? OpenOrder.update({
@@ -114,12 +115,13 @@ export class AccountUpdateBot extends ITradingBot {
             remainingQty: order.orderStatus?.remaining * leg.ratio,
           }, {
             where: {
-              perm_Id: order.order.permId,
+              permId: order.order.permId,
+              portfolioId: this.portfolio.id,
               contract_id: contract.id,
             },
-            // logging: console.log,
+            logging: console.log,
           }).then(([affectedCount]): Promise<void> => (affectedCount == 0) ? OpenOrder.create({
-            perm_Id: order.order.permId,
+            permId: order.order.permId,
             portfolioId: this.portfolio.id,
             contract_id: contract.id,
             actionType: (order.order.action == leg.action) ? "BUY" : "SELL",
@@ -131,6 +133,8 @@ export class AccountUpdateBot extends ITradingBot {
             remainingQty: order.orderStatus?.remaining * leg.ratio,
             orderId: order.orderId,
             clientId: order.order.clientId,
+          }, {
+            logging: console.log,
           }).then(() => Promise.resolve()) : Promise.resolve()) : /* error: leg contract not found! */ Promise.resolve())
       );
     }
@@ -138,6 +142,7 @@ export class AccountUpdateBot extends ITradingBot {
   }
 
   protected async updateOpenOrder(order: IbOpenOrder): Promise<void> {
+    // this.printObject(order);
     const contract = await this.findOrCreateContract(order.contract);
     const result = await OpenOrder.update({
       contract_id: contract.id,
@@ -153,6 +158,7 @@ export class AccountUpdateBot extends ITradingBot {
     }, {
       where: {
         perm_Id: order.order.permId,
+        portfolioId: this.portfolio.id,
       },
       // logging: console.log,
     });

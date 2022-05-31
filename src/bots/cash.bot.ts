@@ -56,7 +56,8 @@ export class CashManagementBot extends ITradingBot {
         }
 
         console.log((`strategy ${this.portfolio.cashStrategy} extra_cash ${extra_cash} to buy ${units_to_buy} to sell ${units_to_sell}`));
-        const benchmark_on_buy = await this.getContractOrdersQuantity(benchmark, OrderAction.BUY);
+        const benchmark_on_buy = await this.getContractOrdersQuantity(benchmark, OrderAction.BUY)
+            + await this.getOptionsOrdersQuantity(benchmark, OptionType.Put, OrderAction.SELL);
         const benchmark_on_sell = await this.getContractOrdersQuantity(benchmark, OrderAction.SELL);
         if ((this.portfolio.cashStrategy > 0) && ((benchmark_on_buy - benchmark_on_sell) != (units_to_buy - units_to_sell))) {
             // cancel any pending order
@@ -64,6 +65,7 @@ export class CashManagementBot extends ITradingBot {
                 where: {
                     portfolio_id: this.portfolio.id,
                     contract_id: this.portfolio.benchmark.id,
+                    orderId: { [Op.ne]: 0, },
                 }
             }).then((orders) => orders.reduce((p, order) => {
                 return p.then(() => this.api.cancelOrder(order.orderId));

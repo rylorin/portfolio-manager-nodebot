@@ -434,7 +434,7 @@ export class ContractsUpdaterBot extends ITradingBot {
         model: Contract,
         mapToModel: true, // pass true here if you have any mapped fields
         replacements: [STOCKS_PRICES_REFRESH_FREQ / 1440],
-        logging: console.log,
+        // logging: console.log,
       });
   }
 
@@ -476,7 +476,7 @@ export class ContractsUpdaterBot extends ITradingBot {
         model: Contract,
         mapToModel: true, // pass true here if you have any mapped fields
         replacements: [STOCKS_PRICES_REFRESH_FREQ / 1440],
-        logging: console.log,
+        // logging: console.log,
       });
   }
 
@@ -551,7 +551,7 @@ export class ContractsUpdaterBot extends ITradingBot {
     for (const expstr of expirations) {
       const expdate = ITradingBot.expirationToDate(expstr);
       const days = (expdate.getTime() - Date.now()) / 60000 / 1440;
-      if (days < OPTIONS_PRICE_TIMEFRAME) {
+      if ((days > 0) && (days < OPTIONS_PRICE_TIMEFRAME)) {
         console.log(stock.symbol, expstr, days, "days");
         for (const strike of strikes) {
           // console.log("iterateSecDefOptParamsForExpStrikes", stock.symbol, expstr, strike);
@@ -731,8 +731,10 @@ export class ContractsUpdaterBot extends ITradingBot {
   }
 
   private async updateOptionsPrice(): Promise<void> {
-    const now = Date.now() - (3660 * 1000); // 1 hour
+    // update Fx rates
+    const now = Date.now() - (1 * 3660 * 1000); // 1 hour
     await this.findCurrenciesToUpdatePrice(now).then((currencies) => this.updateCurrenciesRate(currencies));
+    // update option contracts prices
     console.log("updateOptionsPrice", new Date());
     let contracts: Contract[] = [];
     if (contracts.length < BATCH_SIZE_OPTIONS_PRICE) {

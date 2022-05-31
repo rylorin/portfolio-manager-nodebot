@@ -63,7 +63,7 @@ export class SellCashSecuredPutBot extends ITradingBot {
         console.log("put_sell_orders value in base:", put_sell_orders);
         const max_engaged = stock_positions - stock_sell_orders - put_positions_amount - put_sell_orders;
         console.log("max engaged:", max_engaged);
-        const max_for_this_symbol = (await this.getContractPositionValueInBase(this.portfolio.benchmark)) * parameter.navRatio;
+        const max_for_this_symbol = ((await this.getContractPositionValueInBase(this.portfolio.benchmark)) + (await this.getTotalBalanceInBase())) * parameter.navRatio;
         console.log("max for this symbol:", max_for_this_symbol);
         const free_for_this_symbol = max_for_this_symbol - max_engaged;
         console.log("free_for_this_symbol in base:", free_for_this_symbol);
@@ -155,13 +155,13 @@ export class SellCashSecuredPutBot extends ITradingBot {
     }
 
     private async process(): Promise<void> {
-        console.log("process begin");
+        console.log("SellCashSecuredPutBot process begin");
         console.log("this.portfolio:");
         this.printObject(this.portfolio);
         console.log("benchmark_amount:", await this.getContractPositionValueInBase(this.portfolio.benchmark));
         await this.listParameters().then((result) => this.iterateParameters(result));
         setTimeout(() => this.emit("process"), CSP_FREQ * 60 * 1000);
-        console.log("process end");
+        console.log("SellCashSecuredPutBot process end");
     }
 
     public async start(): Promise<void> {
