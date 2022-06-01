@@ -79,17 +79,17 @@ export class AccountUpdateBot extends ITradingBot {
     if (this.qProcessing < 1) {
       this.qProcessing++;
       if (this.orderq.length > 0) {
-        console.log(`processOrderQueue ${this.orderq.length} elements`);
+        console.log(`processOrderQueue ${this.orderq.length} item(s)`);
         const item = this.orderq.shift();
         await this.updateOpenOrder(item);
         console.log("processOrderQueue done");
       } else if (this.positionq.length > 0) {
-        console.log(`processPositionQueue ${this.positionq.length} elements`);
+        console.log(`processPositionQueue ${this.positionq.length} item(s)`);
         const item = this.positionq.shift();
         await this.updatePosition(item);
         console.log("processPositionQueue done");
       } else if (this.cashq.length > 0) {
-        console.log(`processCashQueue ${this.cashq.length} elements`);
+        console.log(`processCashQueue ${this.cashq.length} item(s)`);
         const item = this.cashq.shift();
         await this.updateCashPosition(item);
         console.log("procesCashQueue done");
@@ -192,6 +192,7 @@ export class AccountUpdateBot extends ITradingBot {
   }
 
   protected async updatePosition(pos: IbPosition): Promise<void> {
+    // this.printObject(pos);
     await this.findOrCreateContract(pos.contract)
       .then((contract) => Position.update(
         {

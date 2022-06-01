@@ -14,8 +14,7 @@ import { OrderAction, OptionType } from "@stoqey/ib";
 export class SellCoveredCallsBot extends ITradingBot {
 
     private async processOnePosition(position: Position): Promise<void> {
-        console.log("processing position:");
-        this.printObject(position);
+        console.log(`processing position: ${position.contract.symbol}`);
         const stock_positions = position.quantity;
         console.log("stock_positions:", stock_positions);
         const stock_sell_orders = await this.getContractOrdersQuantity(position.contract, OrderAction.SELL);
@@ -118,10 +117,10 @@ export class SellCoveredCallsBot extends ITradingBot {
     }
 
     private async process(): Promise<void> {
-        console.log("cc bot process begin");
+        console.log("SellCoveredCallsBot process begin");
         await this.listStockPostitions().then((result) => this.iteratePositions(result));
         setTimeout(() => this.emit("process"), 3600 * 1000);
-        console.log("cc bot process end");
+        console.log("SellCoveredCallsBot process end");
     }
 
     public start() {

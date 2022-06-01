@@ -93,11 +93,10 @@ export class SellCashSecuredPutBot extends ITradingBot {
             }, {
                 required: true,
                 model: Stock,
-                // include: Contract,
+                // include: { model: Contract, },
             }],
-            logging: console.log,
+            // logging: console.log,
         });
-        // if (opt.length > 0) this.printObject(opt[0]);
         return { symbol: parameter.underlying.symbol, engaged: max_engaged, options: opt };
     }
 

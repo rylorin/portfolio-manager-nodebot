@@ -19,7 +19,8 @@ import { ITradingBot } from ".";
 
 const UPDATE_CONID_FREQ: number = parseInt(process.env.UPDATE_CONID_FREQ) || 10;
 const HISTORICAL_DATA_REFRESH_FREQ: number = parseInt(process.env.HISTORICAL_DATA_REFRESH_FREQ) || (12 * 60);
-const STOCKS_PRICES_REFRESH_FREQ: number = parseInt(process.env.STOCKS_PRICES_REFRESH_FREQ) || 20;  // mins
+const STOCKS_PRICES_REFRESH_FREQ: number = parseInt(process.env.STOCKS_PRICES_REFRESH_FREQ) || 15;  // mins
+const FX_RATES_REFRESH_FREQ: number = parseInt(process.env.FX_RATES_REFRESH_FREQ) || 60;            // mins
 const OPTIONS_LIST_BUILD_FREQ: number = parseInt(process.env.OPTIONS_LIST_BUILD_FREQ) || 12;        // hours
 const BATCH_SIZE_OPTIONS_PRICE: number = parseInt(process.env.BATCH_SIZE_OPTIONS_PRICE) || 95;      // units
 const OPTIONS_PRICE_DTE_FREQ: number = parseInt(process.env.OPTIONS_PRICE_DTE_FREQ) || 15;          // mins
@@ -34,14 +35,12 @@ export class ContractsUpdaterBot extends ITradingBot {
     this.on("updateStocksConId", this.updateStocksConId);
     this.on("updateOptionsConId", this.updateOptionsConId);
     this.on("updateHistoricalData", this.updateHistoricalData);
-    this.on("updateStocksPrices", this.updateStocksPrices);
     this.on("updateOptionsPrice", this.updateOptionsPrice);
     this.on("buildOptionsList", this.buildOptionsList);
 
     setTimeout(() => this.emit("updateStocksConId"), 1 * 1000);     // start after 1 sec 
     setTimeout(() => this.emit("updateOptionsConId"), 2 * 1000);    // start after 2 secs
     setTimeout(() => this.emit("updateHistoricalData"), 3 * 1000);  // start after 3 secs
-    setTimeout(() => this.emit("updateStocksPrices"), 4 * 1000);    // start after 4 secs
     setTimeout(() => this.emit("updateOptionsPrice"), 5 * 1000);    // start after 5 secs
     setTimeout(() => this.emit("buildOptionsList"), 3600 * 1000);   // start after 1 hour
   }
@@ -282,11 +281,11 @@ export class ContractsUpdaterBot extends ITradingBot {
       }
     } else if (contract.currency == "USD") contract.exchange = "SMART";  // nothing except SMART seems to work for USD
     return this.api
-      .getMarketDataSnapshot(contract, "", false)
-      .catch((err: IBApiNextError) => {
-        console.log(`getMarketDataSnapshot failed for contract ${contract.conId} ${contract.secType} ${contract.symbol} ${contract.currency} @ ${contract.exchange} with ${err.code}: '${err.error.message}'`);
-        throw (err.error);
-      });
+      .getMarketDataSnapshot(contract, "", false);
+    // .catch((err: IBApiNextError) => {
+    //   console.log(`getMarketDataSnapshot failed for contract ${contract.conId} ${contract.secType} ${contract.symbol} ${contract.currency} @ ${contract.exchange} with ${err.code}: '${err.error.message}'`);
+    //   throw (err.error);
+    // });
   }
 
   private updateContratPrice(contract: Contract, marketData: MutableMarketData): Promise<number> {
@@ -303,8 +302,13 @@ export class ContractsUpdaterBot extends ITradingBot {
         dataset.price = tick.value > 0 ? tick.value : null;
       } else if (type == IBApiTickType.CLOSE) {
         dataset.previousClosePrice = tick.value > 0 ? tick.value : null;
-      } else if ([IBApiTickType.BID_SIZE, IBApiTickType.ASK_SIZE, IBApiTickType.LAST_SIZE, IBApiTickType.OPEN,
-      IBApiTickType.HIGH, IBApiTickType.LOW, IBApiTickType.VOLUME, IBApiTickType.HALTED].includes(type as IBApiTickType)) {
+      } else if ([
+        IBApiTickType.BID_SIZE, IBApiTickType.ASK_SIZE, IBApiTickType.LAST_SIZE,
+        IBApiTickType.OPEN,
+        IBApiTickType.HIGH, IBApiTickType.LOW,
+        IBApiTickType.VOLUME,
+        IBApiTickType.HALTED
+      ].includes(type as IBApiTickType)) {
         // siliently ignore
         // console.log('silently ignored', type, tick);
       } else if (type == IBApiNextTickType.OPTION_PV_DIVIDEND) {
@@ -373,7 +377,10 @@ export class ContractsUpdaterBot extends ITradingBot {
         console.log("ignored", type, tick);
       }
     });
-    const price = dataset.price ?? dataset.previousClosePrice;
+    let price = dataset.previousClosePrice;
+    if (dataset.ask && dataset.bid) price = (dataset.ask + dataset.bid) / 2;
+    if (dataset.price) price = dataset.price;
+    if (contract.secType != "OPT") console.log(`${contract.symbol} ${dataset.price} ${dataset.ask} ${dataset.bid} ${dataset.previousClosePrice} ${price}`);
     return Contract.update(
       dataset,
       {
@@ -416,7 +423,7 @@ export class ContractsUpdaterBot extends ITradingBot {
     }, Promise.resolve()); // initial
   }
 
-  private findStocksNeedingPriceUpdate(): Promise<Contract[]> {
+  private findStocksNeedingPriceUpdate(limit: number): Promise<Contract[]> {
     return sequelize.query(`
       SELECT
           DISTINCT(contract.symbol), SUM(trading_parameters.nav_ratio) nav_ratio_sum,
@@ -429,16 +436,17 @@ export class ContractsUpdaterBot extends ITradingBot {
           AND age > ?
         GROUP BY contract.symbol
         ORDER BY contract.updatedAt
+        LIMIT ?
         `,
       {
         model: Contract,
         mapToModel: true, // pass true here if you have any mapped fields
-        replacements: [STOCKS_PRICES_REFRESH_FREQ / 1440],
+        replacements: [STOCKS_PRICES_REFRESH_FREQ / 1440, limit],
         // logging: console.log,
       });
   }
 
-  private findPortfolioContractsNeedingPriceUpdate(): Promise<Contract[]> {
+  private findPortfolioContractsNeedingPriceUpdate(limit: number): Promise<Contract[]> {
     return sequelize.query(`
       SELECT
           DISTINCT(contract.symbol),
@@ -449,16 +457,17 @@ export class ContractsUpdaterBot extends ITradingBot {
           AND age > ?
         GROUP BY contract.symbol
         ORDER BY contract.updatedAt
+        LIMIT ?
         `,
       {
         model: Contract,
         mapToModel: true, // pass true here if you have any mapped fields
-        replacements: [STOCKS_PRICES_REFRESH_FREQ / 1440],
+        replacements: [STOCKS_PRICES_REFRESH_FREQ / 1440, limit],
         // logging: console.log,
       });
   }
 
-  private findPortfolioStocksNeedingPriceUpdate(): Promise<Contract[]> {
+  private findPortfolioStocksNeedingPriceUpdate(limit: number): Promise<Contract[]> {
     return sequelize.query(`
       SELECT
         DISTINCT(stock.symbol),
@@ -471,25 +480,14 @@ export class ContractsUpdaterBot extends ITradingBot {
         AND age > ?
       GROUP BY stock.symbol
       ORDER BY contract.updatedAt
+      LIMIT ?
       `,
       {
         model: Contract,
         mapToModel: true, // pass true here if you have any mapped fields
-        replacements: [STOCKS_PRICES_REFRESH_FREQ / 1440],
+        replacements: [STOCKS_PRICES_REFRESH_FREQ / 1440, limit],
         // logging: console.log,
       });
-  }
-
-  private async updateStocksPrices(): Promise<void> {
-    console.log("updateStocksPrices");
-    await this.findPortfolioStocksNeedingPriceUpdate()
-      .then((contracts) => this.iterateContractsForPriceUpdate(contracts));
-    await this.findPortfolioContractsNeedingPriceUpdate()
-      .then((contracts) => this.iterateContractsForPriceUpdate(contracts));
-    await this.findStocksNeedingPriceUpdate()
-      .then((contracts) => this.iterateContractsForPriceUpdate(contracts));
-    console.log("updateStocksPrices done");
-    setTimeout(() => this.emit("updateStocksPrices"), STOCKS_PRICES_REFRESH_FREQ * 60000 / 2);
   }
 
   private createOptionContractFromDetails(stock: Contract, expstr: string, strike: number, right: OptionType, detailstab: ContractDetails[]): Promise<Option> {
@@ -675,14 +673,14 @@ export class ContractsUpdaterBot extends ITradingBot {
           // .then((marketData) => { console.log(contract.id, marketData); return marketData; })
           .then((marketData) => this.updateContratPrice(contract, marketData))
           .catch((err) => {
-            console.log("fetchOptionContractsPrices error", err.code);
+            console.log(`fetchOptionContractsPrices failed for contract id ${contract.id} ${contract.conId} ${contract.secType} ${contract.symbol} ${contract.currency} @ ${contract.exchange} with ${err.code}: '${err.error.message}'`);
             if ((err.code == 10090)      // 'Part of requested market data is not subscribed. Subscription-independent ticks are still active.Delayed market data is not available.XLV ARCA/TOP/ALL'
               || (err.code == 10091)) {  // 'Part of requested market data requires additional subscription for API. See link in 'Market Data Connections' dialog for more details.Delayed market data is not available.SPY ARCA/TOP/ALL'
               Contract.update({
-                price: undefined, ask: undefined, bid: undefined,
+                price: null, ask: null, bid: null, updatedAt: new Date(),
               }, {
                 where: { id: contract.id },
-                logging: console.log,
+                // logging: console.log,
               });
             } else {
               // silently ignore any error
@@ -694,7 +692,8 @@ export class ContractsUpdaterBot extends ITradingBot {
     return Promise.all(promises);
   }
 
-  private findCurrenciesToUpdatePrice(now: number) {
+  private findCurrenciesToUpdatePrice() {
+    const now: number = Date.now() - (FX_RATES_REFRESH_FREQ * 60 * 1000);
     return Currency.findAll({
       where: {
         updatedAt: {
@@ -709,6 +708,7 @@ export class ContractsUpdaterBot extends ITradingBot {
   }
 
   private updateCurrenciesRate(currencies: Currency[]) {
+    console.log(`updateCurrenciesRate ${currencies.length} item(s)`);
     const promises: Promise<any>[] = [];
     for (const currency of currencies) {
       promises.push(
@@ -731,31 +731,47 @@ export class ContractsUpdaterBot extends ITradingBot {
   }
 
   private async updateOptionsPrice(): Promise<void> {
-    // update Fx rates
-    const now = Date.now() - (1 * 3660 * 1000); // 1 hour
-    await this.findCurrenciesToUpdatePrice(now).then((currencies) => this.updateCurrenciesRate(currencies));
-    // update option contracts prices
     console.log("updateOptionsPrice", new Date());
+    // update Fx rates
+    console.log("updateFxRates");
+    await this.findCurrenciesToUpdatePrice().then((currencies) => this.updateCurrenciesRate(currencies));
+    console.log("updateFxRates done");
     let contracts: Contract[] = [];
     if (contracts.length < BATCH_SIZE_OPTIONS_PRICE) {
+      const c = await this.findPortfolioStocksNeedingPriceUpdate(BATCH_SIZE_OPTIONS_PRICE - contracts.length);
+      console.log(c.length, "portolio stocks item(s)");
+      contracts = contracts.concat(c).filter((value, index) => contracts.findIndex((p) => p.id == value.id) == index);
+    }
+    if (contracts.length < BATCH_SIZE_OPTIONS_PRICE) {
+      const c = await this.findPortfolioContractsNeedingPriceUpdate(BATCH_SIZE_OPTIONS_PRICE - contracts.length);
+      console.log(c.length, "portolio contracts item(s)");
+      contracts = contracts.concat(c).filter((value, index) => contracts.findIndex((p) => p.id == value.id) == index);
+    }
+    if (contracts.length < BATCH_SIZE_OPTIONS_PRICE) {
+      const c = await this.findStocksNeedingPriceUpdate(BATCH_SIZE_OPTIONS_PRICE - contracts.length);
+      console.log(c.length, "stocks item(s)");
+      contracts = contracts.concat(c).filter((value, index) => contracts.findIndex((p) => p.id == value.id) == index);
+    }
+    // update option contracts prices
+    if (contracts.length < BATCH_SIZE_OPTIONS_PRICE) {
       const c = await this.findOptionsToUpdatePrice(1, OPTIONS_PRICE_DTE_FREQ, BATCH_SIZE_OPTIONS_PRICE - contracts.length);
-      console.log(c.length, "one day items");
-      contracts = contracts.concat(c);
+      console.log(c.length, "one day item(s)");
+      contracts = contracts.concat(c).filter((value, index) => contracts.findIndex((p) => p.id == value.id) == index);
     }
     if (contracts.length < BATCH_SIZE_OPTIONS_PRICE) {
       const c = await this.findOptionsToUpdatePrice(7, OPTIONS_PRICE_WEEK_FREQ, BATCH_SIZE_OPTIONS_PRICE - contracts.length);
-      console.log(c.length, "one week items");
-      contracts = contracts.concat(c);
+      console.log(c.length, "one week item(s)");
+      contracts = contracts.concat(c).filter((value, index) => contracts.findIndex((p) => p.id == value.id) == index);
     }
     if (contracts.length < BATCH_SIZE_OPTIONS_PRICE) {
       const c = await this.findOptionsToUpdatePrice(31, OPTIONS_PRICE_MONTH_FREQ, BATCH_SIZE_OPTIONS_PRICE - contracts.length);
-      console.log(c.length, "one month items");
-      contracts = contracts.concat(c);
+      console.log(c.length, "one month item(s)");
+      contracts = contracts.concat(c).filter((value, index) => contracts.findIndex((p) => p.id == value.id) == index);
     }
     if (contracts.length < BATCH_SIZE_OPTIONS_PRICE) {
       const c = await this.findOptionsToUpdatePrice(OPTIONS_PRICE_TIMEFRAME, OPTIONS_PRICE_OTHER_FREQ, BATCH_SIZE_OPTIONS_PRICE - contracts.length);
-      console.log(c.length, "other items");
-      contracts = contracts.concat(c);
+      console.log(c.length, "other item(s)");
+      contracts = contracts.concat(c).filter((value, index) => contracts.findIndex((p) => p.id == value.id) == index);
     }
     await this.fetchOptionContractsPrices(contracts);
     console.log("updateOptionsPrice done", new Date());
