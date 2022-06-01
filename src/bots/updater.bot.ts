@@ -740,38 +740,39 @@ export class ContractsUpdaterBot extends ITradingBot {
     if (contracts.length < BATCH_SIZE_OPTIONS_PRICE) {
       const c = await this.findPortfolioStocksNeedingPriceUpdate(BATCH_SIZE_OPTIONS_PRICE - contracts.length);
       console.log(c.length, "portolio stocks item(s)");
-      contracts = contracts.concat(c).filter((value, index) => contracts.findIndex((p) => p.id == value.id) == index);
+      contracts = contracts.concat(c).reduce(((p, v) => p.findIndex((q) => q.id == v.id) < 0 ? [...p, v] : p), [] as Contract[]);
+      console.log(contracts.length, "portolio stocks item(s) filtered");
     }
     if (contracts.length < BATCH_SIZE_OPTIONS_PRICE) {
       const c = await this.findPortfolioContractsNeedingPriceUpdate(BATCH_SIZE_OPTIONS_PRICE - contracts.length);
       console.log(c.length, "portolio contracts item(s)");
-      contracts = contracts.concat(c).filter((value, index) => contracts.findIndex((p) => p.id == value.id) == index);
+      contracts = contracts.concat(c).reduce(((p, v) => p.findIndex((q) => q.id == v.id) < 0 ? [...p, v] : p), [] as Contract[]);
     }
     if (contracts.length < BATCH_SIZE_OPTIONS_PRICE) {
       const c = await this.findStocksNeedingPriceUpdate(BATCH_SIZE_OPTIONS_PRICE - contracts.length);
       console.log(c.length, "stocks item(s)");
-      contracts = contracts.concat(c).filter((value, index) => contracts.findIndex((p) => p.id == value.id) == index);
+      contracts = contracts.concat(c).reduce(((p, v) => p.findIndex((q) => q.id == v.id) < 0 ? [...p, v] : p), [] as Contract[]);
     }
     // update option contracts prices
     if (contracts.length < BATCH_SIZE_OPTIONS_PRICE) {
       const c = await this.findOptionsToUpdatePrice(1, OPTIONS_PRICE_DTE_FREQ, BATCH_SIZE_OPTIONS_PRICE - contracts.length);
       console.log(c.length, "one day item(s)");
-      contracts = contracts.concat(c).filter((value, index) => contracts.findIndex((p) => p.id == value.id) == index);
+      contracts = contracts.concat(c).reduce(((p, v) => p.findIndex((q) => q.id == v.id) < 0 ? [...p, v] : p), [] as Contract[]);
     }
     if (contracts.length < BATCH_SIZE_OPTIONS_PRICE) {
       const c = await this.findOptionsToUpdatePrice(7, OPTIONS_PRICE_WEEK_FREQ, BATCH_SIZE_OPTIONS_PRICE - contracts.length);
       console.log(c.length, "one week item(s)");
-      contracts = contracts.concat(c).filter((value, index) => contracts.findIndex((p) => p.id == value.id) == index);
+      contracts = contracts.concat(c).reduce(((p, v) => p.findIndex((q) => q.id == v.id) < 0 ? [...p, v] : p), [] as Contract[]);
     }
     if (contracts.length < BATCH_SIZE_OPTIONS_PRICE) {
       const c = await this.findOptionsToUpdatePrice(31, OPTIONS_PRICE_MONTH_FREQ, BATCH_SIZE_OPTIONS_PRICE - contracts.length);
       console.log(c.length, "one month item(s)");
-      contracts = contracts.concat(c).filter((value, index) => contracts.findIndex((p) => p.id == value.id) == index);
+      contracts = contracts.concat(c).reduce(((p, v) => p.findIndex((q) => q.id == v.id) < 0 ? [...p, v] : p), [] as Contract[]);
     }
     if (contracts.length < BATCH_SIZE_OPTIONS_PRICE) {
       const c = await this.findOptionsToUpdatePrice(OPTIONS_PRICE_TIMEFRAME, OPTIONS_PRICE_OTHER_FREQ, BATCH_SIZE_OPTIONS_PRICE - contracts.length);
       console.log(c.length, "other item(s)");
-      contracts = contracts.concat(c).filter((value, index) => contracts.findIndex((p) => p.id == value.id) == index);
+      contracts = contracts.concat(c).reduce(((p, v) => p.findIndex((q) => q.id == v.id) < 0 ? [...p, v] : p), [] as Contract[]);
     }
     await this.fetchOptionContractsPrices(contracts);
     console.log("updateOptionsPrice done", new Date());
