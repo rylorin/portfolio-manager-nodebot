@@ -51,13 +51,13 @@ export class Contract extends Model {
     this.setDataValue("price", (Math.round(value * 1000) / 1000));
   }
 
-  @Column({ type: DataType.FLOAT(6, 2) })
+  @Column({ type: DataType.FLOAT(6, 3) })
   public bid: number;
 
-  @Column({ type: DataType.FLOAT(6, 2) })
+  @Column({ type: DataType.FLOAT(6, 3) })
   public ask: number;
 
-  @Column({ type: DataType.FLOAT, field: "previous_close_price" })
+  @Column({ type: DataType.FLOAT(6, 3), field: "previous_close_price" })
   public previousClosePrice: number;
 
 }

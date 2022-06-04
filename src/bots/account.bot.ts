@@ -119,7 +119,7 @@ export class AccountUpdateBot extends ITradingBot {
               portfolioId: this.portfolio.id,
               contract_id: contract.id,
             },
-            logging: console.log,
+            // logging: console.log,
           }).then(([affectedCount]): Promise<void> => (affectedCount == 0) ? OpenOrder.create({
             permId: order.order.permId,
             portfolioId: this.portfolio.id,
@@ -134,7 +134,7 @@ export class AccountUpdateBot extends ITradingBot {
             orderId: order.orderId,
             clientId: order.order.clientId,
           }, {
-            logging: console.log,
+            // logging: console.log,
           }).then(() => Promise.resolve()) : Promise.resolve()) : /* error: leg contract not found! */ Promise.resolve())
       );
     }
