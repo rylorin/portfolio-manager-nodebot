@@ -390,23 +390,16 @@ export class ContractsUpdaterBot extends ITradingBot {
       }
     ).then(() => {
       if (contract.secType == "OPT") {
-        // this.app.printObject(dataset);
-        // this.app.printObject(optdataset);
-        return Option.update(
-          optdataset,
-          {
-            where: {
-              id: contract.id,
-            }
-          }
-        ).then(() => price);
+        return Option.update(optdataset, { where: { id: contract.id } }).then(() => price);
+      } else if (contract.secType == "CASH") {
+        return Currency.update({ rate: price }, { where: { base: contract.symbol.substring(0, 4), currency: contract.currency }, logging: console.log }).then(() => price);
       } else {
         return price;
       }
     });
   }
 
-  private iterateContractsForPriceUpdate(contracts: Contract[]): Promise<any> {
+  private iterateContractsForSerialPriceUpdate(contracts: Contract[]): Promise<any> {
     // fetch all contracts one after the previous one
     return contracts.reduce((p, contract) => {
       return p.then(() => this.requestContractPrice(contract)
@@ -414,7 +407,7 @@ export class ContractsUpdaterBot extends ITradingBot {
         .then((marketData) => this.updateContratPrice(contract, marketData))
         .catch((err) =>
           Contract.update({
-            price: undefined, ask: undefined, bid: undefined,
+            price: null, ask: null, bid: null,
           }, {
             where: { id: contract.id }
           })
@@ -719,8 +712,8 @@ export class ContractsUpdaterBot extends ITradingBot {
           exchange: "IDEALPRO",
         }).then((contract) => this.requestContractPrice(contract)
           // .then((marketData) => { console.log(contract.id, marketData); return marketData; })
-          .then((marketData) => this.updateContratPrice(contract, marketData))
-          .then((price) => Currency.update({ rate: price }, { where: { id: currency.id } })))
+          .then((marketData) => this.updateContratPrice(contract, marketData)))
+          // .then((price) => Currency.update({ rate: price }, { where: { id: currency.id } }))
           .catch((err) => {
             // silently ignore any error
             console.log("updateCurrenciesRate: error ignored", err);
@@ -741,7 +734,7 @@ export class ContractsUpdaterBot extends ITradingBot {
       const c = await this.findPortfolioStocksNeedingPriceUpdate(BATCH_SIZE_OPTIONS_PRICE - contracts.length);
       console.log(c.length, "portolio stocks item(s)");
       contracts = contracts.concat(c).reduce(((p, v) => p.findIndex((q) => q.id == v.id) < 0 ? [...p, v] : p), [] as Contract[]);
-      console.log(contracts.length, "portolio stocks item(s) filtered");
+      // console.log(contracts.length, "portolio stocks item(s) filtered");
     }
     if (contracts.length < BATCH_SIZE_OPTIONS_PRICE) {
       const c = await this.findPortfolioContractsNeedingPriceUpdate(BATCH_SIZE_OPTIONS_PRICE - contracts.length);
