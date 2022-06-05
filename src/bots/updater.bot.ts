@@ -37,11 +37,13 @@ export class ContractsUpdaterBot extends ITradingBot {
     this.on("updateHistoricalData", this.updateHistoricalData);
     this.on("updateOptionsPrice", this.updateOptionsPrice);
     this.on("buildOptionsList", this.buildOptionsList);
+    this.on("createCashContracts", this.createCashContracts);
 
     setTimeout(() => this.emit("updateStocksConId"), 1 * 1000);     // start after 1 sec 
     setTimeout(() => this.emit("updateOptionsConId"), 2 * 1000);    // start after 2 secs
     setTimeout(() => this.emit("updateHistoricalData"), 3 * 1000);  // start after 3 secs
     setTimeout(() => this.emit("updateOptionsPrice"), 5 * 1000);    // start after 5 secs
+    setTimeout(() => this.emit("createCashContracts"), 6 * 1000);    // start after 6 secs
     setTimeout(() => this.emit("buildOptionsList"), 3600 * 1000);   // start after 1 hour
   }
 
@@ -700,7 +702,24 @@ export class ContractsUpdaterBot extends ITradingBot {
     });
   }
 
-  private updateCurrenciesRate(currencies: Currency[]) {
+  private findCashContractsToUpdatePrice(limit: number): Promise<Contract[]> {
+    const now: number = Date.now() - (FX_RATES_REFRESH_FREQ * 60 * 1000);
+    return Contract.findAll({
+      where: {
+        secType: "CASH",
+        updatedAt: {
+          [Op.or]: {
+            [Op.lt]: new Date(now),
+            [Op.is]: null,
+          },
+        },
+      },
+      limit: limit,
+    });
+  }
+
+  private async createCashContracts() {
+    const currencies: Currency[] = await Currency.findAll();
     console.log(`updateCurrenciesRate ${currencies.length} item(s)`);
     const promises: Promise<any>[] = [];
     for (const currency of currencies) {
@@ -710,31 +729,29 @@ export class ContractsUpdaterBot extends ITradingBot {
           secType: SecType.CASH,
           currency: currency.currency,
           exchange: "IDEALPRO",
-        }).then((contract) => this.requestContractPrice(contract)
-          // .then((marketData) => { console.log(contract.id, marketData); return marketData; })
-          .then((marketData) => this.updateContratPrice(contract, marketData)))
-          // .then((price) => Currency.update({ rate: price }, { where: { id: currency.id } }))
-          .catch((err) => {
-            // silently ignore any error
-            console.log("updateCurrenciesRate: error ignored", err);
-          })
+        }).catch((err) => {
+          // silently ignore any error
+          console.log("updateCurrenciesRate: error ignored", err);
+        })
       );
     }
-    return Promise.all(promises);
+    await Promise.all(promises);
+    setTimeout(() => this.emit("createCashContracts"), 10 * 60 * 1000); // 10 minutes
   }
 
   private async updateOptionsPrice(): Promise<void> {
     console.log("updateOptionsPrice", new Date());
-    // update Fx rates
-    console.log("updateFxRates");
-    await this.findCurrenciesToUpdatePrice().then((currencies) => this.updateCurrenciesRate(currencies));
-    console.log("updateFxRates done");
     let contracts: Contract[] = [];
+    // update Fx rates
+    if (contracts.length < BATCH_SIZE_OPTIONS_PRICE) {
+      const c = await this.findCashContractsToUpdatePrice(BATCH_SIZE_OPTIONS_PRICE - contracts.length);
+      console.log(c.length, "cash contract(s)");
+      contracts = contracts.concat(c).reduce(((p, v) => p.findIndex((q) => q.id == v.id) < 0 ? [...p, v] : p), [] as Contract[]);
+    }
     if (contracts.length < BATCH_SIZE_OPTIONS_PRICE) {
       const c = await this.findPortfolioStocksNeedingPriceUpdate(BATCH_SIZE_OPTIONS_PRICE - contracts.length);
       console.log(c.length, "portolio stocks item(s)");
       contracts = contracts.concat(c).reduce(((p, v) => p.findIndex((q) => q.id == v.id) < 0 ? [...p, v] : p), [] as Contract[]);
-      // console.log(contracts.length, "portolio stocks item(s) filtered");
     }
     if (contracts.length < BATCH_SIZE_OPTIONS_PRICE) {
       const c = await this.findPortfolioContractsNeedingPriceUpdate(BATCH_SIZE_OPTIONS_PRICE - contracts.length);
