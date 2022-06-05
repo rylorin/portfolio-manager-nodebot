@@ -492,106 +492,147 @@ export class ITradingBot extends EventEmitter {
             });
     }
 
+    protected static formatOptionName(ibContract: IbContract): string {
+        const months = ["JAV", "FEB", "APR", "MAY", "JUN", "JUL", "AUG", "SEP", "OCT", "NOV", "DEC"];
+        const month = months[parseInt(ibContract.lastTradeDateOrContractMonth.substring(4, 6)) - 1];
+        const day = ibContract.lastTradeDateOrContractMonth.substring(6, 8);
+        const year = ibContract.lastTradeDateOrContractMonth.substring(2, 4);
+        const strike = ibContract.strike.toFixed(1);
+        const datestr: string = day + "-" + month + "-" + year;
+        return `${ibContract.symbol} ${datestr} ${strike} ${ibContract.right}`;
+    }
+
     protected async findOrCreateContract(ibContract: IbContract): Promise<Contract> {
+        let contract: Contract = null;
         // find contract by ib id
-        let contract: Contract = ibContract.conId ? await Contract.findOne({
-            where: { conId: ibContract.conId }
-        }) : null;
-        if (contract === null) {  // not found
-            if (ibContract.secType == SecType.STK) {
-                // find stock contract by data
-                contract = await Contract.findOne({
-                    where: {
-                        secType: "STK",
-                        symbol: ibContract.symbol,
-                        currency: ibContract.currency,
+        if (ibContract.conId) {
+            contract = await Contract.findOne({ where: { conId: ibContract.conId }, });
+        }
+        if (contract === null) {  // ibContract conId not found, find by data and update it or create it
+            // canonize ibContract
+            let details: ContractDetails = null;
+            await this.api
+                .getContractDetails(ibContract)
+                .then((detailstab) => {
+                    if (detailstab.length >= 1) {
+                        details = detailstab[0];
+                        ibContract = details.contract;
                     }
+                })
+                .catch((err: IBApiNextError) => {
+                    this.error(`findOrCreateContract failed for ${contract.symbol} with '${err.error.message}'`);
                 });
-                if (contract === null) {
-                    // not found, create it
-                    contract = await Contract.create({
-                        conId: ibContract.conId,
-                        secType: ibContract.secType,
-                        symbol: ibContract.symbol,
-                        currency: ibContract.currency,
-                        exchange: ibContract.exchange,
-                    }).then((contract) => Stock.create({
-                        id: contract.id,
-                    }).then(() => contract)
-                    );
-                } else {
-                    // update conId for this contract
-                    return Contract.update({ conId: ibContract.conId }, { where: { id: contract.id } })
-                        .then(() => contract);
-                }
-            } else if (ibContract.secType == SecType.OPT) {
-                // find option contract by data
-                const lastTradeDate = ITradingBot.expirationToDate(ibContract.lastTradeDateOrContractMonth);
-                const stock = await this.findOrCreateContract({
-                    secType: "STK" as SecType,
+            if (ibContract.secType == SecType.STK) {
+                const defaults: any = {
+                    conId: ibContract.conId,
+                    secType: ibContract.secType,
                     symbol: ibContract.symbol,
                     currency: ibContract.currency,
-                });
-                contract = await Option.findOne({
+                    exchange: ibContract.primaryExch || ibContract.exchange,
+                };
+                if (details) defaults.name = details.longName;
+                contract = await Contract.findOrCreate({
                     where: {
-                        stock_id: stock.id,
-                        lastTradeDate: lastTradeDate,
-                        strike: ibContract.strike,
-                        callOrPut: ibContract.right,
-                    }
-                }).then((option) => {
-                    if (option !== null) {
-                        return Contract.findByPk(option.id)
-                            // update ib con id
-                            .then((contract) => Contract.update({ conId: ibContract.conId }, { where: { id: contract.id } }))
-                            .then(() => contract);
-                    } else {
-                        // Create option contrat
-                        return Contract.create({
-                            conId: ibContract.conId,
-                            secType: ibContract.secType,
-                            symbol: ibContract.localSymbol,
-                            currency: ibContract.currency,
-                            exchange: ibContract.exchange,
-                        }).then((contract) => Option.create({
+                        secType: defaults.secType,
+                        symbol: defaults.symbol,
+                        currency: defaults.currency,
+                    },
+                    defaults: defaults,
+                }).then(([contract, created]) => {
+                    if (created) {
+                        return Stock.create({
                             id: contract.id,
-                            stock_id: stock.id,
-                            lastTradeDate: lastTradeDate,
-                            strike: ibContract.strike,
-                            callOrPut: ibContract.right,
-                        }).then(() => contract)
-                        );
+                        }).then(() => contract);
+                    } else {
+                        return Contract.update({ values: defaults }, { where: { id: contract.id }, })
+                            .then(() => contract);
                     }
                 });
-            } else if (ibContract.secType == SecType.CASH) {
-                // find stock by data
-                contract = await Contract.findOne({
-                    where: {
-                        secType: SecType.CASH,
-                        symbol: ibContract.symbol,
-                        currency: ibContract.currency,
-                    }
-                });
-                if (contract === null) {
-                    this.printObject(ibContract);
-                    // create it
-                    contract = await Contract.create({
-                        conId: ibContract.conId,
-                        secType: ibContract.secType,
-                        symbol: ibContract.localSymbol ?? ibContract.symbol,
-                        currency: ibContract.currency,
-                        name: ibContract.localSymbol ?? ibContract.symbol,
-                    }).then((contract) => Cash.create({
-                        id: contract.id,
-                    }).then(() => contract)
-                    );
+            } else if (ibContract.secType == SecType.OPT) {
+                // const lastTradeDate = ITradingBot.expirationToDate(ibContract.lastTradeDateOrContractMonth);
+                const name: string = ITradingBot.formatOptionName(ibContract);
+                const defaults: any = {
+                    conId: ibContract.conId,
+                    secType: ibContract.secType,
+                    symbol: ibContract.localSymbol,
+                    currency: ibContract.currency,
+                    exchange: ibContract.primaryExch || ibContract.exchange,
+                    name: name,
+                    lastTradeDate: ITradingBot.expirationToDate(ibContract.lastTradeDateOrContractMonth),
+                    strike: ibContract.strike,
+                    callOrPut: ibContract.right,
+                };
+                let underlying: any = {};
+                if (details) {
+                    underlying = {
+                        conId: details.underConId,
+                        secType: details.underSecType,
+                        symbol: details.underSymbol,
+                        currency: defaults.currency,
+                    };
                 } else {
-                    // update conId for this contract
-                    return Contract.update({ conId: ibContract.conId }, { where: { id: contract.id } })
-                        .then(() => contract);
+                    underlying = {
+                        secType: "STK" as SecType,
+                        symbol: ibContract.symbol,
+                        currency: defaults.currency,
+                    };
                 }
+                this.printObject(ibContract);
+                this.printObject(details);
+                this.printObject(underlying);
+                this.printObject(defaults);
+                contract = await this.findOrCreateContract(underlying)
+                    .then((stock) => {
+                        defaults.stock_id = stock.id;
+                        return Option.findOne({
+                            where: {
+                                stock_id: defaults.stock_id,
+                                lastTradeDate: defaults.lastTradeDate,
+                                strike: defaults.strike,
+                                callOrPut: defaults.callOrPut,
+                            },
+                        }).then((option) => {
+                            if (option) {
+                                // update
+                                return Contract.update({ values: defaults }, { where: { id: option.id }, })
+                                    .then(() => Option.update({ values: defaults }, { where: { id: option.id }, }))
+                                    .then(() => Contract.findByPk(option.id));
+                            } else {
+                                return Contract.create(defaults)
+                                    .then((contract) => {
+                                        defaults.id = contract.id;
+                                        return Option.create(defaults)
+                                            .then(() => contract);
+                                    });
+                            }
+                        });
+                    });
+            } else if (ibContract.secType == SecType.CASH) {
+                const defaults: any = {
+                    conId: ibContract.conId,
+                    secType: ibContract.secType,
+                    symbol: ibContract.localSymbol,
+                    currency: ibContract.currency,
+                    exchange: ibContract.exchange,
+                    name: ibContract.localSymbol,
+                };
+                contract = await Contract.findOrCreate({
+                    where: {
+                        secType: defaults.secType,
+                        symbol: defaults.symbol,
+                        currency: defaults.currency,
+                    },
+                    defaults: defaults,
+                }).then(([contract, created]) => {
+                    if (created) {
+                        return Cash.create({ id: contract.id, }).then(() => contract);
+                    } else {
+                        return Contract.update({ values: defaults }, { where: { id: contract.id }, })
+                            .then(() => contract);
+                    }
+                });
             } else if (ibContract.secType == SecType.BAG) {
-                // create it
+                // not yet refactored
                 contract = await Contract.create({
                     conId: ibContract.conId,
                     secType: ibContract.secType,
@@ -612,6 +653,7 @@ export class ITradingBot extends EventEmitter {
                 }));
             }
         }
+        this.printObject(contract);
         return contract;
     }
 

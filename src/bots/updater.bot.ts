@@ -32,8 +32,8 @@ const OPTIONS_PRICE_TIMEFRAME: number = parseInt(process.env.OPTIONS_PRICE_TIMEF
 export class ContractsUpdaterBot extends ITradingBot {
 
   public start(): void {
-    this.on("updateStocksConId", this.updateStocksConId);
-    this.on("updateOptionsConId", this.updateOptionsConId);
+    // this.on("updateStocksConId", this.updateStocksConId);
+    // this.on("updateOptionsConId", this.updateOptionsConId);
     this.on("updateHistoricalData", this.updateHistoricalData);
     this.on("updateOptionsPrice", this.updateOptionsPrice);
     this.on("buildOptionsList", this.buildOptionsList);
@@ -80,6 +80,7 @@ export class ContractsUpdaterBot extends ITradingBot {
         contract.symbol = contract.symbol.substring(0, 3);
       }
     } else if (contract.currency == "USD") contract.exchange = "SMART";  // nothing except SMART seems to work for USD
+    if (contract == null) this.error("requestContractDetails called with null contract");
     return this.api
       .getContractDetails(contract)
       .catch((err: IBApiNextError) => {
@@ -394,7 +395,7 @@ export class ContractsUpdaterBot extends ITradingBot {
       if (contract.secType == "OPT") {
         return Option.update(optdataset, { where: { id: contract.id } }).then(() => price);
       } else if (contract.secType == "CASH") {
-        return Currency.update({ rate: price }, { where: { base: contract.symbol.substring(0, 4), currency: contract.currency }, logging: console.log }).then(() => price);
+        return Currency.update({ rate: price }, { where: { base: contract.symbol.substring(0, 4), currency: contract.currency }, logging: false }).then(() => price);
       } else {
         return price;
       }
@@ -720,18 +721,19 @@ export class ContractsUpdaterBot extends ITradingBot {
 
   private async createCashContracts() {
     const currencies: Currency[] = await Currency.findAll();
-    console.log(`updateCurrenciesRate ${currencies.length} item(s)`);
+    console.log(`createCashContracts ${currencies.length} item(s)`);
     const promises: Promise<any>[] = [];
     for (const currency of currencies) {
       promises.push(
         this.findOrCreateContract({
-          symbol: `${currency.base}.${currency.currency}`,
+          symbol: currency.base,
+          localSymbol: `${currency.base}.${currency.currency}`,
           secType: SecType.CASH,
           currency: currency.currency,
           exchange: "IDEALPRO",
         }).catch((err) => {
           // silently ignore any error
-          console.log("updateCurrenciesRate: error ignored", err);
+          console.log("createCashContracts: error ignored", err);
         })
       );
     }

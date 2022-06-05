@@ -4,59 +4,59 @@
   // For more information, visit: https://go.microsoft.com/fwlink/?linkid=830387
   "version": "0.2.0",
   "configurations": [
-      {
-          "type": "pwa-node",
-          "request": "launch",
-          "name": "Launch Program",
-          "skipFiles": [
-              "<node_internals>/**"
-          ],
-          "runtimeArgs": [
-            "--trace-warnings"
-          ],
-          "program": "${workspaceFolder}/dist/index.js",
-          "args": [
-            "-watch",
-            "-log=warn",
-            "-host=localhost",
-            "-clientId=0",
-            "-csp"
-          ],
-          "outFiles": [
-              "${workspaceFolder}/**/*.js"
-          ]
-      },
-      {
-          "type": "pwa-node",
-          "request": "launch",
-          "name": "Launch tool",
-          "skipFiles": [
-              "<node_internals>/**"
-          ],
-          "program": "${workspaceFolder}/node_modules/@stoqey/ib/dist/tools/open-orders.js",
-          "outFiles": [
-              "${workspaceFolder}/**/*.js"
-          ]
-      },
-      {
-          "type": "node",
-          "request": "launch",
-          "name": "Tool: open-orders",
-          "skipFiles": [
-            "<node_internals>/**"
-          ],
-          "runtimeArgs": [
-            "--trace-warnings"
-          ],
-          "program": "${workspaceFolder}/node_modules/@stoqey/ib/dist/tools/open-orders.js",
-          "outFiles": [
-            "${workspaceFolder}/**/*.js"
-          ],
-          "outputCapture": "std",
-          "resolveSourceMapLocations": [
-            "${workspaceFolder}/**",
-            "!**/node_modules/**"
-          ]
-      },
+    {
+      "type": "pwa-node",
+      "request": "launch",
+      "name": "Launch Program",
+      "skipFiles": [
+        "<node_internals>/**"
+      ],
+      "runtimeArgs": [
+        "--trace-warnings"
+      ],
+      "program": "${workspaceFolder}/dist/index.js",
+      "args": [
+        "-watch",
+        "-log=warn",
+        "-host=127.0.0.1",
+        "-clientId=0",
+        "-account"
+      ],
+      "outFiles": [
+        "${workspaceFolder}/**/*.js"
+      ]
+    },
+    {
+      "type": "pwa-node",
+      "request": "launch",
+      "name": "Launch tool",
+      "skipFiles": [
+        "<node_internals>/**"
+      ],
+      "program": "${workspaceFolder}/node_modules/@stoqey/ib/dist/tools/open-orders.js",
+      "outFiles": [
+        "${workspaceFolder}/**/*.js"
+      ]
+    },
+    {
+      "type": "node",
+      "request": "launch",
+      "name": "Tool: open-orders",
+      "skipFiles": [
+        "<node_internals>/**"
+      ],
+      "runtimeArgs": [
+        "--trace-warnings"
+      ],
+      "program": "${workspaceFolder}/node_modules/@stoqey/ib/dist/tools/open-orders.js",
+      "outFiles": [
+        "${workspaceFolder}/**/*.js"
+      ],
+      "outputCapture": "std",
+      "resolveSourceMapLocations": [
+        "${workspaceFolder}/**",
+        "!**/node_modules/**"
+      ]
+    },
   ]
 }

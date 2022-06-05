@@ -19,8 +19,8 @@ export class CashManagementBot extends ITradingBot {
         await this.init();  // load parameters
         const benchmark = this.portfolio.benchmark;
         const benchmark_value = await this.getContractPositionValueInBase(benchmark);
-        let balance_in_base: number = await this.getTotalBalanceInBase();
-        let benchmark_balance_in_base: number = await this.getBalanceInBase(benchmark.currency);
+        const balance_in_base: number = await this.getTotalBalanceInBase();
+        const benchmark_balance_in_base: number = await this.getBalanceInBase(benchmark.currency);
 
         let extra_cash: number;
         if (this.portfolio.cashStrategy == 0) {
