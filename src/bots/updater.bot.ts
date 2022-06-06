@@ -277,7 +277,6 @@ export class ContractsUpdaterBot extends ITradingBot {
     // console.log(`requestContractPrice for ${contract.secType} contract ${contract.symbol} ${contract.exchange} id ${contract.id}`);
     if (contract.secType == "CASH") {
       contract.exchange = "IDEALPRO";    // nothing except IDEALPRO seems to work for CASH
-      // contract.localSymbol = contract.symbol;
       if (contract.symbol.length == 7) {
         contract.currency = contract.symbol.substring(4, 8);
         contract.symbol = contract.symbol.substring(0, 3);
@@ -285,10 +284,6 @@ export class ContractsUpdaterBot extends ITradingBot {
     } else if (contract.currency == "USD") contract.exchange = "SMART";  // nothing except SMART seems to work for USD
     return this.api
       .getMarketDataSnapshot(contract, "", false);
-    // .catch((err: IBApiNextError) => {
-    //   console.log(`getMarketDataSnapshot failed for contract ${contract.conId} ${contract.secType} ${contract.symbol} ${contract.currency} @ ${contract.exchange} with ${err.code}: '${err.error.message}'`);
-    //   throw (err.error);
-    // });
   }
 
   private updateContratPrice(contract: Contract, marketData: MutableMarketData): Promise<number> {
@@ -637,7 +632,7 @@ export class ContractsUpdaterBot extends ITradingBot {
         SELECT
           (julianday('now') - julianday(ifnull(contract.updatedAt, '2022-01-01'))) options_age,
           (julianday(option.last_trade_date) + 1 - julianday('now')) options_dte,
-          contract.id, contract.con_id, contract.secType, contract.currency, contract.exchange, stock.symbol, strftime('%Y%m%d', option.last_trade_date) lastTradeDateOrContractMonth, option.strike, option.call_or_put 'right'
+          contract.id, contract.con_id conId, contract.secType, contract.currency, contract.exchange, stock.symbol, strftime('%Y%m%d', option.last_trade_date) lastTradeDateOrContractMonth, option.strike, option.call_or_put 'right'
         FROM contract, option, trading_parameters, contract stock
         WHERE contract.secType = 'OPT'
           AND contract.id = option.id
@@ -669,9 +664,11 @@ export class ContractsUpdaterBot extends ITradingBot {
           // .then((marketData) => { console.log(contract.id, marketData); return marketData; })
           .then((marketData) => this.updateContratPrice(contract, marketData))
           .catch((err) => {
-            console.log(`fetchOptionContractsPrices failed for contract id ${contract.id} ${contract.conId} ${contract.secType} ${contract.symbol} ${contract.currency} @ ${contract.exchange} with ${err.code}: '${err.error.message}'`);
-            if ((err.code == 10090)      // 'Part of requested market data is not subscribed. Subscription-independent ticks are still active.Delayed market data is not available.XLV ARCA/TOP/ALL'
-              || (err.code == 10091)) {  // 'Part of requested market data requires additional subscription for API. See link in 'Market Data Connections' dialog for more details.Delayed market data is not available.SPY ARCA/TOP/ALL'
+            console.log(`fetchOptionContractsPrices failed for contract id ${contract.id} ${contract.conId} ${contract.secType} ${contract.symbol} ${contract.currency} @ ${contract.exchange} with error ${err.code}: '${err.error.message}'`);
+            if ((err.code == 10090)  // 'Part of requested market data is not subscribed. Subscription-independent ticks are still active.Delayed market data is not available.XLV ARCA/TOP/ALL'
+              || (err.code == 10091) // 'Part of requested market data requires additional subscription for API. See link in 'Market Data Connections' dialog for more details.Delayed market data is not available.SPY ARCA/TOP/ALL'
+              || (err.code == 354)   // 'Requested market data is not subscribed.Delayed market data is not available.WBD NASDAQ.NMS/TOP/ALL'
+            ) {
               Contract.update({
                 price: null, ask: null, bid: null, updatedAt: new Date(),
               }, {
@@ -680,7 +677,8 @@ export class ContractsUpdaterBot extends ITradingBot {
               });
             } else {
               // silently ignore any error
-              console.log("fetchOptionContractsPrices error ignored", err);
+              // console.log("fetchOptionContractsPrices error ignored", err);
+              this.printObject(contract);
             }
           })
       );
