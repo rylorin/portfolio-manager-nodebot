@@ -149,7 +149,7 @@ export class SellCashSecuredPutBot extends ITradingBot {
                 model: Contract,
                 required: true,
             },
-            logging: console.log,
+            // logging: console.log,
         }));
     }
 

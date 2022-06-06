@@ -69,7 +69,7 @@ export class ContractsUpdaterBot extends ITradingBot {
         }
       });
     }
-   */
+
   private requestContractDetails(contract: IbContract): Promise<ContractDetails[]> {
     // console.log(`requestContractDetails for contract ${contract.symbol}`)
     if (contract.secType == "CASH") {
@@ -89,7 +89,7 @@ export class ContractsUpdaterBot extends ITradingBot {
       });
   }
 
-  /*  private iterateContractsForDetails(contracts: Contract[]): Promise<any> {
+  private iterateContractsForDetails(contracts: Contract[]): Promise<any> {
       return contracts.reduce((p, contract) => {
         return p.then(() => this.requestContractDetails(contract)
           .then((detailstab) => this.updateContractDetails(contract.id, detailstab))
@@ -274,33 +274,33 @@ export class ContractsUpdaterBot extends ITradingBot {
   }
 
   private requestContractPrice(contract: Contract): Promise<MutableMarketData> {
-    // const ibContract: IbContract = {
-    //   conId: contract.conId,
-    //   secType: contract.secType,
-    //   symbol: contract.symbol,
-    //   currency: contract.currency,
-    //   exchange: contract.exchange,
-    //   lastTradeDateOrContractMonth: undefined,
-    //   strike: undefined,
-    //   right: undefined,
-    // };
+    const ibContract: IbContract = {
+      conId: contract.conId,
+      secType: contract.secType,
+      symbol: contract.symbol,
+      currency: contract.currency,
+      exchange: contract.exchange,
+      lastTradeDateOrContractMonth: contract["lastTradeDateOrContractMonth"],
+      strike: contract["strike"],
+      right: contract["right"],
+    };
     // console.log(`requestContractPrice for ${contract.secType} contract ${contract.symbol} ${contract.exchange} id ${contract.id}`);
     if (contract.secType == "CASH") {
-      contract.exchange = "IDEALPRO";    // nothing except IDEALPRO seems to work for CASH
+      ibContract.exchange = "IDEALPRO";    // nothing except IDEALPRO seems to work for CASH
       if (contract.symbol.length == 7) {
-        contract.currency = contract.symbol.substring(4, 8);
-        contract.symbol = contract.symbol.substring(0, 3);
+        ibContract.currency = contract.symbol.substring(4, 8);
+        ibContract.symbol = contract.symbol.substring(0, 3);
       }
-    } else if (contract.currency == "USD") contract.exchange = "SMART";  // nothing except SMART seems to work for USD
+    } else if (contract.currency == "USD") ibContract.exchange = "SMART";  // nothing except SMART seems to work for USD
     return this.api
-      .getMarketDataSnapshot(contract, "", false);
+      .getMarketDataSnapshot(ibContract, "", false);
   }
 
   private updateContratPrice(contract: Contract, marketData: MutableMarketData): Promise<number> {
     // console.log(`updateContratPrice got data for ${contract.secType} contract ${contract.symbol} id ${contract.id}`);
     // this.app.printObject(marketData);
-    const dataset: Contract = {} as any;
-    const optdataset: Option = {} as any;
+    const dataset: any = {};
+    const optdataset: any = {};
     marketData.forEach((tick, type: TickType) => {
       if (type == IBApiTickType.BID) {
         dataset.bid = tick.value > 0 ? tick.value : null;
@@ -701,13 +701,13 @@ export class ContractsUpdaterBot extends ITradingBot {
     for (const contract of contracts) {
       promises.push(
         this.requestContractPrice(contract)
-          // .then((marketData) => { console.log(contract.id, marketData); return marketData; })
           .then((marketData) => this.updateContratPrice(contract, marketData))
           .catch((err) => {
             console.log(`fetchOptionContractsPrices failed for contract id ${contract.id} ${contract.conId} ${contract.secType} ${contract.symbol} ${contract.currency} @ ${contract.exchange} with error ${err.code}: '${err.error.message}'`);
             if ((err.code == 10090)  // 'Part of requested market data is not subscribed. Subscription-independent ticks are still active.Delayed market data is not available.XLV ARCA/TOP/ALL'
               || (err.code == 10091) // 'Part of requested market data requires additional subscription for API. See link in 'Market Data Connections' dialog for more details.Delayed market data is not available.SPY ARCA/TOP/ALL'
               || (err.code == 354)   // 'Requested market data is not subscribed.Delayed market data is not available.WBD NASDAQ.NMS/TOP/ALL'
+              || (err.code == 200)   // 'No security definition has been found for the request'
             ) {
               Contract.update({
                 price: null, ask: null, bid: null, updatedAt: new Date(),
@@ -726,21 +726,21 @@ export class ContractsUpdaterBot extends ITradingBot {
     return Promise.all(promises);
   }
 
-  private findCurrenciesToUpdatePrice() {
-    const now: number = Date.now() - (FX_RATES_REFRESH_FREQ * 60 * 1000);
-    return Currency.findAll({
-      where: {
-        updatedAt: {
-          [Op.or]: {
-            [Op.lt]: new Date(now),
-            [Op.is]: null,
+  /*   private findCurrenciesToUpdatePrice() {
+      const now: number = Date.now() - (FX_RATES_REFRESH_FREQ * 60 * 1000);
+      return Currency.findAll({
+        where: {
+          updatedAt: {
+            [Op.or]: {
+              [Op.lt]: new Date(now),
+              [Op.is]: null,
+            },
           },
         },
-      },
-      // logging: console.log,
-    });
-  }
-
+        // logging: console.log,
+      });
+    }
+   */
   private findCashContractsToUpdatePrice(limit: number): Promise<Contract[]> {
     const now: number = Date.now() - (FX_RATES_REFRESH_FREQ * 60 * 1000);
     return Contract.findAll({
@@ -791,7 +791,7 @@ export class ContractsUpdaterBot extends ITradingBot {
     // update stocks
     if (contracts.length < BATCH_SIZE_OPTIONS_PRICE) {
       const c = await this.findStockContractsToUpdatePrice(BATCH_SIZE_OPTIONS_PRICE - contracts.length);
-      console.log(c.length, "cash contract(s)");
+      console.log(c.length, "stock contract(s)");
       contracts = contracts.concat(c).reduce(((p, v) => p.findIndex((q) => q.id == v.id) < 0 ? [...p, v] : p), [] as Contract[]);
     }
     // if (contracts.length < BATCH_SIZE_OPTIONS_PRICE) {

@@ -520,11 +520,11 @@ export class ITradingBot extends EventEmitter {
                     }
                 })
                 .catch((err: IBApiNextError) => {
-                    this.error(`findOrCreateContract failed for ${contract.symbol} with '${err.error.message}'`);
+                    this.error(`findOrCreateContract failed for ${ibContract.symbol} with '${err.error.message}'`);
                 });
             if (details === null) {
                 // IB contract doesn't exists
-                this.error(`findOrCreateContract failed for ${contract.symbol}: can't find corresponding IB contract data`);
+                this.error(`findOrCreateContract failed for ${ibContract.symbol}: can't find corresponding IB contract data`);
             } else if (details && (ibContract.secType == SecType.STK)) {
                 const defaults: any = {
                     conId: ibContract.conId,
