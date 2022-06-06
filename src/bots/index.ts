@@ -522,7 +522,10 @@ export class ITradingBot extends EventEmitter {
                 .catch((err: IBApiNextError) => {
                     this.error(`findOrCreateContract failed for ${contract.symbol} with '${err.error.message}'`);
                 });
-            if (ibContract.secType == SecType.STK) {
+            if (details === null) {
+                // IB contract doesn't exists
+                this.error(`findOrCreateContract failed for ${contract.symbol}: can't find corresponding IB contract data`);
+            } else if (details && (ibContract.secType == SecType.STK)) {
                 const defaults: any = {
                     conId: ibContract.conId,
                     secType: ibContract.secType,
@@ -548,8 +551,7 @@ export class ITradingBot extends EventEmitter {
                             .then(() => contract);
                     }
                 });
-            } else if (ibContract.secType == SecType.OPT) {
-                // const lastTradeDate = ITradingBot.expirationToDate(ibContract.lastTradeDateOrContractMonth);
+            } else if (details && (ibContract.secType == SecType.OPT)) {
                 const name: string = ITradingBot.formatOptionName(ibContract);
                 const defaults: any = {
                     conId: ibContract.conId,
@@ -607,7 +609,7 @@ export class ITradingBot extends EventEmitter {
                             }
                         });
                     });
-            } else if (ibContract.secType == SecType.CASH) {
+            } else if (details && (ibContract.secType == SecType.CASH)) {
                 const defaults: any = {
                     conId: ibContract.conId,
                     secType: ibContract.secType,
@@ -631,7 +633,7 @@ export class ITradingBot extends EventEmitter {
                             .then(() => contract);
                     }
                 });
-            } else if (ibContract.secType == SecType.BAG) {
+            } else if (details && (ibContract.secType == SecType.BAG)) {
                 // not yet refactored
                 contract = await Contract.create({
                     conId: ibContract.conId,
