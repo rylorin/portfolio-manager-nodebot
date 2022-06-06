@@ -47,29 +47,29 @@ export class ContractsUpdaterBot extends ITradingBot {
     setTimeout(() => this.emit("buildOptionsList"), 3600 * 1000);   // start after 1 hour
   }
 
-  private updateContractDetails(id: number, detailstab: ContractDetails[]): Promise<[affectedCount: number]> {
-    console.log(`updateContractDetails got data for contract id ${id}`);
-    if (detailstab.length > 1) {
-      // this.app.printObject(detailstab);
-      // console.log(`Ambigous results from getContractDetails! ${detailstab.length} results for ${detailstab[0].contract.symbol}`)
-    }
-    const details: ContractDetails = detailstab[0];
-    this.app.printObject(details);
-    return Contract.update(
-      {
-        conId: details.contract.conId,
-        symbol: (details.contract.secType == SecType.CASH) ? details.contract.localSymbol : details.contract.symbol,
-        secType: details.contract.secType,
-        exchange: (details.contract.secType == SecType.CASH) ? details.contract.exchange : details.contract.primaryExch,
-        currency: details.contract.currency,
-        name: (details.contract.secType == SecType.CASH) ? details.contract.localSymbol : details.longName,
-      } as Contract, {
-      where: {
-        id: id,
+  /*   private updateContractDetails(id: number, detailstab: ContractDetails[]): Promise<[affectedCount: number]> {
+      console.log(`updateContractDetails got data for contract id ${id}`);
+      if (detailstab.length > 1) {
+        // this.app.printObject(detailstab);
+        // console.log(`Ambigous results from getContractDetails! ${detailstab.length} results for ${detailstab[0].contract.symbol}`)
       }
-    });
-  }
-
+      const details: ContractDetails = detailstab[0];
+      this.app.printObject(details);
+      return Contract.update(
+        {
+          conId: details.contract.conId,
+          symbol: (details.contract.secType == SecType.CASH) ? details.contract.localSymbol : details.contract.symbol,
+          secType: details.contract.secType,
+          exchange: (details.contract.secType == SecType.CASH) ? details.contract.exchange : details.contract.primaryExch,
+          currency: details.contract.currency,
+          name: (details.contract.secType == SecType.CASH) ? details.contract.localSymbol : details.longName,
+        } as Contract, {
+        where: {
+          id: id,
+        }
+      });
+    }
+   */
   private requestContractDetails(contract: IbContract): Promise<ContractDetails[]> {
     // console.log(`requestContractDetails for contract ${contract.symbol}`)
     if (contract.secType == "CASH") {
@@ -89,117 +89,117 @@ export class ContractsUpdaterBot extends ITradingBot {
       });
   }
 
-  private iterateContractsForDetails(contracts: Contract[]): Promise<any> {
-    return contracts.reduce((p, contract) => {
-      return p.then(() => this.requestContractDetails(contract)
-        .then((detailstab) => this.updateContractDetails(contract.id, detailstab))
-        .catch((err) => {
-          // silently ignore any error
-          console.log(`iterateContractsForDetails: error '${err}' for ${contract.id} ${contract.symbol}`);
-        }));
-    }, Promise.resolve()); // initial
-  }
-
-  private findContractsWithoutConId(): Promise<Contract[]> {
-    return sequelize.query(`
-      SELECT
-        contract.*
-      FROM contract
-      WHERE contract.secType IN ('STK', 'CASH') 
-        AND contract.con_id ISNULL
-      `,
-      {
-        model: Contract,
-        mapToModel: true, // pass true here if you have any mapped fields
-        // logging: console.log,
-      }
-    );
-  }
-
-  private async updateStocksConId(): Promise<void> {
-    console.log("updateStocksConId begin");
-    const contracts = await this.findContractsWithoutConId().then((contracts) => this.iterateContractsForDetails(contracts));
-    console.log("updateStocksConId done");
-    setTimeout(() => this.emit("updateStocksConId"), UPDATE_CONID_FREQ * 60000);
-    return Promise.resolve();
-  }
-
-  private updateOptionDetails(id: number, detailstab: ContractDetails[]): Promise<[affectedCount: number]> {
-    console.log(`-- updateOptionDetails got data for contract id ${id}`);
-    if (detailstab.length > 1) {
-      // this.app.printObject(detailstab);
-      // console.log(`Ambigous results from getContractDetails! ${detailstab.length} results for ${detailstab[0].contract.symbol}`)
+  /*  private iterateContractsForDetails(contracts: Contract[]): Promise<any> {
+      return contracts.reduce((p, contract) => {
+        return p.then(() => this.requestContractDetails(contract)
+          .then((detailstab) => this.updateContractDetails(contract.id, detailstab))
+          .catch((err) => {
+            // silently ignore any error
+            console.log(`iterateContractsForDetails: error '${err}' for ${contract.id} ${contract.symbol}`);
+          }));
+      }, Promise.resolve()); // initial
     }
-    const details: ContractDetails = detailstab[0];
-    return Contract.update(
-      {
-        conId: details.contract.conId,
-        symbol: `${details.contract.symbol} ${details.contract.lastTradeDateOrContractMonth} ${details.contract.strike} ${details.contract.right}`,
-        secType: details.contract.secType,
-        exchange: details.contract.exchange,
-        currency: details.contract.currency,
-        name: details.longName,
-      } as Contract, {
-      where: {
-        id: id,
-      }
-    });
-  }
-
-  private iterateOptionsForDetails(contracts: Contract[]): Promise<any> {
-    // this.app.printObject(contracts);
-    return contracts.reduce((p, contract) => {
-      return p.then(() => this.requestContractDetails({
-        symbol: contract["stock_symbol"],
-        secType: contract.secType as SecType,
-        currency: contract.currency,
-        lastTradeDateOrContractMonth: contract["expstr"],  // while expiration column is not filled for all
-        strike: contract["strike"],
-        right: contract["call_or_put"] as OptionType,
-        exchange: contract.exchange,
-      })
-        .then((detailstab) => this.updateOptionDetails(contract.id, detailstab))
-        .catch((err) => {
-          // silently ignore any error
-          console.log(
-            `-- iterateOptionsForDetails error for contract id ${contract.id};
-  DELETE FROM option WHERE id = ${contract.id};
-  DELETE FROM contract WHERE id = ${contract.id};
-            `);
-          // this.app.printObject(err);
-          return Promise.resolve();
-        }));
-    }, Promise.resolve()); // initial
-  }
-
-  private findOptionsWithoutConId(): Promise<Contract[]> {
-    return sequelize.query(`
-        SELECT strftime('%Y%m%d', option.last_trade_date) expstr,
-          contract.*, option.*, stock.symbol stock_symbol, stock.exchange stock_exchange
-        FROM contract, option, contract stock
-        WHERE contract.secType = 'OPT'
+  
+    private findContractsWithoutConId(): Promise<Contract[]> {
+      return sequelize.query(`
+        SELECT
+          contract.*
+        FROM contract
+        WHERE contract.secType IN ('STK', 'CASH') 
           AND contract.con_id ISNULL
-          AND option.id = contract.id
-          AND stock.id = option.stock_id
-        ORDER BY option.createdAt DESC
         `,
-      {
-        model: Contract,
-        raw: true,
-        // logging: console.log,
+        {
+          model: Contract,
+          mapToModel: true, // pass true here if you have any mapped fields
+          // logging: console.log,
+        }
+      );
+    }
+  
+    private async updateStocksConId(): Promise<void> {
+      console.log("updateStocksConId begin");
+      const contracts = await this.findContractsWithoutConId().then((contracts) => this.iterateContractsForDetails(contracts));
+      console.log("updateStocksConId done");
+      setTimeout(() => this.emit("updateStocksConId"), UPDATE_CONID_FREQ * 60000);
+      return Promise.resolve();
+    }
+   
+    private updateOptionDetails(id: number, detailstab: ContractDetails[]): Promise<[affectedCount: number]> {
+      console.log(`-- updateOptionDetails got data for contract id ${id}`);
+      if (detailstab.length > 1) {
+        // this.app.printObject(detailstab);
+        // console.log(`Ambigous results from getContractDetails! ${detailstab.length} results for ${detailstab[0].contract.symbol}`)
       }
-    );
-  }
-
-  private async updateOptionsConId(): Promise<void> {
-    console.log("updateOptionsConId begin");
-    await this
-      .findOptionsWithoutConId()
-      .then((contracts) => this.iterateOptionsForDetails(contracts));
-    console.log("updateOptionsConId done");
-    setTimeout(() => this.emit("updateOptionsConId"), UPDATE_CONID_FREQ * 60000);
-    return Promise.resolve();
-  }
+      const details: ContractDetails = detailstab[0];
+      return Contract.update(
+        {
+          conId: details.contract.conId,
+          symbol: `${details.contract.symbol} ${details.contract.lastTradeDateOrContractMonth} ${details.contract.strike} ${details.contract.right}`,
+          secType: details.contract.secType,
+          exchange: details.contract.exchange,
+          currency: details.contract.currency,
+          name: details.longName,
+        } as Contract, {
+        where: {
+          id: id,
+        }
+      });
+    }
+  
+    private iterateOptionsForDetails(contracts: Contract[]): Promise<any> {
+      // this.app.printObject(contracts);
+      return contracts.reduce((p, contract) => {
+        return p.then(() => this.requestContractDetails({
+          symbol: contract["stock_symbol"],
+          secType: contract.secType as SecType,
+          currency: contract.currency,
+          lastTradeDateOrContractMonth: contract["expstr"],  // while expiration column is not filled for all
+          strike: contract["strike"],
+          right: contract["call_or_put"] as OptionType,
+          exchange: contract.exchange,
+        })
+          .then((detailstab) => this.updateOptionDetails(contract.id, detailstab))
+          .catch((err) => {
+            // silently ignore any error
+            console.log(
+              `-- iterateOptionsForDetails error for contract id ${contract.id};
+    DELETE FROM option WHERE id = ${contract.id};
+    DELETE FROM contract WHERE id = ${contract.id};
+              `);
+            // this.app.printObject(err);
+            return Promise.resolve();
+          }));
+      }, Promise.resolve()); // initial
+    }
+  
+    private findOptionsWithoutConId(): Promise<Contract[]> {
+      return sequelize.query(`
+          SELECT strftime('%Y%m%d', option.last_trade_date) expstr,
+            contract.*, option.*, stock.symbol stock_symbol, stock.exchange stock_exchange
+          FROM contract, option, contract stock
+          WHERE contract.secType = 'OPT'
+            AND contract.con_id ISNULL
+            AND option.id = contract.id
+            AND stock.id = option.stock_id
+          ORDER BY option.createdAt DESC
+          `,
+        {
+          model: Contract,
+          raw: true,
+          // logging: console.log,
+        }
+      );
+    }
+  
+    private async updateOptionsConId(): Promise<void> {
+      console.log("updateOptionsConId begin");
+      await this
+        .findOptionsWithoutConId()
+        .then((contracts) => this.iterateOptionsForDetails(contracts));
+      console.log("updateOptionsConId done");
+      setTimeout(() => this.emit("updateOptionsConId"), UPDATE_CONID_FREQ * 60000);
+      return Promise.resolve();
+    } */
 
   private updateHistoricalVolatility(id: number, bars: Bar[]): Promise<[affectedCount: number]> {
     const histVol: number = bars[bars.length - 1].close;
@@ -481,60 +481,60 @@ export class ContractsUpdaterBot extends ITradingBot {
       });
   }
 
-  private createOptionContractFromDetails(stock: Contract, expstr: string, strike: number, right: OptionType, detailstab: ContractDetails[]): Promise<Option> {
-    const details: ContractDetails = detailstab[0];
-    // console.log("createOptionContractFromDetails", details.contract.symbol, details.realExpirationDate, details.contract.strike, details.contract.right);
-    return Contract.create({
-      conId: details.contract.conId,
-      secType: details.contract.secType,
-      symbol: details.contract.localSymbol,
-      currency: details.contract.currency,
-      exchange: details.contract.exchange,
-      name: details.longName,
-    }).then((contract) => {
-      const lastTradeDate = ITradingBot.expirationToDate(details.contract.lastTradeDateOrContractMonth);
-      return Option.create({
-        id: contract.id,
-        stock_id: stock.id,
-        lastTradeDate: lastTradeDate,
-        expiration: details.realExpirationDate,
-        strike: details.contract.strike,
-        callOrPut: details.contract.right,
+  /*  private createOptionContractFromDetails(stock: Contract, expstr: string, strike: number, right: OptionType, detailstab: ContractDetails[]): Promise<Option> {
+      const details: ContractDetails = detailstab[0];
+      // console.log("createOptionContractFromDetails", details.contract.symbol, details.realExpirationDate, details.contract.strike, details.contract.right);
+      return Contract.create({
+        conId: details.contract.conId,
+        secType: details.contract.secType,
+        symbol: details.contract.localSymbol,
+        currency: details.contract.currency,
+        exchange: details.contract.exchange,
+        name: details.longName,
+      }).then((contract) => {
+        const lastTradeDate = ITradingBot.expirationToDate(details.contract.lastTradeDateOrContractMonth);
+        return Option.create({
+          id: contract.id,
+          stock_id: stock.id,
+          lastTradeDate: lastTradeDate,
+          expiration: details.realExpirationDate,
+          strike: details.contract.strike,
+          callOrPut: details.contract.right,
+        });
       });
-    });
-  }
-
-  private async buildOneOptionContract(stock: Contract, expstr: string, strike: number, right: OptionType): Promise<Option> {
-    const option = await Option.findOne({
-      where: {
-        stock_id: stock.id,
-        lastTradeDate: ITradingBot.expirationToDate(expstr),
-        strike: strike,
-        callOrPut: right,
-      },
-      // logging: console.log,
-    });
-    if (option === null) {
-      // console.log(`buildOneOptionContract ${stock.symbol} ${expstr} ${strike} ${right}`);
-      return this.requestContractDetails({
-        symbol: stock.symbol,
-        currency: stock.currency,
-        secType: "OPT" as SecType,
-        lastTradeDateOrContractMonth: expstr,
-        strike: strike,
-        right: right,
-      })
-        .catch((err: IBApiNextError) => {
-          // console.log(`buildOneOptionContract ${stock.symbol} ${expstr} ${strike} ${right} failed with '${err.error.message}'`);
-          throw (err.error);
-        })
-        .then((detailstab) => this.createOptionContractFromDetails(stock, expstr, strike, right, detailstab));
-    } else {
-      // console.log(`contract ${stock.symbol} ${expstr} ${strike} ${right} already exists`);
-      return option;
     }
-  }
-
+  
+    private async buildOneOptionContract(stock: Contract, expstr: string, strike: number, right: OptionType): Promise<Option> {
+      const option = await Option.findOne({
+        where: {
+          stock_id: stock.id,
+          lastTradeDate: ITradingBot.expirationToDate(expstr),
+          strike: strike,
+          callOrPut: right,
+        },
+        // logging: console.log,
+      });
+      if (option === null) {
+        // console.log(`buildOneOptionContract ${stock.symbol} ${expstr} ${strike} ${right}`);
+        return this.requestContractDetails({
+          symbol: stock.symbol,
+          currency: stock.currency,
+          secType: "OPT" as SecType,
+          lastTradeDateOrContractMonth: expstr,
+          strike: strike,
+          right: right,
+        })
+        .then((detailstab) => this.createOptionContractFromDetails(stock, expstr, strike, right, detailstab))
+        .catch((err: IBApiNextError) => {
+            // console.log(`buildOneOptionContract ${stock.symbol} ${expstr} ${strike} ${right} failed with '${err.error.message}'`);
+            throw (err.error);
+          });
+      } else {
+        // console.log(`contract ${stock.symbol} ${expstr} ${strike} ${right} already exists`);
+        return option;
+      }
+    }
+   */
   private async iterateSecDefOptParamsForExpStrikes(stock: Contract, expirations: string[], strikes: number[]): Promise<void> {
     // console.log(`iterateSecDefOptParamsForExpStrikes for ${stock.symbol}, ${expirations.length} exp, ${strikes.length} strikes`)
     for (const expstr of expirations) {
@@ -544,10 +544,21 @@ export class ContractsUpdaterBot extends ITradingBot {
         console.log(stock.symbol, expstr, days, "days");
         for (const strike of strikes) {
           // console.log("iterateSecDefOptParamsForExpStrikes", stock.symbol, expstr, strike);
-          const put = this.buildOneOptionContract(stock, expstr, strike, OptionType.Put)
-            .catch((err) => { /* silently ignore any error */ });
-          const call = this.buildOneOptionContract(stock, expstr, strike, OptionType.Call)
-            .catch((err) => { /* silently ignore any error */ });
+          const ibContract: IbContract = {
+            symbol: stock.symbol,
+            currency: stock.currency,
+            lastTradeDateOrContractMonth: expstr,
+            strike: strike,
+            right: undefined,
+          };
+          // const put = this.buildOneOptionContract(stock, expstr, strike, OptionType.Put)
+          //   .catch((err) => { /* silently ignore any error */ });
+          // const call = this.buildOneOptionContract(stock, expstr, strike, OptionType.Call)
+          //   .catch((err) => { /* silently ignore any error */ });
+          ibContract.right = OptionType.Put;
+          const put = this.findOrCreateContract(ibContract);
+          ibContract.right = OptionType.Call;
+          const call = this.findOrCreateContract(ibContract);
           await Promise.all([put, call]);
         }
       }
