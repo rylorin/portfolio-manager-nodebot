@@ -274,6 +274,16 @@ export class ContractsUpdaterBot extends ITradingBot {
   }
 
   private requestContractPrice(contract: Contract): Promise<MutableMarketData> {
+    // const ibContract: IbContract = {
+    //   conId: contract.conId,
+    //   secType: contract.secType,
+    //   symbol: contract.symbol,
+    //   currency: contract.currency,
+    //   exchange: contract.exchange,
+    //   lastTradeDateOrContractMonth: undefined,
+    //   strike: undefined,
+    //   right: undefined,
+    // };
     // console.log(`requestContractPrice for ${contract.secType} contract ${contract.symbol} ${contract.exchange} id ${contract.id}`);
     if (contract.secType == "CASH") {
       contract.exchange = "IDEALPRO";    // nothing except IDEALPRO seems to work for CASH
@@ -378,7 +388,8 @@ export class ContractsUpdaterBot extends ITradingBot {
     let price = dataset.previousClosePrice;
     if (dataset.ask && dataset.bid) price = (dataset.ask + dataset.bid) / 2;
     if (dataset.price) price = dataset.price;
-    if (contract.secType != "OPT") console.log(`${contract.symbol} ${dataset.price} ${dataset.ask} ${dataset.bid} ${dataset.previousClosePrice} ${price}`);
+    // if (contract.secType != "OPT")
+    // console.log(`${contract.id}: ${contract.symbol} ${dataset.price} ${dataset.bid} ${dataset.ask} ${dataset.previousClosePrice} ${price}`);
     return Contract.update(
       dataset,
       {
@@ -435,6 +446,22 @@ export class ContractsUpdaterBot extends ITradingBot {
         replacements: [STOCKS_PRICES_REFRESH_FREQ / 1440, limit],
         // logging: console.log,
       });
+  }
+
+  private findStockContractsToUpdatePrice(limit: number): Promise<Contract[]> {
+    const now: number = Date.now() - (STOCKS_PRICES_REFRESH_FREQ * 60 * 1000);
+    return Contract.findAll({
+      where: {
+        secType: SecType.STK,
+        updatedAt: {
+          [Op.or]: {
+            [Op.lt]: new Date(now),
+            [Op.is]: null,
+          },
+        },
+      },
+      limit: limit,
+    });
   }
 
   private findPortfolioContractsNeedingPriceUpdate(limit: number): Promise<Contract[]> {
@@ -556,9 +583,11 @@ export class ContractsUpdaterBot extends ITradingBot {
           // const call = this.buildOneOptionContract(stock, expstr, strike, OptionType.Call)
           //   .catch((err) => { /* silently ignore any error */ });
           ibContract.right = OptionType.Put;
-          const put = this.findOrCreateContract(ibContract);
+          const put = this.findOrCreateContract(ibContract)
+            .catch((err) => { /* silently ignore any error */ });
           ibContract.right = OptionType.Call;
-          const call = this.findOrCreateContract(ibContract);
+          const call = this.findOrCreateContract(ibContract)
+            .catch((err) => { /* silently ignore any error */ });
           await Promise.all([put, call]);
         }
       }
@@ -716,7 +745,7 @@ export class ContractsUpdaterBot extends ITradingBot {
     const now: number = Date.now() - (FX_RATES_REFRESH_FREQ * 60 * 1000);
     return Contract.findAll({
       where: {
-        secType: "CASH",
+        secType: SecType.CASH,
         updatedAt: {
           [Op.or]: {
             [Op.lt]: new Date(now),
@@ -759,21 +788,27 @@ export class ContractsUpdaterBot extends ITradingBot {
       console.log(c.length, "cash contract(s)");
       contracts = contracts.concat(c).reduce(((p, v) => p.findIndex((q) => q.id == v.id) < 0 ? [...p, v] : p), [] as Contract[]);
     }
+    // update stocks
     if (contracts.length < BATCH_SIZE_OPTIONS_PRICE) {
-      const c = await this.findPortfolioStocksNeedingPriceUpdate(BATCH_SIZE_OPTIONS_PRICE - contracts.length);
-      console.log(c.length, "portolio stocks item(s)");
+      const c = await this.findStockContractsToUpdatePrice(BATCH_SIZE_OPTIONS_PRICE - contracts.length);
+      console.log(c.length, "cash contract(s)");
       contracts = contracts.concat(c).reduce(((p, v) => p.findIndex((q) => q.id == v.id) < 0 ? [...p, v] : p), [] as Contract[]);
     }
+    // if (contracts.length < BATCH_SIZE_OPTIONS_PRICE) {
+    //   const c = await this.findPortfolioStocksNeedingPriceUpdate(BATCH_SIZE_OPTIONS_PRICE - contracts.length);
+    //   console.log(c.length, "portolio stocks item(s)");
+    //   contracts = contracts.concat(c).reduce(((p, v) => p.findIndex((q) => q.id == v.id) < 0 ? [...p, v] : p), [] as Contract[]);
+    // }
     if (contracts.length < BATCH_SIZE_OPTIONS_PRICE) {
       const c = await this.findPortfolioContractsNeedingPriceUpdate(BATCH_SIZE_OPTIONS_PRICE - contracts.length);
       console.log(c.length, "portolio contracts item(s)");
       contracts = contracts.concat(c).reduce(((p, v) => p.findIndex((q) => q.id == v.id) < 0 ? [...p, v] : p), [] as Contract[]);
     }
-    if (contracts.length < BATCH_SIZE_OPTIONS_PRICE) {
-      const c = await this.findStocksNeedingPriceUpdate(BATCH_SIZE_OPTIONS_PRICE - contracts.length);
-      console.log(c.length, "stocks item(s)");
-      contracts = contracts.concat(c).reduce(((p, v) => p.findIndex((q) => q.id == v.id) < 0 ? [...p, v] : p), [] as Contract[]);
-    }
+    // if (contracts.length < BATCH_SIZE_OPTIONS_PRICE) {
+    //   const c = await this.findStocksNeedingPriceUpdate(BATCH_SIZE_OPTIONS_PRICE - contracts.length);
+    //   console.log(c.length, "stocks item(s)");
+    //   contracts = contracts.concat(c).reduce(((p, v) => p.findIndex((q) => q.id == v.id) < 0 ? [...p, v] : p), [] as Contract[]);
+    // }
     // update option contracts prices
     if (contracts.length < BATCH_SIZE_OPTIONS_PRICE) {
       const c = await this.findOptionsToUpdatePrice(1, OPTIONS_PRICE_DTE_FREQ, BATCH_SIZE_OPTIONS_PRICE - contracts.length);
