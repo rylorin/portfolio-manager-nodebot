@@ -493,12 +493,12 @@ export class ITradingBot extends EventEmitter {
     }
 
     protected static formatOptionName(ibContract: IbContract): string {
-        const months = ["JAV", "FEB", "APR", "MAY", "JUN", "JUL", "AUG", "SEP", "OCT", "NOV", "DEC"];
+        const months = ["JAN", "FEB", "APR", "MAY", "JUN", "JUL", "AUG", "SEP", "OCT", "NOV", "DEC"];
         const month = months[parseInt(ibContract.lastTradeDateOrContractMonth.substring(4, 6)) - 1];
         const day = ibContract.lastTradeDateOrContractMonth.substring(6, 8);
         const year = ibContract.lastTradeDateOrContractMonth.substring(2, 4);
+        const datestr: string = day + month + year;
         const strike = ibContract.strike.toFixed(1);
-        const datestr: string = day + "-" + month + "-" + year;
         return `${ibContract.symbol} ${datestr} ${strike} ${ibContract.right}`;
     }
 
@@ -577,10 +577,10 @@ export class ITradingBot extends EventEmitter {
                         currency: defaults.currency,
                     };
                 }
-                this.printObject(ibContract);
-                this.printObject(details);
-                this.printObject(underlying);
-                this.printObject(defaults);
+                // this.printObject(ibContract);
+                // this.printObject(details);
+                // this.printObject(underlying);
+                // this.printObject(defaults);
                 contract = await this.findOrCreateContract(underlying)
                     .then((stock) => {
                         defaults.stock_id = stock.id;
@@ -653,7 +653,7 @@ export class ITradingBot extends EventEmitter {
                 }));
             }
         }
-        this.printObject(contract);
+        // this.printObject(contract);
         return contract;
     }
 
