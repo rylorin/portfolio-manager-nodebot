@@ -143,7 +143,7 @@ export class AccountUpdateBot extends ITradingBot {
 
   protected async updateOpenOrder(order: IbOpenOrder): Promise<void> {
     // this.printObject(order);
-    const contract = await this.findOrCreateContract(order.contract);
+    const contract: Contract = await this.findOrCreateContract(order.contract);
     const result = await OpenOrder.update({
       contract_id: contract.id,
       actionType: order.order.action,

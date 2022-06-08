@@ -55,8 +55,8 @@ class MyTradingBotApp extends IBApiNextApp {
       this.cmdLineArgs.watch ? 10000 : 0,
       +this.cmdLineArgs.clientId ?? 0
     );
+    this.api.setMarketDataType(MarketDataType.DELAYED_FROZEN);  // Error 354 on JPY and CHF
     this.api.setMarketDataType(MarketDataType.REALTIME);
-    this.api.setMarketDataType(MarketDataType.DELAYED_FROZEN);
     initDB().then(() => {
       const portfolio: string = this.cmdLineArgs.portfolio ? this.cmdLineArgs.portfolio as string : process.env.IB_ACCOUNT;
       // console.log(this.cmdLineArgs.portfolio as string, process.env.IB_ACCOUNT, portfolio)

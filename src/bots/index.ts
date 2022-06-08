@@ -493,13 +493,15 @@ export class ITradingBot extends EventEmitter {
     }
 
     protected static formatOptionName(ibContract: IbContract): string {
-        const months = ["JAN", "FEB", "APR", "MAY", "JUN", "JUL", "AUG", "SEP", "OCT", "NOV", "DEC"];
+        const months = ["JAN", "FEB", "MAR", "APR", "MAY", "JUN", "JUL", "AUG", "SEP", "OCT", "NOV", "DEC"];
         const month = months[parseInt(ibContract.lastTradeDateOrContractMonth.substring(4, 6)) - 1];
         const day = ibContract.lastTradeDateOrContractMonth.substring(6, 8);
         const year = ibContract.lastTradeDateOrContractMonth.substring(2, 4);
         const datestr: string = day + month + year;
-        const strike = ibContract.strike.toFixed(1);
-        return `${ibContract.symbol} ${datestr} ${strike} ${ibContract.right}`;
+        // const strike = ibContract.strike.toFixed(1); // not good, new AMZN have two decimals
+        const name = `${ibContract.symbol} ${datestr} ${ibContract.strike} ${ibContract.right}`;
+        // console.log("formatOptionName", name);
+        return name;
     }
 
     protected async findOrCreateContract(ibContract: IbContract): Promise<Contract> {
@@ -520,18 +522,21 @@ export class ITradingBot extends EventEmitter {
                     }
                 })
                 .catch((err: IBApiNextError) => {
-                    this.error(`findOrCreateContract failed for ${ibContract.symbol} with '${err.error.message}'`);
+                    this.error(`findOrCreateContract failed for ${ibContract.symbol} with error #${err.code}: '${err.error.message}'`);
+                    this.printObject(ibContract);
+                    throw err;
                 });
             if (details === null) {
                 // IB contract doesn't exists
                 this.error(`findOrCreateContract failed for ${ibContract.symbol}: can't find corresponding IB contract data`);
             } else if (details && (ibContract.secType == SecType.STK)) {
-                const defaults: any = {
+                const defaults = {
                     conId: ibContract.conId,
                     secType: ibContract.secType,
                     symbol: ibContract.symbol,
                     currency: ibContract.currency,
                     exchange: ibContract.primaryExch || ibContract.exchange,
+                    name: undefined,
                 };
                 if (details) defaults.name = details.longName;
                 contract = await Contract.findOrCreate({
@@ -552,58 +557,53 @@ export class ITradingBot extends EventEmitter {
                     }
                 });
             } else if (details && (ibContract.secType == SecType.OPT)) {
-                const name: string = ITradingBot.formatOptionName(ibContract);
-                const defaults: any = {
+                const contract_values = {   // Contract part of the option
                     conId: ibContract.conId,
                     secType: ibContract.secType,
                     symbol: ibContract.localSymbol,
                     currency: ibContract.currency,
                     exchange: ibContract.primaryExch || ibContract.exchange,
-                    name: name,
+                    name: ITradingBot.formatOptionName(ibContract),
+                };
+                const opt_values = {    // option specific fields
+                    id: undefined,
+                    stock_id: undefined,
                     lastTradeDate: ITradingBot.expirationToDate(ibContract.lastTradeDateOrContractMonth),
                     strike: ibContract.strike,
                     callOrPut: ibContract.right,
                 };
-                let underlying: any = {};
-                if (details) {
-                    underlying = {
-                        conId: details.underConId,
-                        secType: details.underSecType,
-                        symbol: details.underSymbol,
-                        currency: defaults.currency,
-                    };
-                } else {
-                    underlying = {
-                        secType: "STK" as SecType,
-                        symbol: ibContract.symbol,
-                        currency: defaults.currency,
-                    };
-                }
+                const underlying = {    // option underlying contract
+                    conId: details.underConId,
+                    secType: details.underSecType,
+                    symbol: details.underSymbol,
+                    currency: ibContract.currency,
+                };
                 // this.printObject(ibContract);
                 // this.printObject(details);
                 // this.printObject(underlying);
                 // this.printObject(defaults);
                 contract = await this.findOrCreateContract(underlying)
                     .then((stock) => {
-                        defaults.stock_id = stock.id;
+                        opt_values.stock_id = stock.id;
                         return Option.findOne({
                             where: {
-                                stock_id: defaults.stock_id,
-                                lastTradeDate: defaults.lastTradeDate,
-                                strike: defaults.strike,
-                                callOrPut: defaults.callOrPut,
+                                stock_id: opt_values.stock_id,
+                                lastTradeDate: opt_values.lastTradeDate,
+                                strike: opt_values.strike,
+                                callOrPut: opt_values.callOrPut,
                             },
                         }).then((option) => {
                             if (option) {
                                 // update
-                                return Contract.update({ values: defaults }, { where: { id: option.id }, })
-                                    .then(() => Option.update({ values: defaults }, { where: { id: option.id }, }))
+                                return Contract.update({ values: contract_values }, { where: { id: option.id }, })
+                                    .then(() => Option.update({ values: opt_values }, { where: { id: option.id }, }))
                                     .then(() => Contract.findByPk(option.id));
                             } else {
-                                return Contract.create(defaults)
+                                return Contract.create(contract_values)
                                     .then((contract) => {
-                                        defaults.id = contract.id;
-                                        return Option.create(defaults)
+                                        opt_values.id = contract.id;
+                                        this.printObject(opt_values);
+                                        return Option.create(opt_values, { logging: console.log, })
                                             .then(() => contract);
                                     });
                             }

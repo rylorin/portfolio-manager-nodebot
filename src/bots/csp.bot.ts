@@ -51,8 +51,8 @@ export class SellCashSecuredPutBot extends ITradingBot {
     }
 
     private async processOneParamaeter(parameter: Parameter): Promise<{ symbol: string; engaged: number; options: Option[]; }> {
-        console.log("processing parameter:");
-        this.printObject(parameter);
+        console.log("processing parameter:", parameter.underlying.symbol);
+        // this.printObject(parameter);
         const stock_positions = await this.getContractPositionValueInBase(parameter.underlying);
         console.log("stock_positions_amount:", stock_positions);
         const stock_sell_orders = await this.getContractOrderValueInBase(parameter.underlying, OrderAction.SELL);
