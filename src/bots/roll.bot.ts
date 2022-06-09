@@ -233,10 +233,10 @@ export class RollOptionPositionsBot extends ITradingBot {
     }
 
     public async process(): Promise<void> {
-        console.log("process begin");
+        console.log("RollOptionPositionsBot process begin");
         await this.listItmOptionPostitions().then((result) => this.iteratePositions(result));
         setTimeout(() => this.emit("process"), ROLL_FREQ * 60000);
-        console.log("process end");
+        console.log("RollOptionPositionsBot process end");
     }
 
     public async start(): Promise<void> {
