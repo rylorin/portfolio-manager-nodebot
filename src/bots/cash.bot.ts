@@ -18,7 +18,8 @@ export class CashManagementBot extends ITradingBot {
         console.log("CashManagementBot process begin");
         await this.init();  // load parameters
         const benchmark = this.portfolio.benchmark;
-        const benchmark_value = await this.getContractPositionValueInBase(benchmark);
+        const benchmark_value = (await this.getContractPositionValueInBase(benchmark))
+            + (await this.getOptionPositionsRiskInBase(benchmark.id, OptionType.Put));
         const balance_in_base: number = await this.getTotalBalanceInBase();
         const benchmark_balance_in_base: number = await this.getBalanceInBase(benchmark.currency);
 
@@ -55,7 +56,7 @@ export class CashManagementBot extends ITradingBot {
             units_to_buy = Math.floor(extra_cash / benchmark.price);
         }
 
-        console.log((`strategy ${this.portfolio.cashStrategy} extra_cash ${extra_cash} to buy ${units_to_buy} to sell ${units_to_sell}`));
+        console.log(`strategy ${this.portfolio.cashStrategy} extra_cash ${extra_cash} to buy ${units_to_buy} to sell ${units_to_sell}`);
         const benchmark_on_buy = await this.getContractOrdersQuantity(benchmark, OrderAction.BUY)
             + await this.getOptionsOrdersQuantity(benchmark, OptionType.Put, OrderAction.SELL);
         const benchmark_on_sell = await this.getContractOrdersQuantity(benchmark, OrderAction.SELL);
@@ -81,7 +82,7 @@ export class CashManagementBot extends ITradingBot {
 
     public async start(): Promise<void> {
         this.on("process", this.process);
-        setTimeout(() => this.emit("process"), 60 * 1000);
+        setTimeout(() => this.emit("process"), 60 * 1000);  // start after 1 min
     }
 
 }
