@@ -634,7 +634,7 @@ export class ContractsUpdaterBot extends ITradingBot {
     WHERE contract.id = option.stock_id
       AND trading_parameters.stock_id =  option.stock_id
     GROUP BY option.stock_id
-    ORDER BY contract.symbol
+    ORDER BY options_age DESC
       `,
       {
         model: Contract,
