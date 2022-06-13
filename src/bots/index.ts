@@ -274,11 +274,7 @@ export class ITradingBot extends EventEmitter {
         if (right) where.callOrPut = right;
         for (const position of positions) {
             where.id = position.contract.id;
-            const opt = await Option.findOne(
-                {
-                    where: where,
-                },
-            );
+            const opt = await Option.findOne({ where: where, },);
             if (opt != null) {
                 result += position.quantity * opt.multiplier * position.contract.price / this.base_rates[position.contract.currency];
             }
@@ -370,13 +366,14 @@ export class ITradingBot extends EventEmitter {
     }
 
     protected getContractOrdersQuantity(benchmark: Contract, actionType: OrderAction): Promise<number> {
+        const where: any = {
+            portfolio_id: this.portfolio.id,
+            status: ["Submitted", "PreSubmitted"],
+        };
+        if (actionType) where.actionType = actionType;
         if (benchmark !== null) {
             return OpenOrder.findAll({
-                where: {
-                    portfolio_id: this.portfolio.id,
-                    actionType: actionType,
-                    status: ["Submitted", "PreSubmitted"],
-                },
+                where: where,
                 include: {
                     model: Contract,
                     where: {

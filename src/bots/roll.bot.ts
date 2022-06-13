@@ -18,31 +18,23 @@ const AGRESSIVE_ROLL_DAYS: number = parseInt(process.env.AGRESSIVE_ROLL_DAYS) ||
 export class RollOptionPositionsBot extends ITradingBot {
 
     private async processOnePosition(position: Position): Promise<void> {
-        console.log("processing position:");
-        this.printObject(position);
+        console.log("processing position:", position.contract.symbol);
         if (position.quantity < 0) {
             // at the moment we only roll short positions
-            const order = await OpenOrder.findOne({
-                where: {
-                    contract_id: position.contract.id,
-                    status: {
-                        [Op.in]: [
-                            "Submitted", "PreSubmitted",
-                        ]
-                    },
-                },
-            });
-            if (order === null) {
+            const order = await this.getContractOrdersQuantity(position.contract, null);
+            if (order == 0) {
                 const option = await Option.findByPk(position.contract.id, { include: Stock });
                 const stock: Contract = await Contract.findByPk(option.stock.id);
                 const parameter = await Parameter.findOne({
                     where: {
                         portfolio_id: this.portfolio.id,
                         stock_id: option.stock.id,
-                        // rollStrategy: { [Op.and]: {
-                        //     [Op.not]: null,
-                        //     [Op.gt]: 0,
-                        // }},
+                        // rollStrategy: {
+                        //     [Op.and]: {
+                        //         [Op.not]: null,
+                        //         [Op.gt]: 0,
+                        //     }
+                        // },
                     },
                     include: {
                         model: Contract,
@@ -51,9 +43,9 @@ export class RollOptionPositionsBot extends ITradingBot {
                 });
                 if (parameter !== null) {
                     const expiry: Date = new Date(option.lastTradeDate);
-                    const diffDays = Math.ceil((expiry.getTime() - Date.now()) / (1000 * 3600 * 24));
-                    console.log("stock:");
-                    this.printObject(stock);
+                    const now: number = Date.now();
+                    const diffDays = Math.ceil((expiry.getTime() - now) / (1000 * 3600 * 24));
+                    console.log("stock price:", stock.symbol, stock.price);
                     if (option.callOrPut == "P") {                                                  // PUT
                         const rolllist = await Option.findAll({
                             where: {
@@ -69,7 +61,10 @@ export class RollOptionPositionsBot extends ITradingBot {
                                         [Op.and]: {
                                             [Op.not]: null,
                                             [Op.gt]: position.contract.ask,
-                                        }
+                                        },
+                                    },
+                                    updatedAt: {
+                                        [Op.gt]: new Date(now - (1000 * 3600 * 24)),  // updated less than 1 day ago
                                     },
                                 },
                                 required: true,
@@ -136,7 +131,10 @@ export class RollOptionPositionsBot extends ITradingBot {
                                         [Op.and]: {
                                             [Op.not]: null,
                                             [Op.gt]: position.contract.ask,
-                                        }
+                                        },
+                                    },
+                                    updatedAt: {
+                                        [Op.gt]: new Date(now - (1000 * 3600 * 24)),  // updated less than 1 day ago
                                     },
                                 },
                             },
@@ -189,7 +187,7 @@ export class RollOptionPositionsBot extends ITradingBot {
                         }
                     }
                 } else {
-                    console.log("ignored: no parameters for underlying");
+                    console.log("ignored: no parameters available for underlying");
                 }
             } else {
                 console.log("ignored (already in open orders list)");
