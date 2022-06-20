@@ -22,6 +22,7 @@ export class CashManagementBot extends ITradingBot {
             + (await this.getOptionPositionsRiskInBase(benchmark.id, OptionType.Put));
         const balance_in_base: number = await this.getTotalBalanceInBase();
         const benchmark_balance_in_base: number = await this.getBalanceInBase(benchmark.currency);
+        const benchmark_units: number = await this.getContractPosition(benchmark);
 
         let extra_cash: number;
         if (this.portfolio.cashStrategy == 0) {
@@ -49,7 +50,7 @@ export class CashManagementBot extends ITradingBot {
         if (extra_cash < 0) {
             // we need to sell some benchmark units
             if (-extra_cash > benchmark_value) extra_cash = -benchmark_value;
-            units_to_sell = Math.ceil(-extra_cash / benchmark.price);
+            units_to_sell = Math.min(Math.ceil(-extra_cash / benchmark.price), benchmark_units);
         } else if (extra_cash > benchmark.price) {
             // we can buy some benchmark units
             if (extra_cash > benchmark_balance_in_base) extra_cash = benchmark_balance_in_base;

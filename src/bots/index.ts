@@ -170,23 +170,28 @@ export class ITradingBot extends EventEmitter {
         });
     }
 
-    protected getContractPositionValueInBase(benchmark: Contract): Promise<number> {
+    protected getContractPosition(benchmark: Contract): Promise<number> {
         if ((this.portfolio !== null) && (benchmark !== null)) {
             return Position.findOne({
                 where: {
                     portfolio_id: this.portfolio.id,
                     contract_id: benchmark.id,
                 },
-            }).then((position) => Currency.findOne({
+            }).then((position) => position ? position.quantity : 0);
+        } else {
+            return Promise.resolve(0);
+        }
+    }
+
+    protected getContractPositionValueInBase(benchmark: Contract): Promise<number> {
+        return this.getContractPosition(benchmark)
+            .then((position) => Currency.findOne({
                 where: {
                     base: this.portfolio.baseCurrency,
                     currency: benchmark.currency,
                 },
-            }).then((currency) => ((position === null) || (currency === null)) ? 0 : (position.quantity * benchmark.price / currency.rate))
+            }).then((currency) => ((position === null) || (currency === null)) ? 0 : (position * benchmark.price / currency.rate))
             );
-        } else {
-            return Promise.resolve(0);
-        }
     }
 
     private async sumOptionsPositionsEngagedInBase(positions: Position[], underlying: number, right: OptionType): Promise<number> {
