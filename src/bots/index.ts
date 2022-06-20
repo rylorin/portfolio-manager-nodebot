@@ -510,23 +510,22 @@ export class ITradingBot extends EventEmitter {
         if (contract === null) {  // ibContract conId not found, find by data and update it or create it
             // canonize ibContract
             let details: ContractDetails = null;
-            await this.api
-                .getContractDetails(ibContract)
-                .then((detailstab) => {
-                    if (detailstab.length >= 1) {
-                        details = detailstab[0];
-                        ibContract = details.contract;
-                    }
-                })
-                .catch((err: IBApiNextError) => {
-                    this.error(`findOrCreateContract failed for ${ibContract.symbol} with error #${err.code}: '${err.error.message}'`);
-                    this.printObject(ibContract);
-                    throw err;
-                });
-            if (details === null) {
-                // IB contract doesn't exists
-                this.error(`findOrCreateContract failed for ${ibContract.symbol}: can't find corresponding IB contract data`);
-            } else if (details && (ibContract.secType == SecType.STK)) {
+            if (ibContract.secType != SecType.BAG) {
+                await this.api
+                    .getContractDetails(ibContract)
+                    .then((detailstab) => {
+                        if (detailstab.length >= 1) {
+                            details = detailstab[0];
+                            ibContract = details.contract;
+                        }
+                    })
+                    .catch((err: IBApiNextError) => {
+                        this.error(`findOrCreateContract failed for ${ibContract.symbol} with error #${err.code}: '${err.error.message}'`);
+                        this.printObject(ibContract);
+                        throw err;
+                    });
+            }
+            if (details && (ibContract.secType == SecType.STK)) {
                 const defaults = {
                     conId: ibContract.conId,
                     secType: ibContract.secType,
@@ -568,6 +567,7 @@ export class ITradingBot extends EventEmitter {
                     lastTradeDate: ITradingBot.expirationToDate(ibContract.lastTradeDateOrContractMonth),
                     strike: ibContract.strike,
                     callOrPut: ibContract.right,
+                    multiplier: ibContract.multiplier,
                 };
                 const underlying = {    // option underlying contract
                     conId: details.underConId,
@@ -578,7 +578,6 @@ export class ITradingBot extends EventEmitter {
                 // this.printObject(ibContract);
                 // this.printObject(details);
                 // this.printObject(underlying);
-                // this.printObject(defaults);
                 contract = await this.findOrCreateContract(underlying)
                     .then((stock) => {
                         opt_values.stock_id = stock.id;
@@ -592,13 +591,15 @@ export class ITradingBot extends EventEmitter {
                         }).then((option) => {
                             if (option) {
                                 // update
+                                opt_values.id = option.id;
                                 return Contract.update({ values: contract_values }, { where: { id: option.id }, })
                                     .then(() => Option.update({ values: opt_values }, { where: { id: option.id }, }))
                                     .then(() => Contract.findByPk(option.id));
                             } else {
-                                return Contract.create(contract_values)
+                                return Contract.create(contract_values, { logging: console.log, })
                                     .then((contract) => {
                                         opt_values.id = contract.id;
+                                        this.printObject(contract_values);
                                         this.printObject(opt_values);
                                         return Option.create(opt_values, { logging: console.log, })
                                             .then(() => contract);
@@ -630,7 +631,7 @@ export class ITradingBot extends EventEmitter {
                             .then(() => contract);
                     }
                 });
-            } else if (details && (ibContract.secType == SecType.BAG)) {
+            } else if (ibContract.secType == SecType.BAG) {
                 // not yet refactored
                 contract = await Contract.create({
                     conId: ibContract.conId,
@@ -643,13 +644,14 @@ export class ITradingBot extends EventEmitter {
                 }).then(async () => {
                     const p: Promise<Contract>[] = [];
                     for (const leg of ibContract.comboLegs) {
-                        p.push(this.findOrCreateContract({
-                            conId: leg.conId,
-                        }));
+                        p.push(this.findOrCreateContract({ conId: leg.conId, }));
                     }
                     await Promise.all(p);
                     return contract;
                 }));
+            } else {
+                // IB contract doesn't exists
+                this.error(`findOrCreateContract failed for ${ibContract.symbol}: can't find corresponding IB contract data`);
             }
         }
         // this.printObject(contract);
