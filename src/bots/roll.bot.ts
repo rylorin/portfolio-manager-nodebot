@@ -64,7 +64,7 @@ export class RollOptionPositionsBot extends ITradingBot {
                                         },
                                     },
                                     updatedAt: {
-                                        [Op.gt]: new Date(now - (1000 * 3600 * 24)),  // updated less than 1 day ago
+                                        [Op.gt]: new Date(now - (1000 * 3600 * 6)),  // updated less than 6 hours ago
                                     },
                                 },
                                 required: true,

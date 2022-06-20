@@ -52,7 +52,7 @@ export class Option extends Model {
     this.setDataValue("pvDividend", (Math.round(value * 1000) / 1000));
   }
 
-  @Column({ type: DataType.FLOAT(1, 3), defaultValue: 0 })
+  @Column({ type: DataType.FLOAT(1, 3) })
   // public delta: number; 
   get delta(): number {
     return this.getDataValue("delta");
