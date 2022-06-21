@@ -14,6 +14,7 @@ import {
   RollOptionPositionsBot,
   SellCashSecuredPutBot,
   SellCoveredCallsBot,
+  YahooUpdateBot,
 } from "./bots";
 
 /////////////////////////////////////////////////////////////////////////////////
@@ -23,9 +24,10 @@ import {
 const DESCRIPTION_TEXT = "Print real time market data of a given contract id.";
 const USAGE_TEXT = "Usage: market-data.js <options>";
 const OPTION_ARGUMENTS: [string, string][] = [
-  ["clientId=<number>", "Client id of current IB connection. Default is 0"],
+  ["clientId=<number>", "Client id of current IB connection. Default is random"],
   ["portfolio=<string>", "IB account number"],
   ["updater", "start option contracts updater bot"],
+  ["yahoo", "start Yahoo Finance updater"],
   ["account", "start account info update bot"],
   ["cash", "start cash management bot"],
   ["cc", "start covered calls bot"],
@@ -51,9 +53,11 @@ class MyTradingBotApp extends IBApiNextApp {
   public start(): void {
     const scriptName = path.basename(__filename);
     logger.debug(`Starting ${scriptName} script`);
+    const clientId: number = (this.cmdLineArgs.clientId != undefined) ? +this.cmdLineArgs.clientId : Math.round(Math.random() * 32767);
+    // console.log("clientId", clientId);
     this.connect(
       this.cmdLineArgs.watch ? 10000 : 0,
-      +this.cmdLineArgs.clientId ?? 0
+      clientId
     );
     this.api.setMarketDataType(MarketDataType.DELAYED_FROZEN);  // Error 354 on JPY and CHF
     this.api.setMarketDataType(MarketDataType.REALTIME);
@@ -66,6 +70,7 @@ class MyTradingBotApp extends IBApiNextApp {
       if (this.cmdLineArgs.cc) (new SellCoveredCallsBot(this, this.api, portfolio)).start();
       if (this.cmdLineArgs.csp) (new SellCashSecuredPutBot(this, this.api, portfolio)).start();
       if (this.cmdLineArgs.roll) (new RollOptionPositionsBot(this, this.api, portfolio)).start();
+      if (this.cmdLineArgs.yahoo) (new YahooUpdateBot(this, this.api, portfolio)).start();
     });
   }
 
