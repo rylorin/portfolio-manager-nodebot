@@ -1,0 +1,132 @@
+import { QueryTypes, Op } from "sequelize";
+import {
+    Contract as IbContract,
+    IBApiNext,
+    IBApiNextError,
+    BarSizeSetting,
+    SecType,
+    ContractDetails,
+    OptionType,
+    Bar,
+    TickType,
+} from "@stoqey/ib";
+import { ITradingBot } from ".";
+import {
+    Contract,
+    Stock,
+    Option,
+    Position,
+    OpenOrder,
+    Parameter,
+    Portfolio,
+    Balance,
+} from "../models";
+import yahooFinance from "yahoo-finance2";
+import { Quote } from "yahoo-finance2/dist/esm/src/modules/quote";
+
+const YAHOO_PRICE_FREQ: number = parseInt(process.env.YAHOO_PRICE_FREQ) || 20;                 // mins
+const BATCH_SIZE_YAHOO_PRICE: number = parseInt(process.env.BATCH_SIZE_YAHOO_PRICE) || 1;      // units
+
+export class YahooUpdateBot extends ITradingBot {
+
+    protected static formatOptionName(ibContract: Option): string {
+        // console.log(typeof ibContract.lastTradeDate);
+        const lastTradeDateOrContractMonth: string = ibContract.lastTradeDate.toISOString();
+        const year = lastTradeDateOrContractMonth.substring(2, 4);
+        const month = lastTradeDateOrContractMonth.substring(5, 7);
+        const day = lastTradeDateOrContractMonth.substring(8, 10);
+        const datestr: string = year + month + day;
+        let strike: string = (ibContract.strike * 1000).toString();
+        while (strike.length < 8) strike = "0" + strike;
+        const name = `${ibContract.stock.contract.symbol}${datestr}${ibContract.callOrPut}${strike}`;
+        return name;
+    }
+
+    private findOptionsToUpdatePrice(limit: number): Promise<Option[]> {
+        const now: number = Date.now() - (YAHOO_PRICE_FREQ * 60 * 1000);
+        return Option.findAll({
+            where: {
+                lastTradeDate: {
+                    [Op.gt]: new Date(now),
+                },
+            },
+            include: [{
+                model: Contract,
+                where: {
+                    updatedAt: {
+                        [Op.or]: {
+                            [Op.lt]: new Date(now),
+                            [Op.is]: null,
+                        },
+                    },
+                },
+            }, {
+                model: Stock,
+                required: true,
+                include: [Contract],
+            }],
+            order: [["updatedAt", "ASC"],],
+            limit: limit,
+            // logging: console.log,
+        });
+    }
+
+    private async fetchOptionsPrices(opts: Option[]): Promise<Quote[]> {
+        let q = [];
+        for (const opt of opts) {
+            q.push(YahooUpdateBot.formatOptionName(opt));
+        }
+        // this.printObject(q);
+        let quotes: Quote[] = [];
+        try {
+            quotes = await yahooFinance.quote(q);
+        } catch (e) {
+            quotes = e.result;
+        }
+        // this.printObject(quotes);
+        return quotes;
+    }
+
+    private iterateYahooResults(quotes: Quote[]): Promise<any> {
+        console.log(`iterateToBuildOptionList ${quotes.length} items`);
+        return quotes.reduce((p, quote) => {
+            return p.then(() => {
+                let ibContract: IbContract = undefined;
+                if (quote.quoteType == "OPTION") {
+                    ibContract = {
+                        secType: SecType.OPT,
+                        symbol: quote.underlyingSymbol,
+                        currency: quote.currency,
+                        right: quote.symbol.substring(10, 11) as OptionType,
+                        strike: quote.strike,
+                        lastTradeDateOrContractMonth: ITradingBot.dateToExpiration(new Date(quote.expireDate)),
+                    };
+                }
+                const values = {
+                    price: quote.regularMarketPrice,
+                    ask: quote.ask,
+                    bid: quote.bid,
+                };
+                return this.findOrCreateContract(ibContract)
+                    .then((contract) => Contract.update(values, { where: { id: contract.id, }, }));
+            });
+        }, Promise.resolve()); // initial
+    }
+
+    private async process(): Promise<void> {
+        console.log("YahooUpdateBot process begin");
+
+        await this.findOptionsToUpdatePrice(BATCH_SIZE_YAHOO_PRICE)
+            .then((opts) => this.fetchOptionsPrices(opts))
+            .then((r) => this.iterateYahooResults(r));
+
+        setTimeout(() => this.emit("process"), 3600 * 1000);    // wait 1 hour
+        console.log("YahooUpdateBot process end");
+    }
+
+    public async start(): Promise<void> {
+        this.on("process", this.process);
+        setTimeout(() => this.emit("process"), 10 * 1000);  // start after 1 min
+    }
+
+}

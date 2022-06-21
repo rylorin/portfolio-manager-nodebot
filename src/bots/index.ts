@@ -67,6 +67,14 @@ export class ITradingBot extends EventEmitter {
         return lastTradeDate;
     }
 
+    protected static dateToExpiration(lastTradeDate: Date): string {
+        const lastTradeDateOrContractMonth: string = lastTradeDate.toDateString();
+        const year = lastTradeDateOrContractMonth.substring(0, 4);
+        const month = lastTradeDateOrContractMonth.substring(5, 7);
+        const day = lastTradeDateOrContractMonth.substring(8, 10);
+        return `${year}-${month}-${day}`;
+    }
+
     protected static OptionComboContract(underlying: Contract, buyleg: number, sellleg: number): IbContract {
         const contract: IbContract = {
             symbol: underlying.symbol,
@@ -671,3 +679,4 @@ export { CashManagementBot } from "./cash.bot";
 export { SellCoveredCallsBot } from "./cc.bot";
 export { SellCashSecuredPutBot } from "./csp.bot";
 export { RollOptionPositionsBot } from "./roll.bot";
+export { YahooUpdateBot } from "./yahoo.bot";

@@ -21,9 +21,15 @@ export class Option extends Model {
   @BelongsTo(() => Stock, "stock_id")
   public stock: Stock;
 
-  // we could change DATEONLY to DATE when offset with timezone
   @Column({ type: DataType.DATEONLY, field: "last_trade_date" })
-  public lastTradeDate!: Date;
+  // public lastTradeDate!: Date;
+  get lastTradeDate(): Date {
+    return new Date(this.getDataValue("lastTradeDate"));
+  }
+  set lastTradeDate(value: Date) {
+    console.log("lastTradeDate", value, value.toDateString());
+    this.setDataValue("lastTradeDate", value.toDateString());
+  }
 
   @Column({ type: DataType.FLOAT })
   public strike!: number;
@@ -35,7 +41,6 @@ export class Option extends Model {
   public multiplier: number;
 
   @Column({ type: DataType.FLOAT(1, 3), field: "implied_volatility" })
-  // public impliedVolatility: number;
   get impliedVolatility(): number {
     return this.getDataValue("impliedVolatility");
   }
@@ -44,7 +49,6 @@ export class Option extends Model {
   }
 
   @Column({ type: DataType.FLOAT, field: "pv_dividend" })
-  // public pvDividend: number;
   get pvDividend(): number {
     return this.getDataValue("pvDividend");
   }
@@ -53,7 +57,6 @@ export class Option extends Model {
   }
 
   @Column({ type: DataType.FLOAT(1, 3) })
-  // public delta: number; 
   get delta(): number {
     return this.getDataValue("delta");
   }
@@ -62,7 +65,6 @@ export class Option extends Model {
   }
 
   @Column({ type: DataType.FLOAT })
-  // public gamma: number;
   get gamma(): number {
     return this.getDataValue("gamma");
   }
@@ -71,7 +73,6 @@ export class Option extends Model {
   }
 
   @Column({ type: DataType.FLOAT })
-  // public vega: number;
   get vega(): number {
     return this.getDataValue("vega");
   }
@@ -80,7 +81,6 @@ export class Option extends Model {
   }
 
   @Column({ type: DataType.FLOAT })
-  // public theta: number; 
   get theta(): number {
     return this.getDataValue("theta");
   }

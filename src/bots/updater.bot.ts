@@ -725,21 +725,6 @@ export class ContractsUpdaterBot extends ITradingBot {
     return Promise.all(promises);
   }
 
-  /*   private findCurrenciesToUpdatePrice() {
-      const now: number = Date.now() - (FX_RATES_REFRESH_FREQ * 60 * 1000);
-      return Currency.findAll({
-        where: {
-          updatedAt: {
-            [Op.or]: {
-              [Op.lt]: new Date(now),
-              [Op.is]: null,
-            },
-          },
-        },
-        // logging: console.log,
-      });
-    }
-   */
   private findCashContractsToUpdatePrice(limit: number): Promise<Contract[]> {
     const now: number = Date.now() - (FX_RATES_REFRESH_FREQ * 60 * 1000);
     return Contract.findAll({
@@ -800,21 +785,11 @@ export class ContractsUpdaterBot extends ITradingBot {
       console.log(c.length, "stock contract(s)");
       contracts = this.concatAndUniquelyze(contracts, c);
     }
-    // if (contracts.length < BATCH_SIZE_OPTIONS_PRICE) {
-    //   const c = await this.findPortfolioStocksNeedingPriceUpdate(BATCH_SIZE_OPTIONS_PRICE - contracts.length);
-    //   console.log(c.length, "portolio stocks item(s)");
-    //   contracts = contracts.concat(c).reduce(((p, v) => p.findIndex((q) => q.id == v.id) < 0 ? [...p, v] : p), [] as Contract[]);
-    // }
     if (contracts.length < BATCH_SIZE_OPTIONS_PRICE) {
       const c = await this.findPortfolioContractsNeedingPriceUpdate(BATCH_SIZE_OPTIONS_PRICE - contracts.length);
       console.log(c.length, "portolio contracts item(s)");
       contracts = this.concatAndUniquelyze(contracts, c);
     }
-    // if (contracts.length < BATCH_SIZE_OPTIONS_PRICE) {
-    //   const c = await this.findStocksNeedingPriceUpdate(BATCH_SIZE_OPTIONS_PRICE - contracts.length);
-    //   console.log(c.length, "stocks item(s)");
-    //   contracts = contracts.concat(c).reduce(((p, v) => p.findIndex((q) => q.id == v.id) < 0 ? [...p, v] : p), [] as Contract[]);
-    // }
     // update option contracts prices
     if (contracts.length < BATCH_SIZE_OPTIONS_PRICE) {
       const c = await this.findOptionsToUpdatePrice(1, OPTIONS_PRICE_DTE_FREQ, BATCH_SIZE_OPTIONS_PRICE - contracts.length);
