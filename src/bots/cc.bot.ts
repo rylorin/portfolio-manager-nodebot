@@ -78,8 +78,8 @@ export class SellCoveredCallsBot extends ITradingBot {
                 });
                 if (options.length > 0) {
                     for (const option of options) {
-                        const expiry: Date = new Date(option.lastTradeDate);
-                        const diffDays = Math.ceil((expiry.getTime() - Date.now()) / (1000 * 3600 * 24));
+                        // const expiry: Date = new Date(option.lastTradeDate);
+                        const diffDays = Math.ceil((option.lastTradeDate.getTime() - Date.now()) / (1000 * 3600 * 24));
                         option["yield"] = option.contract.bid / option.strike / diffDays * 360;
                         option.stock.contract = await Contract.findByPk(option.stock.id);
                     }

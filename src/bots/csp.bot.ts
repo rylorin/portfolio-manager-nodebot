@@ -114,8 +114,8 @@ export class SellCashSecuredPutBot extends ITradingBot {
             // RULE 6: check overall margin space
             if ((option.strike * option.multiplier * this.base_rates[option.contract.currency]) < max_for_all_symbols) {
                 if (option.impliedVolatility > option.stock.historicalVolatility) { // RULE 1: implied volatility > historical volatility
-                    const expiry: Date = new Date(option.lastTradeDate);
-                    const diffDays = Math.ceil((expiry.getTime() - Date.now()) / (1000 * 3600 * 24));
+                    // const expiry: Date = new Date(option.lastTradeDate);
+                    const diffDays = Math.ceil((option.lastTradeDate.getTime() - Date.now()) / (1000 * 3600 * 24));
                     option["yield"] = option.contract.bid / option.strike / diffDays * 360;
                     option.stock.contract = await Contract.findByPk(option.stock.id);
                     filtered_options.push(option);
