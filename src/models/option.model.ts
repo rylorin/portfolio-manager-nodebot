@@ -27,8 +27,8 @@ export class Option extends Model {
     return new Date(this.getDataValue("lastTradeDate"));
   }
   set lastTradeDate(value: Date) {
-    console.log("lastTradeDate", value, value.toDateString());
-    this.setDataValue("lastTradeDate", value.toDateString());
+    // console.log("lastTradeDate", value, value.toDateString());
+    this.setDataValue("lastTradeDate", value.toISOString().substring(0, 10));
   }
 
   @Column({ type: DataType.FLOAT })

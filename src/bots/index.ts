@@ -59,6 +59,7 @@ export class ITradingBot extends EventEmitter {
     }
 
     protected static expirationToDate(lastTradeDateOrContractMonth: string): Date {
+        // convert YYYYMMDD to Date
         const lastTradeDate = new Date(
             parseInt(lastTradeDateOrContractMonth.substring(0, 4)),
             parseInt(lastTradeDateOrContractMonth.substring(4, 6)) - 1,
@@ -68,11 +69,12 @@ export class ITradingBot extends EventEmitter {
     }
 
     protected static dateToExpiration(lastTradeDate: Date): string {
-        const lastTradeDateOrContractMonth: string = lastTradeDate.toDateString();
+        // convert Date to YYYYMMDD
+        const lastTradeDateOrContractMonth: string = lastTradeDate.toISOString().substring(0, 10);
         const year = lastTradeDateOrContractMonth.substring(0, 4);
         const month = lastTradeDateOrContractMonth.substring(5, 7);
         const day = lastTradeDateOrContractMonth.substring(8, 10);
-        return `${year}-${month}-${day}`;
+        return `${year}${month}${day}`;
     }
 
     protected static OptionComboContract(underlying: Contract, buyleg: number, sellleg: number): IbContract {
