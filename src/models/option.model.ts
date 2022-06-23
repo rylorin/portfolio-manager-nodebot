@@ -27,8 +27,12 @@ export class Option extends Model {
     return new Date(this.getDataValue("lastTradeDate"));
   }
   set lastTradeDate(value: Date) {
-    // console.log("lastTradeDate", value, value.toDateString());
-    this.setDataValue("lastTradeDate", value.toISOString().substring(0, 10));
+    // Format date to YYYY-MM-DD
+    const day: number = value.getDate();
+    const month: number = value.getMonth() + 1;
+    const year: number = value.getFullYear();
+    const lastTradeDate: string = year + "-" + ((month < 10) ? "0" + month : month) + "-" + ((day < 10) ? ("0" + day) : day);
+    this.setDataValue("lastTradeDate", lastTradeDate);
   }
 
   @Column({ type: DataType.FLOAT })

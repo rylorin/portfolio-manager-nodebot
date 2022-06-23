@@ -68,13 +68,13 @@ export class ITradingBot extends EventEmitter {
         return lastTradeDate;
     }
 
-    protected static dateToExpiration(lastTradeDate: Date): string {
+    protected static dateToExpiration(value: Date): string {
         // convert Date to YYYYMMDD
-        const lastTradeDateOrContractMonth: string = lastTradeDate.toISOString().substring(0, 10);
-        const year = lastTradeDateOrContractMonth.substring(0, 4);
-        const month = lastTradeDateOrContractMonth.substring(5, 7);
-        const day = lastTradeDateOrContractMonth.substring(8, 10);
-        return `${year}${month}${day}`;
+        const day: number = value.getDate();
+        const month: number = value.getMonth() + 1;
+        const year: number = value.getFullYear();
+        const lastTradeDate: string = year.toString() + ((month < 10) ? ("0" + month) : month) + ((day < 10) ? ("0" + day) : day);
+        return lastTradeDate;
     }
 
     protected static OptionComboContract(underlying: Contract, buyleg: number, sellleg: number): IbContract {
@@ -611,12 +611,12 @@ export class ITradingBot extends EventEmitter {
                                     .then(() => Option.update({ values: opt_values }, { where: { id: option.id }, }))
                                     .then(() => Contract.findByPk(option.id));
                             } else {
-                                return Contract.create(contract_values, { logging: console.log, })
+                                return Contract.create(contract_values, { logging: false, })
                                     .then((contract) => {
                                         opt_values.id = contract.id;
                                         this.printObject(contract_values);
                                         this.printObject(opt_values);
-                                        return Option.create(opt_values, { logging: console.log, })
+                                        return Option.create(opt_values, { logging: false, })
                                             .then(() => contract);
                                     });
                             }
