@@ -200,7 +200,7 @@ export class ITradingBot extends EventEmitter {
                     base: this.portfolio.baseCurrency,
                     currency: benchmark.currency,
                 },
-            }).then((currency) => ((position === null) || (currency === null)) ? 0 : (position * benchmark.price / currency.rate))
+            }).then((currency) => ((position === null) || (currency === null)) ? 0 : (position * benchmark.lastPrice / currency.rate))
             );
     }
 
@@ -291,7 +291,7 @@ export class ITradingBot extends EventEmitter {
             where.id = position.contract.id;
             const opt = await Option.findOne({ where: where, },);
             if (opt != null) {
-                result += position.quantity * opt.multiplier * position.contract.price / this.base_rates[position.contract.currency];
+                result += position.quantity * opt.multiplier * position.contract.lastPrice / this.base_rates[position.contract.currency];
             }
         }
         console.log(`sumOptionsPositionsValueInBase(${underlying}, ${right}): ${result}`);
@@ -373,7 +373,7 @@ export class ITradingBot extends EventEmitter {
                     base: this.portfolio.baseCurrency,
                     currency: benchmark.currency,
                 },
-            }).then((currency) => orders.reduce((p, order) => (p + (order.remainingQty * benchmark.price / currency.rate)), 0))
+            }).then((currency) => orders.reduce((p, order) => (p + (order.remainingQty * benchmark.lastPrice / currency.rate)), 0))
             );
         } else {
             return Promise.resolve(0);

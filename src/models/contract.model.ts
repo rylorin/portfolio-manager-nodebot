@@ -35,7 +35,18 @@ export class Contract extends Model {
   public name: string;
 
   @Column({ type: DataType.FLOAT(6, 3) })
-  get price(): number {
+  public price: number;
+
+  @Column({ type: DataType.FLOAT(6, 3) })
+  public bid: number;
+
+  @Column({ type: DataType.FLOAT(6, 3) })
+  public ask: number;
+
+  @Column({ type: DataType.FLOAT(6, 3), field: "previous_close_price" })
+  public previousClosePrice: number;
+
+  get lastPrice(): number {
     let value = undefined;
     if ((this.getDataValue("ask") !== null)
       && (this.getDataValue("bid") !== null)) {
@@ -47,17 +58,5 @@ export class Contract extends Model {
     }
     return (Math.round(value * 1000) / 1000);
   }
-  set price(value: number) {
-    this.setDataValue("price", (Math.round(value * 1000) / 1000));
-  }
-
-  @Column({ type: DataType.FLOAT(6, 3) })
-  public bid: number;
-
-  @Column({ type: DataType.FLOAT(6, 3) })
-  public ask: number;
-
-  @Column({ type: DataType.FLOAT(6, 3), field: "previous_close_price" })
-  public previousClosePrice: number;
 
 }

@@ -45,7 +45,7 @@ export class RollOptionPositionsBot extends ITradingBot {
                     const expiry: Date = new Date(option.lastTradeDate);
                     const now: number = Date.now();
                     const diffDays = Math.ceil((expiry.getTime() - now) / (1000 * 3600 * 24));
-                    console.log("stock price:", stock.symbol, stock.price);
+                    console.log("stock price:", stock.symbol, stock.lastPrice);
                     if (option.callOrPut == "P") {                                                  // PUT
                         const rolllist = await Option.findAll({
                             where: {
@@ -80,7 +80,7 @@ export class RollOptionPositionsBot extends ITradingBot {
                             let defensive: Option = undefined;  // lowest delta
                             let agressive: Option = undefined;  // first OTM
                             for (const opt of rolllist) {
-                                if (!agressive && (opt.strike < stock.price)) agressive = opt;
+                                if (!agressive && (opt.strike < stock.lastPrice)) agressive = opt;
                                 if (!defensive && (opt.delta !== null)) defensive = opt;
                                 if ((opt.delta !== null) && (opt.delta > defensive.delta)) defensive = opt;
                             }
@@ -148,7 +148,7 @@ export class RollOptionPositionsBot extends ITradingBot {
                             let defensive: Option = undefined;  // lowest delta
                             let agressive: Option = undefined;  // first OTM
                             for (const opt of rolllist) {
-                                if (!agressive && (opt.strike > stock.price)) agressive = opt;
+                                if (!agressive && (opt.strike > stock.lastPrice)) agressive = opt;
                                 if (!defensive && (opt.delta !== null)) defensive = opt;
                                 if ((opt.delta !== null) && (opt.delta < defensive.delta)) defensive = opt;
                             }
@@ -209,7 +209,7 @@ export class RollOptionPositionsBot extends ITradingBot {
                     && (position.quantity)) {
                     const opt = await Option.findByPk(position.contract.id, { include: Stock });
                     const stock: Contract = await Contract.findByPk(opt.stock.id, {});
-                    const price = stock.price != null ? stock.price : stock.previousClosePrice;
+                    const price = stock.lastPrice;
                     // console.log(price);
                     if ((price != null)
                         && (opt.callOrPut == "P")

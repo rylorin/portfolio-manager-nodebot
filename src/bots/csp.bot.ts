@@ -67,14 +67,14 @@ export class SellCashSecuredPutBot extends ITradingBot {
         console.log("max for this symbol:", max_for_this_symbol);
         const free_for_this_symbol = max_for_this_symbol - max_engaged;
         console.log("free_for_this_symbol in base:", free_for_this_symbol);
-        console.log("parameter.underlying.price:", parameter.underlying.price);
+        console.log("parameter.underlying.price:", parameter.underlying.lastPrice);
         console.log("free_for_this_symbol in currency:", free_for_this_symbol * this.base_rates[parameter.underlying.currency]);
         // RULE 7: stock price is lower than previous close
-        const opt = (parameter.underlying.price > parameter.underlying.previousClosePrice) ? [] : await Option.findAll({
+        const opt = (parameter.underlying.lastPrice > parameter.underlying.previousClosePrice) ? [] : await Option.findAll({
             where: {
                 stock_id: parameter.underlying.id,
                 strike: {
-                    [Op.lt]: Math.min(parameter.underlying.price, (free_for_this_symbol / 100)),    // RULE 2 & 5: strike < cours (OTM) & max ratio per symbol
+                    [Op.lt]: Math.min(parameter.underlying.lastPrice, (free_for_this_symbol / 100)),    // RULE 2 & 5: strike < cours (OTM) & max ratio per symbol
                 },
                 lastTradeDate: { [Op.gt]: new Date() },
                 callOrPut: "P",
