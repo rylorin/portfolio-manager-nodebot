@@ -537,7 +537,7 @@ export class ITradingBot extends EventEmitter {
                     .catch((err: IBApiNextError) => {
                         this.error(`findOrCreateContract failed for ${ibContract.symbol} with error #${err.code}: '${err.error.message}'`);
                         this.printObject(ibContract);
-                        throw err;
+                        throw err.error;
                     });
             }
             if (details && (ibContract.secType == SecType.STK)) {

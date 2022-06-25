@@ -24,10 +24,37 @@ import {
 import yahooFinance from "yahoo-finance2";
 import { Quote } from "yahoo-finance2/dist/esm/src/modules/quote";
 
-const YAHOO_PRICE_FREQ: number = parseInt(process.env.YAHOO_PRICE_FREQ) || 1;                  // mins
+const YAHOO_PRICE_FREQ: number = parseInt(process.env.YAHOO_PRICE_FREQ) || 15;                 // secs
 const BATCH_SIZE_YAHOO_PRICE: number = parseInt(process.env.BATCH_SIZE_YAHOO_PRICE) || 512;    // units
 
 export class YahooUpdateBot extends ITradingBot {
+
+    protected static getYahooTicker(contract: Contract): string {
+        let $ticker: string = contract.symbol.replace("-PR", "-P");
+        const $exchange: string = contract.exchange;
+        if (($exchange == "SBF") || ($exchange == "IBIS2")) {
+            $ticker = $ticker + ".PA";
+        } else if (($exchange == "LSE") || ($exchange == "LSEETF")) {
+            $ticker = $ticker + ".L";
+        } else if ($exchange == "VSE") {
+            $ticker = $ticker + ".VI";
+        } else if ($exchange == "BVME") {
+            $ticker = $ticker + ".MI";
+        } else if ($exchange == "TSEJ") {
+            $ticker = $ticker + ".T";
+        } else if (($exchange == "TSE") || (contract.currency == "CAD")) {
+            $ticker = $ticker.replace(".", "-") + ".TO";
+        } else if ($exchange == "AEB") {
+            $ticker = $ticker + ".AS";
+        } else if ($exchange == "EBS") {
+            $ticker = $ticker + ".SW";
+        } else if ($exchange == "FWB") {
+            $ticker = $ticker + ".DE";
+        } else if ($exchange == "IBIS") {
+            $ticker = (($ticker[$ticker.length - 1] == "d") ? $ticker.substring(0, $ticker.length - 1) : $ticker) + ".DE";
+        }
+        return $ticker;
+    }
 
     protected static formatOptionName(ibContract: Option): string {
         // console.log(typeof ibContract.lastTradeDate);
@@ -42,44 +69,9 @@ export class YahooUpdateBot extends ITradingBot {
         return name;
     }
 
-    private iterateYahooResults(quotes: Quote[]): Promise<any> {
-        console.log(`iterateYahooResults ${quotes.length} items`);
-        return quotes.reduce((p, quote) => {
-            return p.then(() => {
-                let ibContract: IbContract = undefined;
-                if (quote.quoteType == "OPTION") {
-                    const p: number = quote.symbol.indexOf("2");    // will work up to 2030
-                    const right: OptionType = quote.symbol.substring(p).substring(6, 7) as OptionType;
-                    const strike: number = quote.strike || parseInt(quote.symbol.substring(p).substring(7)) / 1000;  // strike is sometimes missing! :<
-                    ibContract = {
-                        secType: SecType.OPT,
-                        symbol: quote.underlyingSymbol,
-                        currency: quote.currency,
-                        right: right,
-                        strike: strike,
-                        lastTradeDateOrContractMonth: ITradingBot.dateToExpiration(new Date(quote.expireDate)),
-                    };
-                }
-                const values = {
-                    price: quote.regularMarketPrice || null,
-                    ask: quote.ask || null,
-                    bid: quote.bid || null,
-                    previousClosePrice: quote.regularMarketPreviousClose || null,
-                };
-                if (ibContract) {
-                    this.printObject(ibContract);
-                    return this.findOrCreateContract(ibContract)
-                        .then((contract) => Contract.update(values, { where: { id: contract.id, }, }));
-                } else {
-                    return Promise.resolve();
-                }
-            });
-        }, Promise.resolve()); // initial
-    }
-
     private async fetchContractsPrices(opts: Option[]) {
         console.log(`fetchContractsPrices ${opts.length} items`);
-        let q: { id: number, symbol: string, quote: Quote }[] = [];
+        const q: { id: number, symbol: string, quote: Quote }[] = [];
         for (const opt of opts) {
             q.push({ id: opt.id, symbol: YahooUpdateBot.formatOptionName(opt), quote: undefined });
         }
@@ -90,21 +82,24 @@ export class YahooUpdateBot extends ITradingBot {
         } catch (e) {
             quotes = e.result;
         }
-        for (const quote of quotes) {
-            const i = q.findIndex(
-                (p) => p.symbol == quote.symbol
-            );
-            if (i !== -1) q[i].quote = quote;
-        }
         const promises: Promise<any>[] = [];
-        for (const r of q) {
-            const values = {
-                price: r.quote?.regularMarketPrice || null,
-                ask: r.quote?.ask || null,
-                bid: r.quote?.bid || null,
-                previousClosePrice: r.quote?.regularMarketPreviousClose || null,
-            };
-            promises.push(Contract.update(values, { where: { id: r.id, }, }));
+        if (quotes !== undefined) {
+            for (const quote of quotes) {
+                const i = q.findIndex(
+                    (p) => p.symbol == quote.symbol
+                );
+                if (i !== -1) q[i].quote = quote;
+            }
+            for (const r of q) {
+                const values = {
+                    price: r.quote?.regularMarketPrice || null,
+                    ask: r.quote?.ask || null,
+                    bid: r.quote?.bid || null,
+                    previousClosePrice: r.quote?.regularMarketPreviousClose || null,
+                    updatedAt: Date.now(),  // force update
+                };
+                promises.push(Contract.update(values, { where: { id: r.id, }, }));
+            }
         }
         await Promise.all(promises);
     }
@@ -114,11 +109,9 @@ export class YahooUpdateBot extends ITradingBot {
         return Option.findAll({
             where: {
                 lastTradeDate: {
-                    [Op.gt]: new Date(now + (30 * 1440 * 60 * 1000)),   // don't update short term options as their price should be real time updted
+                    // [Op.gt]: new Date(now + (7 * 1440 * 60 * 1000)),   // don't update short term options as their price should be real time updted
+                    [Op.gt]: new Date(now),   // don't update expired contracts
                 },
-                // stock_id: {
-                //     [Op.notIn]: [4614,],  // Skip DISCK - ugly hack :< these options should be deleted from db
-                // },
             },
             include: [{
                 model: Contract,
@@ -137,7 +130,7 @@ export class YahooUpdateBot extends ITradingBot {
             }],
             order: [["contract", "updatedAt", "ASC"],],
             limit: limit,
-            // logging: console.log,
+            logging: console.log,
         });
     }
 
@@ -146,9 +139,8 @@ export class YahooUpdateBot extends ITradingBot {
 
         await this.findOptionsToUpdatePrice(BATCH_SIZE_YAHOO_PRICE)
             .then((opts) => this.fetchContractsPrices(opts));
-        // .then((r) => this.iterateYahooResults(r));
 
-        setTimeout(() => this.emit("process"), YAHOO_PRICE_FREQ * 60 * 1000);
+        setTimeout(() => this.emit("process"), YAHOO_PRICE_FREQ * 1000);
         console.log("YahooUpdateBot process end");
     }
 

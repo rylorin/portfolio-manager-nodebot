@@ -311,7 +311,7 @@ export class ContractsUpdaterBot extends ITradingBot {
         if (tick.value) {
           optdataset.delta = tick.value;
         }
-        // console.log("delta (last):", optdataset.delta, tick.value);
+        console.log("delta (last):", optdataset.delta, tick.value);
       } else if (type == IBApiNextTickType.LAST_OPTION_GAMMA) {
         if (tick.value) {
           optdataset.gamma = tick.value;
@@ -340,7 +340,7 @@ export class ContractsUpdaterBot extends ITradingBot {
         if (!optdataset.delta) {
           optdataset.delta = tick.value ? tick.value : null;
         }
-        // console.log("delta (model):", optdataset.delta, tick.value);
+        console.log("delta (model):", optdataset.delta, tick.value);
       } else if (type == IBApiNextTickType.MODEL_OPTION_GAMMA) {
         if (!optdataset.gamma) {
           optdataset.gamma = tick.value ? tick.value : null;
@@ -466,7 +466,7 @@ export class ContractsUpdaterBot extends ITradingBot {
         model: Contract,
         mapToModel: true, // pass true here if you have any mapped fields
         replacements: [STOCKS_PRICES_REFRESH_FREQ / 1440, limit],
-        // logging: console.log,
+        logging: console.log,
       });
   }
   /*
