@@ -46,6 +46,7 @@ export class Contract extends Model {
   @Column({ type: DataType.FLOAT(6, 3), field: "previous_close_price" })
   public previousClosePrice: number;
 
+  // actually this is next price not last
   get lastPrice(): number {
     let value = undefined;
     if ((this.getDataValue("ask") !== null)
@@ -58,5 +59,11 @@ export class Contract extends Model {
     }
     return (Math.round(value * 1000) / 1000);
   }
+
+  @Column({ type: DataType.FLOAT(6, 3), field: "fifty_two_week_low" })
+  public fiftyTwoWeekLow?: number;
+
+  @Column({ type: DataType.FLOAT(6, 3), field: "fifty_two_week_high" })
+  public fiftyTwoWeekHigh?: number;
 
 }

@@ -92,4 +92,10 @@ export class Option extends Model {
     this.setDataValue("theta", (Math.round(value * 1000) / 1000));
   }
 
+  get dte(): number {
+    const dte: number = Math.floor(1 + (new Date(this.getDataValue("lastTradeDate"))).getTime() - Date.now());
+    console.log("dte for", this.getDataValue("lastTradeDate"), dte);
+    return dte;
+  }
+
 }
