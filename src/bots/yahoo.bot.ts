@@ -102,9 +102,9 @@ export class YahooUpdateBot extends ITradingBot {
                 };
                 promises.push(Contract.update(values, { where: { id: r.id, }, }));
                 if (r.quote?.quoteType == "OPTION") {
-                    const values = {
-                        impliedVolatility: r.quote.impliedVolatility,
+                    const values: any = {
                     }
+                    if (r.quote?.impliedVolatility) values.impliedVolatility = r.quote.impliedVolatility;
                     promises.push(Option.update(values, { where: { id: r.id, }, }));
                 }
             }
@@ -187,11 +187,14 @@ export class YahooUpdateBot extends ITradingBot {
                         promises.push(Stock.update(stock_prices, { where: { id: r.stock.id, }, }));
                     }
                     const stock_values = {
+                        epsTrailingTwelveMonths: r.quote.epsTrailingTwelveMonths,
+                        epsForward: r.quote.epsForward,
+                        trailingAnnualDividendRate: r.quote.trailingAnnualDividendRate,
                     };
                     promises.push(Stock.update(stock_values, { where: { id: r.stock.id, }, }));
                     const values = {
-                        fiftyTwoWeekLow: r.quote?.fiftyTwoWeekLow || null,
-                        fiftyTwoWeekHigh: r.quote?.fiftyTwoWeekHigh || null,
+                        fiftyTwoWeekLow: r.quote.fiftyTwoWeekLow || null,
+                        fiftyTwoWeekHigh: r.quote.fiftyTwoWeekHigh || null,
                     };
                     promises.push(Contract.update(values, { where: { id: r.stock.id, }, }));
                 }
@@ -213,7 +216,7 @@ export class YahooUpdateBot extends ITradingBot {
                 },
             },
             limit: limit,
-            logging: console.log,
+            // logging: console.log,
         });
     }
 
@@ -231,7 +234,7 @@ export class YahooUpdateBot extends ITradingBot {
         this.on("process", this.process);
         this.on("history", this.history);
         yahooFinance.setGlobalConfig({ validation: { logErrors: true } });
-        this.printObject(await yahooFinance.quote("SPY"));
+        this.printObject(await yahooFinance.quote("MSFT"));
         setTimeout(() => this.emit("process"), 1 * 60 * 1000);  // start after 1 min
         setTimeout(() => this.emit("history"), 10 * 1000);  // start after 10 secs
     }
