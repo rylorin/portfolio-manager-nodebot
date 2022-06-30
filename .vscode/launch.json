@@ -20,7 +20,7 @@
         "-log=warn",
         "-host=127.0.0.1",
         // "-clientId=0",
-        "-yahoo",
+        "-cc",
       ],
       "outFiles": [
         "${workspaceFolder}/**/*.js"

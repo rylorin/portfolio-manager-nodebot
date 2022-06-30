@@ -311,7 +311,7 @@ export class ContractsUpdaterBot extends ITradingBot {
         if (tick.value) {
           optdataset.delta = tick.value;
         }
-        console.log("delta (last):", optdataset.delta, tick.value);
+        // console.log("delta (last):", optdataset.delta, tick.value);
       } else if (type == IBApiNextTickType.LAST_OPTION_GAMMA) {
         if (tick.value) {
           optdataset.gamma = tick.value;
@@ -329,29 +329,29 @@ export class ContractsUpdaterBot extends ITradingBot {
           optdataset.impliedVolatility = tick.value;
         }
       } else if (type == IBApiNextTickType.MODEL_OPTION_PRICE) {
-        if (!dataset.price) {
-          dataset.price = tick.value > 0 ? tick.value : null;
+        if (!dataset.price && (tick.value > 0)) {
+          dataset.price = tick.value;
         }
       } else if (type == IBApiNextTickType.MODEL_OPTION_IV) {
-        if (!optdataset.impliedVolatility) {
-          optdataset.impliedVolatility = tick.value > 0 ? tick.value : null;
+        if (!optdataset.impliedVolatility && (tick.value > 0)) {
+          optdataset.impliedVolatility = tick.value;
         }
       } else if (type == IBApiNextTickType.MODEL_OPTION_DELTA) {
-        if (!optdataset.delta) {
-          optdataset.delta = tick.value ? tick.value : null;
+        if (!optdataset.delta && tick.value) {
+          optdataset.delta = tick.value;
         }
-        console.log("delta (model):", optdataset.delta, tick.value);
+        // console.log("delta (model):", optdataset.delta, tick.value);
       } else if (type == IBApiNextTickType.MODEL_OPTION_GAMMA) {
-        if (!optdataset.gamma) {
-          optdataset.gamma = tick.value ? tick.value : null;
+        if (!optdataset.gamma && tick.value) {
+          optdataset.gamma = tick.value;
         }
       } else if (type == IBApiNextTickType.MODEL_OPTION_VEGA) {
-        if (!optdataset.vega) {
-          optdataset.vega = tick.value ? tick.value : null;
+        if (!optdataset.vega && tick.value) {
+          optdataset.vega = tick.value;
         }
       } else if (type == IBApiNextTickType.MODEL_OPTION_THETA) {
-        if (!optdataset.theta) {
-          optdataset.theta = tick.value ? tick.value : null;
+        if (!optdataset.theta && tick.value) {
+          optdataset.theta = tick.value;
         }
       } else if ([IBApiNextTickType.OPTION_UNDERLYING,
       // would be interesting to use OPTION_UNDERLYING to update underlying
@@ -466,7 +466,7 @@ export class ContractsUpdaterBot extends ITradingBot {
         model: Contract,
         mapToModel: true, // pass true here if you have any mapped fields
         replacements: [STOCKS_PRICES_REFRESH_FREQ / 1440, limit],
-        logging: console.log,
+        // logging: console.log,
       });
   }
   /*
@@ -755,9 +755,9 @@ export class ContractsUpdaterBot extends ITradingBot {
       };
       promises.push(
         this.findOrCreateContract(ibContract)
-          .catch((err: IBApiNextError) => {
+          .catch((error: Error) => {
             // silently ignore any error
-            this.error(`createCashContracts failed for ${ibContract.localSymbol} with ${err.code}: '${err.error.message}'`);
+            this.error(`createCashContracts failed for ${ibContract.localSymbol}: '${error.message}'`);
           })
       );
     }

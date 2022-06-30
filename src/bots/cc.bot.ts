@@ -24,7 +24,7 @@ export class SellCoveredCallsBot extends ITradingBot {
         const call_sell_orders = -(await this.getOptionsOrdersQuantity(position.contract, "C" as OptionType, OrderAction.SELL));
         console.log("call_sell_orders:", call_sell_orders);
         const free_for_this_symbol = stock_positions + call_positions + stock_sell_orders + call_sell_orders;
-        console.log("free_for_this_symbol in base:", free_for_this_symbol);
+        console.log("free_for_this_symbol:", free_for_this_symbol);
         if (free_for_this_symbol > 0) {
             const parameter = await Parameter.findOne({
                 where: {
@@ -89,6 +89,7 @@ export class SellCoveredCallsBot extends ITradingBot {
                     //     this.printObject(option);
                     // }
                     const option = options[0];
+                    this.printObject(option);
                     await this.api.placeNewOrder(
                         ITradingBot.OptionToIbContract(option),
                         ITradingBot.CcOrder(OrderAction.SELL, Math.floor(free_for_this_symbol / option.multiplier), option.contract.ask)).then((orderId: number) => {
