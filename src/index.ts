@@ -15,6 +15,7 @@ import {
   SellCashSecuredPutBot,
   SellCoveredCallsBot,
   YahooUpdateBot,
+  OptionsCreateBot,
 } from "./bots";
 
 /////////////////////////////////////////////////////////////////////////////////
@@ -33,6 +34,7 @@ const OPTION_ARGUMENTS: [string, string][] = [
   ["cc", "start covered calls bot"],
   ["csp", "start cash secured puts bot"],
   ["roll", "start roll positions bot"],
+  ["options", "start create options contracts bot"],
 ];
 const EXAMPLE_TEXT =
   path.basename(__filename) + path.basename(__filename) + "-port=7497 -host=localhost ";
@@ -53,14 +55,14 @@ class MyTradingBotApp extends IBApiNextApp {
   public start(): void {
     const scriptName = path.basename(__filename);
     logger.debug(`Starting ${scriptName} script`);
-    const clientId: number = (this.cmdLineArgs.clientId != undefined) ? +this.cmdLineArgs.clientId : Math.round(Math.random() * 32767);
+    const clientId: number = (this.cmdLineArgs.clientId != undefined) ? +this.cmdLineArgs.clientId : Math.round(Math.random() * 16383);
     // console.log("clientId", clientId);
     this.connect(
       this.cmdLineArgs.watch ? 10000 : 0,
       clientId
     );
-    this.api.setMarketDataType(MarketDataType.DELAYED_FROZEN);  // Error 354 on JPY and CHF
-    this.api.setMarketDataType(MarketDataType.REALTIME);
+    // this.api.setMarketDataType(MarketDataType.DELAYED_FROZEN);  // Error 354 on JPY and CHF
+    // this.api.setMarketDataType(MarketDataType.REALTIME);        // Error 354 on JPY and CHF
     initDB().then(() => {
       const portfolio: string = this.cmdLineArgs.portfolio ? this.cmdLineArgs.portfolio as string : process.env.IB_ACCOUNT;
       // console.log(this.cmdLineArgs.portfolio as string, process.env.IB_ACCOUNT, portfolio)
@@ -71,6 +73,7 @@ class MyTradingBotApp extends IBApiNextApp {
       if (this.cmdLineArgs.csp) (new SellCashSecuredPutBot(this, this.api, portfolio)).start();
       if (this.cmdLineArgs.roll) (new RollOptionPositionsBot(this, this.api, portfolio)).start();
       if (this.cmdLineArgs.yahoo) (new YahooUpdateBot(this, this.api, portfolio)).start();
+      if (this.cmdLineArgs.options) (new OptionsCreateBot(this, this.api, portfolio)).start();
     });
   }
 
