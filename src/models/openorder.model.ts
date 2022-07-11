@@ -12,6 +12,9 @@ import { Contract } from ".";
 @Table({ tableName: "open_order", timestamps: true, createdAt: true, updatedAt: true, deletedAt: false })
 export class OpenOrder extends Model {
 
+  @BelongsTo(() => Contract, "contract_id")
+  public contract!: Contract;
+
   @Column({ type: DataType.INTEGER, field: "perm_id" })
   public permId!: number;
 
@@ -23,9 +26,6 @@ export class OpenOrder extends Model {
 
   @Column({ type: DataType.INTEGER, field: "portfolio_id" })
   public portfolioId!: number;
-
-  @BelongsTo(() => Contract, "contract_id")
-  public contract!: Contract;
 
   @Column({ type: DataType.STRING(4), field: "action_type" })
   public actionType!: OrderAction;

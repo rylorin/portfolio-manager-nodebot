@@ -29,7 +29,7 @@ export class Contract extends Model {
   @Column({ type: DataType.STRING(3) })
   public currency: string;
 
-  /* other fields */
+  /* other fields to be documented */
 
   @Column({ type: DataType.STRING })
   public name: string;
@@ -46,8 +46,7 @@ export class Contract extends Model {
   @Column({ type: DataType.FLOAT(6, 3), field: "previous_close_price" })
   public previousClosePrice: number;
 
-  // actually this is next price not last
-  get lastPrice(): number {
+  get livePrice(): number {
     let value = undefined;
     if ((this.getDataValue("ask") !== null)
       && (this.getDataValue("bid") !== null)) {

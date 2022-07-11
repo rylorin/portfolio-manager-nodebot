@@ -24,8 +24,15 @@ import {
 import yahooFinance from "yahoo-finance2";
 import { Quote } from "yahoo-finance2/dist/esm/src/modules/quote";
 
-const YAHOO_PRICE_FREQ: number = parseInt(process.env.YAHOO_PRICE_FREQ) || 15;                 // secs
-const BATCH_SIZE_YAHOO_PRICE: number = parseInt(process.env.BATCH_SIZE_YAHOO_PRICE) || 512;    // units
+const YAHOO_PRICE_FREQ: number = parseInt(process.env.YAHOO_PRICE_FREQ) || 15;                // secs
+const YAHOO_PRICE_AGE: number = parseInt(process.env.YAHOO_PRICE_FREQ) || 60;                 // mins
+const BATCH_SIZE_YAHOO_PRICE: number = parseInt(process.env.BATCH_SIZE_YAHOO_PRICE) || 512;   // units
+
+type MappedQuote = {
+    contract: Contract,
+    symbol: string,
+    quote?: Quote,
+}
 
 export class YahooUpdateBot extends ITradingBot {
 
@@ -46,7 +53,7 @@ export class YahooUpdateBot extends ITradingBot {
             $ticker = $ticker.replace(".", "-") + ".TO";
         } else if ($exchange == "AEB") {
             $ticker = $ticker + ".AS";
-        } else if ($exchange == "EBS") {
+        } else if (($exchange == "EBS") || (contract.currency == "CHF")) {
             $ticker = $ticker + ".SW";
         } else if ($exchange == "FWB") {
             $ticker = $ticker + ".DE";
@@ -69,12 +76,42 @@ export class YahooUpdateBot extends ITradingBot {
         return name;
     }
 
-    private async fetchContractsPrices(opts: Option[]) {
-        console.log(`fetchContractsPrices ${opts.length} items`);
-        const q: { id: number, symbol: string, quote: Quote }[] = [];
-        for (const opt of opts) {
-            q.push({ id: opt.id, symbol: YahooUpdateBot.formatOptionName(opt), quote: undefined });
+    private iterateResults(q: MappedQuote[]): Promise<any[]> {
+        const promises: Promise<any>[] = [];
+        for (const r of q) {
+            if (r.quote !== undefined) {
+                const prices: any = {
+                    price: r.quote?.regularMarketPrice || null,
+                    ask: r.quote?.ask || null,
+                    bid: r.quote?.bid || null,
+                    fiftyTwoWeekLow: r.quote?.fiftyTwoWeekLow || null,
+                    fiftyTwoWeekHigh: r.quote?.fiftyTwoWeekHigh || null,
+                    updatedAt: Date.now(),
+                };
+                if (r.quote?.regularMarketPreviousClose) prices.previousClosePrice = r.quote?.regularMarketPreviousClose;
+                promises.push(Contract.update(prices, { where: { id: r.contract.id, }, }));
+                if (r.contract.secType == SecType.STK) {
+                    const stock_values = {
+                        epsTrailingTwelveMonths: r.quote.epsTrailingTwelveMonths,
+                        epsForward: r.quote.epsForward,
+                        trailingAnnualDividendRate: r.quote.trailingAnnualDividendRate,
+                    };
+                    promises.push(Stock.update(stock_values, { where: { id: r.contract.id, }, }));
+                } else if (r.contract.secType == SecType.OPT) {
+                    const values: any = {
+                    };
+                    if (r.quote?.impliedVolatility) values.impliedVolatility = r.quote.impliedVolatility;
+                    promises.push(Option.update(values, { where: { id: r.contract.id, }, }));
+                }
+            } else {
+                promises.push(Contract.update({ updatedAt: new Date() }, { where: { id: r.contract.id, }, }));
+            }
         }
+        return Promise.all(promises);
+    }
+
+    private async fetchQuotes(q: MappedQuote[]) {
+        console.log(`fetchQuotes ${q.length} items`);
         // this.printObject(q);
         let quotes: Quote[] = undefined;
         try {
@@ -82,37 +119,75 @@ export class YahooUpdateBot extends ITradingBot {
         } catch (e) {
             quotes = e.result;
         }
-        const promises: Promise<any>[] = [];
         if (quotes !== undefined) {
             for (const quote of quotes) {
                 const i = q.findIndex(
                     (p) => p.symbol == quote.symbol
                 );
-                if (i !== -1) q[i].quote = quote;
-            }
-            for (const r of q) {
-                const values = {
-                    price: r.quote?.regularMarketPrice || null,
-                    ask: r.quote?.ask || null,
-                    bid: r.quote?.bid || null,
-                    previousClosePrice: r.quote?.regularMarketPreviousClose || null,
-                    fiftyTwoWeekLow: r.quote?.fiftyTwoWeekLow || null,
-                    fiftyTwoWeekHigh: r.quote?.fiftyTwoWeekHigh || null,
-                    updatedAt: Date.now(),  // force update
-                };
-                promises.push(Contract.update(values, { where: { id: r.id, }, }));
-                if (r.quote?.quoteType == "OPTION") {
-                    const values: any = {
-                    }
-                    if (r.quote?.impliedVolatility) values.impliedVolatility = r.quote.impliedVolatility;
-                    promises.push(Option.update(values, { where: { id: r.id, }, }));
-                }
+                if ((i !== -1) && (q[i].contract.currency == quote.currency)) q[i].quote = quote;
             }
         }
-        await Promise.all(promises);
+        return q;
     }
 
-    private findOptionsToUpdatePrice(limit: number): Promise<Option[]> {
+    private findCurrencies(limit: number): Promise<MappedQuote[]> {
+        const now: number = Date.now();
+        return Contract.findAll({
+            where: {
+                secType: SecType.CASH,
+                updatedAt: {
+                    [Op.or]: {
+                        [Op.lt]: new Date(now - (YAHOO_PRICE_AGE * 60 * 1000)),
+                        [Op.is]: null,
+                    },
+                },
+            },
+            order: [["updatedAt", "ASC"]],
+            limit: limit,
+            // logging: console.log,
+        })
+            .then((currencies) => {
+                const p: MappedQuote[] = [];
+                for (const currency of currencies) {
+                    p.push({ contract: currency, symbol: currency.symbol.substring(0, 3) + currency.currency + "=X" });
+                }
+                return p;
+            });
+    }
+
+    private findStocks(limit: number): Promise<MappedQuote[]> {
+        const now: number = Date.now();
+        return Stock.findAll({
+            include: {
+                association: "contract",
+                model: Contract,
+                required: true,
+                where: {
+                    exchange: {
+                        [Op.ne]: "VALUE",  // Contracts that are not tradable (removed, merges, ...) are on VALUE exchange 
+                    },
+                    updatedAt: {
+                        [Op.or]: {
+                            [Op.lt]: new Date(now - (YAHOO_PRICE_AGE * 60 * 1000)),
+                            [Op.is]: null,
+                        },
+                    },
+                },
+            },
+            order: [["contract", "updatedAt", "ASC"]],
+            limit: limit,
+            // logging: console.log,
+        })
+            .then((stocks) => {
+                const p: MappedQuote[] = [];
+                for (const stock of stocks) {
+                    p.push({ contract: stock.contract, symbol: YahooUpdateBot.getYahooTicker(stock.contract) });
+                }
+                return p;
+            });
+    }
+
+    private findOptions(limit: number): Promise<MappedQuote[]> {
         const now: number = Date.now();
         return Option.findAll({
             where: {
@@ -126,9 +201,13 @@ export class YahooUpdateBot extends ITradingBot {
                 where: {
                     updatedAt: {
                         [Op.or]: {
-                            [Op.lt]: new Date(now - (20 * 60 * 1000)),  // Yahoo quotes delayed by 20 mins
+                            [Op.lt]: new Date(now - (YAHOO_PRICE_AGE * 60 * 1000)),  // Yahoo quotes delayed by 20 mins
                             [Op.is]: null,
                         },
+                    },
+                    currency: "USD",
+                    exchange: {
+                        [Op.ne]: "VALUE",  // Contracts that are not tradable (removed, merges, ...) are on VALUE exchange 
                     },
                 },
             }, {
@@ -136,107 +215,52 @@ export class YahooUpdateBot extends ITradingBot {
                 required: true,
                 include: [Contract],
             }],
-            order: [["contract", "updatedAt", "ASC"],],
+            order: [["contract", "updatedAt", "ASC"]],
             limit: limit,
             // logging: console.log,
-        });
+        })
+            .then((options) => {
+                const p: MappedQuote[] = [];
+                for (const option of options) {
+                    p.push({ contract: option.contract, symbol: YahooUpdateBot.formatOptionName(option) });
+                }
+                return p;
+            });
     }
 
     private async process(): Promise<void> {
         console.log("YahooUpdateBot process begin");
 
-        await this.findOptionsToUpdatePrice(BATCH_SIZE_YAHOO_PRICE)
-            .then((opts) => this.fetchContractsPrices(opts));
+        let contracts: MappedQuote[] = [];
+        if (contracts.length < BATCH_SIZE_YAHOO_PRICE) {
+            const c = await this.findCurrencies(BATCH_SIZE_YAHOO_PRICE - contracts.length);
+            console.log(c.length, "currency contract(s)");
+            contracts = contracts.concat(c);
+        }
+        if (contracts.length < BATCH_SIZE_YAHOO_PRICE) {
+            const c = await this.findStocks(BATCH_SIZE_YAHOO_PRICE - contracts.length);
+            console.log(c.length, "stock contract(s)");
+            contracts = contracts.concat(c);
+        }
+        if (contracts.length < BATCH_SIZE_YAHOO_PRICE) {
+            const c = await this.findOptions(BATCH_SIZE_YAHOO_PRICE - contracts.length);
+            console.log(c.length, "option contract(s)");
+            contracts = contracts.concat(c);
+        }
+        await this.fetchQuotes(contracts)
+            .then((q) => this.iterateResults(q));
 
         setTimeout(() => this.emit("process"), YAHOO_PRICE_FREQ * 1000);
         console.log("YahooUpdateBot process end");
     }
 
-    private async fetchContractsHistory(stoks: Stock[]) {
-        console.log(`fetchContractsHistory ${stoks.length} items`);
-        const q: { stock: Stock, symbol: string, quote: Quote }[] = [];
-        for (const opt of stoks) {
-            q.push({ stock: opt, symbol: YahooUpdateBot.getYahooTicker(opt.contract), quote: undefined });
-        }
-        // this.printObject(q);
-        let quotes: Quote[] = undefined;
-        try {
-            quotes = await yahooFinance.quote(q.map(a => a.symbol), {}, { validateResult: false, });
-        } catch (e) {
-            quotes = e.result;
-        }
-        const promises: Promise<any>[] = [];
-        if (quotes !== undefined) {
-            for (const quote of quotes) {
-                const i = q.findIndex(
-                    (p) => p.symbol == quote.symbol
-                );
-                if ((i !== -1) && (q[i].stock.contract.currency == quote.currency)) q[i].quote = quote;
-            }
-            for (const r of q) {
-                if (r.quote !== undefined) {
-                    if (r.stock.contract.updatedAt < r.quote?.regularMarketTime) {
-                        // we got newer prices
-                        const stock_prices = {
-                            price: r.quote?.regularMarketPrice || null,
-                            ask: r.quote?.ask || null,
-                            bid: r.quote?.bid || null,
-                            previousClosePrice: r.quote?.regularMarketPreviousClose || null,
-                            updatedAt: r.quote.regularMarketTime,
-                        };
-                        promises.push(Stock.update(stock_prices, { where: { id: r.stock.id, }, }));
-                    }
-                    const stock_values = {
-                        epsTrailingTwelveMonths: r.quote.epsTrailingTwelveMonths,
-                        epsForward: r.quote.epsForward,
-                        trailingAnnualDividendRate: r.quote.trailingAnnualDividendRate,
-                    };
-                    promises.push(Stock.update(stock_values, { where: { id: r.stock.id, }, }));
-                    const values = {
-                        fiftyTwoWeekLow: r.quote.fiftyTwoWeekLow || null,
-                        fiftyTwoWeekHigh: r.quote.fiftyTwoWeekHigh || null,
-                    };
-                    promises.push(Contract.update(values, { where: { id: r.stock.id, }, }));
-                }
-            }
-        }
-        await Promise.all(promises);
-    }
-
-    private findStocks(limit: number): Promise<Stock[]> {
-        return Stock.findAll({
-            include: {
-                association: "contract",
-                model: Contract,
-                required: true,
-                where: {
-                    exchange: {
-                        [Op.ne]: "VALUE",  // Contracts that are not tradable (removed, merges, ...) are on VALUE exchange 
-                    },
-                },
-            },
-            limit: limit,
-            // logging: console.log,
-        });
-    }
-
-    private async history(): Promise<void> {
-        console.log("YahooUpdateBot history begin");
-
-        await this.findStocks(BATCH_SIZE_YAHOO_PRICE)
-            .then((opts) => this.fetchContractsHistory(opts));
-
-        setTimeout(() => this.emit("history"), 4 * 3600 * 1000);    // update every 4  hours
-        console.log("YahooUpdateBot history end");
-    }
-
     public async start(): Promise<void> {
         this.on("process", this.process);
-        this.on("history", this.history);
+
         yahooFinance.setGlobalConfig({ validation: { logErrors: true } });
-        this.printObject(await yahooFinance.quote("MSFT"));
+        // this.printObject(await yahooFinance.quote("SPY220708C00295000"));
+
         setTimeout(() => this.emit("process"), 1 * 60 * 1000);  // start after 1 min
-        setTimeout(() => this.emit("history"), 10 * 1000);  // start after 10 secs
     }
 
 }

@@ -354,12 +354,6 @@ export class AccountUpdateBot extends ITradingBot {
             if (key != "BASE") this.enqueueCashPostition(key, balance);
           }
         }
-        // data.added?.portfolio?.get(this.accountNumber).forEach((p) => {
-        //   this.enqueuePosition(p);
-        // });
-        // data.changed?.portfolio?.get(this.accountNumber).forEach((p) => {
-        //   this.enqueuePosition(p);
-        // });
       },
     });
 
