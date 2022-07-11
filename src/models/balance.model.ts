@@ -20,7 +20,7 @@ export class Balance extends Model {
     public currency!: string;
 
     /** quantity */
-    @Column({ type: DataType.FLOAT(8, 2) })
+    @Column({ type: DataType.FLOAT(8, 2), defaultValue: 0 })
     public quantity: number;
 
 }
