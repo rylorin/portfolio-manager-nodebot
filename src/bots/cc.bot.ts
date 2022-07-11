@@ -44,11 +44,11 @@ export class SellCoveredCallsBot extends ITradingBot {
             });
             if ((parameter !== null) && (parameter.ccStrategy > 0)
                 // RULE : stock price is higher than previous close
-                && (parameter.underlying.lastPrice > parameter.underlying.previousClosePrice)) {
+                && (parameter.underlying.livePrice > parameter.underlying.previousClosePrice)) {
                 this.printObject(parameter);
                 // RULE defensive : strike > cours (OTM) & strike > position avg price
                 // RULE agressive : strike > cours (OTM)
-                const strike = (parameter.ccStrategy == 1) ? Math.max(parameter.underlying.lastPrice, position.averagePrice) : parameter.underlying.lastPrice;
+                const strike = (parameter.ccStrategy == 1) ? Math.max(parameter.underlying.livePrice, position.averagePrice) : parameter.underlying.livePrice;
                 const options = await Option.findAll({
                     where: {
                         stock_id: parameter.underlying.id,

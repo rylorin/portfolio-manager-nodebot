@@ -9,7 +9,7 @@ import {
     Portfolio,
 } from "../models";
 import { QueryTypes, Op } from "sequelize";
-import { OrderAction } from "@stoqey/ib";
+import { OptionType, OrderAction } from "@stoqey/ib";
 
 const ROLL_FREQ: number = parseInt(process.env.ROLL_FREQ) || 10;  // mins
 const DEFENSIVE_ROLL_DAYS: number = parseInt(process.env.DEFENSIVE_ROLL_DAYS) || 6;  // days
@@ -45,8 +45,8 @@ export class RollOptionPositionsBot extends ITradingBot {
                     const expiry: Date = new Date(option.lastTradeDate);
                     const now: number = Date.now();
                     const diffDays = Math.ceil((expiry.getTime() - now) / (1000 * 3600 * 24));
-                    console.log("stock price:", stock.symbol, stock.lastPrice);
-                    if (option.callOrPut == "P") {                                                  // PUT
+                    console.log("stock price:", stock.symbol, stock.livePrice);
+                    if (option.callOrPut == OptionType.Put) {                                                  // PUT
                         const rolllist = await Option.findAll({
                             where: {
                                 stock_id: option.stock.id,
@@ -69,7 +69,7 @@ export class RollOptionPositionsBot extends ITradingBot {
                                 },
                                 required: true,
                             },
-                            // logging: console.log,
+                            logging: console.log,
                         }).then((result) => result.sort((a, b) => {
                             if (a.lastTradeDate > b.lastTradeDate) return 1;
                             else if (a.lastTradeDate < b.lastTradeDate) return -1;
@@ -80,7 +80,7 @@ export class RollOptionPositionsBot extends ITradingBot {
                             let defensive: Option = undefined;  // lowest delta
                             let agressive: Option = undefined;  // first OTM
                             for (const opt of rolllist) {
-                                if (!agressive && (opt.strike < stock.lastPrice)) agressive = opt;
+                                if (!agressive && (opt.strike < stock.livePrice)) agressive = opt;
                                 if (!defensive && (opt.delta !== null)) defensive = opt;
                                 if ((opt.delta !== null) && (opt.delta > defensive.delta)) defensive = opt;
                             }
@@ -116,7 +116,7 @@ export class RollOptionPositionsBot extends ITradingBot {
                         } else {
                             this.error("can not roll contract: empty list");
                         }
-                    } else if (option.callOrPut == "C") {                                           // CALL
+                    } else if (option.callOrPut == OptionType.Call) {                                           // CALL
                         const rolllist = await Option.findAll({
                             where: {
                                 stock_id: option.stock.id,
@@ -148,7 +148,7 @@ export class RollOptionPositionsBot extends ITradingBot {
                             let defensive: Option = undefined;  // lowest delta
                             let agressive: Option = undefined;  // first OTM
                             for (const opt of rolllist) {
-                                if (!agressive && (opt.strike > stock.lastPrice)) agressive = opt;
+                                if (!agressive && (opt.strike > stock.livePrice)) agressive = opt;
                                 if (!defensive && (opt.delta !== null)) defensive = opt;
                                 if ((opt.delta !== null) && (opt.delta < defensive.delta)) defensive = opt;
                             }
@@ -209,7 +209,7 @@ export class RollOptionPositionsBot extends ITradingBot {
                     && (position.quantity)) {
                     const opt = await Option.findByPk(position.contract.id, { include: Stock });
                     const stock: Contract = await Contract.findByPk(opt.stock.id, {});
-                    const price = stock.lastPrice;
+                    const price = stock.livePrice;
                     // console.log(price);
                     if ((price != null)
                         && (opt.callOrPut == "P")

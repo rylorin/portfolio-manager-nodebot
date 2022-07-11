@@ -50,11 +50,11 @@ export class CashManagementBot extends ITradingBot {
         if (extra_cash < 0) {
             // we need to sell some benchmark units
             if (-extra_cash > benchmark_value) extra_cash = -benchmark_value;
-            units_to_sell = Math.min(Math.ceil(-extra_cash / benchmark.lastPrice), benchmark_units);
-        } else if (extra_cash > benchmark.lastPrice) {
+            units_to_sell = Math.min(Math.ceil(-extra_cash / benchmark.livePrice), benchmark_units);
+        } else if (extra_cash > benchmark.livePrice) {
             // we can buy some benchmark units
             if (extra_cash > benchmark_balance_in_base) extra_cash = benchmark_balance_in_base;
-            units_to_buy = Math.floor(extra_cash / benchmark.lastPrice);
+            units_to_buy = Math.floor(extra_cash / benchmark.livePrice);
         }
 
         console.log(`strategy ${this.portfolio.cashStrategy} extra_cash ${extra_cash} to buy ${units_to_buy} to sell ${units_to_sell}`);

@@ -200,7 +200,7 @@ export class ITradingBot extends EventEmitter {
                     base: this.portfolio.baseCurrency,
                     currency: benchmark.currency,
                 },
-            }).then((currency) => ((position === null) || (currency === null)) ? 0 : (position * benchmark.lastPrice / currency.rate))
+            }).then((currency) => ((position === null) || (currency === null)) ? 0 : (position * benchmark.livePrice / currency.rate))
             );
     }
 
@@ -291,7 +291,7 @@ export class ITradingBot extends EventEmitter {
             where.id = position.contract.id;
             const opt = await Option.findOne({ where: where, },);
             if (opt != null) {
-                result += position.quantity * opt.multiplier * position.contract.lastPrice / this.base_rates[position.contract.currency];
+                result += position.quantity * opt.multiplier * position.contract.livePrice / this.base_rates[position.contract.currency];
             }
         }
         console.log(`sumOptionsPositionsValueInBase(${underlying}, ${right}): ${result}`);
@@ -373,7 +373,7 @@ export class ITradingBot extends EventEmitter {
                     base: this.portfolio.baseCurrency,
                     currency: benchmark.currency,
                 },
-            }).then((currency) => orders.reduce((p, order) => (p + (order.remainingQty * benchmark.lastPrice / currency.rate)), 0))
+            }).then((currency) => orders.reduce((p, order) => (p + (order.remainingQty * benchmark.livePrice / currency.rate)), 0))
             );
         } else {
             return Promise.resolve(0);
@@ -535,8 +535,8 @@ export class ITradingBot extends EventEmitter {
                         }
                     })
                     .catch((err: IBApiNextError) => {
-                        this.error(`findOrCreateContract failed for ${ibContract.symbol} with error #${err.code}: '${err.error.message}'`);
-                        this.printObject(ibContract);
+                        this.error(`findOrCreateContract failed for ${ibContract.secType} ${ibContract.symbol} with error #${err.code}: '${err.error.message}'`);
+                        // this.printObject(ibContract);
                         throw err.error;
                     });
             }
@@ -583,6 +583,7 @@ export class ITradingBot extends EventEmitter {
                     strike: ibContract.strike,
                     callOrPut: ibContract.right,
                     multiplier: ibContract.multiplier,
+                    delta: (ibContract.right == OptionType.Call) ? 0.5 : -0.5,
                 };
                 const underlying = {    // option underlying contract
                     conId: details.underConId,
@@ -614,8 +615,8 @@ export class ITradingBot extends EventEmitter {
                                 return Contract.create(contract_values, { logging: false, })
                                     .then((contract) => {
                                         opt_values.id = contract.id;
-                                        this.printObject(contract_values);
-                                        this.printObject(opt_values);
+                                        // this.printObject(contract_values);
+                                        // this.printObject(opt_values);
                                         return Option.create(opt_values, { logging: false, })
                                             .then(() => contract);
                                     });
@@ -682,3 +683,4 @@ export { SellCoveredCallsBot } from "./cc.bot";
 export { SellCashSecuredPutBot } from "./csp.bot";
 export { RollOptionPositionsBot } from "./roll.bot";
 export { YahooUpdateBot } from "./yahoo.bot";
+export { OptionsCreateBot } from "./options.bot";
