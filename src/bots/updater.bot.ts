@@ -209,8 +209,8 @@ export class ContractsUpdaterBot extends ITradingBot {
       }
     });
     let price = dataset.previousClosePrice;
-    if (dataset.ask && dataset.bid) price = (dataset.ask + dataset.bid) / 2;
     if (dataset.price) price = dataset.price;
+    if (dataset.ask && dataset.bid) price = (dataset.ask + dataset.bid) / 2;
     // if (contract.secType != "OPT")
     // console.log(`${contract.id}: ${contract.symbol} ${dataset.price} ${dataset.bid} ${dataset.ask} ${dataset.previousClosePrice} ${price}`);
     return Contract.update(
@@ -224,7 +224,7 @@ export class ContractsUpdaterBot extends ITradingBot {
       if (contract.secType == "OPT") {
         return Option.update(optdataset, { where: { id: contract.id } }).then(() => price);
       } else if (contract.secType == "CASH") {
-        return Currency.update({ rate: price }, { where: { base: contract.symbol.substring(0, 4), currency: contract.currency }, logging: false }).then(() => price);
+        return Currency.update({ rate: price }, { where: { base: contract.symbol.substring(0, 3), currency: contract.currency }, logging: false, }).then(() => price);
       } else {
         return price;
       }
