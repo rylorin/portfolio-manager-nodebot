@@ -29,12 +29,6 @@ export class RollOptionPositionsBot extends ITradingBot {
                     where: {
                         portfolio_id: this.portfolio.id,
                         stock_id: option.stock.id,
-                        // rollStrategy: {
-                        //     [Op.and]: {
-                        //         [Op.not]: null,
-                        //         [Op.gt]: 0,
-                        //     }
-                        // },
                     },
                     include: {
                         model: Contract,
@@ -64,12 +58,12 @@ export class RollOptionPositionsBot extends ITradingBot {
                                         },
                                     },
                                     updatedAt: {
-                                        [Op.gt]: new Date(now - (1000 * 3600 * 6)),  // updated less than 6 hours ago
+                                        [Op.gt]: new Date(now - (1000 * 3600 * 4)),  // updated less than 4 hours ago
                                     },
                                 },
                                 required: true,
                             },
-                            logging: console.log,
+                            // logging: console.log,
                         }).then((result) => result.sort((a, b) => {
                             if (a.lastTradeDate > b.lastTradeDate) return 1;
                             else if (a.lastTradeDate < b.lastTradeDate) return -1;
@@ -79,8 +73,19 @@ export class RollOptionPositionsBot extends ITradingBot {
                         if (rolllist.length > 0) {
                             let defensive: Option = undefined;  // lowest delta
                             let agressive: Option = undefined;  // first OTM
+                            // rolllist is ordered by expiration date ASC strike DESC
                             for (const opt of rolllist) {
-                                if (!agressive && (opt.strike < stock.livePrice)) agressive = opt;
+                                // agressive is the first contract with strike under stock price
+                                if (!agressive && (opt.strike < stock.livePrice)) {
+                                    agressive = opt;
+                                    // in the worst case defensive is the same
+                                    defensive = opt;
+                                } else if (defensive) {
+                                    // try to improve defensive delta
+                                    if ((defensive.delta != null) && (opt.delta > defensive.delta)) defensive = opt;
+                                    // try to improve defensive strike if delta not defined
+                                    if ((defensive.delta == null) && (opt.strike < defensive.strike)) defensive = opt;
+                                }
                                 if (!defensive && (opt.delta !== null)) defensive = opt;
                                 if ((opt.delta !== null) && (opt.delta > defensive.delta)) defensive = opt;
                             }
@@ -90,10 +95,10 @@ export class RollOptionPositionsBot extends ITradingBot {
                             } else if (!defensive) defensive = agressive;
                             else if (!agressive) agressive = defensive;
                             // this.printObject(rolllist);
-                            console.log("option contract for defensive strategy:");
-                            this.printObject(defensive);
                             console.log("option contract for agressive strategy:");
                             this.printObject(agressive);
+                            console.log("option contract for defensive strategy:");
+                            this.printObject(defensive);
                             let selected: Option = undefined;
                             let price: number = undefined;
                             if (((parameter.rollPutStrategy == 1) && (diffDays > DEFENSIVE_ROLL_DAYS))

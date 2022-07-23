@@ -65,4 +65,7 @@ export class Contract extends Model {
   @Column({ type: DataType.FLOAT(6, 3), field: "fifty_two_week_high" })
   public fiftyTwoWeekHigh?: number;
 
+  // @Column({ type: DataType.FLOAT(6, 3), field: "tick_price" })
+  // public tick_price: number;
+
 }

@@ -44,56 +44,26 @@ export class Option extends Model {
   @Column({ type: DataType.INTEGER, defaultValue: 100 })
   public multiplier: number;
 
-  @Column({ type: DataType.FLOAT(1, 3), field: "implied_volatility" })
-  get impliedVolatility(): number {
-    return this.getDataValue("impliedVolatility");
-  }
-  set impliedVolatility(value: number) {
-    this.setDataValue("impliedVolatility", (Math.round(value * 1000) / 1000));
-  }
+  @Column({ type: DataType.FLOAT(3, 5), field: "implied_volatility" })
+  public impliedVolatility: number;
 
-  @Column({ type: DataType.FLOAT, field: "pv_dividend" })
-  get pvDividend(): number {
-    return this.getDataValue("pvDividend");
-  }
-  set pvDividend(value: number) {
-    this.setDataValue("pvDividend", (Math.round(value * 1000) / 1000));
-  }
+  @Column({ type: DataType.FLOAT, field: "pv_dividend", defaultValue: 0 })
+  public pvDividend: number;
 
-  @Column({ type: DataType.FLOAT(1, 3) })
-  get delta(): number {
-    return this.getDataValue("delta");
-  }
-  set delta(value: number) {
-    this.setDataValue("delta", (Math.round(value * 1000) / 1000));
-  }
+  @Column({ type: DataType.FLOAT(1, 4) })
+  public delta: number;
 
   @Column({ type: DataType.FLOAT })
-  get gamma(): number {
-    return this.getDataValue("gamma");
-  }
-  set gamma(value: number) {
-    this.setDataValue("gamma", (Math.round(value * 1000) / 1000));
-  }
+  public gamma: number;
 
   @Column({ type: DataType.FLOAT })
-  get vega(): number {
-    return this.getDataValue("vega");
-  }
-  set vega(value: number) {
-    this.setDataValue("vega", (Math.round(value * 1000) / 1000));
-  }
+  public vega: number;
 
   @Column({ type: DataType.FLOAT })
-  get theta(): number {
-    return this.getDataValue("theta");
-  }
-  set theta(value: number) {
-    this.setDataValue("theta", (Math.round(value * 1000) / 1000));
-  }
+  public theta: number;
 
   get dte(): number {
-    const dte: number = Math.floor(1 + (new Date(this.getDataValue("lastTradeDate"))).getTime() - Date.now());
+    const dte: number = Math.floor(0.5 + (((new Date(this.getDataValue("lastTradeDate"))).getTime() - Date.now()) / 1000 / 86400));
     console.log("dte for", this.getDataValue("lastTradeDate"), dte);
     return dte;
   }

@@ -15,10 +15,12 @@ import { SecurityDefinitionOptionParameterType, IBApiNextTickType } from "@stoqe
 import { MutableMarketData } from "@stoqey/ib/dist/core/api-next/api/market/mutable-market-data";
 import { IBApiNextApp } from "@stoqey/ib/dist/tools/common/ib-api-next-app";
 import { sequelize, Contract, Stock, Option, Currency } from "../models";
+import { greeks, option_implied_volatility } from "../black_scholes";
 import { ITradingBot } from ".";
 
 const OPTIONS_LIST_BUILD_FREQ: number = parseInt(process.env.OPTIONS_LIST_BUILD_FREQ) || 24;        // hours
 const OPTIONS_PRICE_TIMEFRAME: number = parseInt(process.env.OPTIONS_PRICE_TIMEFRAME) || 366;       // days
+const NO_RISK_INTEREST_RATE: number = parseFloat(process.env.NO_RISK_INTEREST_RATE) || 0.0175;
 
 export class OptionsCreateBot extends ITradingBot {
 
@@ -134,10 +136,101 @@ export class OptionsCreateBot extends ITradingBot {
         setTimeout(() => this.emit("buildOptionsList"), 3600 * 1000); // come back after 1 hour and check again
     }
 
+    private async updateGreeks() {
+        const stocks: Stock[] = await Stock.findAll(
+            {
+                include: {
+                    model: Contract,
+                    required: true,
+                },
+                // logging: console.log,
+            }
+        );
+        for (const stock of stocks) {
+            console.log(stock.contract.symbol);
+            const options: Option[] = await Option.findAll(
+                {
+                    where: {
+                        stock_id: stock.id,
+                        updatedAt: {
+                            [Op.or]: [
+                                null,
+                                {
+                                    [Op.lt]: stock.contract.updatedAt,
+                                },
+                                {
+                                    [Op.lt]: sequelize.col("contract.updatedAt"),
+                                },
+                            ],
+                        },
+                        [Op.or]: [
+                            { pvDividend: 0 },
+                            { pvDividend: null },
+                        ],
+                    },
+                    include: {
+                        model: Contract,
+                        required: true,
+                    },
+                    // logging: console.log,
+                }
+            );
+            let promises: Promise<any>[] = [];
+            for (const option of options) {
+                if (option.dte >= 0) {
+                    let iv_ = undefined;
+                    if (stock.contract.livePrice) {
+                        try {
+                            iv_ = option_implied_volatility(option.callOrPut == OptionType.Call, stock.contract.livePrice, option.strike, NO_RISK_INTEREST_RATE, (option.dte + 1) / 365, option.contract.livePrice);
+                        } catch (e) {
+                            iv_ = stock.historicalVolatility;
+                        }
+                    }
+                    if (iv_) {
+                        const greeks_ = greeks(option.callOrPut == OptionType.Call, stock.contract.livePrice, option.strike, NO_RISK_INTEREST_RATE, (option.dte + 1) / 365, iv_);
+                        const values = {
+                            impliedVolatility: iv_,
+                            delta: greeks_.delta,
+                            gamma: greeks_.gamma,
+                            theta: greeks_.theta / 365,
+                            vega: greeks_.vega / 100,
+                        }
+                        // if (option.delta) {
+                        //     this.printObject(option);
+                        //     this.printObject(values);
+                        // }
+                        promises.push(option.update(values));
+                    }
+                } else {
+                    const prices = {
+                        price: null,
+                        ask: null,
+                        bid: null,
+                    };
+                    const values = {
+                        impliedVolatility: null,
+                        delta: null,
+                        gamma: null,
+                        theta: null,
+                        vega: null,
+                        pvDividend: null,
+                    }
+                    promises.push(option.contract.update(prices));
+                    promises.push(option.update(values));
+                }
+            }
+            await Promise.all(promises);
+        }
+
+        setTimeout(() => this.emit("updateGreeks"), 10 * 60 * 1000); // come back after 10 mins and check again
+    }
+
     public start(): void {
         this.on("buildOptionsList", this.buildOptionsList);
+        this.on("updateGreeks", this.updateGreeks);
 
-        setTimeout(() => this.emit("buildOptionsList"), 60 * 1000);   // start after 1 min
+        setTimeout(() => this.emit("buildOptionsList"), 10 * 60 * 1000);   // start after 10 mins
+        setTimeout(() => this.emit("updateGreeks"), 60 * 1000);   // start after 1 min
     }
 
 }

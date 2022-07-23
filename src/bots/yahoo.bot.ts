@@ -20,13 +20,16 @@ import {
     Parameter,
     Portfolio,
     Balance,
+    Currency,
 } from "../models";
 import yahooFinance from "yahoo-finance2";
 import { Quote } from "yahoo-finance2/dist/esm/src/modules/quote";
+import { greeks, option_implied_volatility } from "../black_scholes";
 
 const YAHOO_PRICE_FREQ: number = parseInt(process.env.YAHOO_PRICE_FREQ) || 15;                // secs
 const YAHOO_PRICE_AGE: number = parseInt(process.env.YAHOO_PRICE_FREQ) || 60;                 // mins
 const BATCH_SIZE_YAHOO_PRICE: number = parseInt(process.env.BATCH_SIZE_YAHOO_PRICE) || 512;   // units
+const NO_RISK_INTEREST_RATE: number = parseFloat(process.env.NO_RISK_INTEREST_RATE) || 0.0175;
 
 type MappedQuote = {
     contract: Contract,
@@ -37,12 +40,12 @@ type MappedQuote = {
 export class YahooUpdateBot extends ITradingBot {
 
     protected static getYahooTicker(contract: Contract): string {
-        let $ticker: string = contract.symbol.replace("-PR", "-P");
+        let $ticker: string = contract.symbol.replace("-PR", "-P").replace(" B", "-B");
         const $exchange: string = contract.exchange;
         if (($exchange == "SBF") || ($exchange == "IBIS2")) {
             $ticker = $ticker + ".PA";
         } else if (($exchange == "LSE") || ($exchange == "LSEETF")) {
-            $ticker = $ticker + ".L";
+            $ticker = (($ticker[$ticker.length - 1] == ".") ? $ticker.substring(0, $ticker.length - 1) : $ticker) + ".L";
         } else if ($exchange == "VSE") {
             $ticker = $ticker + ".VI";
         } else if ($exchange == "BVME") {
@@ -59,6 +62,12 @@ export class YahooUpdateBot extends ITradingBot {
             $ticker = $ticker + ".DE";
         } else if ($exchange == "IBIS") {
             $ticker = (($ticker[$ticker.length - 1] == "d") ? $ticker.substring(0, $ticker.length - 1) : $ticker) + ".DE";
+        } else if ($exchange == "SEHK") {
+            $ticker = $ticker + ".HK";
+        } else if (($exchange == "NYSE") || ($exchange == "NASDAQ") || ($exchange == "SMART")) {
+            // no ticker processing
+        } else {
+            console.log("unknow exchange:", $exchange);
         }
         return $ticker;
     }
@@ -86,10 +95,12 @@ export class YahooUpdateBot extends ITradingBot {
                     bid: r.quote?.bid || null,
                     fiftyTwoWeekLow: r.quote?.fiftyTwoWeekLow || null,
                     fiftyTwoWeekHigh: r.quote?.fiftyTwoWeekHigh || null,
-                    updatedAt: Date.now(),
+                    // tick_price: r.contract.tick_price + 1,
+                    updatedAt: new Date(),
                 };
                 if (r.quote?.regularMarketPreviousClose) prices.previousClosePrice = r.quote?.regularMarketPreviousClose;
-                promises.push(Contract.update(prices, { where: { id: r.contract.id, }, }));
+                r.contract.changed("updatedAt", true);
+                promises.push(r.contract.update(prices));
                 if (r.contract.secType == SecType.STK) {
                     const stock_values = {
                         epsTrailingTwelveMonths: r.quote.epsTrailingTwelveMonths,
@@ -98,13 +109,39 @@ export class YahooUpdateBot extends ITradingBot {
                     };
                     promises.push(Stock.update(stock_values, { where: { id: r.contract.id, }, }));
                 } else if (r.contract.secType == SecType.OPT) {
-                    const values: any = {
-                    };
-                    if (r.quote?.impliedVolatility) values.impliedVolatility = r.quote.impliedVolatility;
-                    promises.push(Option.update(values, { where: { id: r.contract.id, }, }));
+                    promises.push(Option.findByPk(r.contract.id, { include: { as: "stock", model: Stock, required: true, }, })
+                        .then((option) => Contract.findByPk(option.stock.id, {}).then((stock) => {
+                            let iv_ = undefined;
+                            if (r.quote?.regularMarketPrice > 0) {
+                                try {
+                                    iv_ = option_implied_volatility(option.callOrPut == OptionType.Call, stock.livePrice, option.strike, NO_RISK_INTEREST_RATE, (option.dte + 1) / 365, r.quote?.regularMarketPrice);
+                                } catch (e) {
+                                    iv_ = option.stock.historicalVolatility;
+                                }
+                            }
+                            if (iv_) {
+                                const greeks_ = greeks(option.callOrPut == OptionType.Call, stock.livePrice, option.strike, NO_RISK_INTEREST_RATE, (option.dte + 1) / 365, iv_);
+                                const values = {
+                                    impliedVolatility: iv_,
+                                    delta: greeks_.delta,
+                                    gamma: greeks_.gamma,
+                                    theta: greeks_.theta / 365,
+                                    vega: greeks_.vega / 100,
+                                }
+                                // if (option.delta) {
+                                //     this.printObject(option);
+                                //     this.printObject(values);
+                                // }
+                                return option.update(values);
+                            }
+                        })));
+                } else if (r.contract.secType == SecType.CASH) {
+                    promises.push(Currency.update({ rate: r.quote?.regularMarketPrice }, { where: { base: r.symbol.substring(0, 3), currency: r.symbol.substring(3, 6), }, logging: false, }));
                 }
             } else {
-                promises.push(Contract.update({ updatedAt: new Date() }, { where: { id: r.contract.id, }, }));
+                console.log("no Yahoo quote for:", r.symbol);
+                r.contract.changed("updatedAt", true);
+                promises.push(r.contract.update({ updatedAt: new Date(), }, { logging: false, }));
             }
         }
         return Promise.all(promises);
@@ -258,7 +295,7 @@ export class YahooUpdateBot extends ITradingBot {
         this.on("process", this.process);
 
         yahooFinance.setGlobalConfig({ validation: { logErrors: true } });
-        // this.printObject(await yahooFinance.quote("SPY220708C00295000"));
+        // this.printObject(await yahooFinance.quote("EURUSD=X"));
 
         setTimeout(() => this.emit("process"), 1 * 60 * 1000);  // start after 1 min
     }

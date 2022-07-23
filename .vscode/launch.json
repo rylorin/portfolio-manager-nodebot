@@ -5,7 +5,7 @@
   "version": "0.2.0",
   "configurations": [
     {
-      "type": "pwa-node",
+      "type": "node",
       "request": "launch",
       "name": "Launch Program",
       "skipFiles": [
@@ -20,14 +20,14 @@
         "-log=warn",
         "-host=127.0.0.1",
         // "-clientId=0",
-        "-cc",
+        "-yahoo",
       ],
       "outFiles": [
         "${workspaceFolder}/**/*.js"
       ]
     },
     {
-      "type": "pwa-node",
+      "type": "node",
       "request": "launch",
       "name": "Launch tool",
       "skipFiles": [

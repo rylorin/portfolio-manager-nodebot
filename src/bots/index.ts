@@ -327,6 +327,7 @@ export class ITradingBot extends EventEmitter {
                         callOrPut: right,
                         stock_id: underlying.id,
                     },
+                    // logging: console.log,
                 },
             ).then((opt) => {
                 if (opt !== null) result += position.quantity * opt.multiplier;
@@ -348,6 +349,7 @@ export class ITradingBot extends EventEmitter {
                             secType: "OPT",
                         },
                     },
+                    // logging: console.log,
                 }).then((positions: Position[]) => this.sumOptionsPositionsQuantity(positions, underlying, right));
         } else {
             return Promise.resolve(0);

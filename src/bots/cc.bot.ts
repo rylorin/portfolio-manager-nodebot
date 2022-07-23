@@ -17,7 +17,7 @@ export class SellCoveredCallsBot extends ITradingBot {
         console.log(`processing position: ${position.contract.symbol}`);
         const stock_positions = position.quantity;
         console.log("stock_positions:", stock_positions);
-        const stock_sell_orders = await this.getContractOrdersQuantity(position.contract, OrderAction.SELL);
+        const stock_sell_orders = -(await this.getContractOrdersQuantity(position.contract, OrderAction.SELL));
         console.log("stock_sell_orders:", stock_sell_orders);
         const call_positions = await this.getOptionsPositionsQuantity(position.contract, "C" as OptionType);
         console.log("call_positions:", call_positions);
@@ -41,6 +41,7 @@ export class SellCoveredCallsBot extends ITradingBot {
                     model: Contract,
                     required: true,
                 },
+                // logging: console.log,
             });
             if ((parameter !== null) && (parameter.ccStrategy > 0)
                 // RULE : stock price is higher than previous close
@@ -95,7 +96,11 @@ export class SellCoveredCallsBot extends ITradingBot {
                         ITradingBot.CcOrder(OrderAction.SELL, Math.floor(free_for_this_symbol / option.multiplier), option.contract.ask)).then((orderId: number) => {
                             console.log("orderid:", orderId.toString());
                         });
+                } else {
+                    this.error("options list empty");
                 }
+            } else {
+                console.log("no applicable parameters or current price not higher than previous close price");
             }
         }
     }
@@ -112,7 +117,8 @@ export class SellCoveredCallsBot extends ITradingBot {
                 model: Contract,
                 where: {
                     secType: "STK",
-                }
+                },
+                required: true,
             },
         }));
     }
