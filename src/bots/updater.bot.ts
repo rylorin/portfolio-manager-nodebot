@@ -211,6 +211,10 @@ export class ContractsUpdaterBot extends ITradingBot {
     let price = dataset.previousClosePrice;
     if (dataset.price) price = dataset.price;
     if (dataset.ask && dataset.bid) price = (dataset.ask + dataset.bid) / 2;
+    if (contract.secType == SecType.CASH) {
+      // we do not get a price for CASH contracts
+      dataset.price = price;
+    }
     // if (contract.secType != "OPT")
     // console.log(`${contract.id}: ${contract.symbol} ${dataset.price} ${dataset.bid} ${dataset.ask} ${dataset.previousClosePrice} ${price}`);
     return Contract.update(
@@ -235,7 +239,6 @@ export class ContractsUpdaterBot extends ITradingBot {
     // fetch all contracts one after the previous one
     return contracts.reduce((p, contract) => {
       return p.then(() => this.requestContractPrice(contract)
-        // .then((marketData) => { console.log(marketData); return marketData; })
         .then((marketData) => this.updateContratPrice(contract, marketData))
         .catch((err) =>
           Contract.update({
@@ -461,7 +464,9 @@ export class ContractsUpdaterBot extends ITradingBot {
       };
       if (contract.secType == "CASH") {
         ibContract.symbol = contract.symbol.substring(0, 3);
-      } else if (contract.currency == "USD") ibContract.exchange = "SMART";  // nothing except SMART seems to work for USD
+      } else if (contract.currency == "USD") {
+        ibContract.exchange = "SMART";  // nothing except SMART seems to work for USD
+      }
       promises.push(
         this.requestContractPrice(ibContract)
           .then((marketData) => this.updateContratPrice(contract, marketData))

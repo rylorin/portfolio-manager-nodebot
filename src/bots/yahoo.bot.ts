@@ -127,7 +127,7 @@ export class YahooUpdateBot extends ITradingBot {
                                     gamma: greeks_.gamma,
                                     theta: greeks_.theta / 365,
                                     vega: greeks_.vega / 100,
-                                }
+                                };
                                 // if (option.delta) {
                                 //     this.printObject(option);
                                 //     this.printObject(values);

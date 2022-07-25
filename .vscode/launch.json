@@ -7,7 +7,7 @@
     {
       "type": "node",
       "request": "launch",
-      "name": "Launch Program",
+      "name": "Launch CSP",
       "skipFiles": [
         "<node_internals>/**"
       ],
@@ -20,7 +20,29 @@
         "-log=warn",
         "-host=127.0.0.1",
         // "-clientId=0",
-        "-yahoo",
+        "-csp",
+      ],
+      "outFiles": [
+        "${workspaceFolder}/**/*.js"
+      ]
+    },
+    {
+      "type": "node",
+      "request": "launch",
+      "name": "Launch Updater",
+      "skipFiles": [
+        "<node_internals>/**"
+      ],
+      "runtimeArgs": [
+        "--trace-warnings"
+      ],
+      "program": "${workspaceFolder}/dist/index.js",
+      "args": [
+        "-watch",
+        "-log=warn",
+        "-host=127.0.0.1",
+        // "-clientId=0",
+        "-updater",
       ],
       "outFiles": [
         "${workspaceFolder}/**/*.js"

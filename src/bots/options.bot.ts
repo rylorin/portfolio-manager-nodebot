@@ -175,7 +175,7 @@ export class OptionsCreateBot extends ITradingBot {
                     // logging: console.log,
                 }
             );
-            let promises: Promise<any>[] = [];
+            const promises: Promise<any>[] = [];
             for (const option of options) {
                 if (option.dte >= 0) {
                     let iv_ = undefined;
@@ -194,7 +194,7 @@ export class OptionsCreateBot extends ITradingBot {
                             gamma: greeks_.gamma,
                             theta: greeks_.theta / 365,
                             vega: greeks_.vega / 100,
-                        }
+                        };
                         // if (option.delta) {
                         //     this.printObject(option);
                         //     this.printObject(values);
@@ -214,7 +214,7 @@ export class OptionsCreateBot extends ITradingBot {
                         theta: null,
                         vega: null,
                         pvDividend: null,
-                    }
+                    };
                     promises.push(option.contract.update(prices));
                     promises.push(option.update(values));
                 }
