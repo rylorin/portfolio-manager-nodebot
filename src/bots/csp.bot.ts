@@ -1,4 +1,4 @@
-import { QueryTypes, Op } from "sequelize";
+import { Op } from "sequelize";
 import { ITradingBot } from ".";
 import {
     Contract,
@@ -7,12 +7,20 @@ import {
     Position,
     OpenOrder,
     Parameter,
-    Portfolio,
-    Currency,
 } from "../models";
 import { OrderAction, OptionType } from "@stoqey/ib";
 
 const CSP_FREQ: number = parseInt(process.env.CSP_FREQ) || 10;  // mins
+
+interface OptionEx extends Option {
+    yield?: number;
+};
+
+type Row = {
+    symbol: string;
+    engaged_options: number;
+    options: Option[];
+};
 
 export class SellCashSecuredPutBot extends ITradingBot {
 
@@ -50,22 +58,23 @@ export class SellCashSecuredPutBot extends ITradingBot {
         return result;
     }
 
-    private async processOneParamaeter(parameter: Parameter): Promise<{ symbol: string; engaged: number; options: Option[]; }> {
+    private async processOneParamaeter(parameter: Parameter): Promise<Row> {
         console.log("processing parameter:", parameter.underlying.symbol);
         // this.printObject(parameter);
         const stock_positions = await this.getContractPositionValueInBase(parameter.underlying);
         console.log("stock_positions_amount:", stock_positions);
         const stock_sell_orders = await this.getContractOrderValueInBase(parameter.underlying, OrderAction.SELL);
         console.log("stock_sell_orders_amount:", stock_sell_orders);
-        const put_positions_amount = await this.getOptionPositionsEngagedInBase(parameter.underlying.id, OptionType.Put);
-        console.log("put_positions value in base:", put_positions_amount);
-        const put_sell_orders = -(await this.getOptionOrdersValueInBase(parameter.underlying.id, "P" as OptionType, OrderAction.SELL));
-        console.log("put_sell_orders value in base:", put_sell_orders);
-        const max_engaged = stock_positions - stock_sell_orders - put_positions_amount - put_sell_orders;
-        console.log("max engaged:", max_engaged);
+        const put_positions = await this.getOptionPositionsEngagedInBase(parameter.underlying.id, OptionType.Put);
+        console.log("put_positions engaged in base:", put_positions);
+        const put_sell_orders = -(await this.getOptionOrdersValueInBase(parameter.underlying.id, OptionType.Put, OrderAction.SELL));
+        if (put_sell_orders) console.log("** put_sell_orders value in base:", put_sell_orders);
+        const engaged_options = - put_positions - put_sell_orders;
+        const engaged_symbol = stock_positions - stock_sell_orders + engaged_options;
+        console.log("=> engaged:", engaged_symbol, engaged_options);
         const max_for_this_symbol = ((await this.getContractPositionValueInBase(this.portfolio.benchmark)) + (await this.getTotalBalanceInBase())) * parameter.navRatio;
         console.log("max for this symbol:", max_for_this_symbol);
-        const free_for_this_symbol = max_for_this_symbol - max_engaged;
+        const free_for_this_symbol = max_for_this_symbol - engaged_symbol;
         console.log("free_for_this_symbol in base:", free_for_this_symbol);
         console.log("parameter.underlying.price:", parameter.underlying.livePrice);
         console.log("free_for_this_symbol in currency:", free_for_this_symbol * this.base_rates[parameter.underlying.currency]);
@@ -93,23 +102,28 @@ export class SellCashSecuredPutBot extends ITradingBot {
             }, {
                 required: true,
                 model: Stock,
-                // include: { model: Contract, },
             }],
             // logging: console.log,
         });
-        return { symbol: parameter.underlying.symbol, engaged: max_engaged, options: opt };
+        console.log(".");
+        return { symbol: parameter.underlying.symbol, engaged_options, options: opt };
     }
 
     private async iterateParameters(parameters: Parameter[]): Promise<void> {
-        const result = [];
+        const result: Row[] = [];
         for (const parameter of parameters) {
             result.push(await this.processOneParamaeter(parameter));
         }
-        const total_engaged = result.reduce((p, v) => (p + v.engaged), 0);
-        const max_for_all_symbols = ((await this.getContractPositionValueInBase(this.portfolio.benchmark) + (await this.getTotalBalanceInBase())) * this.portfolio.putRatio) - total_engaged;
-        console.log("max_for_all_symbols:", max_for_all_symbols, total_engaged);
-        const all_options: Option[] = result.reduce((p, v) => [...p, ...v.options], []);
-        const filtered_options: Option[] = [];
+        const total_engaged = result.reduce((p, v) => (p + v.engaged_options), 0);
+
+        const invest_base = (await this.getTotalBalanceInBase())
+            + (await this.getContractPositionValueInBase(this.portfolio.benchmark))
+            + (await this.getOptionShortPositionsValueInBase(this.portfolio.benchmark.id, OptionType.Call));
+        const max_for_all_symbols = (invest_base * this.portfolio.putRatio) - total_engaged;
+        console.log("max_for_all_symbols:", max_for_all_symbols, "invest_base:", invest_base, "total_engaged:", total_engaged);
+
+        const all_options: OptionEx[] = result.reduce((p, v) => [...p, ...v.options], []);
+        const filtered_options: OptionEx[] = [];
         for (const option of all_options) {
             // RULE 6: check overall margin space
             if ((option.strike * option.multiplier * this.base_rates[option.contract.currency]) < max_for_all_symbols) {
@@ -123,7 +137,7 @@ export class SellCashSecuredPutBot extends ITradingBot {
             }
         }
         // order by yield
-        filtered_options.sort((a: any, b: any) => b.yield - a.yield);
+        filtered_options.sort((a: OptionEx, b: OptionEx) => b.yield - a.yield);
         if (filtered_options.length > 0) {
             console.log("filtered_options:", filtered_options.length);
             console.log(filtered_options[0]["yield"]);
@@ -155,10 +169,9 @@ export class SellCashSecuredPutBot extends ITradingBot {
 
     private async process(): Promise<void> {
         console.log("SellCashSecuredPutBot process begin");
-        console.log("this.portfolio:");
-        this.printObject(this.portfolio);
-        console.log("benchmark_amount:", await this.getContractPositionValueInBase(this.portfolio.benchmark));
+
         await this.listParameters().then((result) => this.iterateParameters(result));
+
         setTimeout(() => this.emit("process"), CSP_FREQ * 60 * 1000);
         console.log("SellCashSecuredPutBot process end");
     }
