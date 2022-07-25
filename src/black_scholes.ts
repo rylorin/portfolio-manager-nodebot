@@ -158,11 +158,10 @@ function black_scholes(call: boolean, S: number, X: number, r: number, v: number
 export function option_implied_volatility(call: boolean, S: number, X: number, r: number, T: number, o: number): number {
     // define some temp vars, to minimize function calls
     const sqt = Math.sqrt(T);
-    const MAX_ITER = 1000;
+    const MAX_ITER = 100;
     const ACC = 0.0001;
 
     let sigma = (o / S) / (0.398 * sqt);
-    let odiff: number = undefined;
     for (let i = 0; i < MAX_ITER; i++) {
         const price = black_scholes(call, S, X, r, sigma, T);
         const diff = o - price;
@@ -170,12 +169,11 @@ export function option_implied_volatility(call: boolean, S: number, X: number, r
         const d1 = (Math.log(S / X) + r * T) / (sigma * sqt) + 0.5 * sigma * sqt;
         const vega = S * sqt * ndist(d1);
         sigma = sigma + diff / vega;
-        odiff = diff;
     }
     throw new Error("Error, failed to converge");
 } //end of option_implied_volatility
 
-function call_iv(s: number, x: number, r: number, t: number, o: number): number { return option_implied_volatility(true, s, x, r / 100, t / 365, o); }
+// function call_iv(s: number, x: number, r: number, t: number, o: number): number { return option_implied_volatility(true, s, x, r / 100, t / 365, o); }
 
 // console.log(greeks(false, 43.87, 45, 0.0175, 63 / 365, 0.20324132));
 // const iv_ = option_implied_volatility(false, 43.87, 45, 0.0175, 63 / 365, 2.04352);

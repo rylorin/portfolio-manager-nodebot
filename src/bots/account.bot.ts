@@ -1,33 +1,15 @@
 import { Subscription } from "rxjs";
-import { QueryTypes, Op } from "sequelize";
+import { Op } from "sequelize";
 import {
-  Contract as IbContract,
-  IBApiNext,
   IBApiNextError,
-  BarSizeSetting,
-  SecType,
-  ContractDetails,
-  OptionType,
-  Bar,
-  TickType,
   OpenOrder as IbOpenOrder,
   Position as IbPosition,
-  AccountSummaryValue,
 } from "@stoqey/ib";
-import { TickType as IBApiTickType } from "@stoqey/ib/dist/api/market/tickType";
-import { SecurityDefinitionOptionParameterType, IBApiNextTickType } from "@stoqey/ib/dist/api-next";
-import { MutableMarketData } from "@stoqey/ib/dist/core/api-next/api/market/mutable-market-data";
-import { IBApiNextApp } from "@stoqey/ib/dist/tools/common/ib-api-next-app";
 import {
   Contract,
-  Stock,
-  Option,
   OpenOrder,
-  Portfolio,
   Position,
-  Cash,
   Balance,
-  Bag,
 } from "../models";
 import { ITradingBot } from ".";
 

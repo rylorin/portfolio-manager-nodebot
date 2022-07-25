@@ -1,13 +1,11 @@
-import { QueryTypes, Op } from "sequelize";
+import { Op } from "sequelize";
 import { ITradingBot } from ".";
 import {
     Contract,
     Stock,
     Option,
     Position,
-    OpenOrder,
     Parameter,
-    Portfolio,
 } from "../models";
 import { OrderAction, OptionType } from "@stoqey/ib";
 

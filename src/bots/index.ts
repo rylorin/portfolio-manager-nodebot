@@ -1,5 +1,6 @@
 import { IBApiNextApp } from "@stoqey/ib/dist/tools/common/ib-api-next-app";
 import EventEmitter from "events";
+import { Op } from "sequelize";
 import {
     IBApiNext,
     Contract as IbContract,
@@ -8,21 +9,16 @@ import {
     OrderAction,
     OrderType,
     IBApiNextError,
-    BarSizeSetting,
     SecType,
     ContractDetails,
     OptionType,
-    Bar,
-    TickType,
 } from "@stoqey/ib";
 import {
-    sequelize,
     Contract,
     Stock,
     Option,
     Position,
     OpenOrder,
-    Parameter,
     Portfolio,
     Currency,
     Bag,
@@ -220,7 +216,7 @@ export class ITradingBot extends EventEmitter {
                 result += position.quantity * opt.multiplier * opt.strike / this.base_rates[position.contract.currency];
             }
         }
-        console.log(`sumOptionsPositionsEngagedInBase(${underlying}, ${right}): ${result}`);
+        // console.log(`sumOptionsPositionsEngagedInBase(${underlying}, ${right}): ${result}`);
         return result;
     }
 
@@ -294,7 +290,7 @@ export class ITradingBot extends EventEmitter {
                 result += position.quantity * opt.multiplier * position.contract.livePrice / this.base_rates[position.contract.currency];
             }
         }
-        console.log(`sumOptionsPositionsValueInBase(${underlying}, ${right}): ${result}`);
+        // console.log(`sumOptionsPositionsValueInBase(${underlying}, ${right}): ${result}`);
         return result;
     }
 
@@ -304,6 +300,26 @@ export class ITradingBot extends EventEmitter {
                 {
                     where: {
                         portfolio_id: this.portfolio.id,
+                    },
+                    include: {
+                        model: Contract,
+                        where: {
+                            secType: "OPT",
+                        },
+                    },
+                }).then((positions: Position[]) => this.sumOptionsPositionsValueInBase(positions, underlying, right));
+        } else {
+            return Promise.resolve(0);
+        }
+    }
+
+    protected getOptionShortPositionsValueInBase(underlying: number, right: OptionType): Promise<number> {
+        if (this.portfolio !== null) {
+            return Position.findAll(
+                {
+                    where: {
+                        portfolio_id: this.portfolio.id,
+                        quantity: { [Op.lt]: 0, },
                     },
                     include: {
                         model: Contract,
@@ -502,7 +518,7 @@ export class ITradingBot extends EventEmitter {
                 return balances.reduce((p, b) => {
                     p.quantity += b.quantity / this.base_rates[b.currency];
                     return p;
-                }, { quantity: 0, currency: "EUR" }).quantity;
+                }, { quantity: 0, currency: this.portfolio.baseCurrency }).quantity;
             });
     }
 
