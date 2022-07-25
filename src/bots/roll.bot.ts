@@ -4,11 +4,10 @@ import {
     Stock,
     Option,
     Position,
-    OpenOrder,
     Parameter,
     Portfolio,
 } from "../models";
-import { QueryTypes, Op } from "sequelize";
+import { Op } from "sequelize";
 import { OptionType, OrderAction } from "@stoqey/ib";
 
 const ROLL_FREQ: number = parseInt(process.env.ROLL_FREQ) || 10;  // mins

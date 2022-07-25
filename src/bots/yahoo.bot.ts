@@ -1,25 +1,13 @@
-import { QueryTypes, Op } from "sequelize";
+import { Op } from "sequelize";
 import {
-    Contract as IbContract,
-    IBApiNext,
-    IBApiNextError,
-    BarSizeSetting,
     SecType,
-    ContractDetails,
     OptionType,
-    Bar,
-    TickType,
 } from "@stoqey/ib";
 import { ITradingBot } from ".";
 import {
     Contract,
     Stock,
     Option,
-    Position,
-    OpenOrder,
-    Parameter,
-    Portfolio,
-    Balance,
     Currency,
 } from "../models";
 import yahooFinance from "yahoo-finance2";

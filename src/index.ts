@@ -5,7 +5,6 @@
 import path from "path";
 import logger from "@stoqey/ib/dist/common/logger";
 import { IBApiNextApp } from "@stoqey/ib/dist/tools/common/ib-api-next-app";
-import { MarketDataType } from "@stoqey/ib";
 import { initDB } from "./models";
 import {
   ContractsUpdaterBot,

@@ -14,7 +14,7 @@ const CSP_FREQ: number = parseInt(process.env.CSP_FREQ) || 10;  // mins
 
 interface OptionEx extends Option {
     yield?: number;
-};
+}
 
 type Row = {
     symbol: string;
