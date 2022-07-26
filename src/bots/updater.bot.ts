@@ -39,7 +39,7 @@ export class ContractsUpdaterBot extends ITradingBot {
     // setTimeout(() => this.emit("buildOptionsList"), 3600 * 1000);   // start after 1 hour
   }
 
-  private updateHistoricalVolatility(id: number, bars: Bar[]): Promise<[affectedCount: number]> {
+  private updateHistoricalVolatility(id: number, bars: Bar[]): Promise<void> {
     const histVol: number = bars[bars.length - 1].close;
     // console.log(`updateHistoricalVolatility got ${histVol} for contract id ${id}`)
     return Stock.update({
@@ -49,10 +49,10 @@ export class ContractsUpdaterBot extends ITradingBot {
         id: id
       }
     }
-    );
+    ).then();
   }
 
-  private requestHistoricalVolatility(contract: Contract): Promise<any> {
+  private requestHistoricalVolatility(contract: Contract): Promise<Bar[]> {
     // console.log(`requestHistoricalVolatility for contract ${contract.symbol}`)
     return this.api
       .getHistoricalData(
@@ -72,7 +72,7 @@ export class ContractsUpdaterBot extends ITradingBot {
       });
   }
 
-  private iterateContractsForHistoricalVolatility(contracts: Contract[]): Promise<any> {
+  private iterateContractsForHistoricalVolatility(contracts: Contract[]): Promise<void> {
     return contracts.reduce((p, contract) => {
       return p.then(() => this.requestHistoricalVolatility(contract)
         .then((bars) => this.updateHistoricalVolatility(contract.id, bars))
@@ -232,17 +232,17 @@ export class ContractsUpdaterBot extends ITradingBot {
     });
   }
 
-  private iterateContractsForSerialPriceUpdate(contracts: Contract[]): Promise<any> {
+  private iterateContractsForSerialPriceUpdate(contracts: Contract[]): Promise<void> {
     // fetch all contracts one after the previous one
     return contracts.reduce((p, contract) => {
       return p.then(() => this.requestContractPrice(contract)
-        .then((marketData) => this.updateContratPrice(contract, marketData))
+        .then((marketData) => this.updateContratPrice(contract, marketData)).then(() => { / void */ })
         .catch((err) =>
           Contract.update({
             price: null, ask: null, bid: null,
           }, {
             where: { id: contract.id }
-          })
+          }).then()
         )
       );
     }, Promise.resolve()); // initial

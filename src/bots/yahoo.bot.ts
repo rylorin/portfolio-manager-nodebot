@@ -73,8 +73,8 @@ export class YahooUpdateBot extends ITradingBot {
         return name;
     }
 
-    private iterateResults(q: MappedQuote[]): Promise<any[]> {
-        const promises: Promise<any>[] = [];
+    private iterateResults(q: MappedQuote[]): Promise<void[]> {
+        const promises: Promise<void>[] = [];
         for (const r of q) {
             if (r.quote !== undefined) {
                 const prices: any = {
@@ -88,14 +88,14 @@ export class YahooUpdateBot extends ITradingBot {
                 };
                 if (r.quote?.regularMarketPreviousClose) prices.previousClosePrice = r.quote?.regularMarketPreviousClose;
                 r.contract.changed("updatedAt", true);
-                promises.push(r.contract.update(prices));
+                promises.push(r.contract.update(prices).then());
                 if (r.contract.secType == SecType.STK) {
                     const stock_values = {
                         epsTrailingTwelveMonths: r.quote.epsTrailingTwelveMonths,
                         epsForward: r.quote.epsForward,
                         trailingAnnualDividendRate: r.quote.trailingAnnualDividendRate,
                     };
-                    promises.push(Stock.update(stock_values, { where: { id: r.contract.id, }, }));
+                    promises.push(Stock.update(stock_values, { where: { id: r.contract.id, }, }).then());
                 } else if (r.contract.secType == SecType.OPT) {
                     promises.push(Option.findByPk(r.contract.id, { include: { as: "stock", model: Stock, required: true, }, })
                         .then((option) => Contract.findByPk(option.stock.id, {}).then((stock) => {
@@ -122,14 +122,14 @@ export class YahooUpdateBot extends ITradingBot {
                                 // }
                                 return option.update(values);
                             }
-                        })));
+                        })).then());
                 } else if (r.contract.secType == SecType.CASH) {
-                    promises.push(Currency.update({ rate: r.quote?.regularMarketPrice }, { where: { base: r.symbol.substring(0, 3), currency: r.symbol.substring(3, 6), }, logging: false, }));
+                    promises.push(Currency.update({ rate: r.quote?.regularMarketPrice }, { where: { base: r.symbol.substring(0, 3), currency: r.symbol.substring(3, 6), }, logging: false, }).then());
                 }
             } else {
                 console.log("no Yahoo quote for:", r.symbol);
                 r.contract.changed("updatedAt", true);
-                promises.push(r.contract.update({ updatedAt: new Date(), }, { logging: false, }));
+                promises.push(r.contract.update({ updatedAt: new Date(), }, { logging: false, }).then());
             }
         }
         return Promise.all(promises);
