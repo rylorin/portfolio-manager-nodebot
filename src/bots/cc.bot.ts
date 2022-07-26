@@ -9,6 +9,10 @@ import {
 } from "../models";
 import { OrderAction, OptionType } from "@stoqey/ib";
 
+interface OptionEx extends Option {
+    yield?: number;
+}
+
 export class SellCoveredCallsBot extends ITradingBot {
 
     private async processOnePosition(position: Position): Promise<void> {
@@ -82,7 +86,7 @@ export class SellCoveredCallsBot extends ITradingBot {
                         option["yield"] = option.contract.bid / option.strike / diffDays * 360;
                         option.stock.contract = await Contract.findByPk(option.stock.id);
                     }
-                    options.sort((a: any, b: any) => b.yield - a.yield);
+                    options.sort((a: OptionEx, b: OptionEx) => b.yield - a.yield);
                     // for (const option of options) {
                     //     console.log("yield of contract", option["yield"]);
                     //     this.printObject(option);

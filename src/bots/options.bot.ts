@@ -39,13 +39,13 @@ export class OptionsCreateBot extends ITradingBot {
                     //   .catch((err) => { /* silently ignore any error */ });
                     ibContract.right = OptionType.Put;
                     const put = this.findOrCreateContract(ibContract)
-                        .catch((err) => {
+                        .catch(() => {
                             /* silently ignore any error */
                             return Promise.resolve(null as Contract);
                         });
                     ibContract.right = OptionType.Call;
                     const call = this.findOrCreateContract(ibContract)
-                        .catch((err) => {
+                        .catch(() => {
                             /* silently ignore any error */
                             return Promise.resolve(null as Contract);
                         });

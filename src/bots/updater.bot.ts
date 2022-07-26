@@ -76,7 +76,7 @@ export class ContractsUpdaterBot extends ITradingBot {
     return contracts.reduce((p, contract) => {
       return p.then(() => this.requestHistoricalVolatility(contract)
         .then((bars) => this.updateHistoricalVolatility(contract.id, bars))
-        .catch((err: IBApiNextError) => {
+        .catch(() => {
           // this.app.error(`getHistoricalData failed with '${err.error.message}'`);
         }));
     }, Promise.resolve()); // initial
@@ -119,8 +119,8 @@ export class ContractsUpdaterBot extends ITradingBot {
   private updateContratPrice(contract: Contract, marketData: MutableMarketData): Promise<number> {
     // console.log(`updateContratPrice got data for ${contract.secType} contract ${contract.symbol} id ${contract.id}`);
     // this.app.printObject(marketData);
-    const dataset: any = {};
-    const optdataset: any = {};
+    const dataset: { bid?: number; ask?: number; price?: number; previousClosePrice?: number } = {};
+    const optdataset: { pvDividend?: number; delta?: number; gamma?: number; impliedVolatility?: number; vega?: number; theta?: number; } = {};
     marketData.forEach((tick, type: TickType) => {
       if (type == IBApiTickType.BID) {
         dataset.bid = tick.value > 0 ? tick.value : null;
@@ -236,8 +236,8 @@ export class ContractsUpdaterBot extends ITradingBot {
     // fetch all contracts one after the previous one
     return contracts.reduce((p, contract) => {
       return p.then(() => this.requestContractPrice(contract)
-        .then((marketData) => this.updateContratPrice(contract, marketData)).then(() => { / void */ })
-        .catch((err) =>
+        .then((marketData) => this.updateContratPrice(contract, marketData)).then(() => { / void */; })
+        .catch(() =>
           Contract.update({
             price: null, ask: null, bid: null,
           }, {
@@ -334,10 +334,10 @@ export class ContractsUpdaterBot extends ITradingBot {
           //   .catch((err) => { /* silently ignore any error */ });
           ibContract.right = OptionType.Put;
           const put = this.findOrCreateContract(ibContract)
-            .catch((err) => { /* silently ignore any error */ });
+            .catch(() => { /* silently ignore any error */ });
           ibContract.right = OptionType.Call;
           const call = this.findOrCreateContract(ibContract)
-            .catch((err) => { /* silently ignore any error */ });
+            .catch(() => { /* silently ignore any error */ });
           await Promise.all([put, call]);
         }
       }
@@ -467,7 +467,7 @@ export class ContractsUpdaterBot extends ITradingBot {
       promises.push(
         this.requestContractPrice(ibContract)
           .then((marketData) => this.updateContratPrice(contract, marketData))
-          .then((x) => { /* void */ })
+          .then(() => { /* void */ })
           .catch((err) => {
             console.log(`fetchOptionContractsPrices failed for contract id ${contract.id} ${contract.conId} ${contract.secType} ${contract.symbol} ${contract.currency} @ ${contract.exchange} with error ${err.code}: '${err.error?.message}'`);
             if (
