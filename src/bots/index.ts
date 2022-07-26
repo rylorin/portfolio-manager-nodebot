@@ -202,7 +202,7 @@ export class ITradingBot extends EventEmitter {
 
     private async sumOptionsPositionsEngagedInBase(positions: Position[], underlying: number, right: OptionType): Promise<number> {
         let result = 0;
-        const where: any = {};
+        const where: { id?: number; stock_id?: number; callOrPut?: OptionType } = {};
         if (underlying) where.stock_id = underlying;
         if (right) where.callOrPut = right;
         for (const position of positions) {
@@ -241,7 +241,7 @@ export class ITradingBot extends EventEmitter {
 
     private async sumOptionsPositionsRiskInBase(positions: Position[], underlying: number, right: OptionType): Promise<number> {
         let result = 0;
-        const where: any = {};
+        const where: { id?: number; stock_id?: number; callOrPut?: OptionType } = {};
         if (underlying) where.stock_id = underlying;
         if (right) where.callOrPut = right;
         for (const position of positions) {
@@ -280,7 +280,7 @@ export class ITradingBot extends EventEmitter {
 
     private async sumOptionsPositionsValueInBase(positions: Position[], underlying: number, right: OptionType): Promise<number> {
         let result = 0;
-        const where: any = {};
+        const where: { id?: number; stock_id?: number; callOrPut?: OptionType } = {};
         if (underlying) where.stock_id = underlying;
         if (right) where.callOrPut = right;
         for (const position of positions) {
@@ -399,7 +399,7 @@ export class ITradingBot extends EventEmitter {
     }
 
     protected getContractOrdersQuantity(benchmark: Contract, actionType: OrderAction): Promise<number> {
-        const where: any = {
+        const where: { portfolio_id: number; status: string[]; actionType?: OrderAction; } = {
             portfolio_id: this.portfolio.id,
             status: ["Submitted", "PreSubmitted"],
         };
@@ -642,7 +642,7 @@ export class ITradingBot extends EventEmitter {
                         });
                     });
             } else if (details && (ibContract.secType == SecType.CASH)) {
-                const defaults: any = {
+                const defaults = {
                     conId: ibContract.conId,
                     secType: ibContract.secType,
                     symbol: ibContract.localSymbol,
