@@ -25,6 +25,16 @@ type MappedQuote = {
     quote?: Quote,
 }
 
+type Row = {
+    price: number;
+    ask: number;
+    bid: number;
+    previousClosePrice?: number;
+    fiftyTwoWeekLow: number;
+    fiftyTwoWeekHigh: number
+    updatedAt: Date;
+};
+
 export class YahooUpdateBot extends ITradingBot {
 
     protected static getYahooTicker(contract: Contract): string {
@@ -77,7 +87,7 @@ export class YahooUpdateBot extends ITradingBot {
         const promises: Promise<void>[] = [];
         for (const r of q) {
             if (r.quote !== undefined) {
-                const prices: any = {
+                const prices: Row = {
                     price: r.quote?.regularMarketPrice || null,
                     ask: r.quote?.ask || null,
                     bid: r.quote?.bid || null,

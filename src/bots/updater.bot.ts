@@ -373,7 +373,7 @@ export class ContractsUpdaterBot extends ITradingBot {
       });
   }
 
-  private iterateToBuildOptionList(contracts: Contract[]): Promise<any> {
+  private iterateToBuildOptionList(contracts: Contract[]): Promise<void> {
     console.log(`iterateToBuildOptionList ${contracts.length} items`);
     return contracts.reduce((p, stock) => {
       return p.then(() => {
@@ -514,7 +514,7 @@ export class ContractsUpdaterBot extends ITradingBot {
   private async createCashContracts() {
     const currencies: Currency[] = await Currency.findAll();
     console.log(`createCashContracts ${currencies.length} item(s)`);
-    const promises: Promise<any>[] = [];
+    const promises: Promise<Contract>[] = [];
     for (const currency of currencies) {
       const ibContract: IbContract = {
         symbol: currency.base,
@@ -528,6 +528,7 @@ export class ContractsUpdaterBot extends ITradingBot {
           .catch((error: Error) => {
             // silently ignore any error
             this.error(`createCashContracts failed for ${ibContract.localSymbol}: '${error.message}'`);
+            return null as Contract;
           })
       );
     }

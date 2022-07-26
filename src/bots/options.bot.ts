@@ -86,7 +86,7 @@ export class OptionsCreateBot extends ITradingBot {
             });
     }
 
-    private iterateToBuildOptionList(contracts: Contract[]): Promise<any> {
+    private iterateToBuildOptionList(contracts: Contract[]): Promise<void> {
         console.log(`iterateToBuildOptionList ${contracts.length} items`);
         return contracts.reduce((p, stock) => {
             return p.then(() => {
@@ -167,7 +167,7 @@ export class OptionsCreateBot extends ITradingBot {
                     // logging: console.log,
                 }
             );
-            const promises: Promise<any>[] = [];
+            const promises: Promise<void>[] = [];
             for (const option of options) {
                 if (option.dte >= 0) {
                     let iv_ = undefined;
@@ -191,7 +191,7 @@ export class OptionsCreateBot extends ITradingBot {
                         //     this.printObject(option);
                         //     this.printObject(values);
                         // }
-                        promises.push(option.update(values));
+                        promises.push(option.update(values).then());
                     }
                 } else {
                     const prices = {
@@ -207,8 +207,8 @@ export class OptionsCreateBot extends ITradingBot {
                         vega: null,
                         pvDividend: null,
                     };
-                    promises.push(option.contract.update(prices));
-                    promises.push(option.update(values));
+                    promises.push(option.contract.update(prices).then());
+                    promises.push(option.update(values).then());
                 }
             }
             await Promise.all(promises);
