@@ -1,6 +1,6 @@
 import { IBApiNextApp } from "@stoqey/ib/dist/tools/common/ib-api-next-app";
 import EventEmitter from "events";
-import { Op } from "sequelize";
+import { Op, or } from "sequelize";
 import {
     IBApiNext,
     Contract as IbContract,
@@ -200,28 +200,27 @@ export class ITradingBot extends EventEmitter {
             );
     }
 
-    private async sumOptionsPositionsEngagedInBase(positions: Position[], underlying: number, right: OptionType): Promise<number> {
+    private async sumOptionsPositionsQuantity(positions: Position[], underlying: Contract, right: OptionType): Promise<number> {
         let result = 0;
-        const where: { id?: number; stock_id?: number; callOrPut?: OptionType } = {};
-        if (underlying) where.stock_id = underlying;
-        if (right) where.callOrPut = right;
         for (const position of positions) {
-            where.id = position.contract.id;
-            const opt = await Option.findOne(
+            await Option.findOne(
                 {
-                    where: where,
+                    where: {
+                        id: position.contract.id,
+                        callOrPut: right,
+                        stock_id: underlying.id,
+                    },
+                    // logging: console.log,
                 },
-            );
-            if (opt != null) {
-                result += position.quantity * opt.multiplier * opt.strike / this.base_rates[position.contract.currency];
-            }
+            ).then((opt) => {
+                if (opt !== null) result += position.quantity * opt.multiplier;
+            });
         }
-        // console.log(`sumOptionsPositionsEngagedInBase(${underlying}, ${right}): ${result}`);
         return result;
     }
 
-    protected getOptionPositionsEngagedInBase(underlying: number, right: OptionType): Promise<number> {
-        if (this.portfolio !== null) {
+    protected getOptionsPositionsQuantity(underlying: Contract, right: OptionType): Promise<number> {
+        if (underlying !== null) {
             return Position.findAll(
                 {
                     where: {
@@ -233,46 +232,8 @@ export class ITradingBot extends EventEmitter {
                             secType: "OPT",
                         },
                     },
-                }).then((positions: Position[]) => this.sumOptionsPositionsEngagedInBase(positions, underlying, right));
-        } else {
-            return Promise.resolve(0);
-        }
-    }
-
-    private async sumOptionsPositionsRiskInBase(positions: Position[], underlying: number, right: OptionType): Promise<number> {
-        let result = 0;
-        const where: { id?: number; stock_id?: number; callOrPut?: OptionType } = {};
-        if (underlying) where.stock_id = underlying;
-        if (right) where.callOrPut = right;
-        for (const position of positions) {
-            where.id = position.contract.id;
-            const opt = await Option.findOne(
-                {
-                    where: where,
-                },
-            );
-            if (opt != null) {
-                result += position.quantity * opt.multiplier * opt.strike * opt.delta / this.base_rates[position.contract.currency];
-            }
-        }
-        console.log(`sumOptionsPositionsRiskInBase(${underlying}, ${right}): ${result}`);
-        return result;
-    }
-
-    protected getOptionPositionsRiskInBase(underlying: number, right: OptionType): Promise<number> {
-        if (this.portfolio !== null) {
-            return Position.findAll(
-                {
-                    where: {
-                        portfolio_id: this.portfolio.id,
-                    },
-                    include: {
-                        model: Contract,
-                        where: {
-                            secType: "OPT",
-                        },
-                    },
-                }).then((positions: Position[]) => this.sumOptionsPositionsRiskInBase(positions, underlying, right));
+                    // logging: console.log,
+                }).then((positions: Position[]) => this.sumOptionsPositionsQuantity(positions, underlying, right));
         } else {
             return Promise.resolve(0);
         }
@@ -333,27 +294,28 @@ export class ITradingBot extends EventEmitter {
         }
     }
 
-    private async sumOptionsPositionsQuantity(positions: Position[], underlying: Contract, right: OptionType): Promise<number> {
+    private async sumOptionsPositionsEngagedInBase(positions: Position[], underlying: number, right: OptionType): Promise<number> {
         let result = 0;
+        const where: { id?: number; stock_id?: number; callOrPut?: OptionType } = {};
+        if (underlying) where.stock_id = underlying;
+        if (right) where.callOrPut = right;
         for (const position of positions) {
-            await Option.findOne(
+            where.id = position.contract.id;
+            const opt = await Option.findOne(
                 {
-                    where: {
-                        id: position.contract.id,
-                        callOrPut: right,
-                        stock_id: underlying.id,
-                    },
-                    // logging: console.log,
+                    where: where,
                 },
-            ).then((opt) => {
-                if (opt !== null) result += position.quantity * opt.multiplier;
-            });
+            );
+            if (opt != null) {
+                result += position.quantity * opt.multiplier * opt.strike / this.base_rates[position.contract.currency];
+            }
         }
+        // console.log(`sumOptionsPositionsEngagedInBase(${underlying}, ${right}): ${result}`);
         return result;
     }
 
-    protected getOptionsPositionsQuantity(underlying: Contract, right: OptionType): Promise<number> {
-        if (underlying !== null) {
+    protected getOptionsPositionsEngagedInBase(underlying: number, right: OptionType): Promise<number> {
+        if (this.portfolio !== null) {
             return Position.findAll(
                 {
                     where: {
@@ -365,40 +327,52 @@ export class ITradingBot extends EventEmitter {
                             secType: "OPT",
                         },
                     },
-                    // logging: console.log,
-                }).then((positions: Position[]) => this.sumOptionsPositionsQuantity(positions, underlying, right));
+                }).then((positions: Position[]) => this.sumOptionsPositionsEngagedInBase(positions, underlying, right));
         } else {
             return Promise.resolve(0);
         }
     }
 
-    protected getContractOrderValueInBase(benchmark: Contract, actionType: OrderAction): Promise<number> {
-        if ((this.portfolio !== null) && (benchmark !== null)) {
-            return OpenOrder.findAll({
-                where: {
-                    portfolio_id: this.portfolio.id,
-                    actionType: actionType,
-                    status: ["Submitted", "PreSubmitted"],
+    private async sumOptionsPositionsRiskInBase(positions: Position[], underlying?: number, right?: OptionType): Promise<number> {
+        let result = 0;
+        const where: { id?: number; stock_id?: number; callOrPut?: OptionType } = {};
+        if (underlying) where.stock_id = underlying;
+        if (right) where.callOrPut = right;
+        for (const position of positions) {
+            where.id = position.contract.id;
+            const opt = await Option.findOne(
+                {
+                    where: where,
                 },
-                include: {
-                    model: Contract,
-                    where: {
-                        id: benchmark.id,
-                    },
-                }
-            }).then((orders: OpenOrder[]) => Currency.findOne({
-                where: {
-                    base: this.portfolio.baseCurrency,
-                    currency: benchmark.currency,
-                },
-            }).then((currency) => orders.reduce((p, order) => (p + (order.remainingQty * benchmark.livePrice / currency.rate)), 0))
             );
+            if (opt != null) {
+                result += position.quantity * opt.multiplier * opt.strike * opt.delta / this.base_rates[position.contract.currency];
+            }
+        }
+        console.log(`sumOptionsPositionsRiskInBase(${underlying}, ${right}): ${result}`);
+        return result;
+    }
+
+    protected getOptionsPositionsRiskInBase(underlying: number, right: OptionType): Promise<number> {
+        if (this.portfolio !== null) {
+            return Position.findAll(
+                {
+                    where: {
+                        portfolio_id: this.portfolio.id,
+                    },
+                    include: {
+                        model: Contract,
+                        where: {
+                            secType: "OPT",
+                        },
+                    },
+                }).then((positions: Position[]) => this.sumOptionsPositionsRiskInBase(positions, underlying, right));
         } else {
             return Promise.resolve(0);
         }
     }
 
-    protected getContractOrdersQuantity(benchmark: Contract, actionType: OrderAction): Promise<number> {
+    protected getContractOrdersQuantity(benchmark: Contract, actionType?: OrderAction): Promise<number> {
         const where: { portfolio_id: number; status: string[]; actionType?: OrderAction; } = {
             portfolio_id: this.portfolio.id,
             status: ["Submitted", "PreSubmitted"],
@@ -419,44 +393,28 @@ export class ITradingBot extends EventEmitter {
         }
     }
 
-    private async sumOptionsOrdersInBase(orders: OpenOrder[], underlying: number, right: OptionType): Promise<number> {
-        let result = 0;
-        for (const order of orders) {
-            await Option.findOne(
-                {
-                    where: {
-                        id: order.contract.id,
-                        stock_id: underlying,
-                        callOrPut: right,
-                    },
-                },
-            ).then((opt) => Currency.findOne({
-                where: {
-                    base: this.portfolio.baseCurrency,
-                    currency: order.contract.currency,
-                },
-            }).then((currency) => {
-                if (opt !== null) result += order.remainingQty * opt.multiplier * opt.strike / currency.rate;
-            }));
-        }
-        return result;
-    }
-
-    protected getOptionOrdersValueInBase(underlying: number, right: OptionType, actionType: OrderAction): Promise<number> {
-        if ((this.portfolio !== null) && (underlying !== null)) {
+    protected getContractOrderValueInBase(benchmark: Contract, actionType?: OrderAction): Promise<number> {
+        if ((this.portfolio !== null) && (benchmark !== null)) {
+            const where: { portfolio_id: number; actionType?: OrderAction; status: string[] } = {
+                portfolio_id: this.portfolio.id,
+                status: ["Submitted", "PreSubmitted"],
+            };
+            if (actionType) where.actionType = actionType;
             return OpenOrder.findAll({
-                where: {
-                    portfolio_id: this.portfolio.id,
-                    actionType: actionType,
-                    status: ["Submitted", "PreSubmitted"],
-                },
+                where: where,
                 include: {
                     model: Contract,
                     where: {
-                        secType: "OPT",
+                        id: benchmark.id,
                     },
                 }
-            }).then((orders: OpenOrder[]) => this.sumOptionsOrdersInBase(orders, underlying, right as OptionType));
+            }).then((orders: OpenOrder[]) => Currency.findOne({
+                where: {
+                    base: this.portfolio.baseCurrency,
+                    currency: benchmark.currency,
+                },
+            }).then((currency) => orders.reduce((p, order) => (p + (order.remainingQty * benchmark.livePrice / currency.rate / (order.actionType == OrderAction.BUY ? 1 : -1))), 0))
+            );
         } else {
             return Promise.resolve(0);
         }
@@ -495,6 +453,143 @@ export class ITradingBot extends EventEmitter {
                     },
                 }
             }).then((orders: OpenOrder[]) => this.sumOptionsOrdersQuantity(orders, underlying, right as OptionType));
+        } else {
+            return Promise.resolve(0);
+        }
+    }
+
+    private async sumOptionsOrdersValueInBase(orders: OpenOrder[], underlying: number, right: OptionType): Promise<number> {
+        let result = 0;
+        for (const order of orders) {
+            await Option.findOne(
+                {
+                    where: {
+                        id: order.contract.id,
+                        stock_id: underlying,
+                        callOrPut: right,
+                    },
+                    include: {
+                        model: Contract,
+                        required: true,
+                    },
+                    // logging: console.log,
+                },
+            ).then((opt) => Currency.findOne({
+                where: {
+                    base: this.portfolio.baseCurrency,
+                    currency: order.contract.currency,
+                },
+            }).then((currency) => {
+                if (opt !== null) result += order.remainingQty * opt.multiplier * opt.contract.livePrice * (order.actionType == OrderAction.BUY ? 1 : -1) / currency.rate;
+            }));
+        }
+        return result;
+    }
+
+    protected getOptionsOrdersValueInBase(underlying: number, right: OptionType, actionType?: OrderAction): Promise<number> {
+        if ((this.portfolio !== null) && (underlying !== null)) {
+            const where: { portfolio_id: number; status: string[]; actionType?: OrderAction; } = {
+                portfolio_id: this.portfolio.id,
+                status: ["Submitted", "PreSubmitted"],
+            };
+            if (actionType) where.actionType = actionType;
+            return OpenOrder.findAll({
+                where: where,
+                include: {
+                    model: Contract,
+                    where: {
+                        secType: "OPT",
+                    },
+                }
+            }).then((orders: OpenOrder[]) => this.sumOptionsOrdersValueInBase(orders, underlying, right as OptionType));
+        } else {
+            return Promise.resolve(0);
+        }
+    }
+
+    private async sumOptionsOrdersEngagedInBase(orders: OpenOrder[], underlying: number, right: OptionType): Promise<number> {
+        let result = 0;
+        for (const order of orders) {
+            await Option.findOne(
+                {
+                    where: {
+                        id: order.contract.id,
+                        stock_id: underlying,
+                        callOrPut: right,
+                    },
+                },
+            ).then((opt) => Currency.findOne({
+                where: {
+                    base: this.portfolio.baseCurrency,
+                    currency: order.contract.currency,
+                },
+            }).then((currency) => {
+                if (opt !== null) result += order.remainingQty * opt.multiplier * opt.strike * (order.actionType == OrderAction.BUY ? 1 : -1) / currency.rate;
+            }));
+        }
+        return result;
+    }
+
+    protected getOptionsOrdersEngagedInBase(underlying: number, right: OptionType, actionType?: OrderAction): Promise<number> {
+        if ((this.portfolio !== null) && (underlying !== null)) {
+            const where: { portfolio_id: number; status: string[]; actionType?: OrderAction; } = {
+                portfolio_id: this.portfolio.id,
+                status: ["Submitted", "PreSubmitted"],
+            };
+            if (actionType) where.actionType = actionType;
+            return OpenOrder.findAll({
+                where: where,
+                include: {
+                    model: Contract,
+                    where: {
+                        secType: "OPT",
+                    },
+                }
+            }).then((orders: OpenOrder[]) => this.sumOptionsOrdersEngagedInBase(orders, underlying, right as OptionType));
+        } else {
+            return Promise.resolve(0);
+        }
+    }
+
+    private async sumOptionsOrdersRiskInBase(orders: OpenOrder[], underlying: number, right: OptionType): Promise<number> {
+        let result = 0;
+        for (const order of orders) {
+            await Option.findOne(
+                {
+                    where: {
+                        id: order.contract.id,
+                        stock_id: underlying,
+                        callOrPut: right,
+                    },
+                },
+            ).then((opt) => Currency.findOne({
+                where: {
+                    base: this.portfolio.baseCurrency,
+                    currency: order.contract.currency,
+                },
+            }).then((currency) => {
+                if (opt !== null) result += order.remainingQty * opt.multiplier * opt.strike * opt.delta * (order.actionType == OrderAction.BUY ? 1 : -1) / currency.rate;
+            }));
+        }
+        return result;
+    }
+
+    protected getOptionsOrdersRiskInBase(underlying: number, right?: OptionType, actionType?: OrderAction): Promise<number> {
+        if ((this.portfolio !== null) && (underlying !== null)) {
+            const where: { portfolio_id: number; status: string[]; actionType?: OrderAction; } = {
+                portfolio_id: this.portfolio.id,
+                status: ["Submitted", "PreSubmitted"],
+            };
+            if (actionType) where.actionType = actionType;
+            return OpenOrder.findAll({
+                where: where,
+                include: {
+                    model: Contract,
+                    where: {
+                        secType: "OPT",
+                    },
+                }
+            }).then((orders: OpenOrder[]) => this.sumOptionsOrdersRiskInBase(orders, underlying, right as OptionType));
         } else {
             return Promise.resolve(0);
         }
