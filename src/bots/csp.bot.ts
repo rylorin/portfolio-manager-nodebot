@@ -60,18 +60,26 @@ export class SellCashSecuredPutBot extends ITradingBot {
 
     private async processOneParamaeter(parameter: Parameter): Promise<Row> {
         console.log("processing parameter:", parameter.underlying.symbol);
-        // this.printObject(parameter);
+
         const stock_positions = await this.getContractPositionValueInBase(parameter.underlying);
-        console.log("stock_positions_amount:", stock_positions);
-        const stock_sell_orders = await this.getContractOrderValueInBase(parameter.underlying, OrderAction.SELL);
-        console.log("stock_sell_orders_amount:", stock_sell_orders);
-        const put_positions = await this.getOptionPositionsEngagedInBase(parameter.underlying.id, OptionType.Put);
-        console.log("put_positions engaged in base:", put_positions);
-        const put_sell_orders = -(await this.getOptionOrdersValueInBase(parameter.underlying.id, OptionType.Put, OrderAction.SELL));
-        if (put_sell_orders) console.log("** put_sell_orders value in base:", put_sell_orders);
-        const engaged_options = - put_positions - put_sell_orders;
-        const engaged_symbol = stock_positions - stock_sell_orders + engaged_options;
+        const stock_orders = (await this.getContractOrderValueInBase(parameter.underlying));
+        const call_positions = (await this.getOptionsPositionsRiskInBase(parameter.underlying.id, OptionType.Call));
+        const call_sell_orders = (await this.getOptionsOrdersRiskInBase(parameter.underlying.id, OptionType.Call, OrderAction.SELL));
+
+        const put_positions = -(await this.getOptionsPositionsEngagedInBase(parameter.underlying.id, OptionType.Put));
+        const put_sell_orders = -(await this.getOptionsOrdersEngagedInBase(parameter.underlying.id, OptionType.Put, OrderAction.SELL));
+
+        const engaged_options = put_positions + put_sell_orders;
+        const engaged_symbol = stock_positions + call_positions + call_sell_orders + stock_orders + engaged_options;
+
+        if (stock_positions) console.log("stock_positions_amount in base:", stock_positions);
+        if (stock_orders) console.log("stock_orders amount in base:", stock_orders);
+        if (call_positions) console.log("call_positions value in base:", call_positions);
+        if (call_sell_orders) console.log("call_sell_orders risk in base:", call_sell_orders);
+        if (put_positions) console.log("put_positions engaged in base:", put_positions);
+        if (put_sell_orders) console.log("put_sell_orders engaged in base:", put_sell_orders);
         console.log("=> engaged:", engaged_symbol, engaged_options);
+
         const max_for_this_symbol = ((await this.getContractPositionValueInBase(this.portfolio.benchmark)) + (await this.getTotalBalanceInBase())) * parameter.navRatio;
         console.log("max for this symbol:", max_for_this_symbol);
         const free_for_this_symbol = max_for_this_symbol - engaged_symbol;
@@ -79,14 +87,14 @@ export class SellCashSecuredPutBot extends ITradingBot {
         console.log("parameter.underlying.price:", parameter.underlying.livePrice);
         console.log("free_for_this_symbol in currency:", free_for_this_symbol * this.base_rates[parameter.underlying.currency]);
         // RULE 7: stock price is lower than previous close
-        const opt = (parameter.underlying.livePrice > parameter.underlying.previousClosePrice) ? [] : await Option.findAll({
+        const options = (parameter.underlying.livePrice > parameter.underlying.previousClosePrice) ? [] : await Option.findAll({
             where: {
                 stock_id: parameter.underlying.id,
                 strike: {
                     [Op.lt]: Math.min(parameter.underlying.livePrice, (free_for_this_symbol / 100)),    // RULE 2 & 5: strike < cours (OTM) & max ratio per symbol
                 },
                 lastTradeDate: { [Op.gt]: new Date() },
-                callOrPut: "P",
+                callOrPut: OptionType.Put,
                 delta: {
                     [Op.gt]: (this.portfolio.cspWinRatio - 1),  // RULE 3: delta >= -0.2
                 },
@@ -106,7 +114,7 @@ export class SellCashSecuredPutBot extends ITradingBot {
             // logging: console.log,
         });
         console.log(".");
-        return { symbol: parameter.underlying.symbol, engaged_options, options: opt };
+        return { symbol: parameter.underlying.symbol, engaged_options, options, };
     }
 
     private async iterateParameters(parameters: Parameter[]): Promise<void> {
