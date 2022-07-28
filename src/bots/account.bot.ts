@@ -127,8 +127,9 @@ export class AccountUpdateBot extends ITradingBot {
     // this.printObject(order);
     const contract: Contract = await this.findOrCreateContract(order.contract);
     const result = await OpenOrder.update({
-      contract_id: contract.id,
-      actionType: order.order.action,
+      // don't update contract id and action type as they may be different on BEG legs
+      // contract_id: contract.id,
+      // actionType: order.order.action,
       totalQty: order.order.totalQuantity,
       cashQty: order.order.cashQty,
       lmtPrice: order.order.lmtPrice,
