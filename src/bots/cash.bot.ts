@@ -12,7 +12,7 @@ export class CashManagementBot extends ITradingBot {
         await this.init();  // load parameters
         const benchmark = this.portfolio.benchmark;
         const benchmark_value = (await this.getContractPositionValueInBase(benchmark))
-            + (await this.getOptionPositionsRiskInBase(benchmark.id, OptionType.Put));
+            + (await this.getOptionsPositionsRiskInBase(benchmark.id, OptionType.Put));
         const balance_in_base: number = await this.getTotalBalanceInBase();
         const benchmark_balance_in_base: number = await this.getBalanceInBase(benchmark.currency);
         const benchmark_units: number = await this.getContractPosition(benchmark);
@@ -30,7 +30,7 @@ export class CashManagementBot extends ITradingBot {
             extra_cash = balance_in_base - opt_value;
         } else if (this.portfolio.cashStrategy == 3) {
             // option risk: cash to cover options risk
-            let opt_value = await this.getOptionPositionsRiskInBase(null, OptionType.Put);
+            let opt_value = await this.getOptionsPositionsRiskInBase(null, OptionType.Put);
             opt_value = Math.max(opt_value, 0);
             extra_cash = balance_in_base - opt_value;
         } else {
