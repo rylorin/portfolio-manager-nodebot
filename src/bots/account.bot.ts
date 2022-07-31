@@ -4,6 +4,7 @@ import {
   IBApiNextError,
   OpenOrder as IbOpenOrder,
   Position as IbPosition,
+  SecType,
 } from "@stoqey/ib";
 import {
   Contract,
@@ -126,45 +127,69 @@ export class AccountUpdateBot extends ITradingBot {
   protected async updateOpenOrder(order: IbOpenOrder): Promise<void> {
     // this.printObject(order);
     const contract: Contract = await this.findOrCreateContract(order.contract);
-    const result = await OpenOrder.update({
-      // don't update contract id and action type as they may be different on BEG legs
-      // contract_id: contract.id,
-      // actionType: order.order.action,
-      totalQty: order.order.totalQuantity,
-      cashQty: order.order.cashQty,
-      lmtPrice: order.order.lmtPrice,
-      auxPrice: order.order.auxPrice,
-      status: order.orderState.status,
-      remainingQty: order.orderStatus?.remaining,
-      orderId: order.orderId,
-      clientId: order.order.clientId,
-    }, {
+    const [open_order, created]: [OpenOrder, boolean] = await OpenOrder.findOrCreate({
       where: {
         perm_Id: order.order.permId,
         portfolioId: this.portfolio.id,
       },
-      // logging: console.log,
-    });
-    if (result[0] == 0) {
-      // order not existing, create it
-      await OpenOrder.create({
+      defaults: {
         permId: order.order.permId,
         portfolioId: this.portfolio.id,
         contract_id: contract.id,
         actionType: order.order.action,
-        totalQty: order.order.totalQuantity,
-        cashQty: order.order.cashQty,
         lmtPrice: order.order.lmtPrice,
         auxPrice: order.order.auxPrice,
         status: order.orderState.status,
+        totalQty: order.order.totalQuantity,
+        cashQty: order.order.cashQty,
         remainingQty: order.orderStatus?.remaining,
         orderId: order.orderId,
         clientId: order.order.clientId,
-      }, {
-        // logging: console.log,
+      },
+      // logging: console.log,
+    });
+    if (created && (order.contract.secType == SecType.BAG)) await this.createLegs(order);
+    if (order.contract.secType != SecType.BAG) {
+      await open_order.update({
+        // contract_id: contract.id,
+        actionType: order.order.action,
+        lmtPrice: order.order.lmtPrice,
+        auxPrice: order.order.auxPrice,
+        status: order.orderState.status,
+        totalQty: order.order.totalQuantity,
+        cashQty: order.order.cashQty,
+        remainingQty: order.orderStatus?.remaining,
+        orderId: order.orderId,
+        clientId: order.order.clientId,
+      })
+        .then(/* void */);
+    } else {
+      // SecType.BAG, update all legs
+      const promises: Promise<void>[] = [];
+      for (const leg of order.contract.comboLegs) {
+        // this.printObject(leg);
+        promises.push(
+          this.findOrCreateContract({ conId: leg.conId })
+            .then((contract) => OpenOrder.update({
+              actionType: (order.order.action == leg.action) ? "BUY" : "SELL",
+              lmtPrice: undefined,
+              auxPrice: undefined,
+              status: order.orderState.status,
+              totalQty: order.order.totalQuantity * leg.ratio,
+              cashQty: order.order.cashQty * leg.ratio,
+              remainingQty: order.orderStatus?.remaining * leg.ratio,
+            }, {
+              where: {
+                permId: order.order.permId,
+                portfolioId: this.portfolio.id,
+                contract_id: contract.id,
+              },
+              // logging: console.log,
+            }))
+            .then(/* void */)
+        );
       }
-      );
-      if (order.contract.secType == "BAG") await this.createLegs(order);
+      await Promise.all(promises);
     }
   }
 
