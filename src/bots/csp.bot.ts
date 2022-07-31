@@ -63,14 +63,14 @@ export class SellCashSecuredPutBot extends ITradingBot {
 
         const stock_positions = await this.getContractPositionValueInBase(parameter.underlying);
         const stock_orders = (await this.getContractOrderValueInBase(parameter.underlying));
-        const call_positions = (await this.getOptionsPositionsRiskInBase(parameter.underlying.id, OptionType.Call));
-        const call_sell_orders = (await this.getOptionsOrdersRiskInBase(parameter.underlying.id, OptionType.Call, OrderAction.SELL));
+        const call_positions = (await this.getOptionsPositionsSynthesisInBase(parameter.underlying.id, OptionType.Call, true).then((r) => r.value));
+        const call_sell_orders = 0; // not relevant
 
-        const put_positions = -(await this.getOptionsPositionsEngagedInBase(parameter.underlying.id, OptionType.Put));
-        const put_sell_orders = -(await this.getOptionsOrdersEngagedInBase(parameter.underlying.id, OptionType.Put, OrderAction.SELL));
+        const put_positions = (await this.getOptionsPositionsSynthesisInBase(parameter.underlying.id, OptionType.Put).then((r) => r.engaged));
+        const put_sell_orders = (await this.getOptionsOrdersEngagedInBase(parameter.underlying.id, OptionType.Put, OrderAction.SELL));
 
-        const engaged_options = put_positions + put_sell_orders;
-        const engaged_symbol = stock_positions + call_positions + call_sell_orders + stock_orders + engaged_options;
+        const engaged_options = -(put_positions + put_sell_orders);
+        const engaged_symbol = stock_positions + stock_orders + call_positions + call_sell_orders + engaged_options;
 
         if (stock_positions) console.log("stock_positions_amount in base:", stock_positions);
         if (stock_orders) console.log("stock_orders amount in base:", stock_orders);
