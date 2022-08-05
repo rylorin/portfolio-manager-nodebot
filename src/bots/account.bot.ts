@@ -83,66 +83,45 @@ export class AccountUpdateBot extends ITradingBot {
     if ((this.orderq.length > 0) || (this.positionq.length > 0) || (this.cashq.length > 0)) setTimeout(() => this.emit("processQueue"), 100);
   }
 
-  private createLegs(order: IbOpenOrder, transaction: Transaction): Promise<void> {
-    return order.contract.comboLegs.reduce((p, leg) => p.then(() =>
-      this.findOrCreateContract({ conId: leg.conId }, transaction)
-        .then((contract) => {
-          const where = {
-            permId: order.order.permId,
-            portfolioId: this.portfolio.id,
-            contract_id: contract.id,
-          };
-          const values = {
-            permId: order.order.permId,
-            portfolioId: this.portfolio.id,
-            contract_id: contract.id,
-            actionType: (order.order.action == leg.action) ? "BUY" : "SELL",
-            totalQty: order.order.totalQuantity * leg.ratio,
-            cashQty: order.order.cashQty * leg.ratio,
-            lmtPrice: undefined,
-            auxPrice: undefined,
-            status: order.orderState.status,
-            remainingQty: order.orderStatus?.remaining * leg.ratio,
-            orderId: order.orderId,
-            clientId: order.order.clientId,
-          };
-          return OpenOrder.findOrCreate({ where: where, defaults: values, transaction: transaction }).then();
-        })), Promise.resolve());
-  }
-
-  private updateLegs(order: IbOpenOrder, transaction: Transaction): Promise<void> {
-    return order.contract.comboLegs.reduce((p, leg) => p.then(() =>
-      this.findOrCreateContract({ conId: leg.conId }, transaction)
-        .then((contract) => {
-          const where = {
-            permId: order.order.permId,
-            portfolioId: this.portfolio.id,
-            contract_id: contract.id,
-          };
-          const values = {
-            // permId: order.order.permId,
-            // portfolioId: this.portfolio.id,
-            // contract_id: contract.id,
-            actionType: (order.order.action == leg.action) ? "BUY" : "SELL",
-            totalQty: order.order.totalQuantity * leg.ratio,
-            cashQty: order.order.cashQty * leg.ratio,
-            lmtPrice: undefined,
-            auxPrice: undefined,
-            status: order.orderState.status,
-            remainingQty: order.orderStatus?.remaining * leg.ratio,
-            orderId: order.orderId,
-            clientId: order.order.clientId,
-          };
-          return OpenOrder.update(values, { where: where, transaction: transaction }).then();
-        })), Promise.resolve());
+  private createAndUpdateLegs(order: IbOpenOrder, transaction: Transaction): Promise<IbOpenOrder> {
+    if (order.contract.secType == SecType.BAG) {
+      return order.contract.comboLegs.reduce((p, leg) => p.then(() =>
+        this.findOrCreateContract({ conId: leg.conId }, transaction)
+          .then((contract) => {
+            const where = {
+              permId: order.order.permId,
+              portfolioId: this.portfolio.id,
+              contract_id: contract.id,
+            };
+            const values = {
+              // permId: order.order.permId,
+              // portfolioId: this.portfolio.id,
+              // contract_id: contract.id,
+              actionType: (order.order.action == leg.action) ? "BUY" : "SELL",
+              totalQty: order.order.totalQuantity * leg.ratio,
+              cashQty: order.order.cashQty * leg.ratio,
+              lmtPrice: undefined,
+              auxPrice: undefined,
+              status: order.orderState.status,
+              remainingQty: order.orderStatus?.remaining * leg.ratio,
+              orderId: order.orderId,
+              clientId: order.order.clientId,
+            };
+            return OpenOrder.findOrCreate({ where: where, defaults: values, transaction: transaction, logging: console.log, })
+              .then(([open_order, created]) => open_order.update(values, { transaction: transaction, logging: console.log, })
+                .then(() => order));
+          })), Promise.resolve(order));
+    } else {
+      return Promise.resolve(order);
+    }
   }
 
   protected updateOpenOrder(order: IbOpenOrder): Promise<void> {
     // this.printObject(order);
     console.log("updateOpenOrder", order.order.permId, order.contract.symbol);
     try {
-      return this.findOrCreateContract(order.contract).then((contract: Contract) => sequelize.transaction(async (transaction) => {
-        const [open_order, created]: [OpenOrder, boolean] = await OpenOrder.findOrCreate({
+      return this.findOrCreateContract(order.contract)
+        .then((contract: Contract) => sequelize.transaction((transaction) => OpenOrder.findOrCreate({
           where: {
             perm_Id: order.order.permId,
             portfolioId: this.portfolio.id,
@@ -163,28 +142,26 @@ export class AccountUpdateBot extends ITradingBot {
           },
           transaction: transaction,
           // logging: console.log,
-        });
-        if (created && (order.contract.secType == SecType.BAG)) await this.createLegs(order, transaction);
-        await open_order.update({
-          // contract_id: contract.id,
-          actionType: order.order.action,
-          lmtPrice: order.order.lmtPrice,
-          auxPrice: order.order.auxPrice,
-          status: order.orderState.status,
-          totalQty: order.order.totalQuantity,
-          cashQty: order.order.cashQty,
-          remainingQty: order.orderStatus?.remaining,
-          orderId: order.orderId,
-          clientId: order.order.clientId,
-        }, { transaction: transaction, })
-          .then(/* void */);
-        if (order.contract.secType == SecType.BAG) await this.updateLegs(order, transaction);
-      } /* Committed */));
+        })
+          .then(([open_order, created]) => open_order.update({
+            // contract_id: contract.id,  // contract is not supposed to change
+            actionType: order.order.action,
+            lmtPrice: order.order.lmtPrice,
+            auxPrice: order.order.auxPrice,
+            status: order.orderState.status,
+            totalQty: order.order.totalQuantity,
+            cashQty: order.order.cashQty,
+            remainingQty: order.orderStatus?.remaining,
+            orderId: order.orderId,
+            clientId: order.order.clientId,
+          }, { transaction: transaction, }))
+          .then(() => this.createAndUpdateLegs(order, transaction))
+          .then()
+         /* Committed */));
     } catch (err) {
       // Rolled back
       console.error(err);
     }
-    console.log("updateOpenOrder done.");
   }
 
   private iterateOpenOrdersForUpdate(orders: IbOpenOrder[]): void {

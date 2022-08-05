@@ -472,7 +472,7 @@ export class ITradingBot extends EventEmitter {
                         },
                         defaults: defaults,
                         transaction: transaction,
-                        logging: true,
+                        logging: false,
                     }).then(([contract, created]) => {
                         if (created) {
                             return Stock.create({ id: contract.id, }, { transaction: transaction, })
@@ -556,7 +556,7 @@ export class ITradingBot extends EventEmitter {
                         },
                         defaults: defaults,
                         transaction: transaction,
-                        logging: true,
+                        logging: false,
                     }).then(([contract, created]) => {
                         if (created) {
                             return Cash.create({ id: contract.id, }, { transaction: transaction, })
