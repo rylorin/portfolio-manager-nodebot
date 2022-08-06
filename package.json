@@ -6,7 +6,7 @@
     "register/",
     "LICENSE"
   ],
-  "license": "MIT",
+  "license": "UNLICENSED",
   "scripts": {
     "lint": "./node_modules/.bin/eslint . --ext .ts",
     "test": "jest --maxWorkers=8 --reporters=default --useStderr --detectOpenHandles",
@@ -39,6 +39,6 @@
     "sequelize": "^6.17.0",
     "sequelize-typescript": "^2.1.3",
     "sqlite3": "^5.0.8",
-    "yahoo-finance2": "^2.3.3"
+    "yahoo-finance2": "^2.3.4"
   }
 }
