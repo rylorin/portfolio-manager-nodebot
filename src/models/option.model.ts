@@ -64,7 +64,7 @@ export class Option extends Model {
 
   get dte(): number {
     const dte: number = Math.floor(0.9 + (((new Date(this.getDataValue("lastTradeDate"))).getTime() - Date.now()) / 1000 / 86400));
-    console.log("dte for", this.getDataValue("lastTradeDate"), dte);
+    // console.log("dte for", this.getDataValue("lastTradeDate"), dte);
     return dte;
   }
 

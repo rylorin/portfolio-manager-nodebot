@@ -64,14 +64,15 @@ class MyTradingBotApp extends IBApiNextApp {
     // this.api.setMarketDataType(MarketDataType.REALTIME);        // Error 354 on JPY and CHF
     initDB().then(() => {
       const portfolio: string = this.cmdLineArgs.portfolio ? this.cmdLineArgs.portfolio as string : process.env.IB_ACCOUNT;
+      const yahooBot: YahooUpdateBot = new YahooUpdateBot(this, this.api, portfolio);
       // console.log(this.cmdLineArgs.portfolio as string, process.env.IB_ACCOUNT, portfolio)
-      if (this.cmdLineArgs.updater) (new ContractsUpdaterBot(this, this.api)).start();
+      if (this.cmdLineArgs.updater) (new ContractsUpdaterBot(this, this.api, yahooBot)).start();
       if (this.cmdLineArgs.account) (new AccountUpdateBot(this, this.api, portfolio)).start();
       if (this.cmdLineArgs.cash) (new CashManagementBot(this, this.api, portfolio)).start();
       if (this.cmdLineArgs.cc) (new SellCoveredCallsBot(this, this.api, portfolio)).start();
       if (this.cmdLineArgs.csp) (new SellCashSecuredPutBot(this, this.api, portfolio)).start();
       if (this.cmdLineArgs.roll) (new RollOptionPositionsBot(this, this.api, portfolio)).start();
-      if (this.cmdLineArgs.yahoo) (new YahooUpdateBot(this, this.api, portfolio)).start();
+      if (this.cmdLineArgs.yahoo) yahooBot.start();
       if (this.cmdLineArgs.options) (new OptionsCreateBot(this, this.api, portfolio)).start();
     });
   }

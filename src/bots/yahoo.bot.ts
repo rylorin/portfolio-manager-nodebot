@@ -37,6 +37,28 @@ type Row = {
 
 export class YahooUpdateBot extends ITradingBot {
 
+    private requestsQ: MappedQuote[] = [];
+    private lastFetch = 0;
+
+    public async enqueueContract(contract: Contract): Promise<void> {
+        let quote: MappedQuote = undefined;
+        if (contract.secType == SecType.STK) {
+            quote = { contract, symbol: YahooUpdateBot.getYahooTicker(contract) };
+        } else if (contract.secType == SecType.OPT) {
+            quote = { contract, symbol: YahooUpdateBot.formatOptionName(await Option.findByPk(contract.id)) };
+        } else if (contract.secType == SecType.CASH) {
+            quote = { contract, symbol: contract.symbol.substring(0, 3) + contract.currency + "=X", };
+        }
+        const index = this.requestsQ.findIndex(
+            (p) => p.symbol == quote.symbol
+        );
+        if (index !== -1) {
+            this.requestsQ.splice(index, 1);
+        }
+        this.requestsQ.push(quote);
+        // setTimeout(() => this.emit("processQueue"), 100);
+    }
+
     protected static getYahooTicker(contract: Contract): string {
         let $ticker: string = contract.symbol.replace("-PR", "-P").replace(" B", "-B");
         const $exchange: string = contract.exchange;
@@ -50,22 +72,25 @@ export class YahooUpdateBot extends ITradingBot {
             $ticker = $ticker + ".MI";
         } else if ($exchange == "TSEJ") {
             $ticker = $ticker + ".T";
-        } else if (($exchange == "TSE") || (contract.currency == "CAD")) {
-            $ticker = $ticker.replace(".", "-") + ".TO";
         } else if ($exchange == "AEB") {
             $ticker = $ticker + ".AS";
-        } else if (($exchange == "EBS") || (contract.currency == "CHF")) {
-            $ticker = $ticker + ".SW";
         } else if ($exchange == "FWB") {
             $ticker = $ticker + ".DE";
         } else if ($exchange == "IBIS") {
             $ticker = (($ticker[$ticker.length - 1] == "d") ? $ticker.substring(0, $ticker.length - 1) : $ticker) + ".DE";
         } else if ($exchange == "SEHK") {
             $ticker = $ticker + ".HK";
-        } else if (($exchange == "NYSE") || ($exchange == "NASDAQ") || ($exchange == "SMART")) {
+        } else if (($exchange == "NYSE") || ($exchange == "NASDAQ") || ($exchange == "SMART") || ($exchange == "PINK")) {
             // no ticker processing
+        } else if ($exchange == "MOEX") {
+            $ticker = $ticker + ".ME";
+            // currency selection should come after
+        } else if (($exchange == "TSE") || (contract.currency == "CAD")) {
+            $ticker = $ticker.replace(".", "-") + ".TO";
+        } else if (($exchange == "EBS") || (contract.currency == "CHF")) {
+            $ticker = $ticker + ".SW";
         } else {
-            console.log("unknow exchange:", $exchange);
+            console.log("unknow exchange:", $exchange, "for", contract.symbol);
         }
         return $ticker;
     }
@@ -87,13 +112,20 @@ export class YahooUpdateBot extends ITradingBot {
         const promises: Promise<void>[] = [];
         for (const r of q) {
             if (r.quote !== undefined) {
+                if (r.quote?.currency == "GBp") {
+                    r.quote.regularMarketPrice = r.quote?.regularMarketPrice / 100;
+                    r.quote.ask = r.quote?.ask / 100;
+                    r.quote.bid = r.quote?.bid / 100;
+                    r.quote.fiftyTwoWeekLow = r.quote?.fiftyTwoWeekLow / 100;
+                    r.quote.fiftyTwoWeekHigh = r.quote?.fiftyTwoWeekHigh / 100;
+                    r.quote.regularMarketPreviousClose = r.quote?.regularMarketPreviousClose / 100;
+                }
                 const prices: Row = {
                     price: r.quote?.regularMarketPrice || null,
                     ask: r.quote?.ask || null,
                     bid: r.quote?.bid || null,
                     fiftyTwoWeekLow: r.quote?.fiftyTwoWeekLow || null,
                     fiftyTwoWeekHigh: r.quote?.fiftyTwoWeekHigh || null,
-                    // tick_price: r.contract.tick_price + 1,
                     updatedAt: new Date(),
                 };
                 if (r.quote?.regularMarketPreviousClose) prices.previousClosePrice = r.quote?.regularMarketPreviousClose;
@@ -139,7 +171,7 @@ export class YahooUpdateBot extends ITradingBot {
             } else {
                 console.log("no Yahoo quote for:", r.symbol);
                 r.contract.changed("updatedAt", true);
-                promises.push(r.contract.update({ updatedAt: new Date(), }, { logging: false, }).then());
+                promises.push(r.contract.update({ ask: null, bid: null, updatedAt: new Date(), }, { logging: false, }).then());
             }
         }
         return Promise.all(promises);
@@ -147,19 +179,21 @@ export class YahooUpdateBot extends ITradingBot {
 
     private async fetchQuotes(q: MappedQuote[]) {
         console.log(`fetchQuotes ${q.length} items`);
-        // this.printObject(q);
-        let quotes: Quote[] = undefined;
-        try {
-            quotes = await yahooFinance.quote(q.map(a => a.symbol), {}, { validateResult: false, });
-        } catch (e) {
-            quotes = e.result;
-        }
-        if (quotes !== undefined) {
-            for (const quote of quotes) {
-                const i = q.findIndex(
-                    (p) => p.symbol == quote.symbol
-                );
-                if ((i !== -1) && (q[i].contract.currency == quote.currency)) q[i].quote = quote;
+        if (q.length) {
+            this.lastFetch = Date.now();
+            let quotes: Quote[] = undefined;
+            try {
+                quotes = await yahooFinance.quote(q.map(a => a.symbol), {}, { validateResult: false, });
+            } catch (e) {
+                quotes = e.result;
+            }
+            if (quotes !== undefined) {
+                for (const quote of quotes) {
+                    const i = q.findIndex(
+                        (p) => p.symbol == quote.symbol
+                    );
+                    if ((i !== -1) && (q[i].contract.currency == quote.currency)) q[i].quote = quote;
+                }
             }
         }
         return q;
@@ -263,10 +297,21 @@ export class YahooUpdateBot extends ITradingBot {
             });
     }
 
-    private async process(): Promise<void> {
+    public processQ(): Promise<void> {
+        if ((Date.now() - this.lastFetch) < (YAHOO_PRICE_FREQ * 1000)) return Promise.resolve();
+        console.log("YahooUpdateBot processQ begin");
+        const contracts: MappedQuote[] = this.requestsQ.splice(0, BATCH_SIZE_YAHOO_PRICE);
+        return this.fetchQuotes(contracts)
+            .then((q) => this.iterateResults(q))
+            .then(() => console.log("YahooUpdateBot processQ end"));
+    }
+
+    protected async process(): Promise<void> {
+        if ((Date.now() - this.lastFetch) < (YAHOO_PRICE_FREQ * 1000)) return Promise.resolve();
         console.log("YahooUpdateBot process begin");
 
         let contracts: MappedQuote[] = [];
+        contracts = this.requestsQ.splice(0, BATCH_SIZE_YAHOO_PRICE);
         if (contracts.length < BATCH_SIZE_YAHOO_PRICE) {
             const c = await this.findCurrencies(BATCH_SIZE_YAHOO_PRICE - contracts.length);
             console.log(c.length, "currency contract(s)");
@@ -285,7 +330,7 @@ export class YahooUpdateBot extends ITradingBot {
         await this.fetchQuotes(contracts)
             .then((q) => this.iterateResults(q));
 
-        setTimeout(() => this.emit("process"), YAHOO_PRICE_FREQ * 1000);
+        setTimeout(() => this.emit("process"), YAHOO_PRICE_FREQ * 1000 / 2);
         console.log("YahooUpdateBot process end");
     }
 

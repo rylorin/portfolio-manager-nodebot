@@ -1,5 +1,7 @@
 import { QueryTypes, Op } from "sequelize";
+import { IBApiNextApp } from "@stoqey/ib/dist/tools/common/ib-api-next-app";
 import {
+  IBApiNext,
   Contract as IbContract,
   IBApiNextError,
   BarSizeSetting,
@@ -12,7 +14,7 @@ import { TickType as IBApiTickType } from "@stoqey/ib/dist/api/market/tickType";
 import { SecurityDefinitionOptionParameterType, IBApiNextTickType } from "@stoqey/ib/dist/api-next";
 import { MutableMarketData } from "@stoqey/ib/dist/core/api-next/api/market/mutable-market-data";
 import { sequelize, Contract, Stock, Option, Currency } from "../models";
-import { ITradingBot } from ".";
+import { ITradingBot, YahooUpdateBot } from ".";
 
 const HISTORICAL_DATA_REFRESH_FREQ: number = parseInt(process.env.HISTORICAL_DATA_REFRESH_FREQ) || (12 * 60);
 const STOCKS_PRICES_REFRESH_FREQ: number = parseInt(process.env.STOCKS_PRICES_REFRESH_FREQ) || 15;  // mins
@@ -26,6 +28,13 @@ const OPTIONS_PRICE_OTHER_FREQ: number = parseInt(process.env.OPTIONS_PRICE_OTHE
 const OPTIONS_PRICE_TIMEFRAME: number = parseInt(process.env.OPTIONS_PRICE_TIMEFRAME) || 100;       // days
 
 export class ContractsUpdaterBot extends ITradingBot {
+
+  private yahooBot: YahooUpdateBot = undefined;
+
+  constructor(app: IBApiNextApp, api: IBApiNext, yahooBot?: YahooUpdateBot) {
+    super(app, api);
+    this.yahooBot = yahooBot;
+  }
 
   public start(): void {
     this.on("updateHistoricalData", this.updateHistoricalData);
@@ -445,7 +454,7 @@ export class ContractsUpdaterBot extends ITradingBot {
     }
   }
 
-  private fetchOptionContractsPrices(contracts: Contract[]): Promise<void[]> {
+  private fetchOptionContractsPrices(contracts: Contract[]): Promise<void> {
     // fetch all contracts in parallel
     const promises: Promise<void>[] = [];
     for (const contract of contracts) {
@@ -459,7 +468,7 @@ export class ContractsUpdaterBot extends ITradingBot {
         strike: contract["strike"],
         right: contract["right"],
       };
-      if (contract.secType == "CASH") {
+      if (contract.secType == SecType.CASH) {
         ibContract.symbol = contract.symbol.substring(0, 3);
       } else if (contract.currency == "USD") {
         ibContract.exchange = "SMART";  // nothing except SMART seems to work for USD
@@ -469,7 +478,6 @@ export class ContractsUpdaterBot extends ITradingBot {
           .then((marketData) => this.updateContratPrice(contract, marketData))
           .then(() => { /* void */ })
           .catch((err) => {
-            console.log(`fetchOptionContractsPrices failed for contract id ${contract.id} ${contract.conId} ${contract.secType} ${contract.symbol} ${contract.currency} @ ${contract.exchange} with error ${err.code}: '${err.error?.message}'`);
             if (
               (err.code == 200)   // 'No security definition has been found for the request'
               || (err.code == 354)   // 'Requested market data is not subscribed.Delayed market data is not available.WBD NASDAQ.NMS/TOP/ALL'
@@ -477,22 +485,28 @@ export class ContractsUpdaterBot extends ITradingBot {
               || (err.code == 10091) // 'Part of requested market data requires additional subscription for API. See link in 'Market Data Connections' dialog for more details.Delayed market data is not available.SPY ARCA/TOP/ALL'
               || (err.code == 10168) // 'Requested market data is not subscribed. Delayed market data is not enabled.'
             ) {
-              Contract.update({
-                price: null, ask: null, bid: null, updatedAt: new Date(),
-              }, {
-                where: { id: contract.id },
-                // logging: console.log,
-              });
+              if (this.yahooBot) {
+                return this.yahooBot.enqueueContract(contract);
+              } else {
+                return Contract.update({
+                  ask: null, bid: null, updatedAt: new Date(),
+                }, {
+                  where: { id: contract.id },
+                  // logging: console.log,
+                })
+                  .then();
+              }
             } else {
               // silently ignore any other error
               // console.log("fetchOptionContractsPrices error ignored", err);
+              console.log(`fetchOptionContractsPrices failed for contract id ${contract.id} ${contract.conId} ${contract.secType} ${contract.symbol} ${contract.currency} @ ${contract.exchange} with error ${err.code}: '${err.error?.message}'`);
               this.printObject(ibContract);
             }
             return Promise.resolve();
           })
       );
     }
-    return Promise.all(promises);
+    return Promise.all(promises).then(() => this.yahooBot?.processQ());
   }
 
   private findCashContractsToUpdatePrice(limit: number): Promise<Contract[]> {
