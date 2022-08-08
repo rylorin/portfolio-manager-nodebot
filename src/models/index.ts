@@ -1,4 +1,9 @@
 import { Sequelize } from "sequelize-typescript";
+import { Contract } from "./contract.model";
+import { Stock } from "./stock.model";
+import { Option } from "./option.model";
+import { Cash } from "./cash.model";
+import { Bag } from "./bag.model";
 export { Contract } from "./contract.model";
 export { Stock } from "./stock.model";
 export { Option } from "./option.model";
@@ -19,11 +24,13 @@ export const sequelize = new Sequelize(
         modelMatch: (filename, member) => {
             return filename.substring(0, filename.indexOf(".model")) === member.toLowerCase();
         },
-        logging: false,
+        logging: true,
     }
 );
 
 export const initDB = async () => {
-    await sequelize.authenticate();
-    await sequelize.sync({ alter: false });
+    await sequelize.authenticate()
+        .then(() => sequelize.sync({ alter: false }));
 };
+
+export type AnyContract = Contract | Stock | Option | Bag | Cash;

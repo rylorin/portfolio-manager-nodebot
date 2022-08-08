@@ -454,7 +454,7 @@ export class ContractsUpdaterBot extends ITradingBot {
     }
   }
 
-  private fetchOptionContractsPrices(contracts: Contract[]): Promise<void> {
+  private fetchContractsPrices(contracts: Contract[]): Promise<void> {
     // fetch all contracts in parallel
     const promises: Promise<void>[] = [];
     for (const contract of contracts) {
@@ -488,6 +488,7 @@ export class ContractsUpdaterBot extends ITradingBot {
               if (this.yahooBot) {
                 return this.yahooBot.enqueueContract(contract);
               } else {
+                console.log(`fetchContractsPrices failed for contract id ${contract.id} ${contract.conId} ${contract.secType} ${contract.symbol} ${contract.currency} @ ${contract.exchange} with error ${err.code}: '${err.error?.message}'`);
                 return Contract.update({
                   ask: null, bid: null, updatedAt: new Date(),
                 }, {
@@ -498,8 +499,8 @@ export class ContractsUpdaterBot extends ITradingBot {
               }
             } else {
               // silently ignore any other error
-              // console.log("fetchOptionContractsPrices error ignored", err);
-              console.log(`fetchOptionContractsPrices failed for contract id ${contract.id} ${contract.conId} ${contract.secType} ${contract.symbol} ${contract.currency} @ ${contract.exchange} with error ${err.code}: '${err.error?.message}'`);
+              // console.log("fetchContractsPrices error ignored", err);
+              console.log(`fetchContractsPrices failed for contract id ${contract.id} ${contract.conId} ${contract.secType} ${contract.symbol} ${contract.currency} @ ${contract.exchange} with error ${err.code}: '${err.error?.message}'`);
               this.printObject(ibContract);
             }
             return Promise.resolve();
@@ -596,7 +597,7 @@ export class ContractsUpdaterBot extends ITradingBot {
       console.log(c.length, "other item(s)");
       contracts = this.concatAndUniquelyze(contracts, c);
     }
-    await this.fetchOptionContractsPrices(contracts);
+    await this.fetchContractsPrices(contracts);
     console.log("updateOptionsPrice done", new Date());
     const pause = (contracts.length > 0) ? 1 : 30;
     setTimeout(() => this.emit("updateOptionsPrice"), pause * 1000);

@@ -170,58 +170,29 @@ export class AccountUpdateBot extends ITradingBot {
     }
   }
 
-  protected async updatePosition(pos: IbPosition): Promise<void> {
+  protected updatePosition(pos: IbPosition): Promise<Position> {
     // this.printObject(pos);
-    await this.findOrCreateContract(pos.contract)
-      .then((contract) => Position.update(
-        {
-          portfolio_id: this.portfolio.id,
-          quantity: pos.pos,
-          cost: pos.avgCost * pos.pos,
-        }, {
-        where: { contract_id: contract.id }
-      })
-        .then((result): Promise<Position> => {
-          if (!result[0] && pos.pos) {
-            return Position.create({
-              portfolio_id: this.portfolio.id,
-              contract_id: contract.id,
-              quantity: pos.pos,
-              cost: pos.avgCost * pos.pos,
-            });
-          } else {
-            return Promise.resolve(null as Position);
-          }
-        }));
+    const defaults = {
+      portfolio_id: this.portfolio.id,
+      quantity: pos.pos,
+      cost: pos.avgCost * pos.pos,
+    };
+    return this.findOrCreateContract(pos.contract)
+      .then((contract) => Position.findOrCreate({ where: { contract_id: contract.id }, defaults: defaults, })
+        .then(([position, created]) => position.update(defaults)));
   }
 
-  protected async updateCashPosition(pos: { currency: string; balance: number; }): Promise<void> {
+  protected updateCashPosition(pos: { currency: string; balance: number; }): Promise<Balance> {
     console.log(`updateCashPosition(${pos.currency}, ${pos.balance})`);
-    const balance = await Balance.findOne({
-      where: {
-        portfolio_id: this.portfolio.id,
-        currency: pos.currency,
-      },
-      // logging: console.log,
-    });
-    if (balance != null) {
-      await balance.update({
-        quantity: pos.balance,
-      }, {
-        // logging: console.log,
-      });
-    } else {
-      await Balance.create({
-        portfolio_id: this.portfolio.id,
-        currency: pos.currency,
-        quantity: pos.balance,
-      }, {
-        // logging: console.log,
-      });
-    }
+    const where = {
+      portfolio_id: this.portfolio.id,
+      currency: pos.currency,
+    };
+    return Balance.findOrCreate({ where: where, defaults: { quantity: pos.balance, }, })
+      .then(([balance, created]) => balance.update({ quantity: pos.balance, }));
   }
 
-  private async cleanPositions(now: number): Promise<[affectedRowCount: number]> {
+  private cleanPositions(now: number): Promise<void> {
     return Position.update(
       {
         quantity: 0,
@@ -234,11 +205,11 @@ export class AccountUpdateBot extends ITradingBot {
             { updatedAt: null },
           ]
         },
-        // logging: console.log,
-      });
+        logging: console.log,
+      }).then();
   }
 
-  private cleanBalances(now: number): Promise<[affectedRowCount: number]> {
+  private cleanBalances(now: number): Promise<void> {
     return Balance.update(
       {
         quantity: 0,
@@ -252,7 +223,7 @@ export class AccountUpdateBot extends ITradingBot {
           ]
         },
         // logging: console.log,
-      });
+      }).then();
   }
 
   public async start(): Promise<void> {
