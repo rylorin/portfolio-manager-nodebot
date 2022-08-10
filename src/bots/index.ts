@@ -24,8 +24,9 @@ import {
     Bag,
     Cash,
     Balance,
-    sequelize,
+    // sequelize,
 } from "../models";
+import { MyTradingBotApp } from "..";
 
 type OptionsSynthesis = {
     value: number;
@@ -36,13 +37,13 @@ type OptionsSynthesis = {
 }
 
 export class ITradingBot extends EventEmitter {
-    protected app: IBApiNextApp;
+    protected app: MyTradingBotApp;
     protected api: IBApiNext;
     protected accountNumber: string = undefined;
     protected portfolio: Portfolio = undefined;
     protected base_rates: number[] = [];
 
-    constructor(app: IBApiNextApp, api: IBApiNext, account?: string) {
+    constructor(app: MyTradingBotApp, api: IBApiNext, account?: string) {
         super();
         this.app = app;
         this.api = api;
@@ -431,7 +432,7 @@ export class ITradingBot extends EventEmitter {
         const transaction_: Transaction = transaction;  // the Transaction object that we eventually received
         let contract: Contract = null;
         try {
-            if (!transaction_) transaction = await sequelize.transaction();
+            if (!transaction_) transaction = await this.app.sequelize.transaction();
             // find contract by ib id
             if (ibContract.conId) {
                 contract = await Contract.findOne({ where: { conId: ibContract.conId }, transaction: transaction, });

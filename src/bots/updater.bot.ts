@@ -13,8 +13,9 @@ import {
 import { TickType as IBApiTickType } from "@stoqey/ib/dist/api/market/tickType";
 import { SecurityDefinitionOptionParameterType, IBApiNextTickType } from "@stoqey/ib/dist/api-next";
 import { MutableMarketData } from "@stoqey/ib/dist/core/api-next/api/market/mutable-market-data";
-import { sequelize, Contract, Stock, Option, Currency } from "../models";
+import { Contract, Stock, Option, Currency } from "../models";
 import { ITradingBot, YahooUpdateBot } from ".";
+import { MyTradingBotApp } from "..";
 
 const HISTORICAL_DATA_REFRESH_FREQ: number = parseInt(process.env.HISTORICAL_DATA_REFRESH_FREQ) || (12 * 60);
 const STOCKS_PRICES_REFRESH_FREQ: number = parseInt(process.env.STOCKS_PRICES_REFRESH_FREQ) || 15;  // mins
@@ -31,7 +32,7 @@ export class ContractsUpdaterBot extends ITradingBot {
 
   private yahooBot: YahooUpdateBot = undefined;
 
-  constructor(app: IBApiNextApp, api: IBApiNext, yahooBot?: YahooUpdateBot) {
+  constructor(app: MyTradingBotApp, api: IBApiNext, yahooBot?: YahooUpdateBot) {
     super(app, api);
     this.yahooBot = yahooBot;
   }
@@ -93,7 +94,7 @@ export class ContractsUpdaterBot extends ITradingBot {
 
   private findStocksNeedingHistoricalData(): Promise<Contract[]> {
     // stock.historical_volatility is not needed below be we like to eventually display it in debug logs
-    return sequelize.query(`
+    return this.app.sequelize.query(`
       SELECT
           DISTINCT(contract.symbol),
           stock.historical_volatility,
@@ -258,7 +259,7 @@ export class ContractsUpdaterBot extends ITradingBot {
   }
 
   private findStocksNeedingPriceUpdate(limit: number): Promise<Contract[]> {
-    return sequelize.query(`
+    return this.app.sequelize.query(`
       SELECT
           DISTINCT(contract.symbol), SUM(trading_parameters.nav_ratio) nav_ratio_sum,
           stock.historical_volatility,
@@ -300,7 +301,7 @@ export class ContractsUpdaterBot extends ITradingBot {
   }
 
   private findPortfolioContractsNeedingPriceUpdate(limit: number): Promise<Contract[]> {
-    return sequelize.query(`
+    return this.app.sequelize.query(`
       SELECT
           DISTINCT(contract.symbol),
           (julianday('now') - julianday(contract.updatedAt)) age,
@@ -398,7 +399,7 @@ export class ContractsUpdaterBot extends ITradingBot {
   }
 
   private findStocksToListOptions(): Promise<Contract[]> {
-    return sequelize.query(`
+    return this.app.sequelize.query(`
     SELECT
       (julianday('now') - MAX(julianday(IFNULL(option.createdAt, '2022-01-01')))) options_age,
       contract.symbol, contract.con_id conId, contract.id id, contract.currency currency, contract.secType secType,
@@ -427,7 +428,7 @@ export class ContractsUpdaterBot extends ITradingBot {
   private findOptionsToUpdatePrice(dte: number, age: number, limit: number): Promise<Contract[]> {
     // console.log("findOptionsToUpdatePrice", dte, age/1400, limit);
     if (limit > 0) {
-      return sequelize.query(`
+      return this.app.sequelize.query(`
         SELECT
           (julianday('now') - julianday(ifnull(contract.updatedAt, '2022-01-01'))) options_age,
           (julianday(option.last_trade_date) + 1 - julianday('now')) options_dte,

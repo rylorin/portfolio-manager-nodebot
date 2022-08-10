@@ -6,7 +6,7 @@ import {
     OptionType,
 } from "@stoqey/ib";
 import { SecurityDefinitionOptionParameterType } from "@stoqey/ib/dist/api-next";
-import { sequelize, Contract, Stock, Option } from "../models";
+import { Contract, Stock, Option } from "../models";
 import { greeks, option_implied_volatility } from "../black_scholes";
 import { ITradingBot } from ".";
 
@@ -102,7 +102,7 @@ export class OptionsCreateBot extends ITradingBot {
     }
 
     private findStocksToListOptions(): Promise<Contract[]> {
-        return sequelize.query(`
+        return this.app.sequelize.query(`
         SELECT
           (julianday('now') - MAX(julianday(IFNULL(contract.createdAt, '2022-01-01')))) options_age,
           contract.symbol, contract.con_id conId, contract.id id, contract.currency currency, contract.secType secType,
@@ -151,7 +151,7 @@ export class OptionsCreateBot extends ITradingBot {
                                     [Op.lt]: stock.contract.updatedAt,
                                 },
                                 {
-                                    [Op.lt]: sequelize.col("contract.updatedAt"),
+                                    [Op.lt]: this.app.sequelize.col("contract.updatedAt"),
                                 },
                             ],
                         },

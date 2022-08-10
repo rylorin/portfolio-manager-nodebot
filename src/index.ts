@@ -5,7 +5,8 @@
 import path from "path";
 import logger from "@stoqey/ib/dist/common/logger";
 import { IBApiNextApp } from "@stoqey/ib/dist/tools/common/ib-api-next-app";
-import { initDB } from "./models";
+import { Sequelize } from "sequelize-typescript";
+// import { sequelize } from "./models";
 import {
   ContractsUpdaterBot,
   AccountUpdateBot,
@@ -42,7 +43,9 @@ const EXAMPLE_TEXT =
 // The App code                                                             //
 //////////////////////////////////////////////////////////////////////////////
 
-class MyTradingBotApp extends IBApiNextApp {
+export class MyTradingBotApp extends IBApiNextApp {
+
+  public sequelize: Sequelize;
 
   constructor() {
     super(DESCRIPTION_TEXT, USAGE_TEXT, OPTION_ARGUMENTS, EXAMPLE_TEXT);
@@ -62,19 +65,31 @@ class MyTradingBotApp extends IBApiNextApp {
     );
     // this.api.setMarketDataType(MarketDataType.DELAYED_FROZEN);  // Error 354 on JPY and CHF
     // this.api.setMarketDataType(MarketDataType.REALTIME);        // Error 354 on JPY and CHF
-    initDB().then(() => {
-      const portfolio: string = this.cmdLineArgs.portfolio ? this.cmdLineArgs.portfolio as string : process.env.IB_ACCOUNT;
-      const yahooBot: YahooUpdateBot = new YahooUpdateBot(this, this.api, portfolio);
-      // console.log(this.cmdLineArgs.portfolio as string, process.env.IB_ACCOUNT, portfolio)
-      if (this.cmdLineArgs.updater) (new ContractsUpdaterBot(this, this.api, yahooBot)).start();
-      if (this.cmdLineArgs.account) (new AccountUpdateBot(this, this.api, portfolio)).start();
-      if (this.cmdLineArgs.cash) (new CashManagementBot(this, this.api, portfolio)).start();
-      if (this.cmdLineArgs.cc) (new SellCoveredCallsBot(this, this.api, portfolio)).start();
-      if (this.cmdLineArgs.csp) (new SellCashSecuredPutBot(this, this.api, portfolio)).start();
-      if (this.cmdLineArgs.roll) (new RollOptionPositionsBot(this, this.api, portfolio)).start();
-      if (this.cmdLineArgs.yahoo) yahooBot.start();
-      if (this.cmdLineArgs.options) (new OptionsCreateBot(this, this.api, portfolio)).start();
-    });
+    this.sequelize = new Sequelize(
+      {
+        dialect: "sqlite",
+        storage: __dirname + "/../../db/var/db/data.db",
+        models: [__dirname + "/models/*.model.js"], // or [Player, Team],
+        modelMatch: (filename, member) => {
+          return filename.substring(0, filename.indexOf(".model")) === member.toLowerCase();
+        },
+        logging: console.log,
+      }
+    );;
+    this.sequelize.authenticate()
+      .then(() => this.sequelize.sync({ alter: false })).then(() => {
+        const portfolio: string = this.cmdLineArgs.portfolio ? this.cmdLineArgs.portfolio as string : process.env.IB_ACCOUNT;
+        const yahooBot: YahooUpdateBot = new YahooUpdateBot(this, this.api, portfolio);
+        // console.log(this.cmdLineArgs.portfolio as string, process.env.IB_ACCOUNT, portfolio)
+        if (this.cmdLineArgs.updater) (new ContractsUpdaterBot(this, this.api, yahooBot)).start();
+        if (this.cmdLineArgs.account) (new AccountUpdateBot(this, this.api, portfolio)).start();
+        if (this.cmdLineArgs.cash) (new CashManagementBot(this, this.api, portfolio)).start();
+        if (this.cmdLineArgs.cc) (new SellCoveredCallsBot(this, this.api, portfolio)).start();
+        if (this.cmdLineArgs.csp) (new SellCashSecuredPutBot(this, this.api, portfolio)).start();
+        if (this.cmdLineArgs.roll) (new RollOptionPositionsBot(this, this.api, portfolio)).start();
+        if (this.cmdLineArgs.yahoo) yahooBot.start();
+        if (this.cmdLineArgs.options) (new OptionsCreateBot(this, this.api, portfolio)).start();
+      });
   }
 
   /**

@@ -7,7 +7,7 @@ import {
   SecType,
 } from "@stoqey/ib";
 import {
-  sequelize,
+  // sequelize,
   Contract,
   OpenOrder,
   Position,
@@ -121,7 +121,7 @@ export class AccountUpdateBot extends ITradingBot {
     console.log("updateOpenOrder", order.order.permId, order.contract.symbol);
     try {
       return this.findOrCreateContract(order.contract)
-        .then((contract: Contract) => sequelize.transaction((transaction) => OpenOrder.findOrCreate({
+        .then((contract: Contract) => this.app.sequelize.transaction((transaction) => OpenOrder.findOrCreate({
           where: {
             perm_Id: order.order.permId,
             portfolioId: this.portfolio.id,
