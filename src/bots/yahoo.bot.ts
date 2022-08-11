@@ -9,6 +9,7 @@ import {
     Stock,
     Option,
     Currency,
+    AnyContract,
 } from "../models";
 import yahooFinance from "yahoo-finance2";
 import { Quote } from "yahoo-finance2/dist/esm/src/modules/quote";
@@ -40,15 +41,27 @@ export class YahooUpdateBot extends ITradingBot {
     private requestsQ: MappedQuote[] = [];
     private lastFetch = 0;
 
-    public async enqueueContract(contract: Contract): Promise<void> {
+    public async enqueueContract(contract: AnyContract): Promise<void> {
+        // console.log("enqueueContract");
+        // this.printObject(contract);
         let quote: MappedQuote = undefined;
-        if (contract.secType == SecType.STK) {
-            quote = { contract, symbol: YahooUpdateBot.getYahooTicker(contract), };
-        } else if (contract.secType == SecType.OPT) {
-            const option: Option = await Option.findByPk(contract.id);
-            quote = { contract, symbol: YahooUpdateBot.formatOptionName(option), };
-        } else if (contract.secType == SecType.CASH) {
-            quote = { contract, symbol: contract.symbol.substring(0, 3) + contract.currency + "=X", };
+        if (contract instanceof Contract) {
+            if (contract.secType == SecType.STK) {
+                quote = { contract, symbol: YahooUpdateBot.getYahooTicker(contract), };
+            } else if (contract.secType == SecType.OPT) {
+                const option: Option = await Option.findByPk(contract.id);
+                quote = { contract, symbol: YahooUpdateBot.formatOptionName(option), };
+            } else if (contract.secType == SecType.CASH) {
+                quote = { contract, symbol: contract.symbol.substring(0, 3) + contract.currency + "=X", };
+            } else {
+                this.error("enqueueContract unhandled contract type (1)")
+            }
+        } else if (contract instanceof Stock) {
+            quote = { contract: contract.contract, symbol: YahooUpdateBot.getYahooTicker(contract.contract), };
+        } else if (contract instanceof Option) {
+            quote = { contract: contract.contract, symbol: YahooUpdateBot.formatOptionName(contract), };
+        } else {
+            this.error("enqueueContract unhandled contract type (2)")
         }
         const index = this.requestsQ.findIndex(
             (p) => p.symbol == quote.symbol
@@ -259,8 +272,8 @@ export class YahooUpdateBot extends ITradingBot {
         return Option.findAll({
             where: {
                 lastTradeDate: {
-                    // [Op.gt]: new Date(now + (7 * 1440 * 60 * 1000)),   // don't update short term options as their price should be real time updted
-                    [Op.gt]: new Date(now),   // don't update expired contracts
+                    // [Op.gt]: new Date(now + (7 * 1440 * 60 * 1000)),   // don't update short term options as their price should be real time updated
+                    [Op.gte]: new Date(now),   // don't update expired contracts
                 },
             },
             include: [{
