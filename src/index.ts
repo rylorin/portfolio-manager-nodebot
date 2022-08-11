@@ -6,7 +6,6 @@ import path from "path";
 import logger from "@stoqey/ib/dist/common/logger";
 import { IBApiNextApp } from "@stoqey/ib/dist/tools/common/ib-api-next-app";
 import { Sequelize } from "sequelize-typescript";
-// import { sequelize } from "./models";
 import {
   ContractsUpdaterBot,
   AccountUpdateBot,
@@ -73,7 +72,7 @@ export class MyTradingBotApp extends IBApiNextApp {
         modelMatch: (filename, member) => {
           return filename.substring(0, filename.indexOf(".model")) === member.toLowerCase();
         },
-        logging: console.log,
+        logging: false,
       }
     );;
     this.sequelize.authenticate()

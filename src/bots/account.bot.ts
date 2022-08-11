@@ -107,8 +107,8 @@ export class AccountUpdateBot extends ITradingBot {
               orderId: order.orderId,
               clientId: order.order.clientId,
             };
-            return OpenOrder.findOrCreate({ where: where, defaults: values, transaction: transaction, logging: console.log, })
-              .then(([open_order, created]) => open_order.update(values, { transaction: transaction, logging: console.log, })
+            return OpenOrder.findOrCreate({ where: where, defaults: values, transaction: transaction, logging: false, })
+              .then(([open_order, created]) => open_order.update(values, { transaction: transaction, logging: false, })
                 .then(() => order));
           })), Promise.resolve(order));
     } else {
@@ -205,7 +205,7 @@ export class AccountUpdateBot extends ITradingBot {
             { updatedAt: null },
           ]
         },
-        logging: console.log,
+        // logging: console.log,
       }).then();
   }
 

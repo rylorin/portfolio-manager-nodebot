@@ -1,4 +1,3 @@
-import { Sequelize } from "sequelize-typescript";
 import { Contract } from "./contract.model";
 import { Stock } from "./stock.model";
 import { Option } from "./option.model";
@@ -15,22 +14,5 @@ export { Parameter } from "./parameter.model";
 export { Currency } from "./currency.model";
 export { Balance } from "./balance.model";
 export { Bag } from "./bag.model";
-
-// export const sequelize = new Sequelize(
-//     {
-//         dialect: "sqlite",
-//         storage: __dirname + "/../../../db/var/db/data.db",
-//         models: [__dirname + "/*.model.js"], // or [Player, Team],
-//         modelMatch: (filename, member) => {
-//             return filename.substring(0, filename.indexOf(".model")) === member.toLowerCase();
-//         },
-//         logging: console.log,
-//     }
-// );
-
-// export const initDB = async () => {
-//     await sequelize.authenticate()
-//         .then(() => sequelize.sync({ alter: false }));
-// };
 
 export type AnyContract = Contract | Stock | Option | Bag | Cash;
