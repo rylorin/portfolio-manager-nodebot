@@ -1,4 +1,3 @@
-import { IBApiNextApp } from "@stoqey/ib/dist/tools/common/ib-api-next-app";
 import EventEmitter from "events";
 import { Op, Transaction } from "sequelize";
 import {
@@ -417,14 +416,14 @@ export class ITradingBot extends EventEmitter {
     }
 
     protected static formatOptionName(ibContract: IbContract): string {
-        const months = ["JAN", "FEB", "MAR", "APR", "MAY", "JUN", "JUL", "AUG", "SEP", "OCT", "NOV", "DEC"];
-        const month = months[parseInt(ibContract.lastTradeDateOrContractMonth.substring(4, 6)) - 1];
-        const day = ibContract.lastTradeDateOrContractMonth.substring(6, 8);
-        const year = ibContract.lastTradeDateOrContractMonth.substring(2, 4);
+        const months: string[] = ["JAN", "FEB", "MAR", "APR", "MAY", "JUN", "JUL", "AUG", "SEP", "OCT", "NOV", "DEC"];
+        const month: string = months[parseInt(ibContract.lastTradeDateOrContractMonth.substring(4, 6)) - 1];
+        const day: string = ibContract.lastTradeDateOrContractMonth.substring(6, 8);
+        const year: string = ibContract.lastTradeDateOrContractMonth.substring(2, 4);
         const datestr: string = day + month + year;
-        // const strike = ibContract.strike.toFixed(1); // not good, new AMZN have two decimals
-        const name = `${ibContract.symbol} ${datestr} ${ibContract.strike} ${ibContract.right}`;
-        // console.log("formatOptionName", name);
+        let strike: string = ibContract.strike.toFixed(1);
+        if (parseFloat(strike) != ibContract.strike) strike = ibContract.strike.toString(); // new AMZN can have two decimals
+        const name = `${ibContract.symbol} ${datestr} ${strike} ${ibContract.right}`;
         return name;
     }
 
@@ -432,8 +431,8 @@ export class ITradingBot extends EventEmitter {
         const transaction_: Transaction = transaction;  // the Transaction object that we eventually received
         let contract: Contract = null;
         try {
-            if (!transaction_) transaction = await this.app.sequelize.transaction();
-            // find contract by ib id
+            if (!transaction_) transaction = await this.app.sequelize.transaction({ type: Transaction.TYPES.DEFERRED });
+            // find contract by IB conId
             if (ibContract.conId) {
                 contract = await Contract.findOne({ where: { conId: ibContract.conId }, transaction: transaction, });
             }
@@ -450,9 +449,9 @@ export class ITradingBot extends EventEmitter {
                             }
                         })
                         .catch((err: IBApiNextError) => {
-                            this.error(`findOrCreateContract failed for ${ibContract.secType} ${ibContract.symbol} with error #${err.code}: '${err.error.message}'`);
-                            // this.printObject(ibContract);
-                            throw err.error;
+                            const message = `findOrCreateContract.getContractDetails failed for ${ibContract.secType} ${ibContract.symbol} ${ibContract.lastTradeDateOrContractMonth} ${ibContract.strike} ${ibContract.right} with error #${err.code}: '${err.error.message}'`;
+                            this.error(message);
+                            throw { name: "IBApiNextError", message, code: err.code, parent: Error, original: Error } as Error;
                         });
                 }
                 if (details && (ibContract.secType == SecType.STK)) {
@@ -473,14 +472,13 @@ export class ITradingBot extends EventEmitter {
                         },
                         defaults: defaults,
                         transaction: transaction,
-                        logging: false,
+                        // logging: console.log,
                     }).then(([contract, created]) => {
                         if (created) {
                             return Stock.create({ id: contract.id, }, { transaction: transaction, })
                                 .then(() => Promise.resolve(contract));
                         } else {
-                            return contract.update({ values: defaults }, { transaction: transaction, })
-                                .then(() => Promise.resolve(contract));
+                            return contract.update(defaults, { transaction: transaction, });
                         }
                     });
                 } else if (details && (ibContract.secType == SecType.OPT)) {
@@ -496,7 +494,7 @@ export class ITradingBot extends EventEmitter {
                         id: undefined,
                         stock_id: undefined,
                         lastTradeDate: ITradingBot.expirationToDate(ibContract.lastTradeDateOrContractMonth),
-                        strike: ibContract.strike,
+                        strike: ibContract.currency == "GBP" ? ibContract.strike / 100 : ibContract.strike,
                         callOrPut: ibContract.right,
                         multiplier: ibContract.multiplier,
                         delta: (ibContract.right == OptionType.Call) ? 0.5 : -0.5,
@@ -507,9 +505,6 @@ export class ITradingBot extends EventEmitter {
                         symbol: details.underSymbol,
                         currency: ibContract.currency,
                     };
-                    // this.printObject(ibContract);
-                    // this.printObject(details);
-                    // this.printObject(underlying);
                     contract = await this.findOrCreateContract(underlying, transaction)
                         .then((stock) => {
                             opt_values.stock_id = stock.id;
@@ -529,12 +524,10 @@ export class ITradingBot extends EventEmitter {
                                         .then(() => Option.update({ values: opt_values }, { where: { id: option.id }, transaction: transaction, }))
                                         .then(() => Contract.findByPk(option.id, { transaction: transaction, }));
                                 } else {
-                                    return Contract.create(contract_values, { transaction: transaction, logging: false, })
+                                    return Contract.create(contract_values, { transaction: transaction, /* logging: console.log, */ })
                                         .then((contract) => {
                                             opt_values.id = contract.id;
-                                            // this.printObject(contract_values);
-                                            // this.printObject(opt_values);
-                                            return Option.create(opt_values, { transaction: transaction, logging: false, })
+                                            return Option.create(opt_values, { transaction: transaction, /* logging: false, */ })
                                                 .then(() => Promise.resolve(contract));
                                         });
                                 }
@@ -557,7 +550,7 @@ export class ITradingBot extends EventEmitter {
                         },
                         defaults: defaults,
                         transaction: transaction,
-                        logging: false,
+                        // logging: console.log,
                     }).then(([contract, created]) => {
                         if (created) {
                             return Cash.create({ id: contract.id, }, { transaction: transaction, })
@@ -579,15 +572,27 @@ export class ITradingBot extends EventEmitter {
                             .then(() => ibContract.comboLegs.reduce((p, leg) => p.then((contract) => this.findOrCreateContract({ conId: leg.conId, }, transaction).then(() => contract)), Promise.resolve(contract)))
                         );
                 } else {
-                    // IB contract doesn't exists
-                    this.error(`findOrCreateContract failed for ${ibContract.symbol}: can't find corresponding IB contract data`);
+                    // IB contract doesn't exists, we need to implement it!!!
+                    const message = `findOrCreateContract failed: SecType ${ibContract.secType} not implemented`;
+                    this.printObject(ibContract);
+                    throw { name: "ITradingBotNotImplemented", message, } as Error;
                 }
             }
             if (!transaction_) await transaction.commit();
-        } catch (err) {
+        } catch (err: any) {
+            if (err.name == "IBApiNextError") {
+                // silently ignore, only propagate
+            } else {
+                this.error(`findOrCreateContract failed for ${ibContract.secType} ${ibContract.symbol} ${ibContract.lastTradeDateOrContractMonth} ${ibContract.strike} ${ibContract.right}:`);
+                // this.printObject(ibContract);
+                console.error(err);
+                console.error("transaction_", transaction_);
+                console.error("transaction", transaction);
+                if (err.name == "SequelizeTimeoutError") this.app.stop();
+            }
+            // rollback changes
             if (!transaction_) await transaction.rollback();
-            this.error(`findOrCreateContract failed for ${ibContract.secType} ${ibContract.symbol} with error:`);
-            console.error(err);
+            // and propagate exception
             throw err;
         }
         return contract;
