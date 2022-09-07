@@ -14,5 +14,6 @@ export { Parameter } from "./parameter.model";
 export { Currency } from "./currency.model";
 export { Balance } from "./balance.model";
 export { Bag } from "./bag.model";
+export { Trade } from "./trade.model";
 
 export type AnyContract = Contract | Stock | Option | Bag | Cash;

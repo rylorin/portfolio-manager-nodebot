@@ -5,7 +5,7 @@ import {
   DataType,
   BelongsTo,
 } from "sequelize-typescript";
-import { Contract, Portfolio } from ".";
+import { Contract, Portfolio, Trade } from ".";
 
 @Table({ tableName: "position", timestamps: true })
 export class Position extends Model {
@@ -29,5 +29,9 @@ export class Position extends Model {
   get averagePrice(): number {
     return (this.getDataValue("cost") / this.getDataValue("quantity"));
   }
+
+  /** trade */
+  @BelongsTo(() => Trade, "trade_unit_id")
+  public trade: Trade;
 
 }

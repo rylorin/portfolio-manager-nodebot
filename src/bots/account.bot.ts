@@ -108,7 +108,7 @@ export class AccountUpdateBot extends ITradingBot {
               clientId: order.order.clientId,
             };
             return OpenOrder.findOrCreate({ where: where, defaults: values, transaction: transaction, logging: false, })
-              .then(([open_order, created]) => open_order.update(values, { transaction: transaction, logging: false, })
+              .then(([open_order, _created]) => open_order.update(values, { transaction: transaction, logging: false, })
                 .then(() => order));
           })), Promise.resolve(order));
     } else {
@@ -143,7 +143,7 @@ export class AccountUpdateBot extends ITradingBot {
           transaction: transaction,
           // logging: console.log,
         })
-          .then(([open_order, created]) => open_order.update({
+          .then(([open_order, _created]) => open_order.update({
             // contract_id: contract.id,  // contract is not supposed to change
             actionType: order.order.action,
             lmtPrice: order.order.lmtPrice,
@@ -176,10 +176,17 @@ export class AccountUpdateBot extends ITradingBot {
       portfolio_id: this.portfolio.id,
       quantity: pos.pos,
       cost: pos.avgCost * pos.pos,
+      updatedAt: new Date(),
     };
     return this.findOrCreateContract(pos.contract)
       .then((contract) => Position.findOrCreate({ where: { contract_id: contract.id }, defaults: defaults, })
-        .then(([position, created]) => position.update(defaults)));
+        .then(([position, created]) => {
+          if (created) return position;
+          else {
+            position.changed("updatedAt", true);  // force update
+            return position.update(defaults);
+          }
+        }));
   }
 
   protected updateCashPosition(pos: { currency: string; balance: number; }): Promise<Balance> {
@@ -189,7 +196,7 @@ export class AccountUpdateBot extends ITradingBot {
       currency: pos.currency,
     };
     return Balance.findOrCreate({ where: where, defaults: { quantity: pos.balance, }, })
-      .then(([balance, created]) => balance.update({ quantity: pos.balance, }));
+      .then(([balance, _created]) => balance.update({ quantity: pos.balance, }));
   }
 
   private cleanPositions(now: number): Promise<void> {
@@ -287,24 +294,30 @@ export class AccountUpdateBot extends ITradingBot {
       });
 
     // clean balances quantities first as if they are unchanged the updatedAt will be unchanged as well
-    await this.cleanBalances(now);
-    this.accountSubscription$ = this.api.getAccountUpdates(this.accountNumber).subscribe({
-      next: (data) => {
-        // this.printObject(data);
-        if (data.added?.value && data.added?.value?.get(this.accountNumber) && data.added?.value?.get(this.accountNumber).get("TotalCashBalance")) {
-          for (const key of data.added?.value?.get(this.accountNumber).get("TotalCashBalance").keys()) {
-            const balance: number = parseFloat(data.added?.value?.get(this.accountNumber).get("TotalCashBalance").get(key).value);
-            if (key != "BASE") this.enqueueCashPostition(key, balance);
+    this.cleanBalances(now).then(() => {
+      this.accountSubscription$ = this.api.getAccountUpdates(this.accountNumber).subscribe({
+        next: (data) => {
+          // this.printObject(data);
+          if (data.added?.value && data.added?.value?.get(this.accountNumber) && data.added?.value?.get(this.accountNumber).get("TotalCashBalance")) {
+            for (const key of data.added?.value?.get(this.accountNumber).get("TotalCashBalance").keys()) {
+              const balance: number = parseFloat(data.added?.value?.get(this.accountNumber).get("TotalCashBalance").get(key).value);
+              if (key != "BASE") this.enqueueCashPostition(key, balance);
+            }
           }
-        }
-        if (data.changed?.value && data.changed?.value?.get(this.accountNumber) && data.changed?.value?.get(this.accountNumber).get("TotalCashBalance")) {
-          for (const key of data.changed?.value?.get(this.accountNumber).get("TotalCashBalance").keys()) {
-            const balance: number = parseFloat(data.changed?.value?.get(this.accountNumber).get("TotalCashBalance").get(key).value);
-            // console.log("new cash balance:", key, balance);
-            if (key != "BASE") this.enqueueCashPostition(key, balance);
+          if (data.changed?.value && data.changed?.value?.get(this.accountNumber) && data.changed?.value?.get(this.accountNumber).get("TotalCashBalance")) {
+            for (const key of data.changed?.value?.get(this.accountNumber).get("TotalCashBalance").keys()) {
+              const balance: number = parseFloat(data.changed?.value?.get(this.accountNumber).get("TotalCashBalance").get(key).value);
+              // console.log("new cash balance:", key, balance);
+              if (key != "BASE") this.enqueueCashPostition(key, balance);
+            }
           }
-        }
-      },
+        },
+        error: (err: IBApiNextError) => {
+          this.app.error(
+            `getAccountUpdates failed with '${err.error.message}'`
+          );
+        },
+      });
     });
 
     setTimeout(() => this.cleanPositions(now), 15 * 1000);      // clean old positions after 15 secs  
