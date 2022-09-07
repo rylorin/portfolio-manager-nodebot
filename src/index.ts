@@ -5,7 +5,7 @@
 import path from "path";
 import logger from "@stoqey/ib/dist/common/logger";
 import { IBApiNextApp } from "@stoqey/ib/dist/tools/common/ib-api-next-app";
-import { Sequelize } from "sequelize-typescript";
+import { Sequelize, SequelizeOptions } from "sequelize-typescript";
 import {
   ContractsUpdaterBot,
   AccountUpdateBot,
@@ -16,6 +16,7 @@ import {
   YahooUpdateBot,
   OptionsCreateBot,
 } from "./bots";
+import { LogLevel } from "@stoqey/ib";
 
 /////////////////////////////////////////////////////////////////////////////////
 // The help text                                                               //
@@ -57,29 +58,29 @@ export class MyTradingBotApp extends IBApiNextApp {
     const scriptName = path.basename(__filename);
     logger.debug(`Starting ${scriptName} script`);
     const clientId: number = (this.cmdLineArgs.clientId != undefined) ? +this.cmdLineArgs.clientId : Math.round(Math.random() * 16383);
-    // console.log("clientId", clientId);
     this.connect(
       this.cmdLineArgs.watch ? 10000 : 0,
       clientId
     );
+    const sequelize_settings: SequelizeOptions = {
+      dialect: "sqlite",
+      storage: __dirname + "/../../db/var/db/data.db",
+      models: [__dirname + "/models/*.model.js"], // or [Player, Team],
+      modelMatch: (filename, member) => {
+        return filename.substring(0, filename.indexOf(".model")) === member.toLowerCase();
+      },
+      sync: { alter: false },
+      // isolationLevel: Transaction.ISOLATION_LEVELS.SERIALIZABLE,
+      // transactionType: Transaction.TYPES.EXCLUSIVE,
+    };
+    if (this.api.logLevel < LogLevel.DETAIL) sequelize_settings.logging = false;
     // this.api.setMarketDataType(MarketDataType.DELAYED_FROZEN);  // Error 354 on JPY and CHF
     // this.api.setMarketDataType(MarketDataType.REALTIME);        // Error 354 on JPY and CHF
-    this.sequelize = new Sequelize(
-      {
-        dialect: "sqlite",
-        storage: __dirname + "/../../db/var/db/data.db",
-        models: [__dirname + "/models/*.model.js"], // or [Player, Team],
-        modelMatch: (filename, member) => {
-          return filename.substring(0, filename.indexOf(".model")) === member.toLowerCase();
-        },
-        logging: false,
-      }
-    );;
+    this.sequelize = new Sequelize(sequelize_settings);
     this.sequelize.authenticate()
-      .then(() => this.sequelize.sync({ alter: false })).then(() => {
+      .then(() => this.sequelize.sync()).then(() => {
         const portfolio: string = this.cmdLineArgs.portfolio ? this.cmdLineArgs.portfolio as string : process.env.IB_ACCOUNT;
         const yahooBot: YahooUpdateBot = new YahooUpdateBot(this, this.api, portfolio);
-        // console.log(this.cmdLineArgs.portfolio as string, process.env.IB_ACCOUNT, portfolio)
         if (this.cmdLineArgs.updater) (new ContractsUpdaterBot(this, this.api, yahooBot)).start();
         if (this.cmdLineArgs.account) (new AccountUpdateBot(this, this.api, portfolio)).start();
         if (this.cmdLineArgs.cash) (new CashManagementBot(this, this.api, portfolio)).start();
