@@ -1,5 +1,4 @@
 import { QueryTypes, Op } from "sequelize";
-import { IBApiNextApp } from "@stoqey/ib/dist/tools/common/ib-api-next-app";
 import {
   IBApiNext,
   Contract as IbContract,
@@ -26,7 +25,7 @@ const OPTIONS_PRICE_DTE_FREQ: number = parseInt(process.env.OPTIONS_PRICE_DTE_FR
 const OPTIONS_PRICE_WEEK_FREQ: number = parseInt(process.env.OPTIONS_PRICE_WEEK_FREQ) || 60;        // mins
 const OPTIONS_PRICE_MONTH_FREQ: number = parseInt(process.env.OPTIONS_PRICE_MONTH_FREQ) || 90;      // mins
 const OPTIONS_PRICE_OTHER_FREQ: number = parseInt(process.env.OPTIONS_PRICE_OTHER_FREQ) || 120;     // mins
-const OPTIONS_PRICE_TIMEFRAME: number = parseInt(process.env.OPTIONS_PRICE_TIMEFRAME) || 100;       // days
+const OPTIONS_PRICE_TIMEFRAME: number = parseInt(process.env.OPTIONS_PRICE_TIMEFRAME) || 130;       // days
 
 export class ContractsUpdaterBot extends ITradingBot {
 
@@ -43,10 +42,10 @@ export class ContractsUpdaterBot extends ITradingBot {
     this.on("buildOptionsList", this.buildOptionsList);
     this.on("createCashContracts", this.createCashContracts);
 
-    setTimeout(() => this.emit("updateHistoricalData"), 10 * 60 * 1000);  // start after 10 mins
-    setTimeout(() => this.emit("updateOptionsPrice"), 60 * 1000);    // start after 1 min
-    setTimeout(() => this.emit("createCashContracts"), 30 * 1000);    // start after 30 secs
-    // setTimeout(() => this.emit("buildOptionsList"), 3600 * 1000);   // start after 1 hour
+    setTimeout(() => this.emit("updateHistoricalData"), 10 * 60 * 1000);// start after 10 mins
+    setTimeout(() => this.emit("updateOptionsPrice"), 20 * 1000);       // start after 2à secs
+    setTimeout(() => this.emit("createCashContracts"), 10 * 1000);      // start after 10 secs
+    // setTimeout(() => this.emit("buildOptionsList"), 3600 * 1000);    // start after 1 hour
   }
 
   private updateHistoricalVolatility(id: number, bars: Bar[]): Promise<void> {
@@ -242,44 +241,44 @@ export class ContractsUpdaterBot extends ITradingBot {
     });
   }
 
-  private iterateContractsForSerialPriceUpdate(contracts: Contract[]): Promise<void> {
-    // fetch all contracts one after the previous one
-    return contracts.reduce((p, contract) => {
-      return p.then(() => this.requestContractPrice(contract)
-        .then((marketData) => this.updateContratPrice(contract, marketData)).then(() => { / void */; })
-        .catch(() =>
-          Contract.update({
-            price: null, ask: null, bid: null,
-          }, {
-            where: { id: contract.id }
-          }).then()
-        )
-      );
-    }, Promise.resolve()); // initial
-  }
+  // private iterateContractsForSerialPriceUpdate(contracts: Contract[]): Promise<void> {
+  //   // fetch all contracts one after the previous one
+  //   return contracts.reduce((p, contract) => {
+  //     return p.then(() => this.requestContractPrice(contract)
+  //       .then((marketData) => this.updateContratPrice(contract, marketData)).then(() => { / void */; })
+  //       .catch(() =>
+  //         Contract.update({
+  //           price: null, ask: null, bid: null,
+  //         }, {
+  //           where: { id: contract.id }
+  //         }).then()
+  //       )
+  //     );
+  //   }, Promise.resolve()); // initial
+  // }
 
-  private findStocksNeedingPriceUpdate(limit: number): Promise<Contract[]> {
-    return this.app.sequelize.query(`
-      SELECT
-          DISTINCT(contract.symbol), SUM(trading_parameters.nav_ratio) nav_ratio_sum,
-          stock.historical_volatility,
-          (julianday('now') - julianday(contract.updatedAt)) age,
-          contract.*
-        FROM trading_parameters, contract, stock
-        WHERE trading_parameters.stock_id = contract.id
-          AND trading_parameters.stock_id = stock.id
-          AND age > ?
-        GROUP BY contract.symbol
-        ORDER BY contract.updatedAt
-        LIMIT ?
-        `,
-      {
-        model: Contract,
-        mapToModel: true, // pass true here if you have any mapped fields
-        replacements: [STOCKS_PRICES_REFRESH_FREQ / 1440, limit],
-        // logging: console.log,
-      });
-  }
+  // private findStocksNeedingPriceUpdate(limit: number): Promise<Contract[]> {
+  //   return this.app.sequelize.query(`
+  //     SELECT
+  //         DISTINCT(contract.symbol), SUM(trading_parameters.nav_ratio) nav_ratio_sum,
+  //         stock.historical_volatility,
+  //         (julianday('now') - julianday(contract.updatedAt)) age,
+  //         contract.*
+  //       FROM trading_parameters, contract, stock
+  //       WHERE trading_parameters.stock_id = contract.id
+  //         AND trading_parameters.stock_id = stock.id
+  //         AND age > ?
+  //       GROUP BY contract.symbol
+  //       ORDER BY contract.updatedAt
+  //       LIMIT ?
+  //       `,
+  //     {
+  //       model: Contract,
+  //       mapToModel: true, // pass true here if you have any mapped fields
+  //       replacements: [STOCKS_PRICES_REFRESH_FREQ / 1440, limit],
+  //       // logging: console.log,
+  //     });
+  // }
 
   private findStockContractsToUpdatePrice(limit: number): Promise<Contract[]> {
     const now: number = Date.now() - (STOCKS_PRICES_REFRESH_FREQ * 60 * 1000);
@@ -302,7 +301,7 @@ export class ContractsUpdaterBot extends ITradingBot {
 
   private findPortfolioContractsNeedingPriceUpdate(limit: number): Promise<AnyContract[]> {
     // console.log("findOptionsToUpdatePrice", dte, age/1400, limit);
-    const now: number = Date.now();
+    const now: number = Date.now() - (STOCKS_PRICES_REFRESH_FREQ * 60 * 1000);
     return Position.findAll({
       include: [{
         model: Contract,
@@ -310,7 +309,7 @@ export class ContractsUpdaterBot extends ITradingBot {
         where: {
           updatedAt: {
             [Op.or]: {
-              [Op.lt]: new Date(now - (STOCKS_PRICES_REFRESH_FREQ / 1440)),
+              [Op.lt]: new Date(now),
               [Op.is]: null,
             },
           },
@@ -327,9 +326,21 @@ export class ContractsUpdaterBot extends ITradingBot {
     })
       .then((positions: Position[]) => Promise.all(positions.map((position: Position) => {
         if (position.contract.secType == SecType.STK) {
-          return Stock.findByPk(position.contract.id, { include: { association: "contract", required: true, } })
+          return Stock.findByPk(position.contract.id, { include: { association: "contract", required: true, } });
         } else if (position.contract.secType == SecType.OPT) {
-          return Option.findByPk(position.contract.id, { include: { association: "contract", required: true, } })
+          return Option.findByPk(position.contract.id, {
+            include: [{
+              association: "contract",
+              required: true,
+            }, {
+              association: "stock",
+              required: true,
+              include: [{
+                association: "contract",
+                required: true,
+              }],
+            }],
+          });
         } else {
           return Contract.findByPk(position.contract.id);
         }
@@ -446,7 +457,10 @@ export class ContractsUpdaterBot extends ITradingBot {
     return Option.findAll({
       where: {
         lastTradeDate: {
-          [Op.gte]: new Date(now),   // don't update expired contracts
+          [Op.and]: {
+            [Op.gte]: new Date(now),   // don't update expired contracts
+            [Op.lte]: new Date(now + (1440 * 60 * 1000 * dte)),
+          },
         },
       },
       include: [{
@@ -488,7 +502,7 @@ export class ContractsUpdaterBot extends ITradingBot {
       } else if (aContract instanceof Option) {
         contract = aContract.contract;
       } else {
-        this.error("fetchContractsPrices unhandled contract type")
+        this.error("fetchContractsPrices unhandled contract type");
       }
       const ibContract: IbContract = {
         conId: contract.conId,
@@ -585,7 +599,7 @@ export class ContractsUpdaterBot extends ITradingBot {
   }
 
   private concatAndUniquelyze(contracts: AnyContract[], c: AnyContract[]): AnyContract[] {
-    return contracts.concat(c).reduce(((p, v) => p.findIndex((q) => q.id == v.id) < 0 ? [...p, v] : p), [] as Contract[]);
+    return contracts.concat(c).reduce(((p, v) => p.findIndex((q) => q.id == v.id) < 0 ? [...p, v] : p), [] as AnyContract[]);
   }
 
   private async updateOptionsPrice(): Promise<void> {
@@ -625,7 +639,12 @@ export class ContractsUpdaterBot extends ITradingBot {
       contracts = this.concatAndUniquelyze(contracts, c);
     }
     if (contracts.length < BATCH_SIZE_OPTIONS_PRICE) {
-      const c = await this.findOptionsToUpdatePrice(OPTIONS_PRICE_TIMEFRAME, OPTIONS_PRICE_OTHER_FREQ, BATCH_SIZE_OPTIONS_PRICE - contracts.length);
+      const c = await this.findOptionsToUpdatePrice(100, OPTIONS_PRICE_MONTH_FREQ, BATCH_SIZE_OPTIONS_PRICE - contracts.length);
+      console.log(c.length, "three months option(s)");
+      contracts = this.concatAndUniquelyze(contracts, c);
+    }
+    if (contracts.length < BATCH_SIZE_OPTIONS_PRICE) {
+      const c = await this.findOptionsToUpdatePrice(999, OPTIONS_PRICE_OTHER_FREQ, BATCH_SIZE_OPTIONS_PRICE - contracts.length);
       console.log(c.length, "other option(s)");
       contracts = this.concatAndUniquelyze(contracts, c);
     }

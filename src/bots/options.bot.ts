@@ -11,7 +11,7 @@ import { greeks, option_implied_volatility } from "../black_scholes";
 import { ITradingBot } from ".";
 
 const OPTIONS_LIST_BUILD_FREQ: number = parseInt(process.env.OPTIONS_LIST_BUILD_FREQ) || 24;        // hours
-const OPTIONS_PRICE_TIMEFRAME: number = parseInt(process.env.OPTIONS_PRICE_TIMEFRAME) || 366;       // days
+const OPTIONS_PRICE_TIMEFRAME: number = parseInt(process.env.OPTIONS_PRICE_TIMEFRAME) || 999;       // days
 const NO_RISK_INTEREST_RATE: number = parseFloat(process.env.NO_RISK_INTEREST_RATE) || 0.0175;
 
 export class OptionsCreateBot extends ITradingBot {
@@ -31,29 +31,26 @@ export class OptionsCreateBot extends ITradingBot {
                         currency: stock.currency,
                         lastTradeDateOrContractMonth: expstr,
                         strike: strike,
-                        right: undefined,
                     };
-                    // const put = this.buildOneOptionContract(stock, expstr, strike, OptionType.Put)
-                    //   .catch((err) => { /* silently ignore any error */ });
-                    // const call = this.buildOneOptionContract(stock, expstr, strike, OptionType.Call)
-                    //   .catch((err) => { /* silently ignore any error */ });
-                    ibContract.right = OptionType.Put;
-                    const put = this.findOrCreateContract(ibContract)
-                        .catch(() => {
-                            /* silently ignore any error */
-                            return Promise.resolve(null as Contract);
-                        });
-                    ibContract.right = OptionType.Call;
-                    const call = this.findOrCreateContract(ibContract)
-                        .catch(() => {
-                            /* silently ignore any error */
-                            return Promise.resolve(null as Contract);
-                        });
-                    await Promise.all([put, call]);
+                    await this.findOrCreateContract({ ...ibContract, ...{ right: OptionType.Put } })
+                        .catch(() => { /* silently ignore any error */ })
+                        .then(() => this.findOrCreateContract({ ...ibContract, ...{ right: OptionType.Call } }))
+                        .catch(() => { /* silently ignore any error */ });
+                    // const put = this.findOrCreateContract({ ...ibContract, ...{ right: OptionType.Put } })
+                    //     .catch(() => {
+                    //         /* silently ignore any error */
+                    //         return Promise.resolve(null as Contract);
+                    //     });
+                    // const call = this.findOrCreateContract({ ...ibContract, ...{ right: OptionType.Call } })
+                    //     .catch(() => {
+                    //         /* silently ignore any error */
+                    //         return Promise.resolve(null as Contract);
+                    //     });
+                    // await Promise.all([put, call]);
                 }
             }
         }
-        return Promise.resolve();
+        // return Promise.resolve();
     }
 
     private iterateSecDefOptParams(stock: Contract, details: SecurityDefinitionOptionParameterType[]): Promise<void> {
@@ -72,7 +69,7 @@ export class OptionsCreateBot extends ITradingBot {
     }
 
     private requestSecDefOptParams(stock: Contract): Promise<SecurityDefinitionOptionParameterType[]> {
-        console.log(`requestSecDefOptParams: ${stock.symbol}`);
+        console.log(`requestSecDefOptParams: ${stock.symbol} ${stock.conId}`);
         return this.api
             .getSecDefOptParams(
                 stock.symbol,
@@ -93,8 +90,9 @@ export class OptionsCreateBot extends ITradingBot {
                 console.log(`iterateToBuildOptionList ${stock.symbol} ${stock["options_age"] * 24} vs ${OPTIONS_LIST_BUILD_FREQ}`);
                 if ((stock["options_age"] * 24) > OPTIONS_LIST_BUILD_FREQ) {
                     console.log("iterateToBuildOptionList: option contracts list need refreshing");
-                    return this.requestSecDefOptParams(stock)
-                        .then((params) => this.iterateSecDefOptParams(stock, params));
+                    return this.findOrCreateContract(stock)
+                        .then((contract) => this.requestSecDefOptParams(contract)
+                            .then((params) => this.iterateSecDefOptParams(contract, params)));
                 }
                 return Promise.resolve();
             });
@@ -104,11 +102,12 @@ export class OptionsCreateBot extends ITradingBot {
     private findStocksToListOptions(): Promise<Contract[]> {
         return this.app.sequelize.query(`
         SELECT
-          (julianday('now') - MAX(julianday(IFNULL(contract.createdAt, '2022-01-01')))) options_age,
+          (julianday('now') - MAX(julianday(IFNULL(option.createdAt, '2022-01-01')))) options_age,
           contract.symbol, contract.con_id conId, contract.id id, contract.currency currency, contract.secType secType,
-          contract.createdAt
+          contract.createdAt, MAX(option.createdAt)
         FROM option, contract, trading_parameters
         WHERE contract.id = option.stock_id
+          AND contract.exchange != 'VALUE'
           AND trading_parameters.stock_id =  option.stock_id
         GROUP BY option.stock_id
         ORDER BY options_age DESC
@@ -125,16 +124,24 @@ export class OptionsCreateBot extends ITradingBot {
         console.log("buildOptionsList");
         await this.findStocksToListOptions().then((stocks) => this.iterateToBuildOptionList(stocks));
         console.log("buildOptionsList done");
-        setTimeout(() => this.emit("buildOptionsList"), 3600 * 1000); // come back after 1 hour and check again
+        setTimeout(() => this.emit("buildOptionsList"), 4 * 3600 * 1000); // come back after 4 hours and check again
     }
 
-    private async updateGreeks() {
+    private async updateGreeks(): Promise<void> {
+        console.log("updateGreeks");
         const stocks: Stock[] = await Stock.findAll(
             {
                 include: {
                     model: Contract,
+                    association: "contract",
                     required: true,
+                    where: {
+                        exchange: {
+                            [Op.ne]: "VALUE",  // Contracts that are not tradable (removed, merges, ...) are on VALUE exchange 
+                        },
+                    },
                 },
+                order: [["contract", "symbol", "ASC"]],
                 // logging: console.log,
             }
         );
@@ -214,6 +221,7 @@ export class OptionsCreateBot extends ITradingBot {
             await Promise.all(promises);
         }
 
+        console.log("updateGreeks done.");
         setTimeout(() => this.emit("updateGreeks"), 10 * 60 * 1000); // come back after 10 mins and check again
     }
 
@@ -221,8 +229,8 @@ export class OptionsCreateBot extends ITradingBot {
         this.on("buildOptionsList", this.buildOptionsList);
         this.on("updateGreeks", this.updateGreeks);
 
-        setTimeout(() => this.emit("buildOptionsList"), 10 * 60 * 1000);   // start after 10 mins
-        setTimeout(() => this.emit("updateGreeks"), 60 * 1000);   // start after 1 min
+        setTimeout(() => this.emit("buildOptionsList"), 0 * 60 * 1000);   // start after 10 mins
+        // setTimeout(() => this.emit("updateGreeks"), 1 * 60 * 1000);   // start after 1 min
     }
 
 }
