@@ -15,11 +15,8 @@ export class Option extends Model {
   @BelongsTo(() => Contract, "id")
   public contract: Contract;
 
-  // @ForeignKey(() => Stock)
-  // @Column
-  // public stock_id!: number;
-  @BelongsTo(() => Stock, "stock_id")
-  public stock: Stock;
+  @BelongsTo(() => Contract, "stock_id")
+  public stock: Contract;
 
   @Column({ type: DataType.DATEONLY, field: "last_trade_date" })
   // public lastTradeDate!: Date;

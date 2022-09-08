@@ -3,6 +3,7 @@ import { Stock } from "./stock.model";
 import { Option } from "./option.model";
 import { Cash } from "./cash.model";
 import { Bag } from "./bag.model";
+import { Future } from "./future.model";
 export { Contract } from "./contract.model";
 export { Stock } from "./stock.model";
 export { Option } from "./option.model";
@@ -15,5 +16,6 @@ export { Currency } from "./currency.model";
 export { Balance } from "./balance.model";
 export { Bag } from "./bag.model";
 export { Trade } from "./trade.model";
+export { Future } from "./future.model";
 
-export type AnyContract = Contract | Stock | Option | Bag | Cash;
+export type AnyContract = Contract | Stock | Option | Bag | Cash | Future;

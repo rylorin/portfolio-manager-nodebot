@@ -67,6 +67,7 @@ export class SellCoveredCallsBot extends ITradingBot {
                     include: [{
                         required: true,
                         model: Contract,
+                        as: "contract",
                         where: {
                             bid: {
                                 [Op.gte]: this.portfolio.minPremium,    // RULE : premium (bid) >= 0.25$
@@ -74,8 +75,8 @@ export class SellCoveredCallsBot extends ITradingBot {
                         },
                     }, {
                         required: true,
-                        model: Stock,
-                        // include: Contract,
+                        model: Contract,
+                        as: "stock",
                     }],
                     // logging: console.log,
                 });
@@ -84,7 +85,7 @@ export class SellCoveredCallsBot extends ITradingBot {
                         // const expiry: Date = new Date(option.lastTradeDate);
                         const diffDays = Math.ceil((option.lastTradeDate.getTime() - Date.now()) / (1000 * 3600 * 24));
                         option["yield"] = option.contract.bid / option.strike / diffDays * 360;
-                        option.stock.contract = await Contract.findByPk(option.stock.id);
+                        // option.stock.contract = await Contract.findByPk(option.stock.id);
                     }
                     options.sort((a: OptionEx, b: OptionEx) => b.yield - a.yield);
                     // for (const option of options) {
