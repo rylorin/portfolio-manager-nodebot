@@ -24,6 +24,7 @@ import {
     Cash,
     Balance,
     Future,
+    Index,
 } from "../models";
 import { MyTradingBotApp } from "..";
 
@@ -333,7 +334,7 @@ export class ITradingBot extends EventEmitter {
                 stock_id: underlying,
             };
             if (right) where.callOrPut = right;
-            await Option.findOne({ where: where, include: Contract, })
+            await Option.findOne({ where: where, include: { as: "contract", model: Contract, required: true } })
                 .then((opt) => Currency.findOne({
                     where: {
                         base: this.portfolio.baseCurrency,
@@ -424,7 +425,197 @@ export class ITradingBot extends EventEmitter {
         let strike: string = ibContract.strike.toFixed(1);
         if (parseFloat(strike) != ibContract.strike) strike = ibContract.strike.toString(); // new AMZN can have two decimals
         const name = `${ibContract.symbol} ${datestr} ${strike} ${ibContract.right}`;
-        return ibContract.symbol + " " + datestr + (strike ? " " + strike : "") + (ibContract.right ? " " + ibContract.right : "");
+        return ibContract.symbol + " " + datestr + (ibContract.strike ? " " + strike : "") + (ibContract.right ? " " + ibContract.right : "");
+    }
+
+    protected createStockContract(ibContract: IbContract, details: ContractDetails, transaction?: Transaction): Promise<Contract> {
+        const defaults = {
+            conId: ibContract.conId,
+            secType: ibContract.secType,
+            symbol: ibContract.symbol,
+            currency: ibContract.currency,
+            exchange: ibContract.primaryExch || ibContract.exchange,
+            name: details.longName,
+        };
+        return Contract.findOrCreate({
+            where: {
+                secType: defaults.secType,
+                symbol: defaults.symbol,
+                currency: defaults.currency,
+            },
+            defaults: defaults,
+            transaction: transaction,
+            // logging: console.log,
+        }).then(([contract, created]) => {
+            if (created) {
+                return Stock.create({ id: contract.id, }, { transaction: transaction, })
+                    .then(() => Promise.resolve(contract));
+            } else {
+                return contract.update(defaults, { transaction: transaction, });
+            }
+        });
+    }
+
+    protected createIndexContract(ibContract: IbContract, details: ContractDetails, transaction?: Transaction): Promise<Contract> {
+        const defaults = {
+            conId: ibContract.conId,
+            secType: ibContract.secType,
+            symbol: ibContract.symbol,
+            currency: ibContract.currency,
+            exchange: ibContract.primaryExch || ibContract.exchange,
+            name: details.longName,
+        };
+        return Contract.findOrCreate({
+            where: {
+                secType: defaults.secType,
+                symbol: defaults.symbol,
+                currency: defaults.currency,
+            },
+            defaults: defaults,
+            transaction: transaction,
+            // logging: console.log,
+        }).then(([contract, created]) => {
+            if (created) {
+                return Index.create({ id: contract.id, }, { transaction: transaction, })
+                    .then(() => Promise.resolve(contract));
+            } else {
+                return contract.update(defaults, { transaction: transaction, });
+            }
+        });
+    }
+
+    protected createCashContract(ibContract: IbContract, details: ContractDetails, transaction?: Transaction): Promise<Contract> {
+        const defaults = {
+            conId: ibContract.conId,
+            secType: ibContract.secType,
+            symbol: ibContract.localSymbol,
+            currency: ibContract.currency,
+            exchange: ibContract.exchange,
+            name: ibContract.localSymbol,
+        };
+        return Contract.findOrCreate({
+            where: {
+                secType: defaults.secType,
+                symbol: defaults.symbol,
+                currency: defaults.currency,
+            },
+            defaults: defaults,
+            transaction: transaction,
+            // logging: console.log,
+        }).then(([contract, created]) => {
+            if (created) {
+                return Cash.create({ id: contract.id, }, { transaction: transaction, })
+                    .then(() => Promise.resolve(contract));
+            } else {
+                return contract.update({ values: defaults }, { transaction: transaction, })
+                    .then(() => Promise.resolve(contract));
+            }
+        });
+    }
+
+    protected createFutureContract(ibContract: IbContract, details: ContractDetails, transaction?: Transaction): Promise<Contract> {
+        const contract_values = {   // Contract part of the future
+            conId: ibContract.conId,
+            secType: ibContract.secType,
+            symbol: ITradingBot.formatOptionName(ibContract),
+            currency: ibContract.currency,
+            exchange: ibContract.primaryExch || ibContract.exchange,
+            name: ITradingBot.formatOptionName(ibContract),
+        };
+        const future_values = {    // future specific fields
+            id: undefined,
+            // stock_id: undefined,
+            underlying_id: undefined,
+            lastTradeDate: ITradingBot.expirationToDate(ibContract.lastTradeDateOrContractMonth),
+            multiplier: ibContract.multiplier,
+        };
+        const underlying = {    // future contract underlying
+            conId: details.underConId,
+            secType: details.underSecType,
+            symbol: details.underSymbol,
+            currency: ibContract.currency,
+        };
+        return this.findOrCreateContract(underlying, transaction)
+            .then((future) => {
+                // future_values.stock_id = future.id;
+                future_values.underlying_id = future.id;
+                return Future.findOne({
+                    where: {
+                        underlying_id: future_values.underlying_id,
+                        lastTradeDate: future_values.lastTradeDate,
+                    },
+                    transaction: transaction,
+                }).then((option) => {
+                    if (option) {
+                        // update
+                        future_values.id = option.id;
+                        return Contract.update({ values: contract_values }, { where: { id: option.id }, transaction: transaction, })
+                            .then(() => Future.update({ values: future_values }, { where: { id: option.id }, transaction: transaction, }))
+                            .then(() => Contract.findByPk(option.id, { transaction: transaction, }));
+                    } else {
+                        return Contract.create(contract_values, { transaction: transaction, /* logging: console.log, */ })
+                            .then((contract) => {
+                                future_values.id = contract.id;
+                                return Future.create(future_values, { transaction: transaction, /* logging: false, */ })
+                                    .then(() => Promise.resolve(contract));
+                            });
+                    }
+                });
+            });
+    }
+
+    protected createOptionContract(ibContract: IbContract, details: ContractDetails, transaction?: Transaction): Promise<Contract> {
+        const contract_values = {   // Contract part of the option
+            conId: ibContract.conId,
+            secType: SecType.OPT,
+            symbol: ibContract.localSymbol,
+            currency: ibContract.currency,
+            exchange: ibContract.primaryExch || ibContract.exchange,
+            name: ITradingBot.formatOptionName(ibContract),
+        };
+        const opt_values = {    // option specific fields
+            id: undefined,
+            stock_id: undefined,
+            lastTradeDate: ITradingBot.expirationToDate(ibContract.lastTradeDateOrContractMonth),
+            strike: ibContract.currency == "GBP" ? ibContract.strike / 100 : ibContract.strike,
+            callOrPut: ibContract.right,
+            multiplier: ibContract.multiplier,
+            delta: (ibContract.right == OptionType.Call) ? 0.5 : -0.5,
+        };
+        const underlying = {    // option underlying contract
+            conId: details.underConId,
+            secType: details.underSecType,
+            symbol: details.underSymbol,
+            currency: ibContract.currency,
+        };
+        return this.findOrCreateContract(underlying, transaction)
+            .then((stock) => {
+                opt_values.stock_id = stock.id;
+                return Option.findOne({
+                    where: {
+                        stock_id: opt_values.stock_id,
+                        lastTradeDate: opt_values.lastTradeDate,
+                        strike: opt_values.strike,
+                        callOrPut: opt_values.callOrPut,
+                    },
+                    transaction: transaction,
+                }).then((option) => {
+                    if (option) {
+                        // update
+                        opt_values.id = option.id;
+                        return Contract.update({ values: contract_values }, { where: { id: option.id }, transaction: transaction, })
+                            .then(() => Option.update({ values: opt_values }, { where: { id: option.id }, transaction: transaction, }))
+                            .then(() => Contract.findByPk(option.id, { transaction: transaction, }));
+                    } else {
+                        return Contract.create(contract_values, { transaction: transaction, /* logging: console.log, */ })
+                            .then((contract) => {
+                                opt_values.id = contract.id;
+                                return Option.create(opt_values, { transaction: transaction, /* logging: false, */ })
+                                    .then(() => Promise.resolve(contract));
+                            });
+                    }
+                });
+            });
     }
 
     protected async findOrCreateContract(ibContract: IbContract, transaction?: Transaction): Promise<Contract> {
@@ -455,185 +646,15 @@ export class ITradingBot extends EventEmitter {
                         });
                 }
                 if (details && (ibContract.secType == SecType.STK)) {
-                    const defaults = {
-                        conId: ibContract.conId,
-                        secType: ibContract.secType,
-                        symbol: ibContract.symbol,
-                        currency: ibContract.currency,
-                        exchange: ibContract.primaryExch || ibContract.exchange,
-                        name: details.longName,
-                    };
-                    contract = await Contract.findOrCreate({
-                        where: {
-                            secType: defaults.secType,
-                            symbol: defaults.symbol,
-                            currency: defaults.currency,
-                        },
-                        defaults: defaults,
-                        transaction: transaction,
-                        // logging: console.log,
-                    }).then(([contract, created]) => {
-                        if (created) {
-                            return Stock.create({ id: contract.id, }, { transaction: transaction, })
-                                .then(() => Promise.resolve(contract));
-                        } else {
-                            return contract.update(defaults, { transaction: transaction, });
-                        }
-                    });
+                    contract = await this.createStockContract(ibContract, details, transaction);
                 } else if (details && (ibContract.secType == SecType.IND)) {
-                    const defaults = {
-                        conId: ibContract.conId,
-                        secType: ibContract.secType,
-                        symbol: ibContract.symbol,
-                        currency: ibContract.currency,
-                        exchange: ibContract.primaryExch || ibContract.exchange,
-                        name: details.longName,
-                    };
-                    contract = await Contract.findOrCreate({
-                        where: {
-                            secType: defaults.secType,
-                            symbol: defaults.symbol,
-                            currency: defaults.currency,
-                        },
-                        defaults: defaults,
-                        transaction: transaction,
-                        // logging: console.log,
-                    }).then(([contract, created]) => {
-                        // if (created) {
-                        // TODO: maybe required by PHP part to have a fake Index contract's child
-                        // TODO: my now create Stock - which is incorrect - because Option "as one" Stock (not Contract)
-                        //     return Stock.create({ id: contract.id, }, { transaction: transaction, })
-                        //         .then(() => Promise.resolve(contract));
-                        // } else {
-                        return contract.update(defaults, { transaction: transaction, });
-                        // }
-                    });
+                    contract = await this.createIndexContract(ibContract, details, transaction);
                 } else if (details && ((ibContract.secType == SecType.OPT) || (ibContract.secType == SecType.FOP))) {
-                    const contract_values = {   // Contract part of the option
-                        conId: ibContract.conId,
-                        secType: ibContract.secType,
-                        symbol: ibContract.localSymbol,
-                        currency: ibContract.currency,
-                        exchange: ibContract.primaryExch || ibContract.exchange,
-                        name: ITradingBot.formatOptionName(ibContract),
-                    };
-                    const opt_values = {    // option specific fields
-                        id: undefined,
-                        stock_id: undefined,
-                        lastTradeDate: ITradingBot.expirationToDate(ibContract.lastTradeDateOrContractMonth),
-                        strike: ibContract.currency == "GBP" ? ibContract.strike / 100 : ibContract.strike,
-                        callOrPut: ibContract.right,
-                        multiplier: ibContract.multiplier,
-                        delta: (ibContract.right == OptionType.Call) ? 0.5 : -0.5,
-                    };
-                    const underlying = {    // option underlying contract
-                        conId: details.underConId,
-                        secType: details.underSecType,
-                        symbol: details.underSymbol,
-                        currency: ibContract.currency,
-                    };
-                    contract = await this.findOrCreateContract(underlying, transaction)
-                        .then((stock) => {
-                            opt_values.stock_id = stock.id;
-                            return Option.findOne({
-                                where: {
-                                    stock_id: opt_values.stock_id,
-                                    lastTradeDate: opt_values.lastTradeDate,
-                                    strike: opt_values.strike,
-                                    callOrPut: opt_values.callOrPut,
-                                },
-                                transaction: transaction,
-                            }).then((option) => {
-                                if (option) {
-                                    // update
-                                    opt_values.id = option.id;
-                                    return Contract.update({ values: contract_values }, { where: { id: option.id }, transaction: transaction, })
-                                        .then(() => Option.update({ values: opt_values }, { where: { id: option.id }, transaction: transaction, }))
-                                        .then(() => Contract.findByPk(option.id, { transaction: transaction, }));
-                                } else {
-                                    return Contract.create(contract_values, { transaction: transaction, /* logging: console.log, */ })
-                                        .then((contract) => {
-                                            opt_values.id = contract.id;
-                                            return Option.create(opt_values, { transaction: transaction, /* logging: false, */ })
-                                                .then(() => Promise.resolve(contract));
-                                        });
-                                }
-                            });
-                        });
+                    contract = await this.createOptionContract(ibContract, details, transaction);
                 } else if (details && (ibContract.secType == SecType.CASH)) {
-                    const defaults = {
-                        conId: ibContract.conId,
-                        secType: ibContract.secType,
-                        symbol: ibContract.localSymbol,
-                        currency: ibContract.currency,
-                        exchange: ibContract.exchange,
-                        name: ibContract.localSymbol,
-                    };
-                    contract = await Contract.findOrCreate({
-                        where: {
-                            secType: defaults.secType,
-                            symbol: defaults.symbol,
-                            currency: defaults.currency,
-                        },
-                        defaults: defaults,
-                        transaction: transaction,
-                        // logging: console.log,
-                    }).then(([contract, created]) => {
-                        if (created) {
-                            return Cash.create({ id: contract.id, }, { transaction: transaction, })
-                                .then(() => Promise.resolve(contract));
-                        } else {
-                            return contract.update({ values: defaults }, { transaction: transaction, })
-                                .then(() => Promise.resolve(contract));
-                        }
-                    });
+                    contract = await this.createCashContract(ibContract, details, transaction);
                 } else if (details && (ibContract.secType == SecType.FUT)) {
-                    const contract_values = {   // Contract part of the future
-                        conId: ibContract.conId,
-                        secType: ibContract.secType,
-                        symbol: ITradingBot.formatOptionName(ibContract),
-                        currency: ibContract.currency,
-                        exchange: ibContract.primaryExch || ibContract.exchange,
-                        name: ITradingBot.formatOptionName(ibContract),
-                    };
-                    const future_values = {    // future specific fields
-                        id: undefined,
-                        stock_id: undefined,
-                        lastTradeDate: ITradingBot.expirationToDate(ibContract.lastTradeDateOrContractMonth),
-                        multiplier: ibContract.multiplier,
-                    };
-                    const underlying = {    // future contract underlying
-                        conId: details.underConId,
-                        secType: details.underSecType,
-                        symbol: details.underSymbol,
-                        currency: ibContract.currency,
-                    };
-                    contract = await this.findOrCreateContract(underlying, transaction)
-                        .then((future) => {
-                            future_values.stock_id = future.id;
-                            return Future.findOne({
-                                where: {
-                                    underlying_id: future_values.stock_id,
-                                    lastTradeDate: future_values.lastTradeDate,
-                                },
-                                transaction: transaction,
-                            }).then((option) => {
-                                if (option) {
-                                    // update
-                                    future_values.id = option.id;
-                                    return Contract.update({ values: contract_values }, { where: { id: option.id }, transaction: transaction, })
-                                        .then(() => Future.update({ values: future_values }, { where: { id: option.id }, transaction: transaction, }))
-                                        .then(() => Contract.findByPk(option.id, { transaction: transaction, }));
-                                } else {
-                                    return Contract.create(contract_values, { transaction: transaction, /* logging: console.log, */ })
-                                        .then((contract) => {
-                                            future_values.id = contract.id;
-                                            return Future.create(future_values, { transaction: transaction, /* logging: false, */ })
-                                                .then(() => Promise.resolve(contract));
-                                        });
-                                }
-                            });
-                        });
+                    contract = await this.createFutureContract(ibContract, details, transaction);
                 } else if (ibContract.secType == SecType.BAG) {
                     contract = await Contract.create({
                         conId: ibContract.conId,
