@@ -330,15 +330,13 @@ export class ContractsUpdaterBot extends ITradingBot {
         } else if (position.contract.secType == SecType.OPT) {
           return Option.findByPk(position.contract.id, {
             include: [{
-              association: "contract",
+              as: "contract",
+              model: Contract,
               required: true,
             }, {
-              association: "stock",
+              as: "stock",
+              model: Contract,
               required: true,
-              include: [{
-                association: "contract",
-                required: true,
-              }],
             }],
           });
         } else {
@@ -464,7 +462,8 @@ export class ContractsUpdaterBot extends ITradingBot {
         },
       },
       include: [{
-        model: Contract,
+        // as: "contract",
+        // model: Contract,
         association: "contract",
         where: {
           updatedAt: {
@@ -479,10 +478,10 @@ export class ContractsUpdaterBot extends ITradingBot {
         },
         required: true,
       }, {
-        model: Stock,
+        // as: "stock",
+        // model: Contract,
         association: "stock",
         required: true,
-        include: [Contract],
       },],
       order: [["contract", "updatedAt", "ASC"]],
       limit: limit,

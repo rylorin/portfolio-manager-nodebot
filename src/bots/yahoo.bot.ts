@@ -119,7 +119,7 @@ export class YahooUpdateBot extends ITradingBot {
         const datestr: string = year + month + day;
         let strike: string = (option.strike * 1000).toString();
         while (strike.length < 8) strike = "0" + strike;
-        const name = `${option.stock.contract.symbol}${datestr}${option.callOrPut}${strike}`;
+        const name = `${option.contract.symbol}${datestr}${option.callOrPut}${strike}`;
         return name;
     }
 
@@ -155,13 +155,13 @@ export class YahooUpdateBot extends ITradingBot {
                     promises.push(Stock.update(stock_values, { where: { id: r.contract.id, }, }).then());
                 } else if (r.contract.secType == SecType.OPT) {
                     promises.push(Option.findByPk(r.contract.id, { include: { as: "stock", model: Stock, required: true, }, })
-                        .then((option) => Contract.findByPk(option.stock.id, {}).then((stock) => {
+                        .then((option) => Contract.findByPk(option.stock.id, {}).then(async (stock) => {
                             let iv_ = undefined;
                             if (r.quote?.regularMarketPrice > 0) {
                                 try {
                                     iv_ = option_implied_volatility(option.callOrPut == OptionType.Call, stock.livePrice, option.strike, NO_RISK_INTEREST_RATE, (option.dte + 1) / 365, r.quote?.regularMarketPrice);
                                 } catch (e) {
-                                    iv_ = option.stock.historicalVolatility;
+                                    await Stock.findByPk(option.stock.id).then((stock) => { iv_ = stock.historicalVolatility });
                                 }
                             }
                             if (iv_) {

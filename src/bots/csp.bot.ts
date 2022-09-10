@@ -102,6 +102,7 @@ export class SellCashSecuredPutBot extends ITradingBot {
             include: [{
                 required: true,
                 model: Contract,
+                as: "contract",
                 where: {
                     bid: {
                         [Op.gte]: this.portfolio.minPremium,    // RULE 4: premium (bid) >= 0.25$
@@ -109,7 +110,8 @@ export class SellCashSecuredPutBot extends ITradingBot {
                 },
             }, {
                 required: true,
-                model: Stock,
+                model: Contract,
+                as: "stock",
             }],
             // logging: console.log,
         });
@@ -134,12 +136,13 @@ export class SellCashSecuredPutBot extends ITradingBot {
         const filtered_options: OptionEx[] = [];
         for (const option of all_options) {
             // RULE 6: check overall margin space
+            const stock = await Stock.findByPk(option.stock.id);
             if ((option.strike * option.multiplier * this.base_rates[option.contract.currency]) < max_for_all_symbols) {
-                if (option.impliedVolatility > option.stock.historicalVolatility) { // RULE 1: implied volatility > historical volatility
+                if (option.impliedVolatility > stock.historicalVolatility) { // RULE 1: implied volatility > historical volatility
                     // const expiry: Date = new Date(option.lastTradeDate);
                     const diffDays = Math.ceil((option.lastTradeDate.getTime() - Date.now()) / (1000 * 3600 * 24));
                     option["yield"] = option.contract.bid / option.strike / diffDays * 360;
-                    option.stock.contract = await Contract.findByPk(option.stock.id);
+                    // option.stock.contract = await Contract.findByPk(option.stock.id);
                     filtered_options.push(option);
                 }
             }
