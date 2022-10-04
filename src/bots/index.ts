@@ -424,7 +424,7 @@ export class ITradingBot extends EventEmitter {
         const datestr: string = day + month + year;
         let strike: string = ibContract.strike.toFixed(1);
         if (parseFloat(strike) != ibContract.strike) strike = ibContract.strike.toString(); // new AMZN can have two decimals
-        const name = `${ibContract.symbol} ${datestr} ${strike} ${ibContract.right}`;
+        // const name = `${ibContract.symbol} ${datestr} ${strike} ${ibContract.right}`;
         return ibContract.symbol + " " + datestr + (ibContract.strike ? " " + strike : "") + (ibContract.right ? " " + ibContract.right : "");
     }
 
@@ -484,7 +484,7 @@ export class ITradingBot extends EventEmitter {
         });
     }
 
-    protected createCashContract(ibContract: IbContract, details: ContractDetails, transaction?: Transaction): Promise<Contract> {
+    protected createCashContract(ibContract: IbContract, _details: ContractDetails, transaction?: Transaction): Promise<Contract> {
         const defaults = {
             conId: ibContract.conId,
             secType: ibContract.secType,
@@ -506,6 +506,34 @@ export class ITradingBot extends EventEmitter {
             if (created) {
                 return Cash.create({ id: contract.id, }, { transaction: transaction, })
                     .then(() => Promise.resolve(contract));
+            } else {
+                return contract.update({ values: defaults }, { transaction: transaction, })
+                    .then(() => Promise.resolve(contract));
+            }
+        });
+    }
+
+    protected createBagContract(ibContract: IbContract, _details: ContractDetails, transaction?: Transaction): Promise<Contract> {
+        const defaults = {
+            conId: ibContract.conId,
+            secType: ibContract.secType,
+            symbol: `${ibContract.tradingClass}-${ibContract.localSymbol}`,
+            currency: ibContract.currency,
+            exchange: ibContract.exchange,
+        }
+        return Contract.findOrCreate({
+            where: {
+                secType: defaults.secType,
+                symbol: defaults.symbol,
+                currency: defaults.currency,
+            },
+            defaults: defaults,
+            transaction: transaction,
+            // logging: console.log,
+        }).then(([contract, created]) => {
+            if (created) {
+                return Bag.create({ id: contract.id, }, { transaction: transaction, })
+                .then(() => ibContract.comboLegs.reduce((p, leg) => p.then((contract) => this.findOrCreateContract({ conId: leg.conId, }, transaction).then(() => contract)), Promise.resolve(contract)));
             } else {
                 return contract.update({ values: defaults }, { transaction: transaction, })
                     .then(() => Promise.resolve(contract));
@@ -656,16 +684,7 @@ export class ITradingBot extends EventEmitter {
                 } else if (details && (ibContract.secType == SecType.FUT)) {
                     contract = await this.createFutureContract(ibContract, details, transaction);
                 } else if (ibContract.secType == SecType.BAG) {
-                    contract = await Contract.create({
-                        conId: ibContract.conId,
-                        secType: ibContract.secType,
-                        symbol: `${ibContract.tradingClass}-${ibContract.localSymbol}`,
-                        currency: ibContract.currency,
-                        exchange: ibContract.exchange,
-                    }, { transaction: transaction, })
-                        .then((contract) => Bag.create({ id: contract.id, }, { transaction: transaction, })
-                            .then(() => ibContract.comboLegs.reduce((p, leg) => p.then((contract) => this.findOrCreateContract({ conId: leg.conId, }, transaction).then(() => contract)), Promise.resolve(contract)))
-                        );
+                    contract = await this.createBagContract(ibContract, details, transaction);
                 } else {
                     // IB contract doesn't exists, we need to implement it!!!
                     const message = `findOrCreateContract failed: SecType ${ibContract.secType} not implemented`;
@@ -679,7 +698,7 @@ export class ITradingBot extends EventEmitter {
             if (err.name == "IBApiNextError") {
                 // silently ignore, only propagate
             } else {
-                this.error(`findOrCreateContract failed for ${ibContract.secType} ${ibContract.symbol} ${ibContract.lastTradeDateOrContractMonth} ${ibContract.strike} ${ibContract.right}:`);
+                this.error(`findOrCreateContract failed for ${ibContract.conId} ${ibContract.secType} ${ibContract.symbol} ${ibContract.lastTradeDateOrContractMonth} ${ibContract.strike} ${ibContract.right}:`);
                 // this.printObject(ibContract);
                 console.error(err);
                 console.error("transaction_", transaction_);

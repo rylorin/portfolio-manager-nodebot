@@ -44,5 +44,10 @@
     "rxjs/no-ignored-subscription": "error",
     "rxjs/no-unbound-methods": "error",
     "rxjs/throw-error": "error"
-  }
+  },
+  "ignorePatterns": [
+    "node_modules/",
+    "dist/",
+    "**/*.spec.ts"
+  ]
 }
