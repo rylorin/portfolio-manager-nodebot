@@ -2,7 +2,6 @@ import { Op } from "sequelize";
 import { ITradingBot } from ".";
 import {
     Contract,
-    Stock,
     Option,
     Position,
     Parameter,

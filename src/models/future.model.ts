@@ -5,9 +5,8 @@ import {
     DataType,
     BelongsTo,
 } from "sequelize-typescript";
-import { OptionType } from "@stoqey/ib";
 
-import { Contract, Stock } from ".";
+import { Contract } from ".";
 
 @Table({ tableName: "future", timestamps: true, deletedAt: false })
 export class Future extends Model {

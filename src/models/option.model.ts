@@ -7,7 +7,7 @@ import {
 } from "sequelize-typescript";
 import { OptionType } from "@stoqey/ib";
 
-import { Contract, Stock } from ".";
+import { Contract } from ".";
 
 @Table({ tableName: "option", timestamps: true, deletedAt: false })
 export class Option extends Model {
