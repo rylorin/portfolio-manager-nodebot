@@ -92,7 +92,7 @@ export class YahooUpdateBot extends ITradingBot {
             $ticker = (($ticker[$ticker.length - 1] == "d") ? $ticker.substring(0, $ticker.length - 1) : $ticker) + ".DE";
         } else if ($exchange == "SEHK") {
             $ticker = $ticker + ".HK";
-        } else if (($exchange == "NYSE") || ($exchange == "NASDAQ") || ($exchange == "SMART") || ($exchange == "PINK")) {
+        } else if (["NYSE", "NASDAQ", "SMART", "PINK", "ARCA", "AMEX", "BATS"].includes($exchange)) {
             // no ticker processing
         } else if ($exchange == "MOEX") {
             $ticker = $ticker + ".ME";
@@ -100,13 +100,15 @@ export class YahooUpdateBot extends ITradingBot {
             $ticker = $ticker + ".SI";
         } else if ($exchange == "ENEXT.BE") {
             $ticker = $ticker + ".BR";
+        } else if ($exchange == "GLOBEX") {
+            $ticker = $ticker + "=F";
             // currency selection should come after
         } else if (($exchange == "TSE") || (contract.currency == "CAD")) {
             $ticker = $ticker.replace(".", "-") + ".TO";
         } else if (($exchange == "EBS") || (contract.currency == "CHF")) {
             $ticker = $ticker + ".SW";
         } else {
-            console.log("unknow exchange:", $exchange, "for", contract.symbol);
+            console.log("warning: unknow exchange", $exchange, "for", contract.symbol);
         }
         return $ticker;
     }
@@ -119,7 +121,7 @@ export class YahooUpdateBot extends ITradingBot {
         const datestr: string = year + month + day;
         let strike: string = (option.strike * 1000).toString();
         while (strike.length < 8) strike = "0" + strike;
-        const name = `${option.contract.symbol}${datestr}${option.callOrPut}${strike}`;
+        const name = `${option.stock.symbol}${datestr}${option.callOrPut}${strike}`;
         return name;
     }
 
@@ -154,7 +156,7 @@ export class YahooUpdateBot extends ITradingBot {
                     };
                     promises.push(Stock.update(stock_values, { where: { id: r.contract.id, }, }).then());
                 } else if (r.contract.secType == SecType.OPT) {
-                    promises.push(Option.findByPk(r.contract.id, { include: { as: "stock", model: Stock, required: true, }, })
+                    promises.push(Option.findByPk(r.contract.id, { include: { as: "stock", model: Contract, required: true, }, })
                         .then((option) => Contract.findByPk(option.stock.id, {}).then(async (stock) => {
                             let iv_ = undefined;
                             if (r.quote?.regularMarketPrice > 0) {
@@ -282,6 +284,8 @@ export class YahooUpdateBot extends ITradingBot {
             },
             include: [{
                 model: Contract,
+                as: "contract",
+                required: true,
                 where: {
                     updatedAt: {
                         [Op.or]: {
@@ -295,9 +299,10 @@ export class YahooUpdateBot extends ITradingBot {
                     },
                 },
             }, {
-                model: Stock,
+                model: Contract,
+                as: "stock",
                 required: true,
-                include: [Contract],
+                // include: [Contract],
             }],
             order: [["lastTradeDate", "DESC"], ["contract", "updatedAt", "ASC"]],
             limit: limit,
