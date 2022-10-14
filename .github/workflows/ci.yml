@@ -1,5 +1,11 @@
 name: ci
-on: [push]
+
+on:
+  push:
+    paths-ignore:
+      - "README.md"
+      - "LICENSE"
+
 jobs:
   job:
     runs-on: ubuntu-latest
