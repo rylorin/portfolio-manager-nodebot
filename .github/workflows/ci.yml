@@ -1,0 +1,13 @@
+name: ci
+on: [push]
+jobs:
+  job:
+    runs-on: ubuntu-latest
+    timeout-minutes: 3
+    steps:
+      - name: Checkout
+        uses: actions/checkout
+      - name: Lint test
+        run: npm run lint
+      - name: Build test
+        run: npm run build
