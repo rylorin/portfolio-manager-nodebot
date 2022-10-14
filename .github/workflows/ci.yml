@@ -6,7 +6,7 @@ jobs:
     timeout-minutes: 3
     steps:
       - name: Checkout
-        uses: actions/checkout
+        uses: actions/checkout@v2
       - name: Lint test
         run: npm run lint
       - name: Build test
