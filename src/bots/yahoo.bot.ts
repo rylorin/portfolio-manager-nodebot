@@ -163,7 +163,7 @@ export class YahooUpdateBot extends ITradingBot {
                                 try {
                                     iv_ = option_implied_volatility(option.callOrPut == OptionType.Call, stock.livePrice, option.strike, NO_RISK_INTEREST_RATE, (option.dte + 1) / 365, r.quote?.regularMarketPrice);
                                 } catch (e) {
-                                    await Stock.findByPk(option.stock.id).then((stock) => { iv_ = stock.historicalVolatility });
+                                    await Stock.findByPk(option.stock.id).then((stock) => { iv_ = stock.historicalVolatility; });
                                 }
                             }
                             if (iv_) {

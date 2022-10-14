@@ -520,7 +520,7 @@ export class ITradingBot extends EventEmitter {
             symbol: `${ibContract.tradingClass}-${ibContract.localSymbol}`,
             currency: ibContract.currency,
             exchange: ibContract.exchange,
-        }
+        };
         return Contract.findOrCreate({
             where: {
                 secType: defaults.secType,
