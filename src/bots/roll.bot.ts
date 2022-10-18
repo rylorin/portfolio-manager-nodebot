@@ -1,7 +1,6 @@
 import { ITradingBot } from ".";
 import {
     Contract,
-    Stock,
     Option,
     Position,
     Parameter,
@@ -217,7 +216,7 @@ export class RollOptionPositionsBot extends ITradingBot {
             for (const position of positions) {
                 if ((position.contract.secType == "OPT")
                     && (position.quantity)) {
-                    const opt = await Option.findByPk(position.contract.id, { include: {model:Contract, as:'stock'} });
+                    const opt = await Option.findByPk(position.contract.id, { include: { model:Contract, as: "stock" } });
                     const stock: Contract = await Contract.findByPk(opt.stock.id, {});
                     const price = stock.livePrice;
                     // console.log(price);
