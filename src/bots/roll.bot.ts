@@ -22,7 +22,7 @@ export class RollOptionPositionsBot extends ITradingBot {
             // at the moment we only roll short positions
             const order = await this.getContractOrdersQuantity(position.contract, null);
             if (order == 0) {
-                const option = await Option.findByPk(position.contract.id, { include: { model: Contract, as: 'stock' } });
+                const option = await Option.findByPk(position.contract.id, { include: { model: Contract, as: "stock" } });
                 const stock: Contract = await Contract.findByPk(option.stock.id);
                 const parameter = await Parameter.findOne({
                     where: {
@@ -49,7 +49,7 @@ export class RollOptionPositionsBot extends ITradingBot {
                             },
                             include: {
                                 model: Contract,
-                                as: 'contract',
+                                as: "contract",
                                 where: {
                                     bid: {
                                         [Op.and]: {
@@ -133,7 +133,7 @@ export class RollOptionPositionsBot extends ITradingBot {
                             },
                             include: {
                                 model: Contract,
-                                as: 'contract',
+                                as: "contract",
                                 where: {
                                     bid: {
                                         [Op.and]: {

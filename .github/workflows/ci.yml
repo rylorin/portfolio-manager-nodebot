@@ -15,7 +15,7 @@ jobs:
         uses: actions/checkout@master
       - name: Prepare
         run: npm install
-      - name: Lint test
-        run: npm run lint
       - name: Build test
         run: npm run build
+      - name: Lint test
+        run: npm run lint
