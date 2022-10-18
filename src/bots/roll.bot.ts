@@ -91,8 +91,10 @@ export class RollOptionPositionsBot extends ITradingBot {
                             if ((!defensive) && (!agressive)) {
                                 defensive = rolllist[0];
                                 agressive = rolllist[0];
-                            } else if (!defensive) defensive = agressive;
-                            else if (!agressive) agressive = defensive;
+                            } else {
+                                if (!defensive) defensive = agressive;
+                                if (!agressive) agressive = defensive;
+                            }
                             // this.printObject(rolllist);
                             console.log("option contract for agressive strategy:");
                             this.printObject(agressive);
@@ -100,7 +102,7 @@ export class RollOptionPositionsBot extends ITradingBot {
                             this.printObject(defensive);
                             let selected: Option = undefined;
                             let price: number = undefined;
-                            if (parameter.rollPutStrategy == 0) {
+                            if (!parameter.rollPutStrategy) {
                                 console.log("rollPutStrategy set to: off");
                             } else if (((parameter.rollPutStrategy == 1) && (diffDays > DEFENSIVE_ROLL_DAYS))
                                 || ((parameter.rollPutStrategy == 2) && (diffDays > AGRESSIVE_ROLL_DAYS))) {
@@ -150,7 +152,8 @@ export class RollOptionPositionsBot extends ITradingBot {
                             else if (a.lastTradeDate < b.lastTradeDate) return -1;
                             else return (a.strike - b.strike);
                         }));
-                        // this.printObject(rolllist);
+                        // console.log("parameters:")
+                        // this.printObject(parameter);
                         if (rolllist.length > 0) {
                             let defensive: Option = undefined;  // lowest delta
                             let agressive: Option = undefined;  // first OTM
@@ -162,16 +165,18 @@ export class RollOptionPositionsBot extends ITradingBot {
                             if ((!defensive) && (!agressive)) {
                                 defensive = rolllist[0];
                                 agressive = rolllist[0];
-                            } else if (!defensive) defensive = agressive;
-                            else if (!agressive) agressive = defensive;
-                            // this.printObject(rolllist);
+                            } else {
+                                if (!defensive) defensive = agressive;
+                                if (!agressive) agressive = defensive;
+                            }
+                        // this.printObject(rolllist);
                             console.log("option contract for defensive strategy:");
                             this.printObject(defensive);
                             console.log("option contract for agressive strategy:");
                             this.printObject(agressive);
                             let selected: Option = undefined;
                             let price: number = undefined;
-                            if (parameter.rollCallStrategy == 0) {
+                            if (!parameter.rollCallStrategy) {
                                 console.log("rollCallStrategy set to: off");
                             } else if (((parameter.rollCallStrategy == 1) && (diffDays > DEFENSIVE_ROLL_DAYS))
                                 || ((parameter.rollCallStrategy == 2) && (diffDays > AGRESSIVE_ROLL_DAYS))) {
