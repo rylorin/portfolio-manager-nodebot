@@ -22,7 +22,7 @@ export class RollOptionPositionsBot extends ITradingBot {
             // at the moment we only roll short positions
             const order = await this.getContractOrdersQuantity(position.contract, null);
             if (order == 0) {
-                const option = await Option.findByPk(position.contract.id, { include: Stock });
+                const option = await Option.findByPk(position.contract.id, { include: { model: Contract, as: 'stock' } });
                 const stock: Contract = await Contract.findByPk(option.stock.id);
                 const parameter = await Parameter.findOne({
                     where: {
@@ -49,6 +49,7 @@ export class RollOptionPositionsBot extends ITradingBot {
                             },
                             include: {
                                 model: Contract,
+                                as: 'contract',
                                 where: {
                                     bid: {
                                         [Op.and]: {
@@ -100,7 +101,9 @@ export class RollOptionPositionsBot extends ITradingBot {
                             this.printObject(defensive);
                             let selected: Option = undefined;
                             let price: number = undefined;
-                            if (((parameter.rollPutStrategy == 1) && (diffDays > DEFENSIVE_ROLL_DAYS))
+                            if (parameter.rollPutStrategy == 0) {
+                                console.log("rollPutStrategy set to: off");
+                            } else if (((parameter.rollPutStrategy == 1) && (diffDays > DEFENSIVE_ROLL_DAYS))
                                 || ((parameter.rollPutStrategy == 2) && (diffDays > AGRESSIVE_ROLL_DAYS))) {
                                 console.log("too early to roll contract:", diffDays, "days before exipiration");
                             } else {
@@ -118,7 +121,7 @@ export class RollOptionPositionsBot extends ITradingBot {
                                     });
                             }
                         } else {
-                            this.error("can not roll contract: empty list");
+                            this.warn("can not roll contract: empty list");
                         }
                     } else if (option.callOrPut == OptionType.Call) {                                           // CALL
                         const rolllist = await Option.findAll({
@@ -130,6 +133,7 @@ export class RollOptionPositionsBot extends ITradingBot {
                             },
                             include: {
                                 model: Contract,
+                                as: 'contract',
                                 where: {
                                     bid: {
                                         [Op.and]: {
@@ -168,7 +172,9 @@ export class RollOptionPositionsBot extends ITradingBot {
                             this.printObject(agressive);
                             let selected: Option = undefined;
                             let price: number = undefined;
-                            if (((parameter.rollCallStrategy == 1) && (diffDays > DEFENSIVE_ROLL_DAYS))
+                            if (parameter.rollCallStrategy == 0) {
+                                console.log("rollCallStrategy set to: off");
+                            } else if (((parameter.rollCallStrategy == 1) && (diffDays > DEFENSIVE_ROLL_DAYS))
                                 || ((parameter.rollCallStrategy == 2) && (diffDays > AGRESSIVE_ROLL_DAYS))) {
                                 console.log("too early to roll contract:", diffDays, "days before exipiration");
                             } else {
@@ -187,7 +193,7 @@ export class RollOptionPositionsBot extends ITradingBot {
                                     });
                             }
                         } else {
-                            this.error("can not roll contract: empty list");
+                            this.warn("can not roll contract: empty list");
                         }
                     }
                 } else {
@@ -211,7 +217,7 @@ export class RollOptionPositionsBot extends ITradingBot {
             for (const position of positions) {
                 if ((position.contract.secType == "OPT")
                     && (position.quantity)) {
-                    const opt = await Option.findByPk(position.contract.id, { include: Stock });
+                    const opt = await Option.findByPk(position.contract.id, { include: {model:Contract, as:'stock'} });
                     const stock: Contract = await Contract.findByPk(opt.stock.id, {});
                     const price = stock.livePrice;
                     // console.log(price);

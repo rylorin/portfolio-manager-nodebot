@@ -60,6 +60,13 @@ export class ITradingBot extends EventEmitter {
     /**
     * Print and error to console and exit the app with error code, unless -watch argument is present.
     */
+     warn(text: string): void {
+        console.warn("\x1b[33m%s\x1b[0m", "WARN:", text);
+    }
+
+    /**
+    * Print and error to console and exit the app with error code, unless -watch argument is present.
+    */
     error(text: string): void {
         this.app.error(text);
     }
