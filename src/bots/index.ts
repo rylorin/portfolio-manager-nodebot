@@ -58,7 +58,7 @@ export class ITradingBot extends EventEmitter {
     }
 
     /**
-    * Print and error to console and exit the app with error code, unless -watch argument is present.
+    * Print a warning message to console
     */
      warn(text: string): void {
         console.warn("\x1b[33m%s\x1b[0m", "WARN:", text);
@@ -68,7 +68,7 @@ export class ITradingBot extends EventEmitter {
     * Print and error to console and exit the app with error code, unless -watch argument is present.
     */
     error(text: string): void {
-        this.app.error(text);
+        console.error('\x1b[31m%s\x1b[0m', 'Error:', text);
     }
 
     protected static expirationToDate(lastTradeDateOrContractMonth: string): Date {
@@ -113,18 +113,17 @@ export class ITradingBot extends EventEmitter {
         return contract;
     }
 
-    protected static OptionToIbContract(underlying: Option): IbContract {
-        const expiry = new Date(underlying.lastTradeDate);
+    protected static OptionToIbContract(option: Option): IbContract {
         const contract: IbContract = {
-            secType: underlying.contract.secType as SecType,
-            symbol: underlying.stock.symbol,
-            currency: underlying.contract.currency,
-            exchange: underlying.contract.exchange ?? "SMART",
-            conId: underlying.contract.conId,
-            strike: underlying.strike,
-            right: underlying.callOrPut,
-            lastTradeDateOrContractMonth: expiry.toISOString().substring(0, 10).replaceAll("-", ""),
-            multiplier: underlying.multiplier,
+            secType: option.contract.secType as SecType,
+            symbol: option.stock.symbol,
+            currency: option.contract.currency,
+            exchange: option.contract.exchange ?? "SMART",
+            conId: option.contract.conId,
+            strike: option.strike,
+            right: option.callOrPut,
+            lastTradeDateOrContractMonth: option.lastTradeDate.toISOString().substring(0, 10).replaceAll("-", ""),
+            multiplier: option.multiplier,
         };
         return contract;
     }

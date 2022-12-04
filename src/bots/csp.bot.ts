@@ -72,20 +72,20 @@ export class SellCashSecuredPutBot extends ITradingBot {
         const engaged_options = -(put_positions + put_sell_orders);
         const engaged_symbol = stock_positions + stock_orders + call_positions + call_sell_orders + engaged_options;
 
-        if (stock_positions) console.log("stock_positions_amount in base:", stock_positions);
-        if (stock_orders) console.log("stock_orders amount in base:", stock_orders);
-        if (call_positions) console.log("call_positions value in base:", call_positions);
-        if (call_sell_orders) console.log("call_sell_orders risk in base:", call_sell_orders);
-        if (put_positions) console.log("put_positions engaged in base:", put_positions);
-        if (put_sell_orders) console.log("put_sell_orders engaged in base:", put_sell_orders);
-        console.log("=> engaged:", engaged_symbol, engaged_options);
+        if (stock_positions) console.log("stock_positions_amount in base:", Math.round(stock_positions));
+        if (stock_orders) console.log("stock_orders amount in base:", Math.round(stock_orders));
+        if (call_positions) console.log("call_positions value in base:", Math.round(call_positions));
+        if (call_sell_orders) console.log("call_sell_orders risk in base:", Math.round(call_sell_orders));
+        if (put_positions) console.log("put_positions engaged in base:", Math.round(put_positions));
+        if (put_sell_orders) console.log("put_sell_orders engaged in base:", Math.round(put_sell_orders));
+        console.log("=> engaged:", Math.round(engaged_symbol), Math.round(engaged_options));
 
         const max_for_this_symbol = ((await this.getContractPositionValueInBase(this.portfolio.benchmark)) + (await this.getTotalBalanceInBase())) * parameter.navRatio;
-        console.log("max for this symbol:", max_for_this_symbol);
+        console.log("max for this symbol:", Math.round(max_for_this_symbol));
         const free_for_this_symbol = max_for_this_symbol - engaged_symbol;
-        console.log("free_for_this_symbol in base:", free_for_this_symbol);
+        console.log("free_for_this_symbol in base:", Math.round(free_for_this_symbol));
         console.log("parameter.underlying.price:", parameter.underlying.livePrice);
-        console.log("free_for_this_symbol in currency:", free_for_this_symbol * this.base_rates[parameter.underlying.currency]);
+        console.log("free_for_this_symbol in currency:", Math.round(free_for_this_symbol * this.base_rates[parameter.underlying.currency]));
         // RULE 7: stock price is lower than previous close
         const options = (parameter.underlying.livePrice > parameter.underlying.previousClosePrice) ? [] : await Option.findAll({
             where: {

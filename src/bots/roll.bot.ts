@@ -201,7 +201,7 @@ export class RollOptionPositionsBot extends ITradingBot {
                         }
                     }
                 } else {
-                    console.log("ignored: no parameters available for underlying");
+                    console.warn("no parameters available for underlying");
                 }
             } else {
                 console.log("ignored (already in open orders list)");
