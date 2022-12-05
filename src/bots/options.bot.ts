@@ -108,7 +108,7 @@ export class OptionsCreateBot extends ITradingBot {
       .getSecDefOptParams(
         stock.symbol,
         "", // exchange but only empty string returns results
-        stock.secType as SecType,
+        stock.secType,
         stock.conId
       )
       .catch((err: IBApiNextError) => {

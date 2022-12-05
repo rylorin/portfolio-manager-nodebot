@@ -125,7 +125,7 @@ export class ITradingBot extends EventEmitter {
 
   protected static OptionToIbContract(option: Option): IbContract {
     const contract: IbContract = {
-      secType: option.contract.secType as SecType,
+      secType: option.contract.secType,
       symbol: option.stock.symbol,
       currency: option.contract.currency,
       exchange: option.contract.exchange ?? "SMART",
@@ -515,7 +515,7 @@ export class ITradingBot extends EventEmitter {
           },
         },
       }).then((orders: OpenOrder[]) =>
-        this.sumOptionsOrdersInBase(orders, underlying, right as OptionType)
+        this.sumOptionsOrdersInBase(orders, underlying, right)
       );
     } else {
       return Promise.resolve({

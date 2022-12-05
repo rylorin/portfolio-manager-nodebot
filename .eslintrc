@@ -1,32 +1,21 @@
 {
   "root": true,
   "parser": "@typescript-eslint/parser",
-  "plugins": [
-    "@typescript-eslint",
-    "rxjs"
-  ],
+  "plugins": ["@typescript-eslint", "rxjs"],
   "extends": [
     "eslint:recommended",
-    "plugin:@typescript-eslint/eslint-recommended",
-    "plugin:@typescript-eslint/recommended"
+    "plugin:@typescript-eslint/recommended",
+    "plugin:@typescript-eslint/recommended-requiring-type-checking"
   ],
   "parserOptions": {
     "ecmaVersion": 2020,
-    "project": [
-      "tsconfig.json"
-    ],
+    "project": ["tsconfig.json"],
     "sourceType": "module"
   },
   "rules": {
     "strict": "error",
-    "semi": [
-      "error",
-      "always"
-    ],
-    "quotes": [
-      "error",
-      "double"
-    ],
+    "semi": ["error", "always"],
+    "quotes": ["error", "double"],
     // "no-console": "off",
     "@typescript-eslint/explicit-function-return-type": "off",
     "@typescript-eslint/explicit-module-boundary-types": "off",
@@ -41,7 +30,7 @@
     "no-unused-vars": "off",
     "@typescript-eslint/no-unused-vars": [
       "warn", // or "error"
-      { 
+      {
         "argsIgnorePattern": "^_",
         "varsIgnorePattern": "^_",
         "caughtErrorsIgnorePattern": "^_"
@@ -53,9 +42,5 @@
     "rxjs/no-unbound-methods": "error",
     "rxjs/throw-error": "error"
   },
-  "ignorePatterns": [
-    "node_modules/",
-    "dist/",
-    "**/*.spec.ts"
-  ]
+  "ignorePatterns": ["node_modules/", "dist/", "**/*.spec.ts"]
 }
