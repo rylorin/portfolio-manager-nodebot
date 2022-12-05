@@ -1,4 +1,4 @@
-name: Build Test
+name: Quality Check
 
 on:
   push:
@@ -15,6 +15,6 @@ jobs:
       - name: Checkout
         uses: actions/checkout@master
       - name: Prepare
-        run: npm install
-      - name: Build test
-        run: npm run build
+        run: yarn install
+      - name: Lint test
+        run: yarn run lint
