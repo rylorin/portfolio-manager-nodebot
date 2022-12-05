@@ -30,7 +30,7 @@
   "devDependencies": {
     "@types/node": "^17.0.21",
     "@types/validator": "^13.7.1",
-    "@typescript-eslint/eslint-plugin": "^4.22.0",
+    "@typescript-eslint/eslint-plugin": "^5.45.0",
     "@typescript-eslint/parser": "^5.45.0",
     "eslint": "^7.24.0",
     "eslint-plugin-rxjs": "^3.1.5",
