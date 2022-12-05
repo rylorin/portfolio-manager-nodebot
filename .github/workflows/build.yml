@@ -15,6 +15,6 @@ jobs:
       - name: Checkout
         uses: actions/checkout@master
       - name: Prepare
-        run: npm install
+        run: yarn install
       - name: Build test
-        run: npm run build
+        run: yarn run build
