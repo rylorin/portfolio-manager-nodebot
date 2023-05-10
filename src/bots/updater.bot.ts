@@ -324,7 +324,7 @@ export class ContractsUpdaterBot extends ITradingBot {
               base: contract.symbol.substring(0, 3),
               currency: contract.currency,
             },
-            logging: false,
+            // logging: false,
           }
         ).then(() => price);
       } else {

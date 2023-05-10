@@ -118,12 +118,12 @@ export class AccountUpdateBot extends ITradingBot {
                   where: where,
                   defaults: values,
                   transaction: transaction,
-                  logging: false,
+                  // logging: false,
                 }).then(([open_order, _created]) =>
                   open_order
                     .update(values, {
                       transaction: transaction,
-                      logging: false,
+                      // logging: false,
                     })
                     .then(() => order)
                 );
@@ -138,61 +138,66 @@ export class AccountUpdateBot extends ITradingBot {
   }
 
   protected updateOpenOrder(order: IbOpenOrder): Promise<void> {
-    // this.printObject(order);
     console.log("updateOpenOrder", order.order.permId, order.contract.symbol);
-    try {
-      return this.findOrCreateContract(order.contract).then(
-        (contract: Contract) =>
-          this.app.sequelize.transaction(
-            (transaction) =>
-              OpenOrder.findOrCreate({
-                where: {
-                  perm_Id: order.order.permId,
-                  portfolioId: this.portfolio.id,
-                },
-                defaults: {
-                  permId: order.order.permId,
-                  portfolioId: this.portfolio.id,
-                  contract_id: contract.id,
-                  actionType: order.order.action,
-                  lmtPrice: order.order.lmtPrice,
-                  auxPrice: order.order.auxPrice,
-                  status: order.orderState.status,
-                  totalQty: order.order.totalQuantity,
-                  cashQty: order.order.cashQty,
-                  remainingQty: order.orderStatus?.remaining,
-                  orderId: order.orderId,
-                  clientId: order.order.clientId,
-                },
-                transaction: transaction,
-                // logging: console.log,
-              })
-                .then(([open_order, _created]) =>
-                  open_order.update(
-                    {
-                      // contract_id: contract.id,  // contract is not supposed to change
-                      actionType: order.order.action,
-                      lmtPrice: order.order.lmtPrice,
-                      auxPrice: order.order.auxPrice,
-                      status: order.orderState.status,
-                      totalQty: order.order.totalQuantity,
-                      cashQty: order.order.cashQty,
-                      remainingQty: order.orderStatus?.remaining,
-                      orderId: order.orderId,
-                      clientId: order.order.clientId,
-                    },
-                    { transaction: transaction }
-                  )
-                )
-                .then(() => this.createAndUpdateLegs(order, transaction))
-                .then()
-            /* Committed */
-          )
+    return this.app.sequelize.transaction((transaction) => {
+      console.log("transaction acquired");
+      return this.findOrCreateContract(order.contract, transaction).then(
+        (contract: Contract) => {
+          console.log("contract found", contract.id);
+          return OpenOrder.findOrCreate({
+            where: {
+              perm_Id: order.order.permId,
+              portfolioId: this.portfolio.id,
+            },
+            defaults: {
+              permId: order.order.permId,
+              portfolioId: this.portfolio.id,
+              contract_id: contract.id,
+              actionType: order.order.action,
+              lmtPrice: order.order.lmtPrice,
+              auxPrice: order.order.auxPrice,
+              status: order.orderState.status,
+              totalQty: order.order.totalQuantity,
+              cashQty: order.order.cashQty,
+              remainingQty: order.orderStatus?.remaining,
+              orderId: order.orderId,
+              clientId: order.order.clientId,
+            },
+            transaction: transaction,
+            // logging: console.log,
+          })
+            .then(([open_order, created]) => {
+              console.log("OpenOrder.findOrCreate done");
+              if (created) return Promise.resolve(open_order);
+              else
+                return open_order.update(
+                  {
+                    // contract_id: contract.id,  // contract is not supposed to change
+                    actionType: order.order.action,
+                    lmtPrice: order.order.lmtPrice,
+                    auxPrice: order.order.auxPrice,
+                    status: order.orderState.status,
+                    totalQty: order.order.totalQuantity,
+                    cashQty: order.order.cashQty,
+                    remainingQty: order.orderStatus?.remaining,
+                    orderId: order.orderId,
+                    clientId: order.order.clientId,
+                  },
+                  { transaction: transaction }
+                );
+            })
+            .then(() => this.createAndUpdateLegs(order, transaction))
+            .then(() =>
+              console.log(
+                "updateOpenOrder done",
+                order.order.permId,
+                order.contract.symbol
+              )
+            );
+          /* Committed */
+        }
       );
-    } catch (err: unknown) {
-      // Rolled back
-      console.error(err);
-    }
+    });
   }
 
   private iterateOpenOrdersForUpdate(orders: IbOpenOrder[]): void {

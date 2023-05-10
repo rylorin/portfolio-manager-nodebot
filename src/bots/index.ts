@@ -1,5 +1,6 @@
 import EventEmitter from "events";
 import { Op, Transaction } from "sequelize";
+import colors from "colors";
 import {
   IBApiNext,
   Contract as IbContract,
@@ -60,15 +61,23 @@ export class ITradingBot extends EventEmitter {
   /**
    * Print a warning message to console
    */
-  warn(text: string): void {
-    console.warn("\x1b[33m%s\x1b[0m", "WARN:", text);
+  warn(message: string): void {
+    console.error(
+      colors.bold.yellow(
+        `[${new Date().toLocaleTimeString()}] (${module}) Warning: ${message}`
+      )
+    );
   }
 
   /**
    * Print and error to console and exit the app with error code, unless -watch argument is present.
    */
-  error(text: string): void {
-    console.error("\x1b[31m%s\x1b[0m", "Error:", text);
+  error(message: string): void {
+    console.error(
+      colors.bold.red(
+        `[${new Date().toLocaleTimeString()}] (${module}) Error: ${message}`
+      )
+    );
   }
 
   protected static expirationToDate(
@@ -865,6 +874,7 @@ export class ITradingBot extends EventEmitter {
     details: ContractDetails,
     transaction?: Transaction
   ): Promise<Contract> {
+    // console.log("createOptionContract", ibContract, details);
     const contract_values = {
       // Contract part of the option
       conId: ibContract.conId,
@@ -953,22 +963,31 @@ export class ITradingBot extends EventEmitter {
         contract = await Contract.findOne({
           where: { conId: ibContract.conId },
           transaction: transaction,
+          // logging: console.log,
         });
       }
       if (contract === null) {
+        // console.log(
+        //   "contract not found",
+        //   ibContract.secType,
+        //   ibContract.symbol
+        // );
         // ibContract conId not found, find by data and update it or create it
         // canonize ibContract
         let details: ContractDetails = null;
         if (ibContract.secType != SecType.BAG) {
+          // console.log("requesting contract details");
           await this.api
             .getContractDetails(ibContract)
             .then((detailstab) => {
+              // console.log("getContractDetails returned");
               if (detailstab.length >= 1) {
                 details = detailstab[0];
                 ibContract = details.contract;
               }
             })
             .catch((err: IBApiNextError) => {
+              // console.log("getContractDetails error");
               const message = `findOrCreateContract.getContractDetails failed for ${ibContract.secType} ${ibContract.symbol} ${ibContract.lastTradeDateOrContractMonth} ${ibContract.strike} ${ibContract.right} with error #${err.code}: '${err.error.message}'`;
               this.error(message);
               throw {
@@ -979,7 +998,13 @@ export class ITradingBot extends EventEmitter {
                 original: Error,
               } as Error;
             });
+          // console.log("after await");
         }
+        // console.log(
+        //   "contract details found",
+        //   ibContract.secType,
+        //   ibContract.symbol
+        // );
         if (details && ibContract.secType == SecType.STK) {
           contract = await this.createStockContract(
             ibContract,
