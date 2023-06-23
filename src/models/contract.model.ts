@@ -1,52 +1,61 @@
-import { Model, Table, Column, DataType } from "sequelize-typescript";
-import { SecType } from "@stoqey/ib";
+import { SecType as IbSecType } from "@stoqey/ib";
+import { AllowNull, Column, DataType, Model, Table } from "sequelize-typescript";
+
+export const ContracType = {
+  Stock: "STK",
+  Option: "OPT",
+  Bag: "BAG",
+  Cash: "CASH",
+  Future: "FUT",
+  FutureOption: "FOP", // maybe OPT
+  Index: "IND",
+} as const;
+export type ContracType = (typeof ContracType)[keyof typeof ContracType];
 
 @Table({ tableName: "contract", timestamps: true })
 export class Contract extends Model {
   /** The unique IB contract identifier. */
   @Column({ type: DataType.INTEGER, field: "con_id" })
-  public conId: number;
+  declare conId: number;
 
   /** The asset symbol. */
   @Column({ type: DataType.STRING })
-  public symbol!: string;
+  declare symbol: string;
 
   /** The security type   */
-  @Column({ type: DataType.ENUM("STK", "OPT", "BAG", "CASH") })
-  public secType!: SecType;
+  @AllowNull(false)
+  @Column({ type: DataType.ENUM(typeof ContracType) })
+  declare secType: IbSecType;
 
   /** The destination exchange. */
   @Column({ type: DataType.STRING })
-  public exchange: string;
+  declare exchange: string;
 
   /** The trading currency. */
   @Column({ type: DataType.STRING(3) })
-  public currency: string;
+  declare currency: string;
 
   /* other fields to be documented */
 
   @Column({ type: DataType.STRING })
-  public name: string;
+  declare name: string;
 
   @Column({ type: DataType.FLOAT(6, 3) })
-  public price: number;
+  declare price: number;
 
   @Column({ type: DataType.FLOAT(6, 3) })
-  public bid: number;
+  declare bid: number;
 
   @Column({ type: DataType.FLOAT(6, 3) })
-  public ask: number;
+  declare ask: number;
 
   @Column({ type: DataType.FLOAT(6, 3), field: "previous_close_price" })
-  public previousClosePrice: number;
+  declare previousClosePrice: number;
 
   get livePrice(): number {
     let value = undefined;
-    if (
-      this.getDataValue("ask") !== null &&
-      this.getDataValue("bid") !== null
-    ) {
-      value = (this.getDataValue("ask") + this.getDataValue("bid")) / 2;
+    if (this.getDataValue("ask") !== null && this.getDataValue("bid") !== null) {
+      value = ((this.getDataValue("ask") as number) + (this.getDataValue("bid") as number)) / 2;
     } else if (this.getDataValue("price") !== null) {
       value = this.getDataValue("price");
     } else {
@@ -56,8 +65,8 @@ export class Contract extends Model {
   }
 
   @Column({ type: DataType.FLOAT(6, 3), field: "fifty_two_week_low" })
-  public fiftyTwoWeekLow?: number;
+  declare fiftyTwoWeekLow?: number;
 
   @Column({ type: DataType.FLOAT(6, 3), field: "fifty_two_week_high" })
-  public fiftyTwoWeekHigh?: number;
+  declare fiftyTwoWeekHigh?: number;
 }

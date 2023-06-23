@@ -1,20 +1,17 @@
-import {
-  Model,
-  Table,
-  Column,
-  DataType,
-} from "sequelize-typescript";
+import { BelongsTo, Column, DataType, Model, Table } from "sequelize-typescript";
+import { Portfolio } from "./portfolio.model";
 
 @Table({ tableName: "currency", timestamps: true })
 export class Currency extends Model {
+  @Column({ type: DataType.STRING(3) })
+  declare base: string;
 
   @Column({ type: DataType.STRING(3) })
-  public base: string;
-
-  @Column({ type: DataType.STRING(3) })
-  public currency: string;
+  declare currency: string;
 
   @Column({ type: DataType.FLOAT })
-  public rate: number;
+  declare rate: number;
 
+  @BelongsTo(() => Portfolio, { foreignKey: "base", targetKey: "baseCurrency" })
+  declare portfolios: Portfolio[];
 }

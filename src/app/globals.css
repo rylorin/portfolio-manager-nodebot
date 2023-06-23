@@ -1,0 +1,9 @@
+.table-tiny th,
+.table-tiny td {
+  padding-left: 4px;
+  padding-right: 4px;
+}
+
+form.inline {
+  display: inline;
+}

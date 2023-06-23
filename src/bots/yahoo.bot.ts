@@ -1,17 +1,15 @@
+import { OptionType, SecType } from "@stoqey/ib";
 import { Op } from "sequelize";
-import { SecType, OptionType } from "@stoqey/ib";
-import { ITradingBot } from ".";
-import { Contract, Stock, Option, Currency, AnyContract } from "../models";
 import yahooFinance from "yahoo-finance2";
 import { Quote } from "yahoo-finance2/dist/esm/src/modules/quote";
+import { ITradingBot } from ".";
 import { greeks, option_implied_volatility } from "../black_scholes";
+import { AnyContract, Contract, Currency, Option, Stock } from "../models";
 
 const YAHOO_PRICE_FREQ: number = parseInt(process.env.YAHOO_PRICE_FREQ) || 15; // secs
 const YAHOO_PRICE_AGE: number = parseInt(process.env.YAHOO_PRICE_FREQ) || 60; // mins
-const BATCH_SIZE_YAHOO_PRICE: number =
-  parseInt(process.env.BATCH_SIZE_YAHOO_PRICE) || 512; // units
-const NO_RISK_INTEREST_RATE: number =
-  parseFloat(process.env.NO_RISK_INTEREST_RATE) || 0.025; // as of 2022-07-28
+const BATCH_SIZE_YAHOO_PRICE: number = parseInt(process.env.BATCH_SIZE_YAHOO_PRICE) || 512; // units
+const NO_RISK_INTEREST_RATE: number = parseFloat(process.env.NO_RISK_INTEREST_RATE) || 0.025; // as of 2022-07-28
 
 type MappedQuote = {
   contract: Contract;
@@ -73,17 +71,12 @@ export class YahooUpdateBot extends ITradingBot {
   }
 
   protected static getYahooTicker(contract: Contract): string {
-    let $ticker: string = contract.symbol
-      .replace("-PR", "-P")
-      .replace(" B", "-B");
+    let $ticker: string = contract.symbol.replace("-PR", "-P").replace(" B", "-B");
     const $exchange: string = contract.exchange;
     if ($exchange == "SBF") {
       $ticker = $ticker + ".PA";
     } else if ($exchange == "LSE" || $exchange == "LSEETF") {
-      $ticker =
-        ($ticker[$ticker.length - 1] == "."
-          ? $ticker.substring(0, $ticker.length - 1)
-          : $ticker) + ".L";
+      $ticker = ($ticker[$ticker.length - 1] == "." ? $ticker.substring(0, $ticker.length - 1) : $ticker) + ".L";
     } else if ($exchange == "VSE") {
       $ticker = $ticker + ".VI";
     } else if ($exchange == "BVME") {
@@ -92,22 +85,11 @@ export class YahooUpdateBot extends ITradingBot {
       $ticker = $ticker + ".T";
     } else if ($exchange == "AEB") {
       $ticker = $ticker + ".AS";
-    } else if (
-      $exchange == "FWB" ||
-      $exchange == "IBIS" ||
-      $exchange == "IBIS2"
-    ) {
-      $ticker =
-        ($ticker[$ticker.length - 1] == "d"
-          ? $ticker.substring(0, $ticker.length - 1)
-          : $ticker) + ".DE";
+    } else if ($exchange == "FWB" || $exchange == "IBIS" || $exchange == "IBIS2") {
+      $ticker = ($ticker[$ticker.length - 1] == "d" ? $ticker.substring(0, $ticker.length - 1) : $ticker) + ".DE";
     } else if ($exchange == "SEHK") {
       $ticker = $ticker + ".HK";
-    } else if (
-      ["NYSE", "NASDAQ", "SMART", "PINK", "ARCA", "AMEX", "BATS"].includes(
-        $exchange
-      )
-    ) {
+    } else if (["NYSE", "NASDAQ", "SMART", "PINK", "ARCA", "AMEX", "BATS"].includes($exchange)) {
       // no ticker processing
     } else if ($exchange == "MOEX") {
       $ticker = $ticker + ".ME";
@@ -123,19 +105,13 @@ export class YahooUpdateBot extends ITradingBot {
     } else if ($exchange == "EBS" || contract.currency == "CHF") {
       $ticker = $ticker + ".SW";
     } else {
-      console.log(
-        "warning: unknow exchange",
-        $exchange,
-        "for",
-        contract.symbol
-      );
+      console.log("warning: unknow exchange", $exchange, "for", contract.symbol);
     }
     return $ticker;
   }
 
   protected static formatOptionName(option: Option): string {
-    const lastTradeDateOrContractMonth: string =
-      option.lastTradeDate.toISOString();
+    const lastTradeDateOrContractMonth: string = option.lastTradeDate.toISOString();
     const year = lastTradeDateOrContractMonth.substring(2, 4);
     const month = lastTradeDateOrContractMonth.substring(5, 7);
     const day = lastTradeDateOrContractMonth.substring(8, 10);
@@ -156,8 +132,7 @@ export class YahooUpdateBot extends ITradingBot {
           r.quote.bid = r.quote?.bid / 100;
           r.quote.fiftyTwoWeekLow = r.quote?.fiftyTwoWeekLow / 100;
           r.quote.fiftyTwoWeekHigh = r.quote?.fiftyTwoWeekHigh / 100;
-          r.quote.regularMarketPreviousClose =
-            r.quote?.regularMarketPreviousClose / 100;
+          r.quote.regularMarketPreviousClose = r.quote?.regularMarketPreviousClose / 100;
         }
         const prices: Row = {
           price: r.quote?.regularMarketPrice || null,
@@ -167,8 +142,7 @@ export class YahooUpdateBot extends ITradingBot {
           fiftyTwoWeekHigh: r.quote?.fiftyTwoWeekHigh || null,
           updatedAt: new Date(),
         };
-        if (r.quote?.regularMarketPreviousClose)
-          prices.previousClosePrice = r.quote?.regularMarketPreviousClose;
+        if (r.quote?.regularMarketPreviousClose) prices.previousClosePrice = r.quote?.regularMarketPreviousClose;
         r.contract.changed("updatedAt", true);
         promises.push(r.contract.update(prices).then());
         if (r.contract.secType == SecType.STK) {
@@ -177,9 +151,7 @@ export class YahooUpdateBot extends ITradingBot {
             epsForward: r.quote.epsForward,
             trailingAnnualDividendRate: r.quote.trailingAnnualDividendRate,
           };
-          promises.push(
-            Stock.update(stock_values, { where: { id: r.contract.id } }).then()
-          );
+          promises.push(Stock.update(stock_values, { where: { id: r.contract.id } }).then());
         } else if (r.contract.secType == SecType.OPT) {
           promises.push(
             Option.findByPk(r.contract.id, {
@@ -196,7 +168,7 @@ export class YahooUpdateBot extends ITradingBot {
                         option.strike,
                         NO_RISK_INTEREST_RATE,
                         (option.dte + 1) / 365,
-                        r.quote?.regularMarketPrice
+                        r.quote?.regularMarketPrice,
                       );
                     } catch (e: unknown) {
                       await Stock.findByPk(option.stock.id).then((stock) => {
@@ -211,7 +183,7 @@ export class YahooUpdateBot extends ITradingBot {
                       option.strike,
                       NO_RISK_INTEREST_RATE,
                       (option.dte + 1) / 365,
-                      iv_
+                      iv_,
                     );
                     const values = {
                       impliedVolatility: iv_,
@@ -224,11 +196,12 @@ export class YahooUpdateBot extends ITradingBot {
                     //     this.printObject(option);
                     //     this.printObject(values);
                     // }
-                    return option.update(values);
+                    return option?.update(values);
                   }
-                })
+                  return option;
+                }),
               )
-              .then()
+              .then(),
           );
         } else if (r.contract.secType == SecType.CASH) {
           promises.push(
@@ -239,8 +212,8 @@ export class YahooUpdateBot extends ITradingBot {
                   base: r.symbol.substring(0, 3),
                   currency: r.symbol.substring(3, 6),
                 } /* logging: console.log, */,
-              }
-            ).then()
+              },
+            ).then(),
           );
         }
       } else {
@@ -252,9 +225,9 @@ export class YahooUpdateBot extends ITradingBot {
               { ask: null, bid: null, updatedAt: new Date() },
               {
                 /* logging: console.log, */
-              }
+              },
             )
-            .then()
+            .then(),
         );
       }
     }
@@ -270,7 +243,7 @@ export class YahooUpdateBot extends ITradingBot {
         quotes = await yahooFinance.quote(
           q.map((a) => a.symbol),
           {},
-          { validateResult: false }
+          { validateResult: false },
         );
       } catch (e: any) {
         quotes = e.result;
@@ -278,8 +251,7 @@ export class YahooUpdateBot extends ITradingBot {
       if (quotes !== undefined) {
         for (const quote of quotes) {
           const i = q.findIndex((p) => p.symbol == quote.symbol);
-          if (i !== -1 && q[i].contract.currency == quote.currency)
-            q[i].quote = quote;
+          if (i !== -1 && q[i].contract.currency == quote.currency) q[i].quote = quote;
         }
       }
     }
@@ -400,13 +372,9 @@ export class YahooUpdateBot extends ITradingBot {
   }
 
   public processQ(): Promise<void> {
-    if (Date.now() - this.lastFetch < YAHOO_PRICE_FREQ * 1000)
-      return Promise.resolve();
+    if (Date.now() - this.lastFetch < YAHOO_PRICE_FREQ * 1000) return Promise.resolve();
     console.log("YahooUpdateBot processQ begin");
-    const contracts: MappedQuote[] = this.requestsQ.splice(
-      0,
-      BATCH_SIZE_YAHOO_PRICE
-    );
+    const contracts: MappedQuote[] = this.requestsQ.splice(0, BATCH_SIZE_YAHOO_PRICE);
     return this.fetchQuotes(contracts)
       .then((q) => this.iterateResults(q))
       .then(() => console.log("YahooUpdateBot processQ end"));
@@ -419,23 +387,17 @@ export class YahooUpdateBot extends ITradingBot {
       let contracts: MappedQuote[] = [];
       contracts = this.requestsQ.splice(0, BATCH_SIZE_YAHOO_PRICE);
       if (contracts.length < BATCH_SIZE_YAHOO_PRICE) {
-        const c = await this.findCurrencies(
-          BATCH_SIZE_YAHOO_PRICE - contracts.length
-        );
+        const c = await this.findCurrencies(BATCH_SIZE_YAHOO_PRICE - contracts.length);
         console.log(c.length, "currency contract(s)");
         contracts = contracts.concat(c);
       }
       if (contracts.length < BATCH_SIZE_YAHOO_PRICE) {
-        const c = await this.findStocks(
-          BATCH_SIZE_YAHOO_PRICE - contracts.length
-        );
+        const c = await this.findStocks(BATCH_SIZE_YAHOO_PRICE - contracts.length);
         console.log(c.length, "stock contract(s)");
         contracts = contracts.concat(c);
       }
       if (contracts.length < BATCH_SIZE_YAHOO_PRICE) {
-        const c = await this.findOptions(
-          BATCH_SIZE_YAHOO_PRICE - contracts.length
-        );
+        const c = await this.findOptions(BATCH_SIZE_YAHOO_PRICE - contracts.length);
         console.log(c.length, "option contract(s)");
         contracts = contracts.concat(c);
       }

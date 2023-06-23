@@ -1,39 +1,46 @@
-import {
-  Model,
-  Table,
-  Column,
-  DataType,
-  BelongsTo,
-} from "sequelize-typescript";
-import { Contract } from ".";
+import { BelongsTo, Column, DataType, ForeignKey, HasMany, Model, Table } from "sequelize-typescript";
+import { Balance, Contract, Currency, Position } from ".";
 
 @Table({ tableName: "portfolio", timestamps: false, deletedAt: false, updatedAt: false })
 export class Portfolio extends Model {
-
   /** The account number. */
   @Column({ type: DataType.STRING })
-  public account!: string;
+  declare account: string;
 
   /** The benchmark symbol. */
+  @ForeignKey(() => Contract)
+  @Column
+  declare benchmark_id: number;
   @BelongsTo(() => Contract, "benchmark_id")
-  public benchmark?: Contract;
+  declare benchmark: Contract;
+
+  @Column({ type: DataType.STRING(32), field: "name" })
+  declare name: string;
 
   @Column({ type: DataType.STRING(3), field: "base_currency" })
-  public baseCurrency: string;
+  declare baseCurrency: string;
 
   @Column({ type: DataType.FLOAT, field: "put_ratio" })
-  public putRatio: number;
+  declare putRatio: number;
 
   @Column({ type: DataType.FLOAT, field: "naked_put_win_ratio" })
-  public cspWinRatio: number;
+  declare cspWinRatio: number;
 
   @Column({ type: DataType.FLOAT, field: "naked_call_win_ratio" })
-  public ccWinRatio: number;
+  declare ccWinRatio: number;
 
   @Column({ type: DataType.FLOAT, field: "min_premium" })
-  public minPremium: number;
+  declare minPremium: number;
 
   @Column({ type: DataType.FLOAT, field: "cash_strategy" })
-  public cashStrategy: number;
+  declare cashStrategy: number;
 
+  @HasMany(() => Position, "portfolio_id")
+  declare positions: Position[];
+
+  @HasMany(() => Balance, "portfolio_id")
+  declare balances: Balance[];
+
+  @HasMany(() => Currency, { sourceKey: "baseCurrency", foreignKey: "base" })
+  declare baseRates: Currency[];
 }

@@ -2,21 +2,42 @@
  * My IB trading bot implementation.
  */
 
-import path from "path";
+import { LogLevel } from "@stoqey/ib";
 import logger from "@stoqey/ib/dist/common/logger";
 import { IBApiNextApp } from "@stoqey/ib/dist/tools/common/ib-api-next-app";
+import path from "path";
 import { Sequelize, SequelizeOptions } from "sequelize-typescript";
 import {
-  ContractsUpdaterBot,
   AccountUpdateBot,
   CashManagementBot,
+  ContractsUpdaterBot,
+  OptionsCreateBot,
   RollOptionPositionsBot,
   SellCashSecuredPutBot,
   SellCoveredCallsBot,
   YahooUpdateBot,
-  OptionsCreateBot,
 } from "./bots";
-import { LogLevel } from "@stoqey/ib";
+import { ImporterBot } from "./bots/importer.bot";
+import {
+  Bag,
+  Balance,
+  Cash,
+  Contract,
+  Currency,
+  EquityStatement,
+  Future,
+  Index,
+  OpenOrder,
+  Option,
+  OptionStatement,
+  Parameter,
+  Portfolio,
+  Position,
+  Stock,
+  Trade,
+} from "./models";
+import { Statement } from "./models/statement.model";
+import StartServer from "./server";
 
 /////////////////////////////////////////////////////////////////////////////////
 // The help text                                                               //
@@ -25,12 +46,9 @@ import { LogLevel } from "@stoqey/ib";
 const DESCRIPTION_TEXT = "Print real time market data of a given contract id.";
 const USAGE_TEXT = "Usage: market-data.js <options>";
 const OPTION_ARGUMENTS: [string, string][] = [
-  [
-    "clientId=<number>",
-    "Client id of current IB connection. Default is random",
-  ],
-  ["portfolio=<string>", "IB account number"],
-  ["updater", "start option contracts updater bot"],
+  ["clientId=<number>", "Client id of current IB connection. Default is random"],
+  ["accountId=<string>", "IB account number"],
+  ["update", "start option contracts updater bot"],
   ["yahoo", "start Yahoo Finance updater"],
   ["account", "start account info update bot"],
   ["cash", "start cash management bot"],
@@ -38,11 +56,10 @@ const OPTION_ARGUMENTS: [string, string][] = [
   ["csp", "start cash secured puts bot"],
   ["roll", "start roll positions bot"],
   ["options", "start create options contracts bot"],
+  ["import", "import flex statements"],
+  ["server", "start React + API server"],
 ];
-const EXAMPLE_TEXT =
-  path.basename(__filename) +
-  path.basename(__filename) +
-  "-port=7497 -host=localhost ";
+const EXAMPLE_TEXT = path.basename(__filename) + path.basename(__filename) + "-port=7497 -host=localhost ";
 
 //////////////////////////////////////////////////////////////////////////////
 // The App code                                                             //
@@ -62,19 +79,33 @@ export class MyTradingBotApp extends IBApiNextApp {
     const scriptName = path.basename(__filename);
     logger.debug(`Starting ${scriptName} script`);
     const clientId: number =
-      this.cmdLineArgs.clientId != undefined
-        ? +this.cmdLineArgs.clientId
-        : Math.round(Math.random() * 16383);
+      this.cmdLineArgs.clientId != undefined ? +this.cmdLineArgs.clientId : Math.round(Math.random() * 16383);
     this.connect(this.cmdLineArgs.watch ? 10000 : 0, clientId);
     const sequelize_settings: SequelizeOptions = {
       dialect: "sqlite",
       storage: __dirname + "/../../db/var/db/data.db",
-      models: [__dirname + "/models/*.model.js"], // or [Player, Team],
+      models: [
+        Bag,
+        Balance,
+        Cash,
+        Contract,
+        Currency,
+        Future,
+        Index,
+        OpenOrder,
+        Option,
+        Parameter,
+        Portfolio,
+        Position,
+        Stock,
+        Trade,
+        Statement,
+        EquityStatement,
+        OptionStatement,
+      ],
+      // models: [__dirname + '/models/*.model.js'], // Not working with ts-node-dev
       modelMatch: (filename, member) => {
-        return (
-          filename.substring(0, filename.indexOf(".model")) ===
-          member.toLowerCase()
-        );
+        return filename.substring(0, filename.indexOf(".model")) === member.toLowerCase();
       },
       sync: { alter: false },
       // isolationLevel: Transaction.ISOLATION_LEVELS.SERIALIZABLE,
@@ -88,44 +119,40 @@ export class MyTradingBotApp extends IBApiNextApp {
       .authenticate()
       .then(() => this.sequelize.sync())
       .then(() => {
-        const portfolio: string = this.cmdLineArgs.portfolio
-          ? (this.cmdLineArgs.portfolio as string)
-          : process.env.IB_ACCOUNT;
-        const yahooBot: YahooUpdateBot = new YahooUpdateBot(
-          this,
-          this.api,
-          portfolio
-        );
-        if (this.cmdLineArgs.updater)
-          new ContractsUpdaterBot(this, this.api, yahooBot).start();
+        let accountId: string;
+        if (this.cmdLineArgs.accountId) accountId = this.cmdLineArgs.accountId as string;
+        else if (process.env.IB_ACCOUNT) accountId = process.env.IB_ACCOUNT;
+        else throw Error("Please define accountId");
+
+        if (this.cmdLineArgs.server) {
+          StartServer();
+        }
+
+        if (this.cmdLineArgs.import) new ImporterBot(this, this.api, accountId).start();
+        const yahooBot: YahooUpdateBot = new YahooUpdateBot(this, this.api, accountId);
+        if (this.cmdLineArgs.update) new ContractsUpdaterBot(this, this.api, yahooBot).start();
         if (this.cmdLineArgs.account)
-          new AccountUpdateBot(this, this.api, portfolio).start().catch(() => {
+          new AccountUpdateBot(this, this.api, accountId).start().catch(() => {
             /* ignored */
           });
         if (this.cmdLineArgs.cash)
-          new CashManagementBot(this, this.api, portfolio).start().catch(() => {
+          new CashManagementBot(this, this.api, accountId).start().catch(() => {
             /* ignored */
           });
-        if (this.cmdLineArgs.cc)
-          new SellCoveredCallsBot(this, this.api, portfolio).start();
+        if (this.cmdLineArgs.cc) new SellCoveredCallsBot(this, this.api, accountId).start();
         if (this.cmdLineArgs.csp)
-          new SellCashSecuredPutBot(this, this.api, portfolio)
-            .start()
-            .catch(() => {
-              /* ignored */
-            });
+          new SellCashSecuredPutBot(this, this.api, accountId).start().catch(() => {
+            /* ignored */
+          });
         if (this.cmdLineArgs.roll)
-          new RollOptionPositionsBot(this, this.api, portfolio)
-            .start()
-            .catch(() => {
-              /* ignored */
-            });
+          new RollOptionPositionsBot(this, this.api, accountId).start().catch(() => {
+            /* ignored */
+          });
         if (this.cmdLineArgs.yahoo)
           yahooBot.start().catch(() => {
             /* ignored */
           });
-        if (this.cmdLineArgs.options)
-          new OptionsCreateBot(this, this.api, portfolio).start();
+        if (this.cmdLineArgs.options) new OptionsCreateBot(this, this.api, accountId).start();
       })
       .catch(() => {
         /* ignored */

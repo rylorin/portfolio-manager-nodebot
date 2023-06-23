@@ -1,37 +1,36 @@
-import {
-  Model,
-  Table,
-  Column,
-  DataType,
-  BelongsTo,
-} from "sequelize-typescript";
+import { BelongsTo, Column, DataType, ForeignKey, Model, Table } from "sequelize-typescript";
 import { Contract, Portfolio, Trade } from ".";
 
 @Table({ tableName: "position", timestamps: true })
 export class Position extends Model {
-
-  /** contract */
+  /** Related Contract */
+  @ForeignKey(() => Contract)
+  @Column
+  declare contract_id: number;
   @BelongsTo(() => Contract, "contract_id")
-  public contract!: Contract;
+  declare contract: Contract;
 
-  /** portfolio */
+  /** Portfolio */
+  @ForeignKey(() => Portfolio)
+  @Column
+  declare portfolio_id: number;
   @BelongsTo(() => Portfolio, "portfolio_id")
-  public portfolio!: Portfolio;
+  declare portfolio: Portfolio;
 
   /** cost basis */
   @Column({ type: DataType.FLOAT })
-  public cost: number;
+  declare cost: number;
 
   /** quantity */
   @Column({ type: DataType.FLOAT })
-  public quantity: number;
+  declare quantity: number;
 
   get averagePrice(): number {
-    return (this.getDataValue("cost") / this.getDataValue("quantity"));
+    return this.getDataValue("cost") / this.getDataValue("quantity");
   }
 
   /** trade */
   @BelongsTo(() => Trade, "trade_unit_id")
-  public trade: Trade;
-
+  declare trade: Trade;
+  declare trade_unit_id: number;
 }

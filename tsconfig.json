@@ -1,29 +1,37 @@
 {
   "compilerOptions": {
     "allowJs": false,
-    "esModuleInterop": true,
-    "lib": ["ES2021"],
+    "allowSyntheticDefaultImports": true,
     "declaration": true,
-    "module": "commonjs",
-    "moduleResolution": "node",
+    "emitDecoratorMetadata": true,
+    "esModuleInterop": true,
+    "experimentalDecorators": true,
+    "forceConsistentCasingInFileNames": true,
+    "isolatedModules": true,
+    "jsx": "react",
+    "lib": ["ESNext", "DOM", "DOM.Iterable"],
+    "module": "ESNext",
+    "moduleResolution": "Node",
+    "noImplicitAny": false, // TODO set to true once all data hava a type
+    "noImplicitReturns": true,
+    "noUnusedLocals": false, // TODO set to true when fixed
+    "noUnusedParameters": false, // TODO set to true when fixed
     "outDir": "./dist",
+    "resolveJsonModule": true,
     "rootDir": "./src",
     "skipLibCheck": true,
     "sourceMap": true,
-    "resolveJsonModule": false,
-    "noImplicitAny": false, //TODO set to true once all data has types
-    "target": "ES2021",
+    "strict": true,
+    "strictNullChecks": false,
+    "target": "ESNext",
+    "types": ["node"],
     "typeRoots": [
       "node_modules/@types",
       // "node_modules/types",
       "src/ts-types"
     ],
-    "experimentalDecorators": true,
-    "emitDecoratorMetadata": true,
-    "strict": true,
-    "strictNullChecks": false,
     "useUnknownInCatchVariables": false
   },
-  "include": ["./src"],
-  "exclude": ["node_modules"]
+  "exclude": ["./node_modules"],
+  "include": ["./src/app"]
 }

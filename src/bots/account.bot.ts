@@ -1,19 +1,8 @@
+import { IBApiNextError, OpenOrder as IbOpenOrder, Position as IbPosition, SecType } from "@stoqey/ib";
 import { Subscription } from "rxjs";
 import { Op, Transaction } from "sequelize";
-import {
-  IBApiNextError,
-  OpenOrder as IbOpenOrder,
-  Position as IbPosition,
-  SecType,
-} from "@stoqey/ib";
-import {
-  // sequelize,
-  Contract,
-  OpenOrder,
-  Position,
-  Balance,
-} from "../models";
 import { ITradingBot } from ".";
+import { Balance, Contract, OpenOrder, Position } from "../models";
 
 export class AccountUpdateBot extends ITradingBot {
   private orderq: IbOpenOrder[] = [];
@@ -26,9 +15,7 @@ export class AccountUpdateBot extends ITradingBot {
   private accountSubscription$: Subscription;
 
   public enqueueOrder(item: IbOpenOrder): void {
-    const orderIndex = this.orderq.findIndex(
-      (p) => p.order.permId == item.order.permId
-    );
+    const orderIndex = this.orderq.findIndex((p) => p.order.permId == item.order.permId);
     if (orderIndex !== -1) {
       this.orderq.splice(orderIndex, 1);
     }
@@ -37,9 +24,7 @@ export class AccountUpdateBot extends ITradingBot {
   }
 
   public enqueuePosition(item: IbPosition): void {
-    const itemIndex = this.positionq.findIndex(
-      (p) => p.contract.conId == item.contract.conId
-    );
+    const itemIndex = this.positionq.findIndex((p) => p.contract.conId == item.contract.conId);
     if (itemIndex !== -1) {
       this.positionq.splice(itemIndex, 1);
     }
@@ -77,60 +62,51 @@ export class AccountUpdateBot extends ITradingBot {
       }
       --this.qProcessing;
     }
-    if (
-      this.orderq.length > 0 ||
-      this.positionq.length > 0 ||
-      this.cashq.length > 0
-    )
+    if (this.orderq.length > 0 || this.positionq.length > 0 || this.cashq.length > 0)
       setTimeout(() => this.emit("processQueue"), 100);
   }
 
-  private createAndUpdateLegs(
-    order: IbOpenOrder,
-    transaction: Transaction
-  ): Promise<IbOpenOrder> {
+  private createAndUpdateLegs(order: IbOpenOrder, transaction: Transaction): Promise<IbOpenOrder> {
     if (order.contract.secType == SecType.BAG) {
       return order.contract.comboLegs.reduce(
         (p, leg) =>
           p.then(() =>
-            this.findOrCreateContract({ conId: leg.conId }, transaction).then(
-              (contract) => {
-                const where = {
-                  permId: order.order.permId,
-                  portfolioId: this.portfolio.id,
-                  contract_id: contract.id,
-                };
-                const values = {
-                  // permId: order.order.permId,
-                  // portfolioId: this.portfolio.id,
-                  // contract_id: contract.id,
-                  actionType: order.order.action == leg.action ? "BUY" : "SELL",
-                  totalQty: order.order.totalQuantity * leg.ratio,
-                  cashQty: order.order.cashQty * leg.ratio,
-                  lmtPrice: undefined,
-                  auxPrice: undefined,
-                  status: order.orderState.status,
-                  remainingQty: order.orderStatus?.remaining * leg.ratio,
-                  orderId: order.orderId,
-                  clientId: order.order.clientId,
-                };
-                return OpenOrder.findOrCreate({
-                  where: where,
-                  defaults: values,
-                  transaction: transaction,
-                  // logging: false,
-                }).then(([open_order, _created]) =>
-                  open_order
-                    .update(values, {
-                      transaction: transaction,
-                      // logging: false,
-                    })
-                    .then(() => order)
-                );
-              }
-            )
+            this.findOrCreateContract({ conId: leg.conId }, transaction).then((contract) => {
+              const where = {
+                permId: order.order.permId,
+                portfolioId: this.portfolio.id,
+                contract_id: contract.id,
+              };
+              const values = {
+                // permId: order.order.permId,
+                // portfolioId: this.portfolio.id,
+                // contract_id: contract.id,
+                actionType: order.order.action == leg.action ? "BUY" : "SELL",
+                totalQty: order.order.totalQuantity * leg.ratio,
+                cashQty: order.order.cashQty * leg.ratio,
+                lmtPrice: undefined,
+                auxPrice: undefined,
+                status: order.orderState.status,
+                remainingQty: order.orderStatus?.remaining * leg.ratio,
+                orderId: order.orderId,
+                clientId: order.order.clientId,
+              };
+              return OpenOrder.findOrCreate({
+                where: where,
+                defaults: values,
+                transaction: transaction,
+                // logging: false,
+              }).then(([open_order, _created]) =>
+                open_order
+                  .update(values, {
+                    transaction: transaction,
+                    // logging: false,
+                  })
+                  .then(() => order),
+              );
+            }),
           ),
-        Promise.resolve(order)
+        Promise.resolve(order),
       );
     } else {
       return Promise.resolve(order);
@@ -141,62 +117,54 @@ export class AccountUpdateBot extends ITradingBot {
     console.log("updateOpenOrder", order.order.permId, order.contract.symbol);
     return this.app.sequelize.transaction((transaction) => {
       console.log("transaction acquired");
-      return this.findOrCreateContract(order.contract, transaction).then(
-        (contract: Contract) => {
-          console.log("contract found", contract.id);
-          return OpenOrder.findOrCreate({
-            where: {
-              perm_Id: order.order.permId,
-              portfolioId: this.portfolio.id,
-            },
-            defaults: {
-              permId: order.order.permId,
-              portfolioId: this.portfolio.id,
-              contract_id: contract.id,
-              actionType: order.order.action,
-              lmtPrice: order.order.lmtPrice,
-              auxPrice: order.order.auxPrice,
-              status: order.orderState.status,
-              totalQty: order.order.totalQuantity,
-              cashQty: order.order.cashQty,
-              remainingQty: order.orderStatus?.remaining,
-              orderId: order.orderId,
-              clientId: order.order.clientId,
-            },
-            transaction: transaction,
-            // logging: console.log,
+      return this.findOrCreateContract(order.contract, transaction).then((contract: Contract) => {
+        console.log("contract found", contract.id);
+        return OpenOrder.findOrCreate({
+          where: {
+            perm_Id: order.order.permId,
+            portfolioId: this.portfolio.id,
+          },
+          defaults: {
+            permId: order.order.permId,
+            portfolioId: this.portfolio.id,
+            contract_id: contract.id,
+            actionType: order.order.action,
+            lmtPrice: order.order.lmtPrice,
+            auxPrice: order.order.auxPrice,
+            status: order.orderState.status,
+            totalQty: order.order.totalQuantity,
+            cashQty: order.order.cashQty,
+            remainingQty: order.orderStatus?.remaining,
+            orderId: order.orderId,
+            clientId: order.order.clientId,
+          },
+          transaction: transaction,
+          // logging: console.log,
+        })
+          .then(([open_order, created]) => {
+            console.log("OpenOrder.findOrCreate done");
+            if (created) return Promise.resolve(open_order);
+            else
+              return open_order.update(
+                {
+                  // contract_id: contract.id,  // contract is not supposed to change
+                  actionType: order.order.action,
+                  lmtPrice: order.order.lmtPrice,
+                  auxPrice: order.order.auxPrice,
+                  status: order.orderState.status,
+                  totalQty: order.order.totalQuantity,
+                  cashQty: order.order.cashQty,
+                  remainingQty: order.orderStatus?.remaining,
+                  orderId: order.orderId,
+                  clientId: order.order.clientId,
+                },
+                { transaction: transaction },
+              );
           })
-            .then(([open_order, created]) => {
-              console.log("OpenOrder.findOrCreate done");
-              if (created) return Promise.resolve(open_order);
-              else
-                return open_order.update(
-                  {
-                    // contract_id: contract.id,  // contract is not supposed to change
-                    actionType: order.order.action,
-                    lmtPrice: order.order.lmtPrice,
-                    auxPrice: order.order.auxPrice,
-                    status: order.orderState.status,
-                    totalQty: order.order.totalQuantity,
-                    cashQty: order.order.cashQty,
-                    remainingQty: order.orderStatus?.remaining,
-                    orderId: order.orderId,
-                    clientId: order.order.clientId,
-                  },
-                  { transaction: transaction }
-                );
-            })
-            .then(() => this.createAndUpdateLegs(order, transaction))
-            .then(() =>
-              console.log(
-                "updateOpenOrder done",
-                order.order.permId,
-                order.contract.symbol
-              )
-            );
-          /* Committed */
-        }
-      );
+          .then(() => this.createAndUpdateLegs(order, transaction))
+          .then(() => console.log("updateOpenOrder done", order.order.permId, order.contract.symbol));
+        /* Committed */
+      });
     });
   }
 
@@ -224,14 +192,11 @@ export class AccountUpdateBot extends ITradingBot {
           position.changed("updatedAt", true); // force update
           return position.update(defaults);
         }
-      })
+      }),
     );
   }
 
-  protected updateCashPosition(pos: {
-    currency: string;
-    balance: number;
-  }): Promise<Balance> {
+  protected updateCashPosition(pos: { currency: string; balance: number }): Promise<Balance> {
     console.log(`updateCashPosition(${pos.currency}, ${pos.balance})`);
     const where = {
       portfolio_id: this.portfolio.id,
@@ -251,13 +216,10 @@ export class AccountUpdateBot extends ITradingBot {
       {
         where: {
           portfolio_id: this.portfolio.id,
-          [Op.or]: [
-            { updatedAt: { [Op.lt]: new Date(now) } },
-            { updatedAt: null },
-          ],
+          [Op.or]: [{ updatedAt: { [Op.lt]: new Date(now) } }, { updatedAt: null }],
         },
         // logging: console.log,
-      }
+      },
     ).then();
   }
 
@@ -269,13 +231,10 @@ export class AccountUpdateBot extends ITradingBot {
       {
         where: {
           portfolio_id: this.portfolio.id,
-          [Op.or]: [
-            { updatedAt: { [Op.lt]: new Date(now) } },
-            { updatedAt: null },
-          ],
+          [Op.or]: [{ updatedAt: { [Op.lt]: new Date(now) } }, { updatedAt: null }],
         },
         // logging: console.log,
-      }
+      },
     ).then();
   }
 
@@ -290,10 +249,7 @@ export class AccountUpdateBot extends ITradingBot {
       return OpenOrder.destroy({
         where: {
           portfolio_id: this.portfolio.id,
-          [Op.or]: [
-            { updatedAt: { [Op.lt]: new Date(now) } },
-            { updatedAt: null },
-          ],
+          [Op.or]: [{ updatedAt: { [Op.lt]: new Date(now) } }, { updatedAt: null }],
         },
         // logging: console.log,
       });
@@ -302,12 +258,9 @@ export class AccountUpdateBot extends ITradingBot {
     this.ordersSubscription$ = this.api.getOpenOrders().subscribe({
       next: (data) => {
         console.log("got next event", data.all.length, "open orders");
-        console.log(
-          `${data.added?.length} orders added, ${data.changed?.length} changed`
-        );
+        console.log(`${data.added?.length} orders added, ${data.changed?.length} changed`);
         if (data.added?.length > 0) this.iterateOpenOrdersForUpdate(data.added);
-        if (data.changed?.length > 0)
-          this.iterateOpenOrdersForUpdate(data.changed);
+        if (data.changed?.length > 0) this.iterateOpenOrdersForUpdate(data.changed);
       },
       error: (err: IBApiNextError) => {
         this.app.error(`getOpenOrders failed with '${err.error.message}'`);
@@ -320,12 +273,10 @@ export class AccountUpdateBot extends ITradingBot {
     this.positionsSubscription$ = this.api.getPositions().subscribe({
       next: (data) => {
         data.added?.forEach((v, k) => {
-          if (k == this.accountNumber)
-            v.forEach((p) => this.enqueuePosition(p));
+          if (k == this.accountNumber) v.forEach((p) => this.enqueuePosition(p));
         });
         data.changed?.forEach((v, k) => {
-          if (k == this.accountNumber)
-            v.forEach((p) => this.enqueuePosition(p));
+          if (k == this.accountNumber) v.forEach((p) => this.enqueuePosition(p));
         });
       },
       error: (err: IBApiNextError) => {
@@ -338,57 +289,39 @@ export class AccountUpdateBot extends ITradingBot {
 
     // clean balances quantities first as if they are unchanged the updatedAt will be unchanged as well
     this.cleanBalances(now).then(() => {
-      this.accountSubscription$ = this.api
-        .getAccountUpdates(this.accountNumber)
-        .subscribe({
-          next: (data) => {
-            // this.printObject(data);
-            if (
-              data.added?.value &&
-              data.added?.value?.get(this.accountNumber) &&
-              data.added?.value?.get(this.accountNumber).get("TotalCashBalance")
-            ) {
-              for (const key of data.added?.value
-                ?.get(this.accountNumber)
-                .get("TotalCashBalance")
-                .keys()) {
-                const balance: number = parseFloat(
-                  data.added?.value
-                    ?.get(this.accountNumber)
-                    .get("TotalCashBalance")
-                    .get(key).value
-                );
-                if (key != "BASE") this.enqueueCashPostition(key, balance);
-              }
+      this.accountSubscription$ = this.api.getAccountUpdates(this.accountNumber).subscribe({
+        next: (data) => {
+          // this.printObject(data);
+          if (
+            data.added?.value &&
+            data.added?.value?.get(this.accountNumber) &&
+            data.added?.value?.get(this.accountNumber).get("TotalCashBalance")
+          ) {
+            for (const key of data.added?.value?.get(this.accountNumber).get("TotalCashBalance").keys()) {
+              const balance: number = parseFloat(
+                data.added?.value?.get(this.accountNumber).get("TotalCashBalance").get(key).value,
+              );
+              if (key != "BASE") this.enqueueCashPostition(key, balance);
             }
-            if (
-              data.changed?.value &&
-              data.changed?.value?.get(this.accountNumber) &&
-              data.changed?.value
-                ?.get(this.accountNumber)
-                .get("TotalCashBalance")
-            ) {
-              for (const key of data.changed?.value
-                ?.get(this.accountNumber)
-                .get("TotalCashBalance")
-                .keys()) {
-                const balance: number = parseFloat(
-                  data.changed?.value
-                    ?.get(this.accountNumber)
-                    .get("TotalCashBalance")
-                    .get(key).value
-                );
-                // console.log("new cash balance:", key, balance);
-                if (key != "BASE") this.enqueueCashPostition(key, balance);
-              }
+          }
+          if (
+            data.changed?.value &&
+            data.changed?.value?.get(this.accountNumber) &&
+            data.changed?.value?.get(this.accountNumber).get("TotalCashBalance")
+          ) {
+            for (const key of data.changed?.value?.get(this.accountNumber).get("TotalCashBalance").keys()) {
+              const balance: number = parseFloat(
+                data.changed?.value?.get(this.accountNumber).get("TotalCashBalance").get(key).value,
+              );
+              // console.log("new cash balance:", key, balance);
+              if (key != "BASE") this.enqueueCashPostition(key, balance);
             }
-          },
-          error: (err: IBApiNextError) => {
-            this.app.error(
-              `getAccountUpdates failed with '${err.error.message}'`
-            );
-          },
-        });
+          }
+        },
+        error: (err: IBApiNextError) => {
+          this.app.error(`getAccountUpdates failed with '${err.error.message}'`);
+        },
+      });
     });
 
     setTimeout(() => this.cleanPositions(now), 15 * 1000); // clean old positions after 15 secs
