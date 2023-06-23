@@ -1,3 +1,6 @@
+/* modules declarations from react-scripts to allow import of svg and css files */
+/* https://github.com/facebook/create-react-app/blob/main/packages/react-scripts/lib/react-app.d.ts */
+
 declare module "*.svg" {
   import * as React from "react";
 

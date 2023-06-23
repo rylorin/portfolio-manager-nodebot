@@ -4,6 +4,8 @@ import { Portfolio } from ".";
 
 @Table({ tableName: "balance", timestamps: true })
 export class Balance extends Model {
+  declare id: number;
+
   /** Portfolio */
   @ForeignKey(() => Portfolio)
   @Column

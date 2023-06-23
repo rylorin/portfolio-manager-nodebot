@@ -5,7 +5,7 @@ import router from "./routers/api";
 
 const { PORT = 3001 } = process.env;
 
-const StartServer = () => {
+const StartServer = (): void => {
   const app = express();
   app.use(cors());
 

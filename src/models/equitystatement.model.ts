@@ -13,6 +13,8 @@ export type StatementStatus = (typeof StatementStatus)[keyof typeof StatementSta
 
 @Table({ tableName: "trade", timestamps: false, createdAt: false, updatedAt: false })
 export class EquityStatement extends Model {
+  declare id: number;
+
   @BelongsTo(() => Statement, "id")
   public statement: Statement;
 

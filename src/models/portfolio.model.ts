@@ -3,6 +3,8 @@ import { Balance, Contract, Currency, Position } from ".";
 
 @Table({ tableName: "portfolio", timestamps: false, deletedAt: false, updatedAt: false })
 export class Portfolio extends Model {
+  declare id: number;
+
   /** The account number. */
   @Column({ type: DataType.STRING })
   declare account: string;

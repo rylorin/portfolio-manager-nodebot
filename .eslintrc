@@ -6,7 +6,7 @@
     "prettier",
     "plugin:storybook/recommended"
   ],
-  "ignorePatterns": ["node_modules/", "dist/", "**/*.spec.ts", "vite.config.js"],
+  "ignorePatterns": ["node_modules/", "dist/", "**/*.spec.ts", "*.config.js"],
   "parser": "@typescript-eslint/parser",
   "parserOptions": {
     "ecmaVersion": 2020,
@@ -50,13 +50,13 @@
     "@typescript-eslint/unbound-method": "warn",
     "no-unsafe-optional-chaining": "warn",
     "no-unused-vars": "off",
-    "quotes": ["warn", "double"],
+    "quotes": ["error", "double"],
     "rxjs/no-async-subscribe": "warn",
     "rxjs/no-ignored-observable": "warn",
     "rxjs/no-ignored-subscription": "warn",
     "rxjs/no-unbound-methods": "warn",
     "rxjs/throw-error": "warn",
-    "semi": ["warn", "always"],
+    "semi": ["error", "always"],
     "strict": "warn"
   }
 }

@@ -3,6 +3,8 @@ import { Portfolio } from "./portfolio.model";
 
 @Table({ tableName: "currency", timestamps: true })
 export class Currency extends Model {
+  declare id: number;
+
   @Column({ type: DataType.STRING(3) })
   declare base: string;
 

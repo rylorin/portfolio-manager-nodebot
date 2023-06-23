@@ -42,6 +42,8 @@ export type StatementTypes = (typeof StatementTypes)[keyof typeof StatementTypes
 
 @Table({ tableName: "statement", timestamps: false, createdAt: false, updatedAt: false })
 export class Statement extends Model {
+  declare id: number;
+
   @Column({ type: DataType.ENUM(typeof StatementTypes), field: "statement_type" })
   declare statementType: StatementTypes;
 

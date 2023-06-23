@@ -3,6 +3,8 @@ import { Contract, Statement } from ".";
 
 @Table({ tableName: "trade_option", timestamps: false, createdAt: false, updatedAt: false })
 export class OptionStatement extends Model {
+  declare id: number;
+
   @BelongsTo(() => Statement, "id")
   declare statement: Statement;
 

@@ -4,6 +4,8 @@ import { Contract } from ".";
 
 @Table({ tableName: "trading_parameters" })
 export class Parameter extends Model {
+  declare id: number;
+
   @Column({ type: DataType.INTEGER, field: "portfolio_id" })
   declare portfolio: number;
 

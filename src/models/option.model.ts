@@ -5,6 +5,8 @@ import { Contract } from ".";
 
 @Table({ tableName: "option", timestamps: true, deletedAt: false })
 export class Option extends Model {
+  declare id: number;
+
   @BelongsTo(() => Contract, "id")
   declare contract: Contract;
 

@@ -3,6 +3,8 @@ import { Contract, Portfolio, Trade } from ".";
 
 @Table({ tableName: "position", timestamps: true })
 export class Position extends Model {
+  declare id: number;
+
   /** Related Contract */
   @ForeignKey(() => Contract)
   @Column

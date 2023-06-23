@@ -34,6 +34,8 @@ export type TradeStrategy = (typeof TradeStrategy)[keyof typeof TradeStrategy];
 
 @Table({ tableName: "trade_unit", timestamps: false })
 export class Trade extends Model {
+  declare id: number;
+
   /** Related Stock */
   @ForeignKey(() => Contract)
   @Column

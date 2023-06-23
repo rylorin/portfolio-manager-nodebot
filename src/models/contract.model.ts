@@ -14,6 +14,8 @@ export type ContracType = (typeof ContracType)[keyof typeof ContracType];
 
 @Table({ tableName: "contract", timestamps: true })
 export class Contract extends Model {
+  declare id: number;
+
   /** The unique IB contract identifier. */
   @Column({ type: DataType.INTEGER, field: "con_id" })
   declare conId: number;

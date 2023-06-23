@@ -3,6 +3,8 @@ import { Contract } from ".";
 
 @Table({ tableName: "stock", timestamps: false, createdAt: false, updatedAt: false })
 export class Stock extends Model {
+  declare id: number;
+
   @BelongsTo(() => Contract, "id")
   public contract: Contract;
 
