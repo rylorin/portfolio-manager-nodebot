@@ -68,7 +68,7 @@ export class AccountUpdateBot extends ITradingBot {
 
   private createAndUpdateLegs(order: IbOpenOrder, transaction: Transaction): Promise<IbOpenOrder> {
     if (order.contract.secType == SecType.BAG) {
-      return order.contract.comboLegs.reduce(
+      return order.contract.comboLegs?.reduce(
         (p, leg) =>
           p.then(() =>
             this.findOrCreateContract({ conId: leg.conId }, transaction).then((contract) => {
@@ -293,13 +293,14 @@ export class AccountUpdateBot extends ITradingBot {
         next: (data) => {
           // this.printObject(data);
           if (
-            data.added?.value &&
-            data.added?.value?.get(this.accountNumber) &&
-            data.added?.value?.get(this.accountNumber).get("TotalCashBalance")
+            data.added &&
+            data.added.value &&
+            data.added.value.get(this.accountNumber) &&
+            data.added.value.get(this.accountNumber)!.get("TotalCashBalance")
           ) {
-            for (const key of data.added?.value?.get(this.accountNumber).get("TotalCashBalance").keys()) {
+            for (const key of data.added.value.get(this.accountNumber)!.get("TotalCashBalance")!.keys()) {
               const balance: number = parseFloat(
-                data.added?.value?.get(this.accountNumber).get("TotalCashBalance").get(key).value,
+                data.added.value.get(this.accountNumber)!.get("TotalCashBalance")!.get(key)?.value ,
               );
               if (key != "BASE") this.enqueueCashPostition(key, balance);
             }
@@ -307,11 +308,11 @@ export class AccountUpdateBot extends ITradingBot {
           if (
             data.changed?.value &&
             data.changed?.value?.get(this.accountNumber) &&
-            data.changed?.value?.get(this.accountNumber).get("TotalCashBalance")
+            data.changed?.value?.get(this.accountNumber)?.get("TotalCashBalance")
           ) {
-            for (const key of data.changed?.value?.get(this.accountNumber).get("TotalCashBalance").keys()) {
+            for (const key of data.changed.value.get(this.accountNumber)!.get("TotalCashBalance")!.keys()) {
               const balance: number = parseFloat(
-                data.changed?.value?.get(this.accountNumber).get("TotalCashBalance").get(key).value,
+                data.changed.value.get(this.accountNumber)!.get("TotalCashBalance")?.get(key)?.value ,
               );
               // console.log("new cash balance:", key, balance);
               if (key != "BASE") this.enqueueCashPostition(key, balance);

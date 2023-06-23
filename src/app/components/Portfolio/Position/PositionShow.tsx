@@ -7,7 +7,7 @@ import PortfolioLayout from "../PortfolioLayout";
 
 type PositionShowProps = {};
 
-const PositionShow: FunctionComponent<PositionShowProps> = ({ ...rest }): JSX.Element => {
+const PositionShow: FunctionComponent<PositionShowProps> = ({ ..._rest }): JSX.Element => {
   const thisPosition = useLoaderData() as PositionModel;
 
   return (

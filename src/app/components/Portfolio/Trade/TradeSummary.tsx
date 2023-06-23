@@ -8,7 +8,7 @@ import TradesMonthlyTable from "./TradesMonthlyTable";
 
 type TradeSummaryProps = {};
 
-const TradeSummary: FunctionComponent<TradeSummaryProps> = ({ ...rest }): JSX.Element => {
+const TradeSummary: FunctionComponent<TradeSummaryProps> = ({ ..._rest }): JSX.Element => {
   const theSynthesys = useLoaderData() as TradeSynthesys;
 
   return (

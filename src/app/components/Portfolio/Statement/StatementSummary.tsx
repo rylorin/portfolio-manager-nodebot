@@ -8,8 +8,8 @@ import PortfolioLayout from "../PortfolioLayout";
 
 type StatementSummaryProps = {};
 
-const StatementSummary: FunctionComponent<StatementSummaryProps> = ({ ...rest }): JSX.Element => {
-  const { portfolioId } = useParams();
+const StatementSummary: FunctionComponent<StatementSummaryProps> = ({ ..._rest }): JSX.Element => {
+  const { _portfolioId } = useParams();
   // const [theSynthesys, setSynthesys] = useState({} as StatementsSynthesysEntries);
   // useEffect(() => {
   //   fetch(`/api/portfolio/${portfolioId}/statements`)

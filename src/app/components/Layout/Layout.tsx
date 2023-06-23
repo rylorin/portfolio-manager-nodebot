@@ -7,7 +7,7 @@ type LayoutProps = {
   children: React.ReactNode;
 };
 
-const Layout: FunctionComponent<LayoutProps> = ({ children, ...rest }): JSX.Element => {
+const Layout: FunctionComponent<LayoutProps> = ({ children, ..._rest }): JSX.Element => {
   return (
     <>
       <NavBar links={links} as="header" />

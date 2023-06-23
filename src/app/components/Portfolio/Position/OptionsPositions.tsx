@@ -15,7 +15,7 @@ import {
   useColorModeValue,
 } from "@chakra-ui/react";
 import { FunctionComponent, default as React } from "react";
-import { Form, Link as RouterLink, useLoaderData, useParams } from "react-router-dom";
+import { Form, Link as RouterLink, useLoaderData } from "react-router-dom";
 import { OptionPositionEntry } from "../../../../routers/types";
 import { formatNumber } from "../../../utils";
 import Number from "../../Number/Number";
@@ -37,9 +37,8 @@ type TotalEntry = {
  * @param param0
  * @returns
  */
-const OptionsPositions: FunctionComponent<PositionsIndexProps> = ({ ...rest }): JSX.Element => {
+const OptionsPositions: FunctionComponent<PositionsIndexProps> = ({ ..._rest }): JSX.Element => {
   const bg = useColorModeValue("gray.200", "gray.900");
-  const { portfolioId } = useParams();
   const thePositions = useLoaderData() as OptionPositionEntry[];
   let subTotal: TotalEntry;
 

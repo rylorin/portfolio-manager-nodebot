@@ -8,7 +8,7 @@ import PortfolioLayout from "./PortfolioLayout";
 
 type PortfolioShowProps = {};
 
-const PortfolioShow: FunctionComponent<PortfolioShowProps> = ({ ...rest }): JSX.Element => {
+const PortfolioShow: FunctionComponent<PortfolioShowProps> = ({ ..._rest }): JSX.Element => {
   // const { portfolioId } = useParams();
   // const [thisPortfolio, setPortfolio] = useState({} as PortfolioModel);
   const thisPortfolio = useLoaderData() as PortfolioModel;

@@ -65,10 +65,10 @@ const makeSynthesys = (statements: Statement[]): Promise<StatementsSynthesysEntr
 /**
  * Get statements monthly summary
  */
-router.get("/summary/all", (req, res) => {
+router.get("/summary/all", (req, res): void => {
   const { portfolioId } = req.params as typeof req.params & parentParams;
 
-  return Statement.findAll({
+  Statement.findAll({
     where: {
       portfolio_id: portfolioId,
       date: {
@@ -78,16 +78,17 @@ router.get("/summary/all", (req, res) => {
     // limit: 500,
   })
     .then((statements: Statement[]): Promise<StatementsSynthesysEntries> => makeSynthesys(statements))
-    .then((synthesysentries: StatementsSynthesysEntries) => res.status(200).json({ synthesysentries }));
+    .then((synthesysentries: StatementsSynthesysEntries) => res.status(200).json({ synthesysentries }))
+    .catch((error) => res.status(500).json({ error }));
 });
 
 /**
  * Get YTD statements monthly summary
  */
-router.get("/summary/ytd", (req, res) => {
+router.get("/summary/ytd", (req, res): void => {
   const { portfolioId } = req.params as typeof req.params & parentParams;
 
-  return Statement.findAll({
+  Statement.findAll({
     where: {
       portfolio_id: portfolioId,
       date: {
@@ -97,16 +98,17 @@ router.get("/summary/ytd", (req, res) => {
     // limit: 500,
   })
     .then((statements: Statement[]): Promise<StatementsSynthesysEntries> => makeSynthesys(statements))
-    .then((synthesysentries: StatementsSynthesysEntries) => res.status(200).json({ synthesysentries }));
+    .then((synthesysentries: StatementsSynthesysEntries) => res.status(200).json({ synthesysentries }))
+    .catch((error) => res.status(500).json({ error }));
 });
 
 /**
  * Get 12M statements monthly summary
  */
-router.get("/summary/12m", (req, res) => {
+router.get("/summary/12m", (req, res): void => {
   const { portfolioId } = req.params as typeof req.params & parentParams;
   const today = new Date();
-  return Statement.findAll({
+  Statement.findAll({
     where: {
       portfolio_id: portfolioId,
       date: {
@@ -116,19 +118,20 @@ router.get("/summary/12m", (req, res) => {
     // limit: 500,
   })
     .then((statements: Statement[]): Promise<StatementsSynthesysEntries> => makeSynthesys(statements))
-    .then((synthesysentries: StatementsSynthesysEntries) => res.status(200).json({ synthesysentries }));
+    .then((synthesysentries: StatementsSynthesysEntries) => res.status(200).json({ synthesysentries }))
+    .catch((error) => res.status(500).json({ error }));
 });
 
 /**
  * Fetch statements for a given month
  */
-router.get("/month/:year(\\d+)/:month(\\d+)", (req, res): Promise<void> => {
+router.get("/month/:year(\\d+)/:month(\\d+)", (req, res): void => {
   const { portfolioId, year, month } = req.params as typeof req.params & parentParams;
   const yearval = parseInt(year);
   const monthval = parseInt(month);
-  return Statement.findAll({
+  Statement.findAll({
     where: {
-      portfolio_id: req.params.portfolioId,
+      portfolio_id: portfolioId,
       date: {
         [Op.gte]: new Date(yearval, monthval - 1, 1),
         [Op.lt]: new Date(monthval < 12 ? yearval : yearval + 1, monthval < 12 ? monthval : 0, 1),
@@ -203,19 +206,17 @@ router.get("/month/:year(\\d+)/:month(\\d+)", (req, res): Promise<void> => {
         });
       }, Promise.resolve([] as StatementEntry[]));
     })
-    .then((statemententries: StatementEntry[]) => {
-      // console.log('sending:', value);
-      res.status(200).json({ statemententries });
-    });
+    .then((statemententries: StatementEntry[]) => res.status(200).json({ statemententries }))
+    .catch((error) => res.status(500).json({ error }));
 });
 
 /**
  * Create a new trade using current statement
  */
-router.get("/:statementId(\\d+)/CreateTrade", (req, res): Promise<void> => {
+router.get("/:statementId(\\d+)/CreateTrade", (req, res): void => {
   const { portfolioId, statementId } = req.params as typeof req.params & parentParams;
   // console.log("CreateTrade", portfolioId, statementId);
-  return Statement.findByPk(statementId, {
+  Statement.findByPk(statementId, {
     include: [{ model: Contract }, { model: Portfolio }],
   })
     .then((statement) => {
@@ -225,7 +226,7 @@ router.get("/:statementId(\\d+)/CreateTrade", (req, res): Promise<void> => {
           status: TradeStatus.open,
           openingDate: statement.date,
           strategy: TradeStrategy.undefined,
-          portfolio_id: statement.portfolio.id,
+          portfolio_id: portfolioId,
           symbol_id: statement.stock.id,
         };
         return Trade.create(trade, { logging: console.log }).then((trade) =>
@@ -235,18 +236,17 @@ router.get("/:statementId(\\d+)/CreateTrade", (req, res): Promise<void> => {
         throw Error("statement doesn't exist");
       }
     })
-    .then((statement) => {
-      res.status(200).json({ statement });
-    });
+    .then((statement) => res.status(200).json({ statement }))
+    .catch((error) => res.status(500).json({ error }));
 });
 
 /**
  * Guess trade of current statement
  */
-router.get("/:statementId(\\d+)/GuessTrade", (req, res): Promise<void> => {
+router.get("/:statementId(\\d+)/GuessTrade", (req, res): void => {
   const { portfolioId, statementId } = req.params as typeof req.params & parentParams;
   // console.log("GuessTrade", portfolioId, statementId);
-  return Statement.findByPk(statementId, {
+  Statement.findByPk(statementId, {
     include: [{ model: Contract }, { model: Portfolio }],
   })
     .then((statement) => {
@@ -256,7 +256,7 @@ router.get("/:statementId(\\d+)/GuessTrade", (req, res): Promise<void> => {
             // console.log("equity statement", statement);
             return Statement.findOne({
               where: {
-                portfolio_id: statement.portfolio.id,
+                portfolio_id: portfolioId,
                 date: { [Op.lt]: statement.date },
                 stock_id: statement.stock.id,
                 trade_unit_id: { [Op.not]: null },
@@ -311,18 +311,17 @@ router.get("/:statementId(\\d+)/GuessTrade", (req, res): Promise<void> => {
         throw Error("statement doesn't exist");
       }
     })
-    .then((statement) => {
-      res.status(200).json({ statement });
-    });
+    .then((statement) => res.status(200).json({ statement }))
+    .catch((error) => res.status(500).json({ error }));
 });
 
 /**
  * Add a statement to an existing trade
  */
-router.get("/:statementId(\\d+)/AddToTrade/:tradeId(\\d+)", (req, res): Promise<void> => {
-  const { portfolioId, statementId, tradeId } = req.params as typeof req.params & parentParams;
+router.get("/:statementId(\\d+)/AddToTrade/:tradeId(\\d+)", (req, res): void => {
+  const { _portfolioId, statementId, tradeId } = req.params as typeof req.params & parentParams;
   // console.log("CreateTrade", portfolioId, statementId);
-  return Statement.findByPk(statementId, {
+  Statement.findByPk(statementId, {
     include: [{ model: Contract }, { model: Portfolio }],
   })
     .then((statement) => {
@@ -332,18 +331,17 @@ router.get("/:statementId(\\d+)/AddToTrade/:tradeId(\\d+)", (req, res): Promise<
         throw Error("statement doesn't exist");
       }
     })
-    .then((statement) => {
-      res.status(200).json({ statement });
-    });
+    .then((statement) => res.status(200).json({ statement }))
+    .catch((error) => res.status(500).json({ error }));
 });
 
 /**
  * Get a statement
  */
-router.get("/id/:statementId(\\d+)", (req, res): Promise<void> => {
-  const { portfolioId, statementId } = req.params as typeof req.params & parentParams;
+router.get("/id/:statementId(\\d+)", (req, res): void => {
+  const { _portfolioId, statementId } = req.params as typeof req.params & parentParams;
   // console.log("statement", portfolioId, statementId);
-  return Statement.findByPk(statementId, {
+  Statement.findByPk(statementId, {
     include: [{ model: Contract }, { model: Portfolio }],
   })
     .then((statement) => {
@@ -353,18 +351,17 @@ router.get("/id/:statementId(\\d+)", (req, res): Promise<void> => {
         throw Error("statement doesn't exist");
       }
     })
-    .then((statement) => {
-      res.status(200).json({ statement });
-    });
+    .then((statement) => res.status(200).json({ statement }))
+    .catch((error) => res.status(500).json({ error }));
 });
 
 /**
  * Delete a statement
  */
-router.get("/:statementId(\\d+)/DeleteStatement", (req, res): Promise<void> => {
+router.get("/:statementId(\\d+)/DeleteStatement", (req, res): void => {
   const { portfolioId, statementId } = req.params as typeof req.params & parentParams;
   console.log("DeleteStatement", portfolioId, statementId);
-  return Statement.findByPk(statementId, {
+  Statement.findByPk(statementId, {
     include: [{ model: Contract }, { model: Portfolio }],
   })
     .then((statement) => {
@@ -374,9 +371,8 @@ router.get("/:statementId(\\d+)/DeleteStatement", (req, res): Promise<void> => {
         throw Error("statement doesn't exist");
       }
     })
-    .then(() => {
-      res.status(200).end();
-    });
+    .then(() => res.status(200).end())
+    .catch((error) => res.status(500).json({ error }));
 });
 
 export default router;

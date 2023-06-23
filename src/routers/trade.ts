@@ -61,10 +61,10 @@ function makeSynthesys(trades: Trade[]): TradeSynthesys {
 /**
  * Get all trades
  */
-router.get("/summary/all", (req, res) => {
+router.get("/summary/all", (req, res): void => {
   const { portfolioId } = req.params as typeof req.params & parentParams;
 
-  return Trade.findAll({
+  Trade.findAll({
     where: {
       portfolio_id: portfolioId,
       openingDate: {
@@ -73,17 +73,19 @@ router.get("/summary/all", (req, res) => {
     },
     include: [{ model: Contract, as: "stock" }],
     // limit: 500,
-  }).then((trades: Trade[]) => res.status(200).json({ tradessynthesys: makeSynthesys(trades) }));
+  })
+    .then((trades: Trade[]) => res.status(200).json({ tradessynthesys: makeSynthesys(trades) }))
+    .catch((error) => res.status(500).json({ error }));
 });
 
 /**
  * Get last 12 months trades
  */
-router.get("/summary/12m", (req, res) => {
+router.get("/summary/12m", (req, res): void => {
   const { portfolioId } = req.params as typeof req.params & parentParams;
   const today = new Date();
 
-  return Trade.findAll({
+  Trade.findAll({
     where: {
       portfolio_id: portfolioId,
       openingDate: {
@@ -98,16 +100,18 @@ router.get("/summary/12m", (req, res) => {
     },
     include: [{ model: Contract, as: "stock" }],
     // limit: 500,
-  }).then((trades: Trade[]) => res.status(200).json({ tradessynthesys: makeSynthesys(trades) }));
+  })
+    .then((trades: Trade[]) => res.status(200).json({ tradessynthesys: makeSynthesys(trades) }))
+    .catch((error) => res.status(500).json({ error }));
 });
 
 /**
  * Get YTD trades
  */
-router.get("/summary/ytd", (req, res) => {
+router.get("/summary/ytd", (req, res): void => {
   const { portfolioId } = req.params as typeof req.params & parentParams;
 
-  return Trade.findAll({
+  Trade.findAll({
     where: {
       portfolio_id: portfolioId,
       openingDate: {
@@ -122,15 +126,17 @@ router.get("/summary/ytd", (req, res) => {
     },
     include: [{ model: Contract, as: "stock" }],
     // limit: 500,
-  }).then((trades: Trade[]) => res.status(200).json({ tradessynthesys: makeSynthesys(trades) }));
+  })
+    .then((trades: Trade[]) => res.status(200).json({ tradessynthesys: makeSynthesys(trades) }))
+    .catch((error) => res.status(500).json({ error }));
 });
 
 /**
  * Get a trade
  */
-router.get("/id/:tradeId(\\d+)", (req, res): Promise<void> => {
-  const { portfolioId, tradeId } = req.params as typeof req.params & parentParams;
-  return Trade.findByPk(tradeId, {
+router.get("/id/:tradeId(\\d+)", (req, res): void => {
+  const { _portfolioId, tradeId } = req.params as typeof req.params & parentParams;
+  Trade.findByPk(tradeId, {
     include: [
       { model: Contract, as: "stock" },
       { model: Portfolio, as: "portfolio" },
@@ -143,9 +149,8 @@ router.get("/id/:tradeId(\\d+)", (req, res): Promise<void> => {
         throw Error("trade doesn't exist");
       }
     })
-    .then((trade) => {
-      res.status(200).json({ trade });
-    });
+    .then((trade) => res.status(200).json({ trade }))
+    .catch((error) => res.status(500).json({ error }));
 });
 
 /**

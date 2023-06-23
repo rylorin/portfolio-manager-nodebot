@@ -7,7 +7,7 @@ import PortfolioLayout from "../PortfolioLayout";
 
 type TradeShowProps = {};
 
-const TradeShow: FunctionComponent<TradeShowProps> = ({ ...rest }): JSX.Element => {
+const TradeShow: FunctionComponent<TradeShowProps> = ({ ..._rest }): JSX.Element => {
   const thisTrade = useLoaderData() as TradeModel;
 
   return (

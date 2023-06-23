@@ -8,17 +8,9 @@ import PortfolioLayout from "./PortfolioLayout";
 
 type PortfolioShowProps = {};
 
-const PortfolioEdit: FunctionComponent<PortfolioShowProps> = ({ ...rest }): JSX.Element => {
+const PortfolioEdit: FunctionComponent<PortfolioShowProps> = ({ ..._rest }): JSX.Element => {
   const thisPortfolio = useLoaderData() as PortfolioModel;
-  // const { portfolioId } = useParams();
   const navigate = useNavigate();
-  // const [thisPortfolio, setPortfolio] = useState({} as PortfolioModel);
-
-  // useEffect(() => {
-  //   fetch(`/api/portfolio/${portfolioId}`)
-  //     .then((response) => response.json())
-  //     .then((data) => setPortfolio(data.data));
-  // }, []);
 
   return (
     <PortfolioLayout>

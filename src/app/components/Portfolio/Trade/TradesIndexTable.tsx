@@ -11,7 +11,11 @@ type TradeSynthesysTableProps = {
   content: TradeEntry[];
 };
 
-const TradeSynthesysTable: FunctionComponent<TradeSynthesysTableProps> = ({ title, content, ...rest }): JSX.Element => {
+const TradeSynthesysTable: FunctionComponent<TradeSynthesysTableProps> = ({
+  title,
+  content,
+  ..._rest
+}): JSX.Element => {
   return (
     <TableContainer>
       <Table variant="simple" size="sm">

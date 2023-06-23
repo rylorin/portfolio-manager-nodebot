@@ -4,18 +4,6 @@ import { Link as RouterLink, useLoaderData } from "react-router-dom";
 import { Portfolio as PortfolioModel } from "../../../models/portfolio.model";
 import { obfuscate } from "../../utils";
 
-/**
- * Load portfolio list content
- * @param param0
- * @returns
- */
-export const loader = ({ params }): Promise<PortfolioModel[]> => {
-  const { portfolioId, year, month } = params;
-  return fetch("/api/portfolio")
-    .then((response) => response.json())
-    .then((data) => data.portfolios);
-};
-
 const PortfolioIndex = (): JSX.Element => {
   // const [portfolios, setPortfolios] = useState([] as PortfolioModel[]);
   const portfolios = useLoaderData() as PortfolioModel[];

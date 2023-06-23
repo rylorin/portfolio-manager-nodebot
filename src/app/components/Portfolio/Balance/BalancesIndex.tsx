@@ -1,7 +1,7 @@
 import { DeleteIcon, EditIcon, SearchIcon } from "@chakra-ui/icons";
 import { IconButton, Table, TableCaption, TableContainer, Tbody, Td, Tfoot, Thead, Tr } from "@chakra-ui/react";
 import { FunctionComponent, default as React } from "react";
-import { useLoaderData, useParams } from "react-router-dom";
+import { useLoaderData } from "react-router-dom";
 import { BalanceEntry } from "../../../../routers/types";
 import Number from "../../Number/Number";
 import PortfolioLayout from "../PortfolioLayout";
@@ -13,8 +13,7 @@ type BalancesIndexProps = {};
  * @param param0
  * @returns
  */
-const BalancesIndex: FunctionComponent<BalancesIndexProps> = ({ ...rest }): JSX.Element => {
-  const { portfolioId } = useParams();
+const BalancesIndex: FunctionComponent<BalancesIndexProps> = ({ ..._rest }): JSX.Element => {
   const theBalances = useLoaderData() as BalanceEntry[];
 
   return (

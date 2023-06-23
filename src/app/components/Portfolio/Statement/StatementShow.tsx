@@ -1,6 +1,4 @@
 import { FunctionComponent, default as React } from "react";
-import { useLoaderData, useParams } from "react-router-dom";
-import { Statement } from "../../../../models";
 import PortfolioLayout from "../PortfolioLayout";
 
 type StatementShowProps = {};
@@ -10,9 +8,9 @@ type StatementShowProps = {};
  * @param param0
  * @returns
  */
-const StatementShow: FunctionComponent<StatementShowProps> = ({ ...rest }): JSX.Element => {
-  const { portfolioId, year, month } = useParams();
-  const theStatement = useLoaderData() as Statement;
+const StatementShow: FunctionComponent<StatementShowProps> = ({ ..._rest }): JSX.Element => {
+  // const { portfolioId, year, month } = useParams();
+  // const theStatement = useLoaderData() as Statement;
 
   return <PortfolioLayout>theStatement</PortfolioLayout>;
 };

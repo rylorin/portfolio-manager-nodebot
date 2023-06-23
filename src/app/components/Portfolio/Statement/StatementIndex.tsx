@@ -33,8 +33,8 @@ type StatementIndexProps = {};
  * @param param0
  * @returns
  */
-const StatementIndex: FunctionComponent<StatementIndexProps> = ({ ...rest }): JSX.Element => {
-  const { portfolioId, year, month } = useParams();
+const StatementIndex: FunctionComponent<StatementIndexProps> = ({ ..._rest }): JSX.Element => {
+  const { portfolioId } = useParams();
   const theStatements = useLoaderData() as StatementEntry[];
   let previousId: number;
 

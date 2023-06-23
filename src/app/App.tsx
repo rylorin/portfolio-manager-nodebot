@@ -1,11 +1,10 @@
 import React from "react";
-import { Outlet, Route, RouterProvider, Routes, createBrowserRouter } from "react-router-dom";
+import { Outlet, RouterProvider, createBrowserRouter } from "react-router-dom";
 import Layout from "./components/Layout/Layout";
-import RoutesLayout from "./components/Layout/RoutesLayout";
 import BalancesIndex from "./components/Portfolio/Balance/BalancesIndex";
 import { balancesIndexLoader } from "./components/Portfolio/Balance/loaders";
 import PortfolioEdit from "./components/Portfolio/PortfolioEdit";
-import { default as PortfolioIndex, loader as PortfolioIndexLoader } from "./components/Portfolio/PortfolioIndex";
+import { default as PortfolioIndex } from "./components/Portfolio/PortfolioIndex";
 import { default as PortfolioShow } from "./components/Portfolio/PortfolioShow";
 import OptionsPositions from "./components/Portfolio/Position/OptionsPositions";
 import PositionShow from "./components/Portfolio/Position/PositionShow";
@@ -16,7 +15,7 @@ import {
   positionsIndexLoader,
   positionsOptionsLoader,
 } from "./components/Portfolio/Position/loaders";
-import { default as Portfolio, action as PortfolioAction } from "./components/Portfolio/Potfolio";
+import { action as PortfolioAction } from "./components/Portfolio/Potfolio";
 import { default as StatementIndex } from "./components/Portfolio/Statement/StatementIndex";
 import { default as StatementShow } from "./components/Portfolio/Statement/StatementShow";
 import { default as StatementSummary } from "./components/Portfolio/Statement/StatementSummary";
@@ -42,21 +41,21 @@ import {
   tradeSummaryLoaderYTD,
   tradesShowLoader,
 } from "./components/Portfolio/Trade/loaders";
-import { portfolioLoader } from "./components/Portfolio/loaders";
+import { portfolioIndexLoader, portfolioLoader } from "./components/Portfolio/loaders";
 
-const Root = (): JSX.Element => {
-  return (
-    <>
-      <Routes>
-        <Route element={<RoutesLayout />}>
-          <Route index element={<main>Home</main>} />
-          <Route path="/blog" element={<main>Blog</main>} />
-          <Route path="/portfolio/*" element={<Portfolio />} />{" "}
-        </Route>
-      </Routes>
-    </>
-  );
-};
+// const Root = (): JSX.Element => {
+//   return (
+//     <>
+//       <Routes>
+//         <Route element={<RoutesLayout />}>
+//           <Route index element={<main>Home</main>} />
+//           <Route path="/blog" element={<main>Blog</main>} />
+//           <Route path="/portfolio/*" element={<Portfolio />} />{" "}
+//         </Route>
+//       </Routes>
+//     </>
+//   );
+// };
 
 const router = createBrowserRouter([
   { path: "/", element: <Layout>(Home)</Layout> },
@@ -70,7 +69,7 @@ const router = createBrowserRouter([
     ),
     action: PortfolioAction,
     children: [
-      { index: true, Component: PortfolioIndex, loader: PortfolioIndexLoader },
+      { index: true, Component: PortfolioIndex, loader: portfolioIndexLoader },
       { path: ":portfolioId", Component: PortfolioShow, loader: portfolioLoader },
       { path: ":portfolioId/edit", Component: PortfolioEdit, loader: portfolioLoader },
 

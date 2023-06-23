@@ -40,11 +40,11 @@ type OptionsSynthesis = {
 export class ITradingBot extends EventEmitter {
   protected app: MyTradingBotApp;
   protected api: IBApiNext;
-  protected accountNumber: string | undefined;
+  protected accountNumber: string;
   protected portfolio: Portfolio;
   protected base_rates: number[] = [];
 
-  constructor(app: MyTradingBotApp, api: IBApiNext, account?: string) {
+  constructor(app: MyTradingBotApp, api: IBApiNext, account: string) {
     super();
     this.app = app;
     this.api = api;

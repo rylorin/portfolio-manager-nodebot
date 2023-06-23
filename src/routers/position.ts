@@ -72,10 +72,9 @@ router.get("/index", async (req, res) => {
       baseRate: baseRates[item.contract.currency],
     } as PositionEntry;
   });
-  return Promise.all(promPositions).then((positions: PositionEntry[]) => {
-    // console.log(positions);
-    return res.status(200).json({ positions });
-  });
+  Promise.all(promPositions)
+    .then((positions: PositionEntry[]) => res.status(200).json({ positions }))
+    .catch((error) => res.status(500).json({ error }));
 });
 
 /**
@@ -156,16 +155,15 @@ router.get("/options", async (req, res) => {
       apy,
     } as OptionPositionEntry;
   });
-  return Promise.all(promPositions).then((positions: OptionPositionEntry[]) => {
-    // console.log(positions);
-    return res.status(200).json({ positions });
-  });
+  Promise.all(promPositions)
+    .then((positions: OptionPositionEntry[]) => res.status(200).json({ positions }))
+    .catch((error) => res.status(500).json({ error }));
 });
 
 /**
  * Delete a positions
  */
-router.get("/id/:positionId(\\d+)/DeletePosition", async (req, res) => {
+router.get("/id/:positionId(\\d+)/DeletePosition", (req, res): void => {
   const { portfolioId, positionId } = req.params as typeof req.params & parentParams;
   console.log("DeletePosition", portfolioId, positionId);
   Position.findByPk(positionId)
@@ -173,15 +171,18 @@ router.get("/id/:positionId(\\d+)/DeletePosition", async (req, res) => {
       if (position) return position.destroy();
       else throw Error("position not found");
     })
-    .then(() => res.status(200).end());
+    .then(() => res.status(200).end())
+    .catch((error) => res.status(500).json({ error }));
 });
 
 /**
  * Get a single position
  */
-router.get("/id/:positionId(\\d+)", async (req, res) => {
-  const { portfolioId, positionId } = req.params as typeof req.params & parentParams;
-  Position.findByPk(positionId).then((position) => res.status(200).json({ position }));
+router.get("/id/:positionId(\\d+)", (req, res): void => {
+  const { _portfolioId, positionId } = req.params as typeof req.params & parentParams;
+  Position.findByPk(positionId)
+    .then((position) => res.status(200).json({ position }))
+    .catch((error) => res.status(500).json({ error }));
 });
 
 /**

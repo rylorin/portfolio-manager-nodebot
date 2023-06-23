@@ -23,7 +23,6 @@ import {
 } from "@chakra-ui/react";
 import { FunctionComponent, default as React } from "react";
 import { Form, Link as RouterLink, useLoaderData, useParams } from "react-router-dom";
-import { Position } from "../../../../models";
 import { PositionEntry } from "../../../../routers/types";
 import { formatNumber } from "../../../utils";
 import Number from "../../Number/Number";
@@ -36,7 +35,7 @@ type PositionsIndexProps = {};
  * @param param0
  * @returns
  */
-const PositionsIndex: FunctionComponent<PositionsIndexProps> = ({ ...rest }): JSX.Element => {
+const PositionsIndex: FunctionComponent<PositionsIndexProps> = ({ ..._rest }): JSX.Element => {
   const { portfolioId } = useParams();
   const thePositions = useLoaderData() as PositionEntry[];
   let previousId: number;
@@ -46,9 +45,9 @@ const PositionsIndex: FunctionComponent<PositionsIndexProps> = ({ ...rest }): JS
     return undefined;
   };
 
-  const getPrice = (item: Position) => {
-    return item.contract.price || (item.contract.ask + item.contract.bid) / 2 || item.contract.previousClosePrice;
-  };
+  // const getPrice = (item: Position) => {
+  //   return item.contract.price || (item.contract.ask + item.contract.bid) / 2 || item.contract.previousClosePrice;
+  // };
 
   return (
     <PortfolioLayout>
