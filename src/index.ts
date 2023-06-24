@@ -24,9 +24,11 @@ import {
   Cash,
   Contract,
   Currency,
+  DividendStatement,
   EquityStatement,
   Future,
   Index,
+  InterestStatement,
   OpenOrder,
   Option,
   OptionStatement,
@@ -34,6 +36,7 @@ import {
   Portfolio,
   Position,
   Stock,
+  TaxStatement,
   Trade,
 } from "./models";
 import { Statement } from "./models/statement.model";
@@ -102,6 +105,9 @@ export class MyTradingBotApp extends IBApiNextApp {
         Statement,
         EquityStatement,
         OptionStatement,
+        TaxStatement,
+        DividendStatement,
+        InterestStatement,
       ],
       // models: [__dirname + '/models/*.model.js'], // Not working with ts-node-dev
       modelMatch: (filename, member) => {
@@ -138,10 +144,7 @@ export class MyTradingBotApp extends IBApiNextApp {
         if (this.cmdLineArgs.cash) new CashManagementBot(this, this.api, accountId).start();
         if (this.cmdLineArgs.cc) new SellCoveredCallsBot(this, this.api, accountId).start();
         if (this.cmdLineArgs.csp) new SellCashSecuredPutBot(this, this.api, accountId).start();
-        if (this.cmdLineArgs.roll)
-          new RollOptionPositionsBot(this, this.api, accountId).start().catch(() => {
-            /* ignored */
-          });
+        if (this.cmdLineArgs.roll) new RollOptionPositionsBot(this, this.api, accountId).start();
         if (this.cmdLineArgs.yahoo) yahooBot.start();
         if (this.cmdLineArgs.options) new OptionsCreateBot(this, this.api, accountId).start();
       })

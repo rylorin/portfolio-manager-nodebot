@@ -4,12 +4,16 @@ import { ITradingBot } from ".";
 import { MyTradingBotApp } from "..";
 import {
   Contract,
+  DividendStatement,
   EquityStatement,
+  FeeStatement,
+  InterestStatement,
   OptionStatement,
   Portfolio,
   Statement,
   StatementStatus,
   StatementTypes,
+  TaxStatement,
 } from "../models";
 
 const ibContractFromElement = (element: any): IbContract => {
@@ -154,15 +158,14 @@ export class ImporterBot extends ITradingBot {
   }
 
   private processAllSecuritiesInfo(element: any): Promise<void> {
-    if (element.SecuritiesInfo.SecurityInfo instanceof Array) {
-      return element.SecuritiesInfo.SecurityInfo.reduce(
+    // console.log("processAllSecuritiesInfo");
+    if (element instanceof Array) {
+      return element.reduce(
         (p: Promise<void>, element: any) => p.then(() => this.processSecurityInfo(element)),
         Promise.resolve(),
       );
-    } else if (element.SecuritiesInfo.SecurityInfo) {
-      return this.processSecurityInfo(element.SecuritiesInfo.SecurityInfo).then(() => undefined);
-    }
-    return Promise.resolve();
+    } else if (element) return this.processSecurityInfo(element).then(() => undefined);
+    else return Promise.resolve();
   }
 
   /*
@@ -255,12 +258,14 @@ export class ImporterBot extends ITradingBot {
             realizedPnL: element.realizedPnL,
             status: transactionStatusFromElement(element),
           });
-        } else return EquityStatement.findByPk(statement.id);
+        } else {
+          return EquityStatement.findByPk(statement.id);
+        }
       }),
     );
   }
 
-  protected processOptStatement(element: any): Promise<OptionStatement | null> {
+  protected processOptionTrade(element: any): Promise<Statement> {
     // console.log("processStockTrade", element);
     return this.processSecurityInfoUnderlying(element).then((contract) =>
       Statement.findOrCreate({
@@ -288,23 +293,23 @@ export class ImporterBot extends ITradingBot {
               realizedPnL: element.realizedPnL,
               status: transactionStatusFromElement(element),
               contract_id: contract?.id,
-            }),
+            }).then((_optStatement) => statement),
           );
         } else {
-          return OptionStatement.findByPk(statement.id);
+          return statement;
         }
       }),
     );
   }
 
-  protected processStatement(element: any): Promise<void> {
+  protected processOneTrade(element: any): Promise<void> {
     switch (element.assetCategory) {
       case SecType.STK:
       case SecType.FUT:
         return this.processStockTrade(element).then(() => undefined);
       case SecType.FOP:
       case SecType.OPT:
-        return this.processOptStatement(element).then(() => undefined);
+        return this.processOptionTrade(element).then(() => undefined);
       default:
         console.error("unsupported assetCategory:", element.assetCategory);
         console.log("processTrade", element);
@@ -312,16 +317,16 @@ export class ImporterBot extends ITradingBot {
     }
   }
 
-  private processAllStatements(element: any): Promise<void> {
-    if (element.Trades.Trade instanceof Array) {
-      return element.Trades.Trade.reduce(
-        (p: Promise<void>, element: any) => p.then(() => this.processStatement(element)),
+  private processAllTrades(element: any): Promise<void> {
+    // console.log("processAllStatements", element);
+    if (element instanceof Array) {
+      return element.reduce(
+        (p: Promise<void>, element: any) => p.then(() => this.processOneTrade(element)),
         Promise.resolve(),
       );
-    } else if (element.Trades.Trade) {
-      return this.processStatement(element.Trades.Trade).then(() => undefined);
-    }
-    return Promise.resolve();
+    } else if (element) {
+      return this.processOneTrade(element).then(() => undefined);
+    } else return Promise.resolve();
   }
 
   /*
@@ -366,35 +371,94 @@ export class ImporterBot extends ITradingBot {
 [0] }
   */
   protected processCashTransaction(element: any): Promise<Statement | null> {
-    const defaults = {
-      portfolio_id: this.portfolio.id,
-      statementType: StatementTypes.CashStatement,
-      date: element.dateTime,
-      currency: element.currency,
-      amount: element.amount,
-      description: element.description,
-      transactionId: element.transactionID,
-      fxRateToBase: element.fxRateToBase,
-      stock_id: undefined,
-    };
-    // console.log("processCashTransaction", element, defaults);
-    return Statement.findOrCreate({
-      where: { transactionId: element.transactionID },
-      defaults,
-      //   logging: console.log,
-    }).then(([statement, _created]) => statement);
+    // console.log("processCashTransaction", element);
+    let statementType: StatementTypes;
+    switch (element.type) {
+      case "Withholding Tax":
+        statementType = StatementTypes.TaxStatement;
+        break;
+      case "Dividends":
+      case "Payment In Lieu Of Dividends":
+        statementType = StatementTypes.DividendStatement;
+        break;
+      case "Broker Interest Paid":
+      case "Broker Interest Received":
+        statementType = StatementTypes.InterestStatement;
+        break;
+      case "Deposits/Withdrawals":
+        statementType = StatementTypes.CashStatement;
+        break;
+      case "Other Fees":
+      case "Commission Adjustments":
+        statementType = StatementTypes.FeeStatement;
+        break;
+      default:
+        console.error("undefined cash trasaction type:", element);
+        throw Error("undefined cash trasaction type:" + element.type);
+    }
+    return (element.assetCategory ? this.processSecurityInfo(element) : Promise.resolve(null))
+      .then((contract: Contract | null) => {
+        const defaults = {
+          portfolio_id: this.portfolio.id,
+          statementType,
+          date: element.dateTime,
+          currency: element.currency,
+          amount: element.amount,
+          description: element.description,
+          transactionId: element.transactionID,
+          fxRateToBase: element.fxRateToBase,
+          stock_id: contract?.id,
+        };
+        return Statement.findOrCreate({
+          where: { transactionId: element.transactionID },
+          defaults,
+          //   logging: console.log,
+        });
+      })
+      .then(([statement, created]) => {
+        if (created) {
+          switch (statementType) {
+            case StatementTypes.TaxStatement:
+              {
+                const idx = element.description.indexOf("(");
+                const country = element.description.substring(idx + 1, idx + 3);
+                return TaxStatement.create({ id: statement.id, country }).then((_taxStatement) => statement);
+              }
+              break;
+            case StatementTypes.DividendStatement:
+              {
+                const idx = element.description.indexOf("(");
+                const country = element.description.substring(idx + 1, idx + 3);
+                return DividendStatement.create({ id: statement.id, country }).then((_dividendStatement) => statement);
+              }
+              break;
+            case StatementTypes.InterestStatement:
+              return InterestStatement.create({ id: statement.id }).then((_interestStatement) => statement);
+              break;
+            case StatementTypes.CashStatement:
+              return Promise.resolve(statement);
+              break;
+            case StatementTypes.FeeStatement:
+              return FeeStatement.create({ id: statement.id }).then((_interestStatement) => statement);
+              break;
+            default:
+              throw Error("invalide statement type: " + statementType);
+          }
+        }
+        return statement;
+      });
   }
 
   private processAllCashTransactions(element: any): Promise<void> {
-    if (element.CashTransactions.CashTransaction instanceof Array) {
-      return element.CashTransactions.CashTransaction.reduce(
+    // console.log("processAllCashTransactions", element);
+    if (element instanceof Array) {
+      return element.reduce(
         (p: Promise<void>, element: any) => p.then(() => this.processCashTransaction(element)),
         Promise.resolve(),
       );
-    } else if (element.CashTransactions.CashTransaction) {
-      return this.processCashTransaction(element.CashTransactions.CashTransaction).then(() => undefined);
-    }
-    return Promise.resolve();
+    } else if (element) {
+      return this.processCashTransaction(element).then(() => undefined);
+    } else return Promise.resolve();
   }
 
   protected processCorporateAction(element: any): void {
@@ -423,9 +487,9 @@ export class ImporterBot extends ITradingBot {
         name: element.AccountInformation.name,
       },
     })
-      .then(([_portfolio, _created]) => this.processAllSecuritiesInfo(element))
-      .then(() => this.processAllStatements(element))
-      .then(() => this.processAllCashTransactions(element))
+      .then(([_portfolio, _created]) => this.processAllSecuritiesInfo(element.SecuritiesInfo.SecurityInfo))
+      .then(() => this.processAllTrades(element.Trades.Trade))
+      .then(() => this.processAllCashTransactions(element.CashTransactions.CashTransaction))
       .then(() => this.processAllCorporateActions(element))
       .catch((error) => console.error("importer bot process report:", error));
   }

@@ -2,11 +2,15 @@ import express from "express";
 import { Op } from "sequelize";
 import {
   Contract,
+  DividendStatement,
   EquityStatement,
+  FeeStatement,
+  InterestStatement,
   OptionStatement,
   Portfolio,
   Statement,
   StatementTypes,
+  TaxStatement,
   Trade,
   TradeStatus,
   TradeStrategy,
@@ -359,19 +363,50 @@ router.get("/id/:statementId(\\d+)", (req, res): void => {
  * Delete a statement
  */
 router.get("/:statementId(\\d+)/DeleteStatement", (req, res): void => {
-  const { portfolioId, statementId } = req.params as typeof req.params & parentParams;
-  console.log("DeleteStatement", portfolioId, statementId);
-  Statement.findByPk(statementId, {
-    include: [{ model: Contract }, { model: Portfolio }],
-  })
+  const { _portfolioId, statementId } = req.params as typeof req.params & parentParams;
+  // console.log("DeleteStatement", portfolioId, statementId);
+  Statement.findByPk(statementId)
     .then((statement) => {
       if (statement) {
-        return statement.destroy();
+        // console.log(JSON.stringify(statement));
+        switch (statement.statementType) {
+          case StatementTypes.TaxStatement:
+            return TaxStatement.destroy({ where: { id: statement.id } }).then((_count) => statement);
+            break;
+          case StatementTypes.DividendStatement:
+            return DividendStatement.destroy({ where: { id: statement.id } }).then((_count) => statement);
+            break;
+          case StatementTypes.InterestStatement:
+            return InterestStatement.destroy({ where: { id: statement.id } }).then((_count) => statement);
+            break;
+          case StatementTypes.CashStatement:
+            return Promise.resolve(statement);
+            break;
+          case StatementTypes.FeeStatement:
+            return FeeStatement.destroy({ where: { id: statement.id } }).then((_count) => statement);
+            break;
+          default:
+            console.error("invalid statement type:", statement.statementType);
+            throw Error("invalid statement type: " + statement.statementType);
+        }
       } else {
+        console.error("statement not found:", statementId);
+        throw Error("statement not found: " + statementId);
+      }
+    })
+    .then((statement) => {
+      if (statement) {
+        // console.log("deleteing statement", statement.id);
+        return Statement.destroy({ where: { id: statementId }, logging: console.log });
+      } else {
+        console.error("statement not found:", statementId);
         throw Error("statement doesn't exist");
       }
     })
-    .then(() => res.status(200).end())
+    .then((_count) => {
+      // console.log("statement deleted");
+      res.status(200).end();
+    })
     .catch((error) => res.status(500).json({ error }));
 });
 
