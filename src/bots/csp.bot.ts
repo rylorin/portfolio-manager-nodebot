@@ -3,7 +3,7 @@ import { Op } from "sequelize";
 import { ITradingBot } from ".";
 import { Contract, OpenOrder, Option, Parameter, Position, Stock } from "../models";
 
-const CSP_FREQ: number = parseInt(process.env.CSP_FREQ) || 10; // mins
+const CSP_FREQ: number = parseInt(process.env.CSP_FREQ || "10"); // mins
 
 interface OptionEx extends Option {
   yield?: number;
@@ -153,13 +153,14 @@ export class SellCashSecuredPutBot extends ITradingBot {
       total_engaged,
     );
 
-    const all_options: OptionEx[] = result.reduce((p, v) => [...p, ...v.options], []);
+    const all_options: OptionEx[] = result.reduce((p, v) => [...p, ...v.options], [] as OptionEx[]);
     const filtered_options: OptionEx[] = [];
     for (const option of all_options) {
       // RULE 6: check overall margin space
       const stock = await Stock.findByPk(option.stock.id);
       if (option.strike * option.multiplier * this.base_rates[option.contract.currency] < max_for_all_symbols) {
-        if (option.impliedVolatility > stock.historicalVolatility) {
+        // eslint-disable-next-line @typescript-eslint/no-unnecessary-type-assertion,@typescript-eslint/no-non-null-assertion
+        if (option.impliedVolatility > stock!.historicalVolatility) {
           // RULE 1: implied volatility > historical volatility
           // const expiry: Date = new Date(option.lastTradeDate);
           const diffDays = Math.ceil((option.lastTradeDate.getTime() - Date.now()) / (1000 * 3600 * 24));
@@ -170,7 +171,8 @@ export class SellCashSecuredPutBot extends ITradingBot {
       }
     }
     // order by yield
-    filtered_options.sort((a: OptionEx, b: OptionEx) => b.yield - a.yield);
+    // eslint-disable-next-line @typescript-eslint/no-unnecessary-type-assertion,@typescript-eslint/no-non-null-assertion
+    filtered_options.sort((a: OptionEx, b: OptionEx) => b.yield! - a.yield!);
     if (filtered_options.length > 0) {
       console.log("filtered_options:", filtered_options.length);
       console.log(filtered_options[0]["yield"]);
@@ -204,17 +206,18 @@ export class SellCashSecuredPutBot extends ITradingBot {
     });
   }
 
-  private async process(): Promise<void> {
+  private process(): void {
     console.log("SellCashSecuredPutBot process begin");
-
-    await this.listParameters().then((result) => this.iterateParameters(result));
-
-    setTimeout(() => this.emit("process"), CSP_FREQ * 60 * 1000);
-    console.log("SellCashSecuredPutBot process end");
+    this.listParameters()
+      .then((result) => this.iterateParameters(result))
+      .then(() => setTimeout(() => this.emit("process"), CSP_FREQ * 60 * 1000))
+      .catch((error) => console.error("csp bot process:", error));
   }
 
-  public async start(): Promise<void> {
-    this.on("process", this.process);
-    this.init().then(() => setTimeout(() => this.emit("process"), 6000));
+  public start(): void {
+    this.on("process", () => this.process());
+    this.init()
+      .then(() => setTimeout(() => this.emit("process"), 6000))
+      .catch((error) => console.error("csp bot start:", error));
   }
 }

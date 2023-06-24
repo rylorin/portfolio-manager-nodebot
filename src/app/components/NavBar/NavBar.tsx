@@ -13,7 +13,7 @@ type NavBarProps = {
 
 const NavBar: FunctionComponent<NavBarProps> = ({ links, ...rest }): JSX.Element => {
   const [isOpen, setIsOpen] = React.useState(false);
-  const toggle = () => setIsOpen(!isOpen);
+  const toggle = (): void => setIsOpen(!isOpen);
   const to = Object.keys(links).shift() || "/";
 
   return (

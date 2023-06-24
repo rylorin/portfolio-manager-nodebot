@@ -5,7 +5,7 @@ import { Link as RouterLink, useLoaderData } from "react-router-dom";
 import { Position as PositionModel } from "../../../../models";
 import PortfolioLayout from "../PortfolioLayout";
 
-type PositionShowProps = {};
+type PositionShowProps = Record<string, never>;
 
 const PositionShow: FunctionComponent<PositionShowProps> = ({ ..._rest }): JSX.Element => {
   const thisPosition = useLoaderData() as PositionModel;

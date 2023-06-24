@@ -93,7 +93,8 @@ export class SellCoveredCallsBot extends ITradingBot {
             option["yield"] = (option.contract.bid / option.strike / diffDays) * 360;
             // option.stock.contract = await Contract.findByPk(option.stock.id);
           }
-          options.sort((a: OptionEx, b: OptionEx) => b.yield - a.yield);
+          // eslint-disable-next-line @typescript-eslint/no-unnecessary-type-assertion,@typescript-eslint/no-non-null-assertion
+          options.sort((a: OptionEx, b: OptionEx) => b.yield! - a.yield!);
           // for (const option of options) {
           //     console.log("yield of contract", option["yield"]);
           //     this.printObject(option);
@@ -139,17 +140,20 @@ export class SellCoveredCallsBot extends ITradingBot {
     });
   }
 
-  private async process(): Promise<void> {
+  private process(): void {
     console.log("SellCoveredCallsBot process begin");
-    await this.listStockPostitions().then((result) => this.iteratePositions(result));
-    setTimeout(() => this.emit("process"), 3600 * 1000);
-    console.log("SellCoveredCallsBot process end");
+    this.listStockPostitions()
+      .then((result) => this.iteratePositions(result))
+      .then(() => setTimeout(() => this.emit("process"), 3600 * 1000))
+      .catch((error) => console.error("cc bot process:", error));
   }
 
-  public start() {
-    this.init().then(() => {
-      this.on("process", this.process);
-      setTimeout(() => this.emit("process"), 60 * 1000);
-    });
+  public start(): void {
+    this.init()
+      .then(() => {
+        this.on("process", () => this.process());
+        setTimeout(() => this.emit("process"), 60 * 1000);
+      })
+      .catch((error) => console.error("cc bot start:", error));
   }
 }

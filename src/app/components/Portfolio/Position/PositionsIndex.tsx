@@ -28,7 +28,7 @@ import { formatNumber } from "../../../utils";
 import Number from "../../Number/Number";
 import PortfolioLayout from "../PortfolioLayout";
 
-type PositionsIndexProps = {};
+type PositionsIndexProps = Record<string, never>;
 
 /**
  * Statements list component
@@ -40,7 +40,7 @@ const PositionsIndex: FunctionComponent<PositionsIndexProps> = ({ ..._rest }): J
   const thePositions = useLoaderData() as PositionEntry[];
   let previousId: number;
 
-  const savePrevious = (value: number) => {
+  const savePrevious = (value: number): undefined => {
     if (value) previousId = value;
     return undefined;
   };

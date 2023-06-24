@@ -99,7 +99,7 @@ export class ImporterBot extends ITradingBot {
   private token: string;
   private query: string;
 
-  constructor(app: MyTradingBotApp, api: IBApiNext, account?: string) {
+  constructor(app: MyTradingBotApp, api: IBApiNext, account: string) {
     super(app, api, account);
     if (process.env.IB_TOKEN_ID) this.token = process.env.IB_TOKEN_ID;
     if (process.env.IB_QUERY_ID) this.query = process.env.IB_QUERY_ID;
@@ -160,7 +160,7 @@ export class ImporterBot extends ITradingBot {
         Promise.resolve(),
       );
     } else if (element.SecuritiesInfo.SecurityInfo) {
-      return this.processSecurityInfo(element.SecuritiesInfo.SecurityInfo).then(() => {});
+      return this.processSecurityInfo(element.SecuritiesInfo.SecurityInfo).then(() => undefined);
     }
     return Promise.resolve();
   }
@@ -301,10 +301,10 @@ export class ImporterBot extends ITradingBot {
     switch (element.assetCategory) {
       case SecType.STK:
       case SecType.FUT:
-        return this.processStockTrade(element).then(() => {});
+        return this.processStockTrade(element).then(() => undefined);
       case SecType.FOP:
       case SecType.OPT:
-        return this.processOptStatement(element).then(() => {});
+        return this.processOptStatement(element).then(() => undefined);
       default:
         console.error("unsupported assetCategory:", element.assetCategory);
         console.log("processTrade", element);
@@ -319,7 +319,7 @@ export class ImporterBot extends ITradingBot {
         Promise.resolve(),
       );
     } else if (element.Trades.Trade) {
-      return this.processStatement(element.Trades.Trade).then(() => {});
+      return this.processStatement(element.Trades.Trade).then(() => undefined);
     }
     return Promise.resolve();
   }
@@ -392,24 +392,25 @@ export class ImporterBot extends ITradingBot {
         Promise.resolve(),
       );
     } else if (element.CashTransactions.CashTransaction) {
-      return this.processCashTransaction(element.CashTransactions.CashTransaction).then(() => {});
+      return this.processCashTransaction(element.CashTransactions.CashTransaction).then(() => undefined);
     }
     return Promise.resolve();
   }
 
-  protected processCorporateAction(element: any) {
+  protected processCorporateAction(element: any): void {
     console.log("processCorporateAction", element);
   }
 
-  private processAllCorporateActions(element: any) {
+  private processAllCorporateActions(element: any): Promise<void> {
     if (element.CorporateActions.CorporateAction instanceof Array) {
       element.CorporateActions.CorporateAction.forEach((element) => this.processCorporateAction(element));
     } else if (element.CorporateActions.CorporateAction) {
       this.processCorporateAction(element.CorporateActions.CorporateAction);
     }
+    return Promise.resolve();
   }
 
-  protected async processReport(element: any): Promise<void> {
+  protected processReport(element: any): void {
     console.log("AccountInformation", element.AccountInformation);
     Portfolio.findOrCreate({
       where: {
@@ -423,28 +424,30 @@ export class ImporterBot extends ITradingBot {
       },
     })
       .then(([_portfolio, _created]) => this.processAllSecuritiesInfo(element))
-      .then(() => this.processAllStatements(element));
-    this.processAllCashTransactions(element);
-    this.processAllCorporateActions(element);
+      .then(() => this.processAllStatements(element))
+      .then(() => this.processAllCashTransactions(element))
+      .then(() => this.processAllCorporateActions(element))
+      .catch((error) => console.error("importer bot process report:", error));
   }
 
-  protected fetchReport(url: string): Promise<void> {
+  protected fetchReport(url: string): void {
     const parser = new XMLParser({
       ignoreAttributes: false,
       attributeNamePrefix: "",
     });
     console.log("fetching report at", url);
-    return fetch(url)
+    fetch(url)
       .then((response) => response.text())
       .then((XMLdata) => {
         const jObj = parser.parse(XMLdata);
         if (jObj.FlexQueryResponse) {
           if (jObj.FlexQueryResponse.FlexStatements.FlexStatement instanceof Array) {
-            jObj.FlexQueryResponse.FlexStatements.FlexStatement.forEach(async (element) => {
-              await this.processReport(element);
-            });
+            return jObj.FlexQueryResponse.FlexStatements.FlexStatement.reduce(
+              (p: Promise<void>, element: any) => p.then(() => this.processReport(element)),
+              Promise.resolve(),
+            );
           } else {
-            this.processReport(jObj.FlexQueryResponse.FlexStatements.FlexStatement);
+            return this.processReport(jObj.FlexQueryResponse.FlexStatements.FlexStatement);
           }
         } else if (jObj.FlexStatementResponse?.Status == "Warn" && jObj.FlexStatementResponse.ErrorCode == 1019) {
           // Retry
@@ -454,12 +457,13 @@ export class ImporterBot extends ITradingBot {
         } else {
           console.log(jObj);
         }
-      });
+      })
+      .catch((error) => console.error("importer bot fetch report:", error));
   }
 
-  protected process(): Promise<void> {
+  protected process(): void {
     const parser = new XMLParser();
-    return fetch(
+    fetch(
       `https://gdcdyn.interactivebrokers.com/Universal/servlet/FlexStatementService.SendRequest?t=${this.token}&q=${this.query}&v=3`,
     )
       .then((response) => response.text())
@@ -470,13 +474,16 @@ export class ImporterBot extends ITradingBot {
             `${jObj.FlexStatementResponse.Url}?q=${jObj.FlexStatementResponse.ReferenceCode}&t=${this.token}&v=3`,
           );
         } else throw Error("Can t fetch data" + jObj.FlexStatementResponse.ErrorMessage);
-      });
+      })
+      .catch((error) => console.error("importer bot fetch:", error));
   }
 
-  public async start(): Promise<void> {
-    this.init().then(() => {
-      this.on("process", this.process);
-      setTimeout(() => this.emit("process"), 10 * 1000); // start after 10 secs
-    });
+  public start(): void {
+    this.init()
+      .then(() => {
+        this.on("process", () => this.process());
+        setTimeout(() => this.emit("process"), 10 * 1000); // start after 10 secs
+      })
+      .catch((error) => console.error("start importer bot:", error));
   }
 }

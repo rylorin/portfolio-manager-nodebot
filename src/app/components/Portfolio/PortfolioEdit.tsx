@@ -6,7 +6,7 @@ import { Portfolio as PortfolioModel } from "../../../models/portfolio.model";
 import { obfuscate } from "../../utils";
 import PortfolioLayout from "./PortfolioLayout";
 
-type PortfolioShowProps = {};
+type PortfolioShowProps = Record<string, never>;
 
 const PortfolioEdit: FunctionComponent<PortfolioShowProps> = ({ ..._rest }): JSX.Element => {
   const thisPortfolio = useLoaderData() as PortfolioModel;
@@ -48,7 +48,7 @@ const PortfolioEdit: FunctionComponent<PortfolioShowProps> = ({ ..._rest }): JSX
       </Flex>
       <Flex justifyContent="center" gap="2" mt="1">
         <Center w="40px" h="40px">
-          <ArrowBackIcon onClick={() => navigate(-1)} />
+          <ArrowBackIcon onClick={(): void => navigate(-1)} />
         </Center>
         <RouterLink to={`../${thisPortfolio.id}`}>
           <Center w="40px" h="40px">

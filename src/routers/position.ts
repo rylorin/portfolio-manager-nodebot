@@ -84,26 +84,19 @@ router.get("/options", async (req, res) => {
   const { portfolioId } = req.params as typeof req.params & parentParams;
 
   const portfolio = await Portfolio.findByPk(portfolioId, {
-    include: [{ model: Position } /*, { model: Currency } */],
+    include: [
+      {
+        model: Position,
+        as: "positions",
+        include: [{ model: Contract, as: "contract", where: { secType: ContracType.Option } }],
+      },
+      { model: Currency, as: "baseRates" },
+    ],
   });
   if (!portfolio) throw Error("Portfolio not found!");
   // console.log(portfolio);
 
-  const baseRates = await Currency.findAll({ where: { base: portfolio.baseCurrency } }).then((records) =>
-    records.reduce((p, item) => {
-      p[item.currency] = 1 / item.rate;
-      return p;
-    }, {} as Record<string, number>),
-  );
-
-  const dbPositions = await Position.findAll({
-    where: {
-      portfolio_id: portfolioId,
-    },
-    include: [{ model: Contract, where: { secType: ContracType.Option }, as: "contract" }],
-  });
-
-  const promPositions = dbPositions.map(async (item) => {
+  const promPositions = portfolio.positions.map(async (item) => {
     // console.log("dbPositions:", JSON.stringify(item));
     const option = await Option.findByPk(item.contract.id, {
       include: [
@@ -136,7 +129,7 @@ router.get("/options", async (req, res) => {
       pru: item.cost / item.quantity / option.multiplier,
       cost: item.cost,
       pnl: value - item.cost,
-      baseRate: baseRates[item.contract.currency],
+      baseRate: portfolio.baseRates[item.contract.currency],
       option: {
         id: item.contract.id,
         symbol: option.stock.symbol,

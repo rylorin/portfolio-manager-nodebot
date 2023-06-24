@@ -2,7 +2,7 @@ import { FunctionComponent, default as React } from "react";
 import { Outlet } from "react-router-dom";
 import Layout from "./Layout";
 
-type RoutesLayoutProps = {};
+type RoutesLayoutProps = Record<string, never>;
 
 const RoutesLayout: FunctionComponent<RoutesLayoutProps> = (): JSX.Element => {
   return (

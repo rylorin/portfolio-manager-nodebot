@@ -130,28 +130,19 @@ export class MyTradingBotApp extends IBApiNextApp {
 
         if (this.cmdLineArgs.import) new ImporterBot(this, this.api, accountId).start();
         const yahooBot: YahooUpdateBot = new YahooUpdateBot(this, this.api, accountId);
-        if (this.cmdLineArgs.update) new ContractsUpdaterBot(this, this.api, yahooBot).start();
+        if (this.cmdLineArgs.update) new ContractsUpdaterBot(this, this.api, accountId, yahooBot).start();
         if (this.cmdLineArgs.account)
           new AccountUpdateBot(this, this.api, accountId).start().catch(() => {
             /* ignored */
           });
-        if (this.cmdLineArgs.cash)
-          new CashManagementBot(this, this.api, accountId).start().catch(() => {
-            /* ignored */
-          });
+        if (this.cmdLineArgs.cash) new CashManagementBot(this, this.api, accountId).start();
         if (this.cmdLineArgs.cc) new SellCoveredCallsBot(this, this.api, accountId).start();
-        if (this.cmdLineArgs.csp)
-          new SellCashSecuredPutBot(this, this.api, accountId).start().catch(() => {
-            /* ignored */
-          });
+        if (this.cmdLineArgs.csp) new SellCashSecuredPutBot(this, this.api, accountId).start();
         if (this.cmdLineArgs.roll)
           new RollOptionPositionsBot(this, this.api, accountId).start().catch(() => {
             /* ignored */
           });
-        if (this.cmdLineArgs.yahoo)
-          yahooBot.start().catch(() => {
-            /* ignored */
-          });
+        if (this.cmdLineArgs.yahoo) yahooBot.start();
         if (this.cmdLineArgs.options) new OptionsCreateBot(this, this.api, accountId).start();
       })
       .catch(() => {

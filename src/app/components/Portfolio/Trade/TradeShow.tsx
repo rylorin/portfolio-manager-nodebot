@@ -5,7 +5,7 @@ import { Link as RouterLink, useLoaderData } from "react-router-dom";
 import { Trade as TradeModel } from "../../../../models";
 import PortfolioLayout from "../PortfolioLayout";
 
-type TradeShowProps = {};
+type TradeShowProps = Record<string, never>;
 
 const TradeShow: FunctionComponent<TradeShowProps> = ({ ..._rest }): JSX.Element => {
   const thisTrade = useLoaderData() as TradeModel;

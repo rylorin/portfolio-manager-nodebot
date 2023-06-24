@@ -860,8 +860,9 @@ export class ITradingBot extends EventEmitter {
           throw { name: "ITradingBotNotImplemented", message } as Error;
         }
       }
-      if (!transaction_) await transaction.commit();
-    } catch (err: any) {
+      // eslint-disable-next-line @typescript-eslint/no-unnecessary-type-assertion,@typescript-eslint/no-non-null-assertion
+      if (!transaction_) await transaction!.commit();
+    } catch (err) {
       if (err.name == "IBApiNextError") {
         // silently ignore, only propagate
       } else {

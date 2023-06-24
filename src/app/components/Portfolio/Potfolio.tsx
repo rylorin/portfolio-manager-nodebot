@@ -7,7 +7,7 @@ import { default as StatementIndex } from "./Statement/StatementIndex";
 import StatementSummary from "./Statement/StatementSummary";
 import { statementMonthLoader } from "./Statement/loaders";
 
-export const action = () => {
+export const action = (): string => {
   console.log("Portfolio action called");
   return "qqch";
 };

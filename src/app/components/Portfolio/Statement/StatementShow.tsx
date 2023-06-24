@@ -1,7 +1,7 @@
 import { FunctionComponent, default as React } from "react";
 import PortfolioLayout from "../PortfolioLayout";
 
-type StatementShowProps = {};
+type StatementShowProps = Record<string, never>;
 
 /**
  * Statements list component

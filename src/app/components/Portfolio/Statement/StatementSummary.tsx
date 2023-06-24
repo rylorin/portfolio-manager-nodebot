@@ -6,7 +6,7 @@ import BarChart from "../../Chart/BarChart";
 import Number from "../../Number/Number";
 import PortfolioLayout from "../PortfolioLayout";
 
-type StatementSummaryProps = {};
+type StatementSummaryProps = Record<string, never>;
 
 const StatementSummary: FunctionComponent<StatementSummaryProps> = ({ ..._rest }): JSX.Element => {
   const { _portfolioId } = useParams();

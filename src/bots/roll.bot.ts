@@ -1,7 +1,7 @@
 import { OptionType, OrderAction } from "@stoqey/ib";
 import { Op } from "sequelize";
 import { ITradingBot } from ".";
-import { Contract, Option, Parameter, Portfolio, Position } from "../models";
+import { Contract, Option, Parameter, Position } from "../models";
 
 const ROLL_FREQ: number = parseInt(process.env.ROLL_FREQ) || 10; // mins
 const DEFENSIVE_ROLL_DAYS: number = parseInt(process.env.DEFENSIVE_ROLL_DAYS) || 6; // days
@@ -247,20 +247,20 @@ export class RollOptionPositionsBot extends ITradingBot {
     });
   }
 
-  public async process(): Promise<void> {
+  public process(): void {
     console.log("RollOptionPositionsBot process begin");
-    await this.listItmOptionPostitions().then((result) => this.iteratePositions(result));
-    setTimeout(() => this.emit("process"), ROLL_FREQ * 60000);
-    console.log("RollOptionPositionsBot process end");
+    this.listItmOptionPostitions()
+      .then((result) => this.iteratePositions(result))
+      .then(() => setTimeout(() => this.emit("process"), ROLL_FREQ * 60000))
+      .catch((error) => console.error("roll bot:", error));
   }
 
-  public async start(): Promise<void> {
-    await Portfolio.findOne({
-      where: {
-        account: this.accountNumber,
-      },
-    }).then((portfolio) => (this.portfolio = portfolio));
-    this.on("process", this.process);
-    setTimeout(() => this.emit("process"), 6000);
+  public start(): void {
+    this.init()
+      .then(() => {
+        this.on("process", () => this.process());
+        setTimeout(() => this.emit("process"), 6000);
+      })
+      .catch((error) => console.error("roll bot start:", error));
   }
 }

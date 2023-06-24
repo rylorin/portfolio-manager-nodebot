@@ -10,10 +10,10 @@ export class Option extends Model {
   @BelongsTo(() => Contract, "id")
   declare contract: Contract;
 
-  /** Related Stock */
+  /** Underlying */
   @ForeignKey(() => Contract)
   @Column
-  declare stock_id?: number;
+  declare stock_id: number;
   @BelongsTo(() => Contract, "stock_id")
   declare stock: Contract;
 

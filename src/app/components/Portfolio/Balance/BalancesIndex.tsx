@@ -6,7 +6,7 @@ import { BalanceEntry } from "../../../../routers/types";
 import Number from "../../Number/Number";
 import PortfolioLayout from "../PortfolioLayout";
 
-type BalancesIndexProps = {};
+type BalancesIndexProps = Record<string, never>;
 
 /**
  * Statements list component

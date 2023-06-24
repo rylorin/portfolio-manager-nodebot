@@ -85,8 +85,8 @@ export class CashManagementBot extends ITradingBot {
     console.log("CashManagementBot process end");
   }
 
-  public async start(): Promise<void> {
-    this.on("process", this.process);
+  public start(): void {
+    this.on("process", () => this.process());
     setTimeout(() => this.emit("process"), 60 * 1000); // start after 60 secs
   }
 }

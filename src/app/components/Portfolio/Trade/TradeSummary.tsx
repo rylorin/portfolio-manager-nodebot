@@ -6,7 +6,7 @@ import PortfolioLayout from "../PortfolioLayout";
 import TradeSynthesysTable from "./TradesIndexTable";
 import TradesMonthlyTable from "./TradesMonthlyTable";
 
-type TradeSummaryProps = {};
+type TradeSummaryProps = Record<string, never>;
 
 const TradeSummary: FunctionComponent<TradeSummaryProps> = ({ ..._rest }): JSX.Element => {
   const theSynthesys = useLoaderData() as TradeSynthesys;

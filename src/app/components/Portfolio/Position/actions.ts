@@ -5,7 +5,7 @@ import { redirect } from "react-router-dom";
  * @param param0
  * @returns
  */
-export const positionDelete = ({ request, params }) => {
+export const positionDelete = ({ request, params }): any => {
   const { portfolioId, positionId } = params;
   return request
     .formData()

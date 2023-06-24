@@ -21,7 +21,7 @@ import { formatNumber } from "../../../utils";
 import Number from "../../Number/Number";
 import PortfolioLayout from "../PortfolioLayout";
 
-type PositionsIndexProps = {};
+type PositionsIndexProps = Record<string, never>;
 
 type TotalEntry = {
   expiration: string;

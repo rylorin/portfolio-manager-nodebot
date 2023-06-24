@@ -6,18 +6,12 @@ import { Portfolio as PortfolioModel } from "../../../models/portfolio.model";
 import { obfuscate } from "../../utils";
 import PortfolioLayout from "./PortfolioLayout";
 
-type PortfolioShowProps = {};
+type PortfolioShowProps = Record<string, never>;
 
 const PortfolioShow: FunctionComponent<PortfolioShowProps> = ({ ..._rest }): JSX.Element => {
   // const { portfolioId } = useParams();
   // const [thisPortfolio, setPortfolio] = useState({} as PortfolioModel);
   const thisPortfolio = useLoaderData() as PortfolioModel;
-
-  // useEffect(() => {
-  //   fetch(`/api/portfolio/${portfolioId}`)
-  //     .then((response) => response.json())
-  //     .then((data) => setPortfolio(data.portfolio));
-  // }, []);
 
   return (
     <PortfolioLayout>

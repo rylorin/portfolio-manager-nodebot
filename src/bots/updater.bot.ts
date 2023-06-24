@@ -28,18 +28,18 @@ const OPTIONS_PRICE_OTHER_FREQ: number = parseInt(process.env.OPTIONS_PRICE_OTHE
 const OPTIONS_PRICE_TIMEFRAME: number = parseInt(process.env.OPTIONS_PRICE_TIMEFRAME) || 130; // days
 
 export class ContractsUpdaterBot extends ITradingBot {
-  private yahooBot: YahooUpdateBot = undefined;
+  private yahooBot: YahooUpdateBot | undefined = undefined;
 
-  constructor(app: MyTradingBotApp, api: IBApiNext, yahooBot?: YahooUpdateBot) {
-    super(app, api);
+  constructor(app: MyTradingBotApp, api: IBApiNext, accountNumber: string, yahooBot?: YahooUpdateBot) {
+    super(app, api, accountNumber);
     this.yahooBot = yahooBot;
   }
 
   public start(): void {
-    this.on("updateHistoricalData", this.updateHistoricalData);
-    this.on("updateOptionsPrice", this.updateOptionsPrice);
-    this.on("buildOptionsList", this.buildOptionsList);
-    this.on("createCashContracts", this.createCashContracts);
+    this.on("updateHistoricalData", () => this.updateHistoricalData());
+    this.on("updateOptionsPrice", () => this.updateOptionsPrice());
+    this.on("buildOptionsList", () => this.buildOptionsList());
+    this.on("createCashContracts", () => this.createCashContracts());
 
     setTimeout(() => this.emit("updateHistoricalData"), 10 * 60 * 1000); // start after 10 mins
     setTimeout(() => this.emit("updateOptionsPrice"), 20 * 1000); // start after 2à secs
@@ -120,14 +120,12 @@ export class ContractsUpdaterBot extends ITradingBot {
     );
   }
 
-  private async updateHistoricalData(): Promise<void> {
+  private updateHistoricalData(): void {
     console.log("updateHistoricalData");
-    await this.findStocksNeedingHistoricalData().then((contracts) =>
-      this.iterateContractsForHistoricalVolatility(contracts),
-    );
-    console.log("updateHistoricalData done");
-    setTimeout(() => this.emit("updateHistoricalData"), HISTORICAL_DATA_REFRESH_FREQ * 60000);
-    return Promise.resolve();
+    this.findStocksNeedingHistoricalData()
+      .then((contracts) => this.iterateContractsForHistoricalVolatility(contracts))
+      .then(() => setTimeout(() => this.emit("updateHistoricalData"), HISTORICAL_DATA_REFRESH_FREQ * 60000))
+      .catch((error) => console.error("updater bot update historical data:", error));
   }
 
   private requestContractPrice(ibContract: IbContract): Promise<MutableMarketData> {
@@ -522,11 +520,12 @@ export class ContractsUpdaterBot extends ITradingBot {
     );
   }
 
-  private async buildOptionsList(): Promise<void> {
+  private buildOptionsList(): void {
     console.log("buildOptionsList");
-    await this.findStocksToListOptions().then((stocks) => this.iterateToBuildOptionList(stocks));
-    console.log("buildOptionsList done");
-    setTimeout(() => this.emit("buildOptionsList"), 3600 * 1000); // come back after 1 hour and check again
+    this.findStocksToListOptions()
+      .then((stocks) => this.iterateToBuildOptionList(stocks))
+      .then(() => setTimeout(() => this.emit("buildOptionsList"), 3600 * 1000))
+      .catch((error) => console.error("updater bot build options list:", error));
   }
 
   private findOptionsToUpdatePrice(dte: number, age: number, limit: number): Promise<Option[]> {
@@ -664,7 +663,7 @@ export class ContractsUpdaterBot extends ITradingBot {
     });
   }
 
-  private async createCashContracts() {
+  private async createCashContracts(): Promise<void> {
     const currencies: Currency[] = await Currency.findAll();
     console.log(`createCashContracts ${currencies.length} item(s)`);
     const promises: Promise<Contract>[] = [];

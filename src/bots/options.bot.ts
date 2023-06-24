@@ -134,11 +134,12 @@ export class OptionsCreateBot extends ITradingBot {
     );
   }
 
-  private async buildOptionsList(): Promise<void> {
+  private buildOptionsList(): void {
     console.log("buildOptionsList");
-    await this.findStocksToListOptions().then((stocks) => this.iterateToBuildOptionList(stocks));
-    console.log("buildOptionsList done");
-    setTimeout(() => this.emit("buildOptionsList"), 4 * 3600 * 1000); // come back after 4 hours and check again
+    this.findStocksToListOptions()
+      .then((stocks) => this.iterateToBuildOptionList(stocks))
+      .then(() => setTimeout(() => this.emit("buildOptionsList"), 4 * 3600 * 1000))
+      .catch((error) => console.log("option bot:", error));
   }
 
   private async updateGreeks(): Promise<void> {
@@ -247,8 +248,8 @@ export class OptionsCreateBot extends ITradingBot {
   }
 
   public start(): void {
-    this.on("buildOptionsList", this.buildOptionsList);
-    this.on("updateGreeks", this.updateGreeks);
+    this.on("buildOptionsList", () => this.buildOptionsList());
+    this.on("updateGreeks", () => this.updateGreeks());
 
     setTimeout(() => this.emit("buildOptionsList"), 0 * 60 * 1000); // start after 10 mins
     // setTimeout(() => this.emit("updateGreeks"), 1 * 60 * 1000);   // start after 1 min

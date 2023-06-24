@@ -208,8 +208,8 @@ export class AccountUpdateBot extends ITradingBot {
     }).then(([balance, _created]) => balance.update({ quantity: pos.balance }));
   }
 
-  private cleanPositions(now: number): Promise<void> {
-    return Position.update(
+  private cleanPositions(now: number): void {
+    Position.update(
       {
         quantity: 0,
       },
@@ -220,7 +220,7 @@ export class AccountUpdateBot extends ITradingBot {
         },
         // logging: console.log,
       },
-    ).then();
+    ).catch((error) => console.error("account bot clean positions:", error));
   }
 
   private cleanBalances(now: number): Promise<void> {
@@ -239,7 +239,7 @@ export class AccountUpdateBot extends ITradingBot {
   }
 
   public async start(): Promise<void> {
-    this.on("processQueue", this.processQueue);
+    this.on("processQueue", () => this.processQueue());
     const now = Date.now() - 60 * 1000; // 1 minute
     // console.log(Date.now(), now);
     await this.init();
@@ -288,42 +288,44 @@ export class AccountUpdateBot extends ITradingBot {
     });
 
     // clean balances quantities first as if they are unchanged the updatedAt will be unchanged as well
-    this.cleanBalances(now).then(() => {
-      this.accountSubscription$ = this.api.getAccountUpdates(this.accountNumber).subscribe({
-        next: (data) => {
-          // this.printObject(data);
-          if (
-            data.added &&
-            data.added.value &&
-            data.added.value.get(this.accountNumber) &&
-            data.added.value.get(this.accountNumber)!.get("TotalCashBalance")
-          ) {
-            for (const key of data.added.value.get(this.accountNumber)!.get("TotalCashBalance")!.keys()) {
-              const balance: number = parseFloat(
-                data.added.value.get(this.accountNumber)!.get("TotalCashBalance")!.get(key)?.value ,
-              );
-              if (key != "BASE") this.enqueueCashPostition(key, balance);
+    this.cleanBalances(now)
+      .then(() => {
+        this.accountSubscription$ = this.api.getAccountUpdates(this.accountNumber).subscribe({
+          next: (data) => {
+            if (
+              data.added &&
+              data.added.value &&
+              data.added.value.get(this.accountNumber) &&
+              data.added.value.get(this.accountNumber)!.get("TotalCashBalance")
+            ) {
+              for (const key of data.added.value.get(this.accountNumber)!.get("TotalCashBalance")!.keys()) {
+                const balance: number = parseFloat(
+                  data.added.value.get(this.accountNumber)!.get("TotalCashBalance")!.get(key)?.value || "0",
+                );
+                if (key != "BASE") this.enqueueCashPostition(key, balance);
+              }
             }
-          }
-          if (
-            data.changed?.value &&
-            data.changed?.value?.get(this.accountNumber) &&
-            data.changed?.value?.get(this.accountNumber)?.get("TotalCashBalance")
-          ) {
-            for (const key of data.changed.value.get(this.accountNumber)!.get("TotalCashBalance")!.keys()) {
-              const balance: number = parseFloat(
-                data.changed.value.get(this.accountNumber)!.get("TotalCashBalance")?.get(key)?.value ,
-              );
-              // console.log("new cash balance:", key, balance);
-              if (key != "BASE") this.enqueueCashPostition(key, balance);
+            if (
+              data.changed &&
+              data.changed.value &&
+              data.changed.value.get(this.accountNumber) &&
+              data.changed.value.get(this.accountNumber)!.get("TotalCashBalance")
+            ) {
+              for (const key of data.changed.value.get(this.accountNumber)!.get("TotalCashBalance")!.keys()) {
+                const balance: number = parseFloat(
+                  data.changed.value.get(this.accountNumber)!.get("TotalCashBalance")!.get(key)?.value || "0",
+                );
+                // console.log("new cash balance:", key, balance);
+                if (key != "BASE") this.enqueueCashPostition(key, balance);
+              }
             }
-          }
-        },
-        error: (err: IBApiNextError) => {
-          this.app.error(`getAccountUpdates failed with '${err.error.message}'`);
-        },
-      });
-    });
+          },
+          error: (err: IBApiNextError) => {
+            this.app.error(`getAccountUpdates failed with '${err.error.message}'`);
+          },
+        });
+      })
+      .catch((error) => console.error("account bot start:", error));
 
     setTimeout(() => this.cleanPositions(now), 15 * 1000); // clean old positions after 15 secs
   }

@@ -5,7 +5,7 @@ import { redirect } from "react-router-dom";
  * @param param0
  * @returns
  */
-export const statementCreateTrade = ({ request, params }) => {
+export const statementCreateTrade = ({ request, params }): Response => {
   const { portfolioId, statementId } = params;
   return request
     .formData()
@@ -22,7 +22,7 @@ export const statementCreateTrade = ({ request, params }) => {
  * @param param0
  * @returns
  */
-export const statementGuessTrade = ({ request, params }) => {
+export const statementGuessTrade = ({ request, params }): Response => {
   const { portfolioId, statementId } = params;
   return request
     .formData()
@@ -39,7 +39,7 @@ export const statementGuessTrade = ({ request, params }) => {
  * @param param0
  * @returns
  */
-export const statementUnlinkTrade = ({ request, params }) => {
+export const statementUnlinkTrade = ({ request, params }): Response => {
   const { portfolioId, statementId } = params;
   return request
     .formData()
@@ -56,7 +56,7 @@ export const statementUnlinkTrade = ({ request, params }) => {
  * @param param0
  * @returns
  */
-export const statementAddToTrade = ({ request, params }) => {
+export const statementAddToTrade = ({ request, params }): Response => {
   const { portfolioId, statementId, tradeId } = params;
   return request
     .formData()
@@ -73,7 +73,7 @@ export const statementAddToTrade = ({ request, params }) => {
  * @param param0
  * @returns
  */
-export const statementDelete = ({ request, params }) => {
+export const statementDelete = ({ request, params }): Response => {
   const { portfolioId, statementId } = params;
   // console.log("statementDelete", portfolioId, statementId);
   return request

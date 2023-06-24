@@ -234,7 +234,7 @@ export class YahooUpdateBot extends ITradingBot {
     return Promise.all(promises);
   }
 
-  private async fetchQuotes(q: MappedQuote[]) {
+  private async fetchQuotes(q: MappedQuote[]): Promise<MappedQuote[]> {
     console.log(`fetchQuotes ${q.length} items`);
     if (q.length) {
       this.lastFetch = Date.now();
@@ -245,7 +245,7 @@ export class YahooUpdateBot extends ITradingBot {
           {},
           { validateResult: false },
         );
-      } catch (e: any) {
+      } catch (e) {
         quotes = e.result;
       }
       if (quotes !== undefined) {
@@ -407,8 +407,8 @@ export class YahooUpdateBot extends ITradingBot {
     console.log("YahooUpdateBot process end");
   }
 
-  public async start(): Promise<void> {
-    this.on("process", this.process);
+  public start(): void {
+    this.on("process", () => this.process());
 
     yahooFinance.setGlobalConfig({ validation: { logErrors: true } });
     // this.printObject(await yahooFinance.quote("EURUSD=X"));

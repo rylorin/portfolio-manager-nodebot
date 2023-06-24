@@ -26,7 +26,7 @@ import { StatementEntry } from "../../../../routers/types";
 import Number from "../../Number/Number";
 import PortfolioLayout from "../PortfolioLayout";
 
-type StatementIndexProps = {};
+type StatementIndexProps = Record<string, never>;
 
 /**
  * Statements list component
@@ -38,7 +38,7 @@ const StatementIndex: FunctionComponent<StatementIndexProps> = ({ ..._rest }): J
   const theStatements = useLoaderData() as StatementEntry[];
   let previousId: number;
 
-  const savePrevious = (value: number) => {
+  const savePrevious = (value: number): undefined => {
     if (value) previousId = value;
     return undefined;
   };
