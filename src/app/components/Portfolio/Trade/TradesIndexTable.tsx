@@ -57,14 +57,14 @@ const TradeSynthesysTable: FunctionComponent<TradeSynthesysTableProps> = ({
                   <Number value={item.pnl} />
                 </Td>
                 <Td>
-                  <Number value={item.apy * 100} decimals={1} />%
+                  <Number value={item.apy} decimals={1} isPercent />
                 </Td>
               </Tr>
             ))}
         </Tbody>
         <Tfoot>
-          <Tr>
-            <Td fontWeight="bold">Total</Td>
+          <Tr fontWeight="bold">
+            <Td>Total</Td>
             <Td></Td>
             <Td></Td>
             <Td></Td>

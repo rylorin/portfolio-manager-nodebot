@@ -12,6 +12,7 @@ import {
   StatementTypes,
   TaxStatement,
   Trade,
+  TradeCreationAttributes,
   TradeStatus,
   TradeStrategy,
 } from "../models";
@@ -219,19 +220,19 @@ router.get("/month/:year(\\d+)/:month(\\d+)", (req, res): void => {
  */
 router.get("/:statementId(\\d+)/CreateTrade", (req, res): void => {
   const { portfolioId, statementId } = req.params as typeof req.params & parentParams;
-  // console.log("CreateTrade", portfolioId, statementId);
+  console.log("CreateTrade", portfolioId, statementId);
   Statement.findByPk(statementId, {
     include: [{ model: Contract }, { model: Portfolio }],
   })
     .then((statement) => {
       if (statement) {
-        const trade = {
+        const trade: TradeCreationAttributes = {
+          portfolio_id: portfolioId,
+          symbol_id: statement.stock.id,
           currency: statement.currency,
           status: TradeStatus.open,
           openingDate: statement.date,
           strategy: TradeStrategy.undefined,
-          portfolio_id: portfolioId,
-          symbol_id: statement.stock.id,
         };
         return Trade.create(trade, { logging: console.log }).then((trade) =>
           statement.update({ trade_unit_id: trade.id }, { logging: console.log }),
@@ -257,6 +258,8 @@ router.get("/:statementId(\\d+)/GuessTrade", (req, res): void => {
       if (statement) {
         switch (statement.statementType) {
           case StatementTypes.EquityStatement:
+          case StatementTypes.DividendStatement:
+          case StatementTypes.TaxStatement:
             // console.log("equity statement", statement);
             return Statement.findOne({
               where: {
@@ -309,7 +312,7 @@ router.get("/:statementId(\\d+)/GuessTrade", (req, res): void => {
             });
             break;
           default:
-            throw Error("invalide statement type");
+            throw Error("invalid statement type");
         }
       } else {
         throw Error("statement doesn't exist");

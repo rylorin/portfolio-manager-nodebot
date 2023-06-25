@@ -17,7 +17,7 @@ const Number: FunctionComponent<NumberProps> = ({ value, decimals = 0, color, is
     ? (isPercent ? value * 100 : value).toLocaleString(undefined, {
         minimumFractionDigits: decimals,
         maximumFractionDigits: decimals,
-      })
+      }) + (isPercent ? "%" : "")
     : "-";
   let style: { color: string };
   if (color) {
@@ -30,7 +30,6 @@ const Number: FunctionComponent<NumberProps> = ({ value, decimals = 0, color, is
   return (
     <Text {...style} {...rest} align="right">
       {rounded}
-      {isPercent && "%"}
     </Text>
   );
 };

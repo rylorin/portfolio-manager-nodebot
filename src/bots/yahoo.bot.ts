@@ -245,7 +245,7 @@ export class YahooUpdateBot extends ITradingBot {
           {},
           { validateResult: false },
         );
-      } catch (e) {
+      } catch (e: any) {
         quotes = e.result;
       }
       if (quotes !== undefined) {

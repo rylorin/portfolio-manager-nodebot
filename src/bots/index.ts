@@ -862,7 +862,7 @@ export class ITradingBot extends EventEmitter {
       }
       // eslint-disable-next-line @typescript-eslint/no-unnecessary-type-assertion,@typescript-eslint/no-non-null-assertion
       if (!transaction_) await transaction!.commit();
-    } catch (err) {
+    } catch (err: any) {
       if (err.name == "IBApiNextError") {
         // silently ignore, only propagate
       } else {

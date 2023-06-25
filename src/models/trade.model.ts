@@ -1,3 +1,4 @@
+import { Optional } from "sequelize";
 import { BelongsTo, Column, DataType, ForeignKey, Model, Table } from "sequelize-typescript";
 import { Contract, Portfolio } from ".";
 
@@ -32,16 +33,27 @@ export const TradeStrategy = {
 } as const;
 export type TradeStrategy = (typeof TradeStrategy)[keyof typeof TradeStrategy];
 
-@Table({ tableName: "trade_unit", timestamps: false })
-export class Trade extends Model {
-  declare id: number;
+export type TradeAttributes = {
+  id: number;
 
-  /** Related Stock */
-  @ForeignKey(() => Contract)
-  @Column
-  declare symbol_id: number;
-  @BelongsTo(() => Contract, "symbol_id")
-  declare stock: Contract;
+  portfolio_id: number;
+  symbol_id?: number;
+
+  strategy: TradeStrategy;
+  openingDate: Date;
+  closingDate?: Date;
+  status: TradeStatus;
+  PnL?: number;
+  currency: string;
+  risk?: number;
+  comment?: string;
+};
+
+export type TradeCreationAttributes = Optional<TradeAttributes, "id">;
+
+@Table({ tableName: "trade_unit", timestamps: true })
+export class Trade extends Model<TradeAttributes, TradeCreationAttributes> {
+  declare id: number;
 
   /** Portfolio */
   @ForeignKey(() => Portfolio)
@@ -50,7 +62,14 @@ export class Trade extends Model {
   @BelongsTo(() => Portfolio, "portfolio_id")
   declare portfolio: Portfolio;
 
-  @Column({ type: DataType.SMALLINT })
+  /** Related Stock */
+  @ForeignKey(() => Contract)
+  @Column
+  declare symbol_id: number;
+  @BelongsTo(() => Contract, "symbol_id")
+  declare stock: Contract;
+
+  @Column({ type: DataType.SMALLINT, defaultValue: 0 })
   declare strategy: TradeStrategy;
 
   @Column({ type: DataType.DATE, field: "opening_date" })

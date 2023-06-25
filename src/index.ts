@@ -3,7 +3,6 @@
  */
 
 import { LogLevel } from "@stoqey/ib";
-import logger from "@stoqey/ib/dist/common/logger";
 import { IBApiNextApp } from "@stoqey/ib/dist/tools/common/ib-api-next-app";
 import path from "path";
 import { Sequelize, SequelizeOptions } from "sequelize-typescript";
@@ -18,6 +17,7 @@ import {
   YahooUpdateBot,
 } from "./bots";
 import { ImporterBot } from "./bots/importer.bot";
+import logger from "./logger";
 import {
   Bag,
   Balance,
