@@ -58,15 +58,20 @@ export type BalanceEntry = {
 
 export type TradeEntry = {
   id: number;
+  symbol_id: number;
   symbol: string;
+  currency: string;
   openingDate: number;
   closingDate: number | undefined;
   status: TradeStatus;
   duration: number;
   strategy: TradeStrategy;
+  strategyLabel: string;
   risk: number | undefined;
   pnl: number | undefined;
   apy: number | undefined;
+  comment: string | undefined;
+  statements: StatementEntry[] | undefined;
 };
 export type TradeMonthlySynthesysEntry = {
   count: number;

@@ -1,6 +1,6 @@
 import { Optional } from "sequelize";
-import { BelongsTo, Column, DataType, ForeignKey, Model, Table } from "sequelize-typescript";
-import { Contract, Portfolio } from ".";
+import { BelongsTo, Column, DataType, ForeignKey, HasMany, Model, Table } from "sequelize-typescript";
+import { Contract, Portfolio, Statement } from ".";
 
 export const TradeStatus = {
   undefined: 0,
@@ -92,4 +92,13 @@ export class Trade extends Model<TradeAttributes, TradeCreationAttributes> {
 
   @Column({ type: DataType.STRING })
   declare comment?: string;
+
+  @HasMany(() => Statement, { foreignKey: "trade_unit_id" })
+  declare statements: Statement[];
+
+  get duration(): number {
+    return (
+      ((this.closingDate ? this.closingDate.getTime() : Date.now()) - this.openingDate.getTime()) / 1000 / 3600 / 24
+    );
+  }
 }

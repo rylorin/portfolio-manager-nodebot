@@ -1,7 +1,7 @@
 import express from "express";
 import { Op } from "sequelize";
-import { Contract, Portfolio, Trade } from "../models";
-import { TradeEntry, TradeMonthlySynthesys, TradeSynthesys } from "./types";
+import { Contract, Portfolio, Trade, TradeStrategy } from "../models";
+import { StatementEntry, TradeEntry, TradeMonthlySynthesys, TradeSynthesys } from "./types";
 
 const router = express.Router({ mergeParams: true });
 
@@ -41,15 +41,20 @@ function makeSynthesys(trades: Trade[]): TradeSynthesys {
       const apy = item.risk && item.PnL ? (item.PnL / item.risk / duration) * 365 : undefined;
       const trade: TradeEntry = {
         id: item.id,
+        symbol_id: item.stock.id,
         symbol: item.stock.symbol,
+        currency: item.currency,
         openingDate: item.openingDate.getTime(),
         closingDate: undefined,
         status: item.status,
-        duration,
+        duration: item.duration,
         strategy: item.strategy,
+        strategyLabel: TradeStrategy[item.strategy],
         risk: item.risk,
         pnl: item.PnL,
         apy,
+        comment: item.comment,
+        statements: undefined,
       };
       theSynthesys.open.push(trade);
     }
@@ -94,7 +99,7 @@ router.get("/summary/12m", (req, res): void => {
       closingDate: {
         [Op.or]: {
           [Op.gte]: new Date(today.getFullYear() - 1, today.getMonth(), today.getDate()),
-          [Op.is]: null,
+          [Op.is]: undefined,
         },
       },
     },
@@ -120,7 +125,7 @@ router.get("/summary/ytd", (req, res): void => {
       closingDate: {
         [Op.or]: {
           [Op.gte]: new Date(new Date().getFullYear(), 0, 1),
-          [Op.is]: null,
+          [Op.is]: undefined,
         },
       },
     },
@@ -149,7 +154,43 @@ router.get("/id/:tradeId(\\d+)", (req, res): void => {
         throw Error("trade doesn't exist");
       }
     })
-    .then((trade) => res.status(200).json({ trade }))
+    .then((thisTrade) => {
+      const apy =
+        thisTrade.risk && thisTrade.PnL ? (thisTrade.PnL / thisTrade.risk / thisTrade.duration) * 365 : undefined;
+      const trade: TradeEntry = {
+        id: thisTrade.id,
+        symbol_id: thisTrade.stock.id,
+        symbol: thisTrade.stock.symbol,
+        currency: thisTrade.currency,
+        openingDate: thisTrade.openingDate.getTime(),
+        closingDate: thisTrade.closingDate ? thisTrade.closingDate.getTime() : undefined,
+        status: thisTrade.status,
+        duration: thisTrade.duration,
+        strategy: thisTrade.strategy,
+        strategyLabel: TradeStrategy[thisTrade.strategy],
+        risk: thisTrade.risk,
+        pnl: thisTrade.PnL,
+        apy,
+        comment: thisTrade.comment,
+        statements: thisTrade.statements.map((item) => {
+          const statement: StatementEntry = {
+            id: item.id,
+            date: item.date.getTime(),
+            type: item.statementType,
+            currency: item.currency,
+            amount: item.amount,
+            pnl: undefined,
+            fees: undefined,
+            fxRateToBase: item.fxRateToBase,
+            description: item.description,
+            trade_id: item.trade_unit_id,
+            underlying: undefined,
+          };
+          return statement;
+        }),
+      };
+      res.status(200).json({ trade });
+    })
     .catch((error) => res.status(500).json({ error }));
 });
 
