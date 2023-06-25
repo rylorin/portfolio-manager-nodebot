@@ -17,9 +17,9 @@ export const LogLevel = {
 } as const;
 export type LogLevel = (typeof LogLevel)[keyof typeof LogLevel];
 
-const level = (parseInt(process.env.LOG_LEVEL ) as LogLevel) || LogLevel.Info; // Default to info
-const log_modules: string[] = ((process.env.LOG_MODULES ) || "").split(",");
-const log_console: string[] = ((process.env.LOG_CONSOLE ) || "").split(",");
+const level = process.env.LOG_LEVEL ? (parseInt(process.env.LOG_LEVEL) as LogLevel) : LogLevel.Info; // Default to info
+const log_modules: string[] = (process.env.LOG_MODULES || "").split(",");
+const log_console: string[] = (process.env.LOG_CONSOLE || "").split(",");
 
 /**
  * Logger facility class
