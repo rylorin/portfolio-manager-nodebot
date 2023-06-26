@@ -54,14 +54,14 @@ const OptionsPositions: FunctionComponent<PositionsIndexProps> = ({ ..._rest }):
           <Td></Td>
           <Td isNumeric>{formatNumber(subTotal.cost)}</Td>
           <Td isNumeric>{formatNumber(subTotal.value)}</Td>
-          <Td>
+          <Td isNumeric>
             <Number value={subTotal.pnl} />
           </Td>
           <Td></Td>
-          <Td>
+          <Td isNumeric>
             <Number value={subTotal.engaged} />
           </Td>
-          <Td>
+          <Td isNumeric>
             <Number value={subTotal.risk} />
           </Td>
           <Td></Td>
@@ -169,15 +169,15 @@ const OptionsPositions: FunctionComponent<PositionsIndexProps> = ({ ..._rest }):
                     <Td>{item.option.expiration}</Td>
                     <Td>{item.option.type == "P" ? "Put" : "Call"}</Td>
                     <Td>{item.contract.currency}</Td>
-                    <Td>
+                    <Td isNumeric>
                       <Number value={getITM(item)} decimals={1} color={getColor(item)} />
                     </Td>
                     <Td isNumeric>{formatNumber(item.cost)}</Td>
                     <Td isNumeric>{formatNumber(item.value)}</Td>
-                    <Td>
+                    <Td isNumeric>
                       <Number value={item.pnl} />
                     </Td>
-                    <Td>
+                    <Td isNumeric>
                       <Number value={item.apy} decimals={1} isPercent />
                     </Td>
                     <Td isNumeric>{formatNumber(item.engaged)}</Td>

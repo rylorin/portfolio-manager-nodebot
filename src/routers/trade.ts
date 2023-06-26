@@ -192,7 +192,7 @@ router.get("/id/:tradeId(\\d+)", (req, res): void => {
           return statement;
         }),
       };
-      console.log(trade);
+      // console.log(trade);
       res.status(200).json({ trade });
     })
     .catch((error) => {

@@ -46,7 +46,7 @@ export type OptionPositionEntry = PositionEntry & {
   };
   engaged: number;
   risk: number;
-  apy: number;
+  apy: number | undefined;
 };
 
 export type BalanceEntry = {
@@ -71,6 +71,7 @@ export type TradeEntry = {
   pnl: number | undefined;
   apy: number | undefined;
   comment: string | undefined;
+  // fxRateToBase: number;
   statements: StatementEntry[] | undefined;
 };
 export type TradeMonthlySynthesysEntry = {

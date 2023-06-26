@@ -141,11 +141,11 @@ const PositionsIndex: FunctionComponent<PositionsIndexProps> = ({ ..._rest }): J
                   <Td isNumeric>{formatNumber(item.value)}</Td>
                   <Td isNumeric>{formatNumber(item.pru, 2)}</Td>
                   <Td isNumeric>{formatNumber(item.cost)}</Td>
-                  <Td>
+                  <Td isNumeric>
                     <Number value={item.pnl} />
                   </Td>
-                  <Td>
-                    <Number value={(item.pnl / item.cost) * 100 * Math.sign(item.quantity)} decimals={1} />
+                  <Td isNumeric>
+                    <Number value={(item.pnl / item.cost) * Math.sign(item.quantity)} decimals={1} isPercent />
                   </Td>
                   <Td>
                     <IconButton aria-label="New trade" icon={<SearchIcon />} size="xs" variant="link" />
