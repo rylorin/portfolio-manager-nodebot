@@ -25,16 +25,16 @@ import { Form, Link as RouterLink, useLoaderData, useParams } from "react-router
 import { StatementEntry } from "../../../../routers/types";
 import Number from "../../Number/Number";
 
-type StatementIndexProps = Record<string, never>;
+type StatementIndexProps = { items?: StatementEntry[] };
 
 /**
  * Statements list component
  * @param param0
  * @returns
  */
-const StatementIndex: FunctionComponent<StatementIndexProps> = ({ ..._rest }): JSX.Element => {
+const StatementIndex: FunctionComponent<StatementIndexProps> = ({ items, ..._rest }): JSX.Element => {
   const { portfolioId } = useParams();
-  const theStatements = useLoaderData() as StatementEntry[];
+  const theStatements = items || (useLoaderData() as StatementEntry[]);
   let previousId: number;
 
   const savePrevious = (value: number): undefined => {

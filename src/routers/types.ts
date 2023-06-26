@@ -1,3 +1,4 @@
+import { SecType } from "@stoqey/ib";
 import { StatementTypes, TradeStatus, TradeStrategy } from "../models";
 
 export type SynthesysEntry = { stocks: number; options: number; dividends: number; interests: number; total: number };
@@ -20,7 +21,15 @@ export type StatementEntry = {
 export type PositionEntry = {
   id: number;
   quantity: number;
-  contract: { id: number; symbol: string; name: string; multiplier: number; currency: string; price: number };
+  contract: {
+    id: number;
+    secType: SecType;
+    symbol: string;
+    name: string;
+    multiplier: number;
+    currency: string;
+    price: number;
+  };
   trade_id: number;
   price: number;
   value: number;

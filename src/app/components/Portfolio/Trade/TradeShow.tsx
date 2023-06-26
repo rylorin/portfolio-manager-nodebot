@@ -5,6 +5,7 @@ import { Link as RouterLink, useLoaderData, useNavigate } from "react-router-dom
 import { TradeEntry } from "../../../../routers/types";
 import { formatNumber } from "../../../utils";
 import Number from "../../Number/Number";
+import StatementIndex from "../Statement/StatementIndex";
 import { tradeStatus2String } from "../utils";
 
 type TradeShowProps = Record<string, never>;
@@ -127,6 +128,7 @@ const TradeShow: FunctionComponent<TradeShowProps> = ({ ..._rest }): JSX.Element
             </Center>
           </RouterLink>
         </Flex>
+        <StatementIndex items={thisTrade.statements} />
       </VStack>
     </>
   );

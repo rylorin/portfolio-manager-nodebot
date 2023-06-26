@@ -140,15 +140,15 @@ router.get("/summary/ytd", (req, res): void => {
  * Get a trade
  */
 router.get("/id/:tradeId(\\d+)", (req, res): void => {
-  const { portfolioId, tradeId } = req.params as typeof req.params & parentParams;
-  console.log("get trade", portfolioId, tradeId);
+  const { _portfolioId, tradeId } = req.params as typeof req.params & parentParams;
+  // console.log("get trade", portfolioId, tradeId);
   Trade.findByPk(tradeId, {
     include: [
       { model: Contract, as: "stock" },
       { model: Portfolio, as: "portfolio" },
       { model: Statement, as: "statements" },
     ],
-    logging: console.log,
+    // logging: console.log,
   })
     .then((trade) => {
       if (trade) {

@@ -85,7 +85,7 @@ const OptionsPositions: FunctionComponent<PositionsIndexProps> = ({ ..._rest }):
       // init new subtotal
       initSubtotal(item);
     }
-    console.log(item);
+    // console.log(item);
     // increment totals
     subTotal.units += Math.abs(item.quantity);
     subTotal.cost += item.cost * item.baseRate;
@@ -93,7 +93,7 @@ const OptionsPositions: FunctionComponent<PositionsIndexProps> = ({ ..._rest }):
     subTotal.engaged += item.engaged * item.baseRate;
     subTotal.risk += item.risk * item.baseRate;
     subTotal.pnl += item.pnl * item.baseRate;
-    console.log(subTotal);
+    // console.log(subTotal);
 
     return result;
   };
@@ -209,35 +209,25 @@ const OptionsPositions: FunctionComponent<PositionsIndexProps> = ({ ..._rest }):
             <SubTotalRow />
           </Tbody>
           <Tfoot>
-            <Tr>
-              <Td fontWeight="bold">Total</Td>
+            <Tr fontWeight="bold">
+              <Td>Total</Td>
               <Td></Td>
               <Td></Td>
               <Td></Td>
               <Td></Td>
               <Td>Base</Td>
               <Td></Td>
-              <Td isNumeric fontWeight="bold">
-                {formatNumber(thePositions.reduce((p, v) => (p += (v.cost || 0) * v.baseRate), 0))}
-              </Td>
-              <Td isNumeric fontWeight="bold">
-                {formatNumber(thePositions.reduce((p, v) => (p += (v.value || 0) * v.baseRate), 0))}
-              </Td>
-              <Td>
-                <Number
-                  value={thePositions.reduce((p, v) => (p += (v.value - v.cost || 0) * v.baseRate), 0)}
-                  fontWeight="bold"
-                />
+              <Td isNumeric>{formatNumber(thePositions.reduce((p, v) => (p += (v.cost || 0) * v.baseRate), 0))}</Td>
+              <Td isNumeric>{formatNumber(thePositions.reduce((p, v) => (p += (v.value || 0) * v.baseRate), 0))}</Td>
+              <Td isNumeric>
+                <Number value={thePositions.reduce((p, v) => (p += (v.value - v.cost || 0) * v.baseRate), 0)} />
               </Td>
               <Td></Td>
-              <Td>
-                <Number
-                  value={thePositions.reduce((p, v) => (p += (v.engaged || 0) * v.baseRate), 0)}
-                  fontWeight="bold"
-                />
+              <Td isNumeric>
+                <Number value={thePositions.reduce((p, v) => (p += (v.engaged || 0) * v.baseRate), 0)} />
               </Td>
-              <Td>
-                <Number value={thePositions.reduce((p, v) => (p += (v.risk || 0) * v.baseRate), 0)} fontWeight="bold" />
+              <Td isNumeric>
+                <Number value={thePositions.reduce((p, v) => (p += (v.risk || 0) * v.baseRate), 0)} />
               </Td>
               <Td></Td>
             </Tr>

@@ -1,11 +1,12 @@
 import { Position } from "../../../../models";
+import { PositionEntry } from "../../../../routers/types";
 
 /**
  * Load all positions
  * @param param0
  * @returns
  */
-export const positionsIndexLoader = ({ params }): Promise<Position[]> => {
+export const positionsIndexLoader = ({ params }): Promise<PositionEntry> => {
   const { portfolioId } = params;
   return fetch(`/api/portfolio/${portfolioId}/positions/index`)
     .then((response) => response.json())
@@ -17,11 +18,11 @@ export const positionsIndexLoader = ({ params }): Promise<Position[]> => {
  * @param param0
  * @returns
  */
-export const positionsOptionsLoader = ({ params }): Promise<Position[]> => {
+export const positionsOptionsLoader = ({ params }): Promise<PositionEntry[]> => {
   const { portfolioId } = params;
-  return fetch(`/api/portfolio/${portfolioId}/positions/options`)
+  return fetch(`/api/portfolio/${portfolioId}/positions/index`)
     .then((response) => response.json())
-    .then((data) => data.positions);
+    .then((data) => data.positions.filter((item) => item.contract.secType == "OPT"));
 };
 
 /**

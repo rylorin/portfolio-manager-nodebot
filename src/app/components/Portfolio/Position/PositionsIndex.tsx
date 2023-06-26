@@ -157,28 +157,22 @@ const PositionsIndex: FunctionComponent<PositionsIndexProps> = ({ ..._rest }): J
               ))}
           </Tbody>
           <Tfoot>
-            <Tr>
-              <Td fontWeight="bold">Total</Td>
+            <Tr fontWeight="bold">
+              <Td>Total</Td>
               <Td></Td>
               <Td></Td>
               <Td></Td>
               <Td>Base</Td>
               <Td></Td>
-              <Td>
-                <Number
-                  value={thePositions.reduce((p, v) => (p += (v.value || 0) * v.baseRate), 0)}
-                  fontWeight="bold"
-                />
+              <Td isNumeric>
+                <Number value={thePositions.reduce((p, v) => (p += (v.value || 0) * v.baseRate), 0)} />
               </Td>
               <Td></Td>
-              <Td>
-                <Number value={thePositions.reduce((p, v) => (p += (v.cost || 0) * v.baseRate), 0)} fontWeight="bold" />
+              <Td isNumeric>
+                <Number value={thePositions.reduce((p, v) => (p += (v.cost || 0) * v.baseRate), 0)} />
               </Td>
-              <Td>
-                <Number
-                  value={thePositions.reduce((p, v) => (p += (v.value - v.cost || 0) * v.baseRate), 0)}
-                  fontWeight="bold"
-                />
+              <Td isNumeric>
+                <Number value={thePositions.reduce((p, v) => (p += (v.value - v.cost || 0) * v.baseRate), 0)} />
               </Td>
               <Td></Td>
               <Td></Td>

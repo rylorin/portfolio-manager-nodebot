@@ -55,6 +55,7 @@ router.get("/index", (req, res): void => {
                   quantity: item.quantity,
                   contract: {
                     id: item.contract.id,
+                    secType: item.contract.secType,
                     symbol: item.contract.symbol,
                     name: item.contract.name,
                     multiplier: 1,
@@ -98,6 +99,7 @@ router.get("/index", (req, res): void => {
                     quantity: item.quantity,
                     contract: {
                       id: item.contract.id,
+                      secType: item.contract.secType,
                       symbol: item.contract.symbol,
                       name: item.contract.name,
                       multiplier: option.multiplier,
@@ -145,6 +147,7 @@ router.get("/index", (req, res): void => {
 
 /**
  * List all positions
+ * @deprecated
  */
 router.get("/Xindex", async (req, res) => {
   const { portfolioId } = req.params as typeof req.params & parentParams;
@@ -201,8 +204,9 @@ router.get("/Xindex", async (req, res) => {
 
 /**
  * List options positions
+ * @deprecated
  */
-router.get("/options", (req, res): void => {
+router.get("/Xoptions", (req, res): void => {
   const { portfolioId } = req.params as typeof req.params & parentParams;
 
   Portfolio.findByPk(portfolioId, {
@@ -244,6 +248,7 @@ router.get("/options", (req, res): void => {
                 quantity: item.quantity,
                 contract: {
                   id: item.contract.id,
+                  secType: item.contract.secType,
                   symbol: item.contract.symbol,
                   name: item.contract.name,
                   multiplier: option.multiplier,
