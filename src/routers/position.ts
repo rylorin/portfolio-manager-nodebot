@@ -92,6 +92,7 @@ router.get("/options", async (req, res) => {
       },
       { model: Currency, as: "baseRates" },
     ],
+    logging: console.log,
   });
   if (!portfolio) throw Error("Portfolio not found!");
   // console.log(portfolio);

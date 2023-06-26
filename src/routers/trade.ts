@@ -1,6 +1,6 @@
 import express from "express";
 import { Op } from "sequelize";
-import { Contract, Portfolio, Trade, TradeStrategy } from "../models";
+import { Contract, Portfolio, Statement, Trade, TradeStrategy } from "../models";
 import { StatementEntry, TradeEntry, TradeMonthlySynthesys, TradeSynthesys } from "./types";
 
 const router = express.Router({ mergeParams: true });
@@ -140,12 +140,15 @@ router.get("/summary/ytd", (req, res): void => {
  * Get a trade
  */
 router.get("/id/:tradeId(\\d+)", (req, res): void => {
-  const { _portfolioId, tradeId } = req.params as typeof req.params & parentParams;
+  const { portfolioId, tradeId } = req.params as typeof req.params & parentParams;
+  console.log("get trade", portfolioId, tradeId);
   Trade.findByPk(tradeId, {
     include: [
       { model: Contract, as: "stock" },
       { model: Portfolio, as: "portfolio" },
+      { model: Statement, as: "statements" },
     ],
+    logging: console.log,
   })
     .then((trade) => {
       if (trade) {
@@ -172,7 +175,7 @@ router.get("/id/:tradeId(\\d+)", (req, res): void => {
         pnl: thisTrade.PnL,
         apy,
         comment: thisTrade.comment,
-        statements: thisTrade.statements.map((item) => {
+        statements: thisTrade.statements?.map((item) => {
           const statement: StatementEntry = {
             id: item.id,
             date: item.date.getTime(),
@@ -189,9 +192,13 @@ router.get("/id/:tradeId(\\d+)", (req, res): void => {
           return statement;
         }),
       };
+      console.log(trade);
       res.status(200).json({ trade });
     })
-    .catch((error) => res.status(500).json({ error }));
+    .catch((error) => {
+      console.error(error);
+      res.status(500).json({ error });
+    });
 });
 
 /**

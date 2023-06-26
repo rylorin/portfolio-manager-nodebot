@@ -24,7 +24,6 @@ import { FunctionComponent, default as React } from "react";
 import { Form, Link as RouterLink, useLoaderData, useParams } from "react-router-dom";
 import { StatementEntry } from "../../../../routers/types";
 import Number from "../../Number/Number";
-import PortfolioLayout from "../PortfolioLayout";
 
 type StatementIndexProps = Record<string, never>;
 
@@ -44,7 +43,7 @@ const StatementIndex: FunctionComponent<StatementIndexProps> = ({ ..._rest }): J
   };
 
   return (
-    <PortfolioLayout>
+    <>
       <TableContainer>
         <Table variant="simple" size="sm" className="table-tiny">
           <TableCaption>Statements index ({theStatements.length})</TableCaption>
@@ -68,7 +67,7 @@ const StatementIndex: FunctionComponent<StatementIndexProps> = ({ ..._rest }): J
                 <Tr key={item.id}>
                   <Td>
                     <Tooltip label={new Date(item.date).toLocaleTimeString()} placement="auto" hasArrow={true}>
-                      <Link to={`../${portfolioId}/statement/${item.id}`} as={RouterLink}>
+                      <Link to={`../id/${item.id}`} as={RouterLink}>
                         {new Date(item.date).toLocaleDateString()}
                       </Link>
                     </Tooltip>
@@ -187,7 +186,7 @@ const StatementIndex: FunctionComponent<StatementIndexProps> = ({ ..._rest }): J
           </Tfoot>
         </Table>
       </TableContainer>
-    </PortfolioLayout>
+    </>
   );
 };
 

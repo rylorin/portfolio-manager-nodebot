@@ -346,8 +346,8 @@ router.get("/:statementId(\\d+)/AddToTrade/:tradeId(\\d+)", (req, res): void => 
  * Get a statement
  */
 router.get("/id/:statementId(\\d+)", (req, res): void => {
-  const { _portfolioId, statementId } = req.params as typeof req.params & parentParams;
-  // console.log("statement", portfolioId, statementId);
+  const { portfolioId, statementId } = req.params as typeof req.params & parentParams;
+  console.log("statement", portfolioId, statementId);
   Statement.findByPk(statementId, {
     include: [{ model: Contract }, { model: Portfolio }],
   })

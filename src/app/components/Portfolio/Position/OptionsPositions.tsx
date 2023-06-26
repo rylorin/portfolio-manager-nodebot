@@ -19,7 +19,6 @@ import { Form, Link as RouterLink, useLoaderData } from "react-router-dom";
 import { OptionPositionEntry } from "../../../../routers/types";
 import { formatNumber } from "../../../utils";
 import Number from "../../Number/Number";
-import PortfolioLayout from "../PortfolioLayout";
 
 type PositionsIndexProps = Record<string, never>;
 
@@ -47,7 +46,7 @@ const OptionsPositions: FunctionComponent<PositionsIndexProps> = ({ ..._rest }):
       <>
         <Tr fontWeight="semibold" key={subTotal.expiration} bg={bg}>
           <Td isNumeric>{formatNumber(subTotal.units)}</Td>
-          <Td></Td>
+          <Td>key={subTotal.expiration}</Td>
           <Td></Td>
           <Td>{subTotal.expiration}</Td>
           <Td></Td>
@@ -71,17 +70,22 @@ const OptionsPositions: FunctionComponent<PositionsIndexProps> = ({ ..._rest }):
     ) : undefined;
   };
 
+  const initSubtotal = (item: OptionPositionEntry): JSX.Element => {
+    subTotal = { expiration: item.option.expiration, units: 0, cost: 0, value: 0, engaged: 0, risk: 0, pnl: 0 };
+    return undefined;
+  };
+
   const addToSubtotal = (item: OptionPositionEntry): JSX.Element => {
     let result: JSX.Element;
-
     if (!subTotal) {
-      subTotal = { expiration: item.option.expiration, units: 0, cost: 0, value: 0, engaged: 0, risk: 0, pnl: 0 };
+      initSubtotal(item);
     } else if (item.option.expiration != subTotal.expiration) {
       // new expiration, emit subtotal
       result = SubTotalRow();
       // init new subtotal
-      subTotal = { expiration: item.option.expiration, units: 0, cost: 0, value: 0, engaged: 0, risk: 0, pnl: 0 };
+      initSubtotal(item);
     }
+    console.log(item);
     // increment totals
     subTotal.units += Math.abs(item.quantity);
     subTotal.cost += item.cost * item.baseRate;
@@ -89,6 +93,7 @@ const OptionsPositions: FunctionComponent<PositionsIndexProps> = ({ ..._rest }):
     subTotal.engaged += item.engaged * item.baseRate;
     subTotal.risk += item.risk * item.baseRate;
     subTotal.pnl += item.pnl * item.baseRate;
+    console.log(subTotal);
 
     return result;
   };
@@ -118,7 +123,7 @@ const OptionsPositions: FunctionComponent<PositionsIndexProps> = ({ ..._rest }):
   };
 
   return (
-    <PortfolioLayout>
+    <>
       <Box>
         <Spacer />
         <Link to={"../all"} as={RouterLink}>
@@ -239,7 +244,7 @@ const OptionsPositions: FunctionComponent<PositionsIndexProps> = ({ ..._rest }):
           </Tfoot>
         </Table>
       </TableContainer>
-    </PortfolioLayout>
+    </>
   );
 };
 

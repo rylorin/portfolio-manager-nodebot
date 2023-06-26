@@ -3,7 +3,6 @@ import { Center, Flex, Text } from "@chakra-ui/layout";
 import React, { FunctionComponent } from "react";
 import { Link as RouterLink, useLoaderData } from "react-router-dom";
 import { Position as PositionModel } from "../../../../models";
-import PortfolioLayout from "../PortfolioLayout";
 
 type PositionShowProps = Record<string, never>;
 
@@ -11,7 +10,7 @@ const PositionShow: FunctionComponent<PositionShowProps> = ({ ..._rest }): JSX.E
   const thisPosition = useLoaderData() as PositionModel;
 
   return (
-    <PortfolioLayout>
+    <>
       <Flex justifyContent="center" gap="2">
         <Text w="90px" as="b" textAlign="right">
           Id:
@@ -56,7 +55,7 @@ const PositionShow: FunctionComponent<PositionShowProps> = ({ ..._rest }): JSX.E
           </Center>
         </RouterLink>
       </Flex>
-    </PortfolioLayout>
+    </>
   );
 };
 

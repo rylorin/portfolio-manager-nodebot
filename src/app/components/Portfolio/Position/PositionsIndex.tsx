@@ -26,7 +26,6 @@ import { Form, Link as RouterLink, useLoaderData, useParams } from "react-router
 import { PositionEntry } from "../../../../routers/types";
 import { formatNumber } from "../../../utils";
 import Number from "../../Number/Number";
-import PortfolioLayout from "../PortfolioLayout";
 
 type PositionsIndexProps = Record<string, never>;
 
@@ -50,7 +49,7 @@ const PositionsIndex: FunctionComponent<PositionsIndexProps> = ({ ..._rest }): J
   // };
 
   return (
-    <PortfolioLayout>
+    <>
       <Box>
         <Spacer />
         <Link to={"../all"} as={RouterLink}>
@@ -187,7 +186,7 @@ const PositionsIndex: FunctionComponent<PositionsIndexProps> = ({ ..._rest }): J
           </Tfoot>
         </Table>
       </TableContainer>
-    </PortfolioLayout>
+    </>
   );
 };
 

@@ -28,7 +28,7 @@ const Number: FunctionComponent<NumberProps> = ({ value, decimals = 0, color, is
     style = { color: "red.500" };
   }
   return (
-    <Text {...style} {...rest} align="right">
+    <Text {...style} {...rest} align="right" as="span">
       {rounded}
     </Text>
   );

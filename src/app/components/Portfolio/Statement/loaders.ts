@@ -44,10 +44,10 @@ export const statementSummaryLoaderAll = ({ params }): Promise<StatementsSynthes
  */
 export const statementShowLoader = ({ params }): Promise<Statement> => {
   const { portfolioId, statementId } = params;
-  console.log("statement show", portfolioId, statementId);
+  // console.log("statement show", portfolioId, statementId);
   return fetch(`/api/portfolio/${portfolioId}/statements/id/${statementId}`)
     .then((response) => response.json())
-    .then((data) => data.data);
+    .then((data) => data.statement);
 };
 
 /**

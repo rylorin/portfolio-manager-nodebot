@@ -5,7 +5,6 @@ import { Link as RouterLink, useLoaderData, useNavigate } from "react-router-dom
 import { TradeEntry } from "../../../../routers/types";
 import { formatNumber } from "../../../utils";
 import Number from "../../Number/Number";
-import PortfolioLayout from "../PortfolioLayout";
 import { tradeStatus2String } from "../utils";
 
 type TradeShowProps = Record<string, never>;
@@ -15,7 +14,7 @@ const TradeShow: FunctionComponent<TradeShowProps> = ({ ..._rest }): JSX.Element
   const navigate = useNavigate();
 
   return (
-    <PortfolioLayout>
+    <>
       <VStack>
         <Flex justifyContent="center" gap="2">
           <Text w="90px" as="b" textAlign="right">
@@ -129,7 +128,7 @@ const TradeShow: FunctionComponent<TradeShowProps> = ({ ..._rest }): JSX.Element
           </RouterLink>
         </Flex>
       </VStack>
-    </PortfolioLayout>
+    </>
   );
 };
 

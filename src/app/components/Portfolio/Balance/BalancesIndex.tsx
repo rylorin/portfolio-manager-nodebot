@@ -4,7 +4,6 @@ import { FunctionComponent, default as React } from "react";
 import { useLoaderData } from "react-router-dom";
 import { BalanceEntry } from "../../../../routers/types";
 import Number from "../../Number/Number";
-import PortfolioLayout from "../PortfolioLayout";
 
 type BalancesIndexProps = Record<string, never>;
 
@@ -17,7 +16,7 @@ const BalancesIndex: FunctionComponent<BalancesIndexProps> = ({ ..._rest }): JSX
   const theBalances = useLoaderData() as BalanceEntry[];
 
   return (
-    <PortfolioLayout>
+    <>
       <TableContainer>
         <Table variant="simple" size="sm" className="table-tiny">
           <TableCaption>Statements index ({theBalances.length})</TableCaption>
@@ -59,7 +58,7 @@ const BalancesIndex: FunctionComponent<BalancesIndexProps> = ({ ..._rest }): JSX
           </Tfoot>
         </Table>
       </TableContainer>
-    </PortfolioLayout>
+    </>
   );
 };
 

@@ -1,16 +1,11 @@
 import React from "react";
 import { Route, Routes } from "react-router-dom";
-import PortfolioEdit from "./PortfolioEdit";
+import PortfolioEdit from "./Portfolio/PortfolioEdit";
+import PortfolioShow from "./Portfolio/PortfolioShow";
 import PortfolioIndex from "./PortfolioIndex";
-import PortfolioShow from "./PortfolioShow";
 import { default as StatementIndex } from "./Statement/StatementIndex";
 import StatementSummary from "./Statement/StatementSummary";
 import { statementMonthLoader } from "./Statement/loaders";
-
-export const action = (): string => {
-  console.log("Portfolio action called");
-  return "qqch";
-};
 
 const Portfolio = (): JSX.Element => {
   return (

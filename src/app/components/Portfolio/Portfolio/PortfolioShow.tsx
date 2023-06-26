@@ -2,9 +2,8 @@ import { DeleteIcon, EditIcon } from "@chakra-ui/icons";
 import { Center, Flex, Text } from "@chakra-ui/layout";
 import React, { FunctionComponent } from "react";
 import { Link as RouterLink, useLoaderData } from "react-router-dom";
-import { Portfolio as PortfolioModel } from "../../../models/portfolio.model";
-import { obfuscate } from "../../utils";
-import PortfolioLayout from "./PortfolioLayout";
+import { Portfolio as PortfolioModel } from "../../../../models/portfolio.model";
+import { obfuscate } from "../../../utils";
 
 type PortfolioShowProps = Record<string, never>;
 
@@ -14,7 +13,7 @@ const PortfolioShow: FunctionComponent<PortfolioShowProps> = ({ ..._rest }): JSX
   const thisPortfolio = useLoaderData() as PortfolioModel;
 
   return (
-    <PortfolioLayout>
+    <>
       <Flex justifyContent="center" gap="2">
         <Text w="90px" as="b" textAlign="right">
           Id:
@@ -59,7 +58,7 @@ const PortfolioShow: FunctionComponent<PortfolioShowProps> = ({ ..._rest }): JSX
           </Center>
         </RouterLink>
       </Flex>
-    </PortfolioLayout>
+    </>
   );
 };
 

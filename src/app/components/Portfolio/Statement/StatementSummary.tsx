@@ -4,7 +4,6 @@ import { Link as RouterLink, useLoaderData, useParams } from "react-router-dom";
 import { StatementsSynthesysEntries, SynthesysEntry } from "../../../../routers/types";
 import BarChart from "../../Chart/BarChart";
 import Number from "../../Number/Number";
-import PortfolioLayout from "../PortfolioLayout";
 
 type StatementSummaryProps = Record<string, never>;
 
@@ -19,7 +18,7 @@ const StatementSummary: FunctionComponent<StatementSummaryProps> = ({ ..._rest }
   const theSynthesys = useLoaderData() as StatementsSynthesysEntries;
 
   return (
-    <PortfolioLayout>
+    <>
       <Box>
         <Spacer />
         <Link to={"../ytd"} as={RouterLink}>
@@ -131,7 +130,7 @@ const StatementSummary: FunctionComponent<StatementSummaryProps> = ({ ..._rest }
           </Tfoot>
         </Table>
       </TableContainer>
-    </PortfolioLayout>
+    </>
   );
 };
 

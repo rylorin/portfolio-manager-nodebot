@@ -1,5 +1,4 @@
 import { FunctionComponent, default as React } from "react";
-import PortfolioLayout from "../PortfolioLayout";
 
 type StatementShowProps = Record<string, never>;
 
@@ -12,7 +11,7 @@ const StatementShow: FunctionComponent<StatementShowProps> = ({ ..._rest }): JSX
   // const { portfolioId, year, month } = useParams();
   // const theStatement = useLoaderData() as Statement;
 
-  return <PortfolioLayout>theStatement</PortfolioLayout>;
+  return <>theStatement</>;
 };
 
 export default StatementShow;
