@@ -2,6 +2,7 @@ import { IBApiNext, Contract as IbContract, SecType } from "@stoqey/ib";
 import { XMLParser } from "fast-xml-parser";
 import { ITradingBot } from ".";
 import { MyTradingBotApp } from "..";
+import logger, { LogLevel } from "../logger";
 import {
   Contract,
   DividendStatement,
@@ -15,6 +16,8 @@ import {
   StatementTypes,
   TaxStatement,
 } from "../models";
+
+const MODULE = "ImporterBot";
 
 const ibContractFromElement = (element: any): IbContract => {
   const ibContract: IbContract = {
@@ -283,6 +286,7 @@ export class ImporterBot extends ITradingBot {
         },
       }).then(([statement, created]) => {
         if (created) {
+          logger.log(LogLevel.Debug, MODULE + ".processOptionTrade", element.underlyingSymbol, element);
           return this.processSecurityInfo(element).then((contract) =>
             OptionStatement.create({
               id: statement.id,
@@ -290,7 +294,7 @@ export class ImporterBot extends ITradingBot {
               price: element.price,
               proceeds: element.proceeds,
               fees: element.ibCommission,
-              realizedPnL: element.realizedPnL,
+              realizedPnL: element.fifoPnlRealized,
               status: transactionStatusFromElement(element),
               contract_id: contract?.id,
             }).then((_optStatement) => statement),
