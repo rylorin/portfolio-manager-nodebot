@@ -367,7 +367,7 @@ router.get("/id/:statementId(\\d+)", (req, res): void => {
  */
 router.get("/:statementId(\\d+)/DeleteStatement", (req, res): void => {
   const { _portfolioId, statementId } = req.params as typeof req.params & parentParams;
-  // console.log("DeleteStatement", portfolioId, statementId);
+
   Statement.findByPk(statementId)
     .then((statement) => {
       if (statement) {
@@ -388,6 +388,9 @@ router.get("/:statementId(\\d+)/DeleteStatement", (req, res): void => {
           case StatementTypes.FeeStatement:
             return FeeStatement.destroy({ where: { id: statement.id } }).then((_count) => statement);
             break;
+          case StatementTypes.OptionStatement:
+            return OptionStatement.destroy({ where: { id: statement.id } }).then((_count) => statement);
+            break;
           default:
             console.error("invalid statement type:", statement.statementType);
             throw Error("invalid statement type: " + statement.statementType);
@@ -400,7 +403,7 @@ router.get("/:statementId(\\d+)/DeleteStatement", (req, res): void => {
     .then((statement) => {
       if (statement) {
         // console.log("deleteing statement", statement.id);
-        return Statement.destroy({ where: { id: statementId }, logging: console.log });
+        return Statement.destroy({ where: { id: statementId } });
       } else {
         console.error("statement not found:", statementId);
         throw Error("statement doesn't exist");

@@ -90,7 +90,7 @@ const StatementIndex: FunctionComponent<StatementIndexProps> = ({ items, ..._res
                   <Td>
                     {item.underlying && item.trade_id && (
                       <>
-                        <Link to={`../${portfolioId}/trade/${item.trade_id}`} as={RouterLink}>
+                        <Link to={`/portfolio/${portfolioId}/trades/id/${item.trade_id}`} as={RouterLink}>
                           {item.trade_id}
                         </Link>
                         <Form method="post" action={`UnlinkTrade/${item.id}`} className="inline">

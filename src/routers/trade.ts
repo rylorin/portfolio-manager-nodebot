@@ -187,7 +187,7 @@ router.get("/id/:tradeId(\\d+)", (req, res): void => {
             fxRateToBase: item.fxRateToBase,
             description: item.description,
             trade_id: item.trade_unit_id,
-            underlying: undefined,
+            underlying: { id: thisTrade.stock.id, symbol: thisTrade.stock.symbol },
           };
           return statement;
         }),
