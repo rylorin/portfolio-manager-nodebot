@@ -675,9 +675,11 @@ export class ContractsUpdaterBot extends ITradingBot {
               currency: currency.currency,
               exchange: "IDEALPRO",
             };
-            return this.findOrCreateContract(ibContract).catch((error: Error) => {
-              throw Error(`createCashContracts failed for ${ibContract.localSymbol}: '${error.message}'`);
-            });
+            return this.findOrCreateContract(ibContract)
+              .catch((error: Error) => {
+                throw Error(`createCashContracts failed for ${ibContract.localSymbol}: '${error.message}'`);
+              })
+              .then(() => Promise.resolve());
           });
         }, Promise.resolve()),
       )

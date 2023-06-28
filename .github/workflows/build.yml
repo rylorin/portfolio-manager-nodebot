@@ -5,7 +5,7 @@ on:
     paths-ignore:
       - "README.md"
       - "LICENSE"
-      - ".github/workflows/ci.yml"
+      - ".github/workflows/check.yml"
 
 jobs:
   job:
@@ -13,8 +13,12 @@ jobs:
     timeout-minutes: 3
     steps:
       - name: Checkout
-        uses: actions/checkout@master
+        uses: actions/checkout@v3
+      - name: Setup Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: 18.16.0
       - name: Prepare
-        run: yarn install
+        run: yarn install --frozen-lockfile
       - name: Build test
         run: yarn run build
