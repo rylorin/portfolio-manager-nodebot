@@ -1,7 +1,11 @@
-import { TradeStatus } from "../../../models/trade.model";
+import { TradeStatus } from "../../../entities/trade";
 
 export const tradeStatus2String = (status: TradeStatus): string => {
-  switch (status as number) {
+  if (status === TradeStatus.open) {
+    console.log("ANTOINE");
+  }
+
+  switch (status) {
     // case TradeStatus.open:
     case 1:
       return "open";

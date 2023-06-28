@@ -1,5 +1,8 @@
 import { BelongsTo, Column, DataType, ForeignKey, HasMany, Model, Table } from "sequelize-typescript";
-import { Balance, Contract, Currency, Position } from ".";
+import { Balance } from "./balance.model";
+import { Contract } from "./contract.model";
+import { Currency } from "./currency.model";
+import { Position } from "./position.model";
 
 @Table({ tableName: "portfolio", timestamps: false, deletedAt: false, updatedAt: false })
 export class Portfolio extends Model {

@@ -1,6 +1,6 @@
 import { BelongsTo, Column, DataType, ForeignKey, Model, Table } from "sequelize-typescript";
 
-import { Portfolio } from ".";
+import { Portfolio } from "./portfolio.model";
 
 @Table({ tableName: "balance", timestamps: true })
 export class Balance extends Model {

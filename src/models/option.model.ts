@@ -1,7 +1,7 @@
 import { OptionType } from "@stoqey/ib";
 import { BelongsTo, Column, DataType, ForeignKey, Model, Table } from "sequelize-typescript";
 
-import { Contract } from ".";
+import { Contract } from "./contract.model";
 
 @Table({ tableName: "option", timestamps: true, deletedAt: false })
 export class Option extends Model {

@@ -1,5 +1,6 @@
 import express from "express";
 import { Op } from "sequelize";
+import { TradeStatus } from "../entities/trade";
 import {
   Contract,
   DividendStatement,
@@ -13,7 +14,6 @@ import {
   TaxStatement,
   Trade,
   TradeCreationAttributes,
-  TradeStatus,
   TradeStrategy,
 } from "../models";
 import { StatementEntry, StatementsSynthesysEntries } from "./types";
@@ -336,6 +336,24 @@ router.get("/:statementId(\\d+)/AddToTrade/:tradeId(\\d+)", (req, res): void => 
         return statement.update({ trade_unit_id: tradeId });
       } else {
         throw Error("statement doesn't exist");
+      }
+    })
+    .then((statement) => res.status(200).json({ statement }))
+    .catch((error) => res.status(500).json({ error }));
+});
+
+/**
+ * Delete a statement
+ */
+router.get("/:statementId(\\d+)/UnlinkTrade", (req, res): void => {
+  const { _portfolioId, statementId } = req.params as typeof req.params & parentParams;
+  Statement.findByPk(statementId)
+    .then((statement) => {
+      if (statement) {
+        return statement.update({ trade_unit_id: null });
+      } else {
+        console.error("statement not found:", statementId);
+        throw Error("statement not found: " + statementId);
       }
     })
     .then((statement) => res.status(200).json({ statement }))

@@ -1,13 +1,10 @@
 import { Optional } from "sequelize";
 import { BelongsTo, Column, DataType, ForeignKey, HasMany, Model, Table } from "sequelize-typescript";
-import { Contract, Portfolio, Statement } from ".";
+import { Contract } from "./contract.model";
+import { Portfolio } from "./portfolio.model";
+import { Statement } from "./statement.model";
 
-export const TradeStatus = {
-  undefined: 0,
-  open: 1,
-  closed: 2,
-} as const;
-export type TradeStatus = (typeof TradeStatus)[keyof typeof TradeStatus];
+import { TradeStatus } from "./../entities/trade";
 
 export const TradeStrategy = {
   undefined: 0,

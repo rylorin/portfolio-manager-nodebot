@@ -1,5 +1,7 @@
 import { BelongsTo, Column, DataType, ForeignKey, Model, Table } from "sequelize-typescript";
-import { Contract, Portfolio, Trade } from ".";
+import { Contract } from "./contract.model";
+import { Portfolio } from "./portfolio.model";
+import { Trade } from "./trade.model";
 
 export const StatementTypes = {
   EquityStatement: "Trade",

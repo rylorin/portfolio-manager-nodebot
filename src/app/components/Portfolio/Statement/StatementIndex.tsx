@@ -98,7 +98,7 @@ const StatementIndex: FunctionComponent<StatementIndexProps> = ({ items, ..._res
                             aria-label="Remove trade association"
                             icon={<SmallCloseIcon />}
                             size="xs"
-                            variant="link"
+                            variant="ghost"
                             type="submit"
                           />
                         </Form>
@@ -111,7 +111,7 @@ const StatementIndex: FunctionComponent<StatementIndexProps> = ({ items, ..._res
                             aria-label="New trade"
                             icon={<PlusSquareIcon />}
                             size="xs"
-                            variant="link"
+                            variant="ghost"
                             type="submit"
                           />
                         </Form>
@@ -130,7 +130,7 @@ const StatementIndex: FunctionComponent<StatementIndexProps> = ({ items, ..._res
                               aria-label="Above trade"
                               icon={<ArrowUpIcon />}
                               size="xs"
-                              variant="link"
+                              variant="ghost"
                               type="submit"
                             />
                           </Form>

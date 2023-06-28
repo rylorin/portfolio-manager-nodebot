@@ -44,7 +44,7 @@ const OptionsPositions: FunctionComponent<PositionsIndexProps> = ({ ..._rest }):
   const SubTotalRow = (): JSX.Element => {
     return (
       <>
-        <Tr fontWeight="semibold" key={subTotal.expiration} bg={bg} id={subTotal.expiration}>
+        <Tr fontWeight="semibold" key={Math.random() * 1000} bg={bg} id={subTotal.expiration}>
           <Td isNumeric>{formatNumber(subTotal.units)}</Td>
           <Td></Td>
           <Td></Td>

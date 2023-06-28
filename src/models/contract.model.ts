@@ -26,7 +26,7 @@ export class Contract extends Model {
 
   /** The security type   */
   @AllowNull(false)
-  @Column({ type: DataType.ENUM(typeof ContracType) })
+  @Column({ type: DataType.STRING })
   declare secType: IbSecType;
 
   /** The destination exchange. */
@@ -34,7 +34,7 @@ export class Contract extends Model {
   declare exchange: string;
 
   /** The trading currency. */
-  @Column({ type: DataType.STRING(3) })
+  @Column({ type: DataType.STRING })
   declare currency: string;
 
   /* other fields to be documented */

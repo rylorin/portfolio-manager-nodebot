@@ -20,5 +20,5 @@ jobs:
           node-version: 18.16.0
       - name: Prepare
         run: yarn install --frozen-lockfile
-      - name: Build test
+      - name: Build Test
         run: yarn run build
