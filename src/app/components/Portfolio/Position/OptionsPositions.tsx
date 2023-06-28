@@ -42,11 +42,11 @@ const OptionsPositions: FunctionComponent<PositionsIndexProps> = ({ ..._rest }):
   let subTotal: TotalEntry;
 
   const SubTotalRow = (): JSX.Element => {
-    return subTotal ? (
+    return (
       <>
-        <Tr fontWeight="semibold" key={subTotal.expiration} bg={bg}>
+        <Tr fontWeight="semibold" key={subTotal.expiration} bg={bg} id={subTotal.expiration}>
           <Td isNumeric>{formatNumber(subTotal.units)}</Td>
-          <Td>key={subTotal.expiration}</Td>
+          <Td></Td>
           <Td></Td>
           <Td>{subTotal.expiration}</Td>
           <Td></Td>
@@ -67,15 +67,14 @@ const OptionsPositions: FunctionComponent<PositionsIndexProps> = ({ ..._rest }):
           <Td></Td>
         </Tr>
       </>
-    ) : undefined;
+    );
   };
 
-  const initSubtotal = (item: OptionPositionEntry): JSX.Element => {
+  const initSubtotal = (item: OptionPositionEntry): void => {
     subTotal = { expiration: item.option.expiration, units: 0, cost: 0, value: 0, engaged: 0, risk: 0, pnl: 0 };
-    return undefined;
   };
 
-  const addToSubtotal = (item: OptionPositionEntry): JSX.Element => {
+  const addToSubtotal = (item: OptionPositionEntry): JSX.Element | void => {
     let result: JSX.Element;
     if (!subTotal) {
       initSubtotal(item);
@@ -84,6 +83,7 @@ const OptionsPositions: FunctionComponent<PositionsIndexProps> = ({ ..._rest }):
       result = SubTotalRow();
       // init new subtotal
       initSubtotal(item);
+      return result;
     }
     // console.log(item);
     // increment totals
@@ -94,8 +94,6 @@ const OptionsPositions: FunctionComponent<PositionsIndexProps> = ({ ..._rest }):
     subTotal.risk += item.risk * item.baseRate;
     subTotal.pnl += item.pnl * item.baseRate;
     // console.log(subTotal);
-
-    return result;
   };
 
   const compareItems = (a: OptionPositionEntry, b: OptionPositionEntry): number => {
@@ -162,7 +160,7 @@ const OptionsPositions: FunctionComponent<PositionsIndexProps> = ({ ..._rest }):
               .map((item) => (
                 <>
                   {addToSubtotal(item)}
-                  <Tr key={item.id}>
+                  <Tr key={item.id} id={`${item.id}`}>
                     <Td isNumeric>{formatNumber(item.quantity)}</Td>
                     <Td>{item.option.symbol}</Td>
                     <Td isNumeric>{formatNumber(item.option.strike, 1)}</Td>

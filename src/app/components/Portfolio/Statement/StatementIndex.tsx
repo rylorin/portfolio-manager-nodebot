@@ -160,19 +160,19 @@ const StatementIndex: FunctionComponent<StatementIndexProps> = ({ items, ..._res
             <Tr>
               <Td fontWeight="bold">Total</Td>
               <Td>Base</Td>
-              <Td>
+              <Td isNumeric>
                 <Number
                   value={theStatements.reduce((p: number, item) => (p += (item.amount || 0) * item.fxRateToBase), 0)}
                   fontWeight="bold"
                 />
               </Td>
-              <Td>
+              <Td isNumeric>
                 <Number
                   value={theStatements.reduce((p: number, item) => (p += (item.pnl || 0) * item.fxRateToBase), 0)}
                   fontWeight="bold"
                 />
               </Td>
-              <Td>
+              <Td isNumeric>
                 <Number
                   value={theStatements.reduce((p: number, item) => (p += (item.fees || 0) * item.fxRateToBase), 0)}
                   fontWeight="bold"

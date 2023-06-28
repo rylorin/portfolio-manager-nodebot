@@ -42,7 +42,7 @@ export class ContractsUpdaterBot extends ITradingBot {
     this.on("createCashContracts", () => this.createCashContracts());
 
     setTimeout(() => this.emit("updateHistoricalData"), 10 * 60 * 1000); // start after 10 mins
-    setTimeout(() => this.emit("updateOptionsPrice"), 20 * 1000); // start after 2à secs
+    setTimeout(() => this.emit("updateOptionsPrice"), 20 * 1000); // start after 20 secs
     setTimeout(() => this.emit("createCashContracts"), 10 * 1000); // start after 10 secs
     // setTimeout(() => this.emit("buildOptionsList"), 3600 * 1000);    // start after 1 hour
   }
@@ -663,29 +663,26 @@ export class ContractsUpdaterBot extends ITradingBot {
     });
   }
 
-  private async createCashContracts(): Promise<void> {
-    const currencies: Currency[] = await Currency.findAll();
-    console.log(`createCashContracts ${currencies.length} item(s)`);
-    const promises: Promise<Contract>[] = [];
-    for (const currency of currencies) {
-      const ibContract: IbContract = {
-        symbol: currency.base,
-        localSymbol: `${currency.base}.${currency.currency}`,
-        secType: SecType.CASH,
-        currency: currency.currency,
-        exchange: "IDEALPRO",
-      };
-      promises.push(
-        this.findOrCreateContract(ibContract).catch((error: Error) => {
-          // silently ignore any error
-          this.error(`createCashContracts failed for ${ibContract.localSymbol}: '${error.message}'`);
-          return null as Contract;
-        }),
-      );
-    }
-    await Promise.all(promises);
-    console.log("createCashContracts done");
-    setTimeout(() => this.emit("createCashContracts"), 10 * 60 * 1000); // 10 minutes
+  private createCashContracts(): void {
+    Currency.findAll()
+      .then((currencies) =>
+        currencies.reduce((p, currency) => {
+          return p.then(() => {
+            const ibContract: IbContract = {
+              symbol: currency.base,
+              localSymbol: `${currency.base}.${currency.currency}`,
+              secType: SecType.CASH,
+              currency: currency.currency,
+              exchange: "IDEALPRO",
+            };
+            return this.findOrCreateContract(ibContract).catch((error: Error) => {
+              throw Error(`createCashContracts failed for ${ibContract.localSymbol}: '${error.message}'`);
+            });
+          });
+        }, Promise.resolve()),
+      )
+      .then(() => setTimeout(() => this.emit("createCashContracts"), 10 * 60 * 1000)) // 10 minutes
+      .catch((error) => console.error("createCashContracts:", error));
   }
 
   private concatAndUniquelyze(contracts: AnyContract[], c: AnyContract[]): AnyContract[] {

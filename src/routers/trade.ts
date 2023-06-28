@@ -1,6 +1,15 @@
 import express from "express";
 import { Op } from "sequelize";
-import { Contract, Portfolio, Statement, Trade, TradeStrategy } from "../models";
+import {
+  Contract,
+  EquityStatement,
+  OptionStatement,
+  Portfolio,
+  Statement,
+  StatementTypes,
+  Trade,
+  TradeStrategy,
+} from "../models";
 import { StatementEntry, TradeEntry, TradeMonthlySynthesys, TradeSynthesys } from "./types";
 
 const router = express.Router({ mergeParams: true });
@@ -175,23 +184,70 @@ router.get("/id/:tradeId(\\d+)", (req, res): void => {
         pnl: thisTrade.PnL,
         apy,
         comment: thisTrade.comment,
-        statements: thisTrade.statements?.map((item) => {
-          const statement: StatementEntry = {
-            id: item.id,
-            date: item.date.getTime(),
-            type: item.statementType,
-            currency: item.currency,
-            amount: item.amount,
-            pnl: undefined,
-            fees: undefined,
-            fxRateToBase: item.fxRateToBase,
-            description: item.description,
-            trade_id: item.trade_unit_id,
-            underlying: { id: thisTrade.stock.id, symbol: thisTrade.stock.symbol },
-          };
-          return statement;
-        }),
+        statements: undefined,
       };
+      return thisTrade.statements
+        ?.reduce((p, item) => {
+          return p.then((statements) => {
+            const statement: StatementEntry = {
+              id: item.id,
+              date: item.date.getTime(),
+              type: item.statementType,
+              currency: item.currency,
+              amount: item.amount,
+              pnl: undefined,
+              fees: undefined,
+              fxRateToBase: item.fxRateToBase,
+              description: item.description,
+              trade_id: item.trade_unit_id,
+              underlying: { id: thisTrade.stock.id, symbol: thisTrade.stock.symbol },
+            };
+            switch (item.statementType) {
+              case StatementTypes.EquityStatement:
+                return EquityStatement.findByPk(item.id).then((thisStatement) => {
+                  // console.log(value);
+                  statement.pnl = thisStatement?.realizedPnL;
+                  statement.fees = thisStatement?.fees;
+                  statements.push(statement);
+                  return statements;
+                });
+                break;
+              case StatementTypes.OptionStatement:
+                return OptionStatement.findByPk(item.id).then((thisStatement) => {
+                  statement.pnl = thisStatement?.realizedPnL;
+                  statement.fees = thisStatement?.fees;
+                  statements.push(statement);
+                  return statements;
+                });
+                break;
+              case StatementTypes.DividendStatement:
+              case StatementTypes.TaxStatement:
+              case StatementTypes.InterestStatement:
+                statement.pnl = item.amount;
+                statements.push(statement);
+                return statements;
+                break;
+              case StatementTypes.FeeStatement:
+                statement.fees = item.amount;
+                statements.push(statement);
+                return statements;
+                break;
+              case StatementTypes.CorporateStatement:
+              case StatementTypes.CashStatement:
+                statements.push(statement);
+                return statements;
+                break;
+              default:
+                throw Error("Undefined statement type: " + item.statementType);
+            }
+          });
+        }, Promise.resolve([] as StatementEntry[]))
+        .then((statements) => {
+          trade.statements = statements;
+          return trade;
+        });
+    })
+    .then((trade) => {
       // console.log(trade);
       res.status(200).json({ trade });
     })
