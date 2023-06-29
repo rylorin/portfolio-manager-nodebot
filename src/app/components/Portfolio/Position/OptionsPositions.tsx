@@ -1,7 +1,5 @@
-import { DeleteIcon, EditIcon, SearchIcon } from "@chakra-ui/icons";
 import {
   Box,
-  IconButton,
   Link,
   Spacer,
   Table,
@@ -15,22 +13,15 @@ import {
   useColorModeValue,
 } from "@chakra-ui/react";
 import { FunctionComponent, default as React } from "react";
-import { Form, Link as RouterLink, useLoaderData } from "react-router-dom";
+import { Link as RouterLink, useLoaderData } from "react-router-dom";
 import { OptionPositionEntry } from "../../../../routers/types";
 import { formatNumber } from "../../../utils";
 import Number from "../../Number/Number";
+import OptionRow from "./OptionRowContent";
+import SubTotalRow, { TotalEntry } from "./SubTotalRowContent";
 
 type PositionsIndexProps = Record<string, never>;
 
-type TotalEntry = {
-  expiration: string;
-  units: number;
-  cost: number;
-  value: number;
-  pnl: number;
-  engaged: number;
-  risk: number;
-};
 /**
  * Statements list component
  * @param param0
@@ -39,62 +30,6 @@ type TotalEntry = {
 const OptionsPositions: FunctionComponent<PositionsIndexProps> = ({ ..._rest }): JSX.Element => {
   const bg = useColorModeValue("gray.200", "gray.900");
   const thePositions = useLoaderData() as OptionPositionEntry[];
-  let subTotal: TotalEntry;
-
-  const SubTotalRow = (): JSX.Element => {
-    return (
-      <>
-        <Tr fontWeight="semibold" key={Math.random() * 1000} bg={bg} id={subTotal.expiration}>
-          <Td isNumeric>{formatNumber(subTotal.units)}</Td>
-          <Td></Td>
-          <Td></Td>
-          <Td>{subTotal.expiration}</Td>
-          <Td></Td>
-          <Td>Base</Td>
-          <Td></Td>
-          <Td isNumeric>{formatNumber(subTotal.cost)}</Td>
-          <Td isNumeric>{formatNumber(subTotal.value)}</Td>
-          <Td isNumeric>
-            <Number value={subTotal.pnl} />
-          </Td>
-          <Td></Td>
-          <Td isNumeric>
-            <Number value={subTotal.engaged} />
-          </Td>
-          <Td isNumeric>
-            <Number value={subTotal.risk} />
-          </Td>
-          <Td></Td>
-        </Tr>
-      </>
-    );
-  };
-
-  const initSubtotal = (item: OptionPositionEntry): void => {
-    subTotal = { expiration: item.option.expiration, units: 0, cost: 0, value: 0, engaged: 0, risk: 0, pnl: 0 };
-  };
-
-  const addToSubtotal = (item: OptionPositionEntry): JSX.Element | void => {
-    let result: JSX.Element;
-    if (!subTotal) {
-      initSubtotal(item);
-    } else if (item.option.expiration != subTotal.expiration) {
-      // new expiration, emit subtotal
-      result = SubTotalRow();
-      // init new subtotal
-      initSubtotal(item);
-      return result;
-    }
-    // console.log(item);
-    // increment totals
-    subTotal.units += Math.abs(item.quantity);
-    subTotal.cost += item.cost * item.baseRate;
-    subTotal.value += item.value * item.baseRate;
-    subTotal.engaged += item.engaged * item.baseRate;
-    subTotal.risk += item.risk * item.baseRate;
-    subTotal.pnl += item.pnl * item.baseRate;
-    // console.log(subTotal);
-  };
 
   const compareItems = (a: OptionPositionEntry, b: OptionPositionEntry): number => {
     let result;
@@ -106,20 +41,58 @@ const OptionsPositions: FunctionComponent<PositionsIndexProps> = ({ ..._rest }):
     return result;
   };
 
-  const getITM = (item: OptionPositionEntry): number => {
-    if (!item.stock.price) return undefined;
-    else if (item.option.type == "P") {
-      return item.option.strike - item.stock.price;
-    } else {
-      return item.stock.price - item.option.strike;
-    }
+  const getPositions = (positions: OptionPositionEntry[]): (OptionPositionEntry | TotalEntry)[] => {
+    const result: (OptionPositionEntry | TotalEntry)[] = [];
+    let subTotal: TotalEntry;
+
+    positions
+      .sort((a, b) => compareItems(a, b))
+      .forEach((item) => {
+        if (!subTotal) {
+          subTotal = {
+            id: item.option.expiration,
+            expiration: item.option.expiration,
+            units: 0,
+            cost: 0,
+            value: 0,
+            engaged: 0,
+            risk: 0,
+            pnl: 0,
+          };
+        } else if (item.option.expiration != subTotal.expiration) {
+          // new expiration, emit subtotal
+          result.push(subTotal);
+          subTotal = {
+            id: item.option.expiration,
+            expiration: item.option.expiration,
+            units: 0,
+            cost: 0,
+            value: 0,
+            engaged: 0,
+            risk: 0,
+            pnl: 0,
+          };
+        }
+        // console.log(item);
+        // increment totals
+        subTotal.units += Math.abs(item.quantity);
+        subTotal.cost += item.cost * item.baseRate;
+        subTotal.value += item.value * item.baseRate;
+        subTotal.engaged += item.engaged * item.baseRate;
+        subTotal.risk += item.risk * item.baseRate;
+        subTotal.pnl += item.pnl * item.baseRate;
+        // console.log(subTotal);
+        result.push(item);
+      });
+    if (subTotal) result.push(subTotal);
+    return result;
   };
 
-  const getColor = (item: OptionPositionEntry): string => {
-    if (getITM(item) * item.quantity < 0) return "red.500";
-    else return "green.500";
-  };
+  // const ItemRow() :JSX.Element=> {
 
+  // }
+
+  const positions = getPositions(thePositions);
   return (
     <>
       <Box>
@@ -155,56 +128,15 @@ const OptionsPositions: FunctionComponent<PositionsIndexProps> = ({ ..._rest }):
             </Tr>
           </Thead>
           <Tbody>
-            {thePositions
-              .sort((a, b) => compareItems(a, b))
-              .map((item) => (
-                <>
-                  {addToSubtotal(item)}
-                  <Tr key={item.id} id={`${item.id}`}>
-                    <Td isNumeric>{formatNumber(item.quantity)}</Td>
-                    <Td>{item.option.symbol}</Td>
-                    <Td isNumeric>{formatNumber(item.option.strike, 1)}</Td>
-                    <Td>{item.option.expiration}</Td>
-                    <Td>{item.option.type == "P" ? "Put" : "Call"}</Td>
-                    <Td>{item.contract.currency}</Td>
-                    <Td isNumeric>
-                      <Number value={getITM(item)} decimals={1} color={getColor(item)} />
-                    </Td>
-                    <Td isNumeric>{formatNumber(item.cost)}</Td>
-                    <Td isNumeric>{formatNumber(item.value)}</Td>
-                    <Td isNumeric>
-                      <Number value={item.pnl} />
-                    </Td>
-                    <Td isNumeric>
-                      <Number value={item.apy} decimals={1} isPercent />
-                    </Td>
-                    <Td isNumeric>{formatNumber(item.engaged)}</Td>
-                    <Td isNumeric>{formatNumber(item.risk)}</Td>
-                    <Td>
-                      <Form method="post" action={`id/${item.id}`} className="inline">
-                        <IconButton
-                          aria-label="Show position"
-                          icon={<SearchIcon />}
-                          size="xs"
-                          variant="link"
-                          type="submit"
-                        />
-                      </Form>
-                      <IconButton aria-label="Guess trade" icon={<EditIcon />} size="xs" variant="ghost" />
-                      <Form method="post" action={`DeletePosition/${item.id}`} className="inline">
-                        <IconButton
-                          aria-label="Delete position"
-                          icon={<DeleteIcon />}
-                          size="xs"
-                          variant="link"
-                          type="submit"
-                        />
-                      </Form>
-                    </Td>
-                  </Tr>
-                </>
-              ))}
-            <SubTotalRow />
+            {positions.map((item) => (
+              <Tr key={`${item.id}`} id={`${item.id}`} bg={item["option"] ? undefined : bg}>
+                {item["option"] ? (
+                  <OptionRow item={item as OptionPositionEntry} />
+                ) : (
+                  <SubTotalRow subTotal={item as TotalEntry} />
+                )}
+              </Tr>
+            ))}
           </Tbody>
           <Tfoot>
             <Tr fontWeight="bold">

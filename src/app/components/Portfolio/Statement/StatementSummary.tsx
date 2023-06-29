@@ -69,61 +69,56 @@ const StatementSummary: FunctionComponent<StatementSummaryProps> = ({ ..._rest }
                       {key}
                     </Link>
                   </Td>
-                  <Td>
+                  <Td isNumeric>
                     <Number value={theSynthesys[key].options} />
                   </Td>
-                  <Td>
+                  <Td isNumeric>
                     <Number value={theSynthesys[key].stocks} />
                   </Td>
-                  <Td>
+                  <Td isNumeric>
                     <Number value={theSynthesys[key].dividends} />
                   </Td>
-                  <Td>
+                  <Td isNumeric>
                     <Number value={theSynthesys[key].interests} />
                   </Td>
-                  <Td>
+                  <Td isNumeric>
                     <Number value={theSynthesys[key].total} />
                   </Td>
                 </Tr>
               ))}
           </Tbody>
           <Tfoot>
-            <Tr>
-              <Td fontWeight="bold">Total</Td>
-              <Td>
+            <Tr fontWeight="bold">
+              <Td>Total</Td>
+              <Td isNumeric>
                 <Number
                   value={Object.values(theSynthesys).reduce((p: number, v: SynthesysEntry) => (p += v.options || 0), 0)}
-                  fontWeight="bold"
                 />
               </Td>
-              <Td>
+              <Td isNumeric>
                 <Number
                   value={Object.values(theSynthesys).reduce((p: number, v: SynthesysEntry) => (p += v.stocks || 0), 0)}
-                  fontWeight="bold"
                 />
               </Td>
-              <Td>
+              <Td isNumeric>
                 <Number
                   value={Object.values(theSynthesys).reduce(
                     (p: number, v: SynthesysEntry) => (p += v.dividends || 0),
                     0,
                   )}
-                  fontWeight="bold"
                 />
               </Td>
-              <Td>
+              <Td isNumeric>
                 <Number
                   value={Object.values(theSynthesys).reduce(
                     (p: number, v: SynthesysEntry) => (p += v.interests || 0),
                     0,
                   )}
-                  fontWeight="bold"
                 />
               </Td>
-              <Td>
+              <Td isNumeric>
                 <Number
                   value={Object.values(theSynthesys).reduce((p: number, v: SynthesysEntry) => (p += v.total || 0), 0)}
-                  fontWeight="bold"
                 />
               </Td>
             </Tr>

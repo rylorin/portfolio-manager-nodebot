@@ -73,13 +73,13 @@ const StatementIndex: FunctionComponent<StatementIndexProps> = ({ items, ..._res
                     </Tooltip>
                   </Td>
                   <Td>{item.currency}</Td>
-                  <Td>
+                  <Td isNumeric>
                     <Number value={item.amount} decimals={2} />
                   </Td>
-                  <Td>
+                  <Td isNumeric>
                     <Number value={item.pnl} decimals={2} />
                   </Td>
-                  <Td>
+                  <Td isNumeric>
                     <Number value={item.fees} decimals={2} />
                   </Td>
                   <Td>

@@ -1,6 +1,5 @@
 import express from "express";
 import { Op } from "sequelize";
-import { TradeStatus } from "../entities/trade";
 import {
   Contract,
   DividendStatement,
@@ -14,8 +13,8 @@ import {
   TaxStatement,
   Trade,
   TradeCreationAttributes,
-  TradeStrategy,
 } from "../models";
+import { TradeStatus, TradeStrategy } from "../models/types";
 import { StatementEntry, StatementsSynthesysEntries } from "./types";
 
 const router = express.Router({ mergeParams: true });

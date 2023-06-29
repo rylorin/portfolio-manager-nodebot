@@ -1,4 +1,4 @@
-import { TradeStatus } from "../../../entities/trade";
+import { TradeStatus } from "../../../models/types";
 
 export const tradeStatus2String = (status: TradeStatus): string => {
   if (status === TradeStatus.open) {

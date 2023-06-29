@@ -42,7 +42,7 @@ export type StatementTypes = (typeof StatementTypes)[keyof typeof StatementTypes
 //   contract: Contract;
 // }
 
-@Table({ tableName: "statement", timestamps: false, createdAt: false, updatedAt: false })
+@Table({ tableName: "statement", timestamps: true })
 export class Statement extends Model {
   declare id: number;
 
