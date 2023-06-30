@@ -1,26 +1,19 @@
-import {
-  Box,
-  Link,
-  Spacer,
-  Table,
-  TableCaption,
-  TableContainer,
-  Tbody,
-  Td,
-  Tfoot,
-  Thead,
-  Tr,
-  useColorModeValue,
-} from "@chakra-ui/react";
+import { Box, Link, Spacer, Table, TableCaption, TableContainer, Tbody, Td, Tfoot, Thead, Tr } from "@chakra-ui/react";
 import { FunctionComponent, default as React } from "react";
 import { Link as RouterLink, useLoaderData } from "react-router-dom";
 import { OptionPositionEntry } from "../../../../routers/types";
 import { formatNumber } from "../../../utils";
 import Number from "../../Number/Number";
-import OptionRow from "./OptionRowContent";
-import SubTotalRow, { TotalEntry } from "./SubTotalRowContent";
+import OptionRow from "./OptionRow";
+import SubTotalRow, { TotalEntry } from "./SubTotalRow";
+
+type ItemRowType = OptionPositionEntry | TotalEntry;
 
 type PositionsIndexProps = Record<string, never>;
+
+type DataRowProps = {
+  item: ItemRowType;
+};
 
 /**
  * Statements list component
@@ -28,7 +21,7 @@ type PositionsIndexProps = Record<string, never>;
  * @returns
  */
 const OptionsPositions: FunctionComponent<PositionsIndexProps> = ({ ..._rest }): JSX.Element => {
-  const bg = useColorModeValue("gray.200", "gray.900");
+  // const bg = useColorModeValue("gray.200", "gray.900");
   const thePositions = useLoaderData() as OptionPositionEntry[];
 
   const compareItems = (a: OptionPositionEntry, b: OptionPositionEntry): number => {
@@ -41,8 +34,8 @@ const OptionsPositions: FunctionComponent<PositionsIndexProps> = ({ ..._rest }):
     return result;
   };
 
-  const getPositions = (positions: OptionPositionEntry[]): (OptionPositionEntry | TotalEntry)[] => {
-    const result: (OptionPositionEntry | TotalEntry)[] = [];
+  const getPositions = (positions: OptionPositionEntry[]): ItemRowType[] => {
+    const result: ItemRowType[] = [];
     let subTotal: TotalEntry;
 
     positions
@@ -88,9 +81,10 @@ const OptionsPositions: FunctionComponent<PositionsIndexProps> = ({ ..._rest }):
     return result;
   };
 
-  // const ItemRow() :JSX.Element=> {
-
-  // }
+  const DataRow: FunctionComponent<DataRowProps> = ({ item, ..._rest }): JSX.Element => {
+    if ("option" in item) return <OptionRow item={item} />;
+    else return <SubTotalRow subTotal={item} />;
+  };
 
   const positions = getPositions(thePositions);
   return (
@@ -129,13 +123,7 @@ const OptionsPositions: FunctionComponent<PositionsIndexProps> = ({ ..._rest }):
           </Thead>
           <Tbody>
             {positions.map((item) => (
-              <Tr key={`${item.id}`} id={`${item.id}`} bg={item["option"] ? undefined : bg}>
-                {item["option"] ? (
-                  <OptionRow item={item as OptionPositionEntry} />
-                ) : (
-                  <SubTotalRow subTotal={item as TotalEntry} />
-                )}
-              </Tr>
+              <DataRow item={item} key={item.id} />
             ))}
           </Tbody>
           <Tfoot>
