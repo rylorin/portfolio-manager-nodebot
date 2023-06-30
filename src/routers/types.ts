@@ -21,6 +21,7 @@ export type StatementEntry = {
 
 export type PositionEntry = {
   id: number;
+  openDate: number;
   quantity: number;
   contract: {
     id: number;

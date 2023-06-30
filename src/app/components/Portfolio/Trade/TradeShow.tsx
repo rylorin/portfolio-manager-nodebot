@@ -1,5 +1,5 @@
 import { ArrowBackIcon, DeleteIcon, EditIcon } from "@chakra-ui/icons";
-import { Center, Flex, Text, VStack } from "@chakra-ui/layout";
+import { Center, Flex, IconButton, Text, VStack } from "@chakra-ui/react";
 import React, { FunctionComponent } from "react";
 import { Link as RouterLink, useLoaderData, useNavigate } from "react-router-dom";
 import { TradeEntry } from "../../../../routers/types";
@@ -113,10 +113,9 @@ const TradeShow: FunctionComponent<TradeShowProps> = ({ ..._rest }): JSX.Element
             {thisTrade.comment}
           </Text>
         </Flex>
+
         <Flex justifyContent="center" gap="2" mt="1">
-          <Center w="40px" h="40px">
-            <ArrowBackIcon onClick={(): void => navigate(-1)} />
-          </Center>
+          <IconButton aria-label="Back" icon={<ArrowBackIcon />} variant="ghost" onClick={(): void => navigate(-1)} />
           <RouterLink to="edit">
             <Center w="40px" h="40px">
               <EditIcon />

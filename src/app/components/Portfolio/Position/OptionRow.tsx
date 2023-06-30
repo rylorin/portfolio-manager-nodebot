@@ -47,11 +47,11 @@ const OptionRow: FunctionComponent<Props> = ({ item, ..._rest }): JSX.Element =>
         <Td isNumeric>{formatNumber(item.risk)}</Td>
         <Td>
           <Form method="post" action={`id/${item.id}`} className="inline">
-            <IconButton aria-label="Show position" icon={<SearchIcon />} size="xs" variant="link" type="submit" />
+            <IconButton aria-label="Show position" icon={<SearchIcon />} size="xs" variant="ghost" type="submit" />
           </Form>
           <IconButton aria-label="Guess trade" icon={<EditIcon />} size="xs" variant="ghost" />
           <Form method="post" action={`DeletePosition/${item.id}`} className="inline">
-            <IconButton aria-label="Delete position" icon={<DeleteIcon />} size="xs" variant="link" type="submit" />
+            <IconButton aria-label="Delete position" icon={<DeleteIcon />} size="xs" variant="ghost" type="submit" />
           </Form>
         </Td>
       </Tr>

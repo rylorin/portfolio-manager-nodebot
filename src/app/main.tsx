@@ -11,9 +11,15 @@ import { portfolioLoader } from "./components/Portfolio/Portfolio/loaders";
 import { default as PortfolioIndex } from "./components/Portfolio/PortfolioIndex";
 import PortfolioLayout from "./components/Portfolio/PortfolioLayout";
 import OptionsPositions from "./components/Portfolio/Position/OptionsPositions";
+import PositionEdit from "./components/Portfolio/Position/PositionEdit";
 import PositionShow from "./components/Portfolio/Position/PositionShow";
 import PositionsIndex from "./components/Portfolio/Position/PositionsIndex";
-import { positionDelete } from "./components/Portfolio/Position/actions";
+import {
+  positionAddToTrade,
+  positionDelete,
+  positionGuessTrade,
+  positionSave,
+} from "./components/Portfolio/Position/actions";
 import {
   positionShowLoader,
   positionsIndexLoader,
@@ -118,7 +124,23 @@ const router = createBrowserRouter([
             path: "positions",
             action: PortfolioAction,
             children: [
-              { path: "all", Component: PositionsIndex, loader: positionsIndexLoader },
+              {
+                path: "all",
+                children: [
+                  { index: true, Component: PositionsIndex, loader: positionsIndexLoader },
+                  {
+                    path: "id/:positionId",
+                    action: PortfolioAction,
+                    children: [
+                      { index: true, Component: PositionShow, loader: positionShowLoader },
+                      { path: "edit", Component: PositionEdit, loader: positionShowLoader, action: positionSave },
+                    ],
+                  },
+                  { path: "DeletePosition/:positionId", action: positionDelete },
+                  { path: "GuessTrade/:positionId", action: positionGuessTrade },
+                  { path: "AddToTrade/:positionId/:tradeId", action: positionAddToTrade },
+                ],
+              },
               {
                 path: "options",
                 children: [
@@ -128,7 +150,7 @@ const router = createBrowserRouter([
                     action: PortfolioAction,
                     children: [
                       { index: true, Component: PositionShow, loader: positionShowLoader },
-                      // { path: "edit", Component: TradeEdit, loader: tradesShowLoader },
+                      { path: "edit", Component: PositionEdit, loader: positionShowLoader },
                     ],
                   },
                   { path: "DeletePosition/:positionId", action: positionDelete },

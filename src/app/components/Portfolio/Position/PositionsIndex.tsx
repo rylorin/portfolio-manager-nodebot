@@ -1,12 +1,4 @@
-import {
-  ArrowUpIcon,
-  DeleteIcon,
-  EditIcon,
-  PlusSquareIcon,
-  QuestionOutlineIcon,
-  SearchIcon,
-  SmallCloseIcon,
-} from "@chakra-ui/icons";
+import { ArrowUpIcon, DeleteIcon, EditIcon, QuestionOutlineIcon, SearchIcon, SmallCloseIcon } from "@chakra-ui/icons";
 import {
   Box,
   IconButton,
@@ -91,28 +83,21 @@ const PositionsIndex: FunctionComponent<PositionsIndexProps> = ({ ..._rest }): J
                   <Td>
                     {item.trade_id && (
                       <>
-                        <Link to={`../${portfolioId}/trade/${item.trade_id}`} as={RouterLink}>
+                        <Link to={`/portfolio/${portfolioId}/trades/id/${item.trade_id}`} as={RouterLink}>
                           {item.trade_id}
                         </Link>
-                        <IconButton
-                          aria-label="Remove trade association"
-                          icon={<SmallCloseIcon />}
-                          size="xs"
-                          variant="link"
-                        />
+                        <Form method="post" action={`UnlinkTrade/${item.id}`} className="inline">
+                          <IconButton
+                            aria-label="Remove trade association"
+                            icon={<SmallCloseIcon />}
+                            size="xs"
+                            variant="ghost"
+                          />
+                        </Form>
                       </>
                     )}
                     {!item.trade_id && (
                       <>
-                        <Form method="post" action={`CreateTrade/${item.id}`} className="inline">
-                          <IconButton
-                            aria-label="New trade"
-                            icon={<PlusSquareIcon />}
-                            size="xs"
-                            variant="link"
-                            type="submit"
-                          />
-                        </Form>
                         <Form method="post" action={`GuessTrade/${item.id}`} className="inline">
                           <IconButton
                             aria-label="Guess trade"
@@ -123,12 +108,12 @@ const PositionsIndex: FunctionComponent<PositionsIndexProps> = ({ ..._rest }): J
                           />
                         </Form>
                         {previousId && (
-                          <Form method="post" action={`AddToTrade/${item.id}/tradeId/${previousId}`} className="inline">
+                          <Form method="post" action={`AddToTrade/${item.id}/${previousId}`} className="inline">
                             <IconButton
-                              aria-label="Above trade"
+                              aria-label="Copy above trade"
                               icon={<ArrowUpIcon />}
                               size="xs"
-                              variant="link"
+                              variant="ghost"
                               type="submit"
                             />
                           </Form>
@@ -148,9 +133,17 @@ const PositionsIndex: FunctionComponent<PositionsIndexProps> = ({ ..._rest }): J
                     <Number value={(item.pnl / item.cost) * Math.sign(item.quantity)} decimals={1} isPercent />
                   </Td>
                   <Td>
-                    <IconButton aria-label="New trade" icon={<SearchIcon />} size="xs" variant="link" />
-                    <IconButton aria-label="Guess trade" icon={<EditIcon />} size="xs" variant="ghost" />
-                    <IconButton aria-label="Above trade" icon={<DeleteIcon />} size="xs" variant="link" />
+                    <Form method="post" action={`id/${item.id}`} className="inline">
+                      <IconButton
+                        aria-label="Show position"
+                        icon={<SearchIcon />}
+                        size="xs"
+                        variant="ghost"
+                        type="submit"
+                      />
+                    </Form>
+                    <IconButton aria-label="Edit position" icon={<EditIcon />} size="xs" variant="ghost" />
+                    <IconButton aria-label="Delete position" icon={<DeleteIcon />} size="xs" variant="ghost" />
                     {savePrevious(item.trade_id)}
                   </Td>
                 </Tr>
