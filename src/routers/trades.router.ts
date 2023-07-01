@@ -12,7 +12,8 @@ import {
   Trade as TradeModel,
 } from "../models";
 import { TradeStrategy } from "../models/trade.types";
-import { StatementEntry, TradeEntry, TradeMonthlySynthesys, TradeSynthesys } from "./types";
+import { StatementEntry } from "./statements.types";
+import { TradeEntry, TradeMonthlySynthesys, TradeSynthesys } from "./trades.types";
 
 const router = express.Router({ mergeParams: true });
 

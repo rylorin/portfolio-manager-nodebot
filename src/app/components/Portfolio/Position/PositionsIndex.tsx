@@ -15,7 +15,7 @@ import {
 } from "@chakra-ui/react";
 import { FunctionComponent, default as React } from "react";
 import { Form, Link as RouterLink, useLoaderData, useParams } from "react-router-dom";
-import { PositionEntry } from "../../../../routers/types";
+import { PositionEntry } from "../../../../routers/positions.types";
 import { formatNumber } from "../../../utils";
 import Number from "../../Number/Number";
 

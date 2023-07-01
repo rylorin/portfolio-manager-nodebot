@@ -1,9 +1,9 @@
 import express from "express";
 import { Contract, Portfolio } from "../models";
-import balances from "./balances";
-import positions from "./positions";
-import statements from "./statements";
-import trades from "./trades";
+import balances from "./balances.router";
+import positions from "./positions.router";
+import statements from "./statements.router";
+import trades from "./trades.router";
 
 const router = express.Router();
 

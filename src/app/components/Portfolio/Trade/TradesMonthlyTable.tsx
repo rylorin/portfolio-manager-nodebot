@@ -1,7 +1,7 @@
 import { Link, Table, TableCaption, TableContainer, Tbody, Td, Tfoot, Thead, Tr } from "@chakra-ui/react";
 import React, { FunctionComponent } from "react";
 import { Link as RouterLink } from "react-router-dom";
-import { TradeMonthlySynthesys } from "../../../../routers/types";
+import { TradeMonthlySynthesys } from "../../../../routers/trades.types";
 import { formatNumber } from "../../../utils";
 import Number from "../../Number/Number";
 

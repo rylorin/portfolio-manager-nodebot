@@ -1,5 +1,5 @@
 import { Statement } from "../../../../models";
-import { StatementEntry, StatementsSynthesysEntries } from "../../../../routers/types";
+import { StatementEntry, StatementsSynthesysEntries } from "../../../../routers/statements.types";
 
 /**
  * Load year to date statements summary

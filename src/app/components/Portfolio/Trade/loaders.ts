@@ -1,5 +1,5 @@
-import { Trade } from "../../../../models";
-import { StatementsSynthesysEntries, TradeEntry } from "../../../../routers/types";
+import { StatementsSynthesysEntries } from "../../../../routers/statements.types";
+import { TradeEntry } from "../../../../routers/trades.types";
 
 /**
  * Load year to date statements summary
@@ -42,7 +42,7 @@ export const tradeSummaryLoaderAll = ({ params }): Promise<StatementsSynthesysEn
  * @param param0
  * @returns
  */
-export const tradesShowLoader = ({ params }): Promise<Trade> => {
+export const tradesShowLoader = ({ params }): Promise<TradeEntry> => {
   const { portfolioId, tradeId } = params;
   // console.log("tradesShowLoader", portfolioId, tradeId);
   return fetch(`/api/portfolio/${portfolioId}/trades/id/${tradeId}`)

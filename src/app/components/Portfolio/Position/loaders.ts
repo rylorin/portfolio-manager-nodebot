@@ -1,5 +1,5 @@
 import { Position } from "../../../../models";
-import { PositionEntry } from "../../../../routers/types";
+import { PositionEntry } from "../../../../routers/positions.types";
 
 /**
  * Load all positions

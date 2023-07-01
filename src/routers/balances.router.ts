@@ -1,6 +1,6 @@
 import { default as express } from "express";
 import { Balance, Currency, Portfolio } from "../models";
-import { BalanceEntry } from "./types";
+import { BalanceEntry } from "./balances.types";
 
 const router = express.Router({ mergeParams: true });
 

@@ -3,7 +3,7 @@ import { Center, Flex, IconButton, Text, VStack } from "@chakra-ui/react";
 import React, { FunctionComponent } from "react";
 import { Link as RouterLink, useLoaderData, useNavigate } from "react-router-dom";
 import { TradeStrategy } from "../../../../models/trade.types";
-import { TradeEntry } from "../../../../routers/types";
+import { TradeEntry } from "../../../../routers/trades.types";
 import { formatNumber } from "../../../utils";
 import Number from "../../Number/Number";
 import StatementIndex from "../Statement/StatementIndex";

@@ -2,7 +2,7 @@ import { Link, Table, TableCaption, TableContainer, Tbody, Td, Tfoot, Thead, Tr 
 import React, { FunctionComponent } from "react";
 import { Link as RouterLink } from "react-router-dom";
 import { TradeStatus } from "../../../../models/trade.types";
-import { TradeEntry } from "../../../../routers/types";
+import { TradeEntry } from "../../../../routers/trades.types";
 import { formatNumber } from "../../../utils";
 import Number from "../../Number/Number";
 

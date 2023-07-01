@@ -2,7 +2,7 @@ import { ArrowBackIcon, DeleteIcon, EditIcon } from "@chakra-ui/icons";
 import { Center, Flex, IconButton, Link, Text, VStack } from "@chakra-ui/react";
 import { FunctionComponent, default as React } from "react";
 import { Link as RouterLink, useLoaderData, useNavigate, useParams } from "react-router-dom";
-import { PositionEntry } from "../../../../routers/types";
+import { PositionEntry } from "../../../../routers/positions.types";
 import { formatNumber } from "../../../utils";
 import Number from "../../Number/Number";
 

@@ -1,7 +1,7 @@
 import { Box, Link, Spacer, Table, TableCaption, TableContainer, Tbody, Td, Tfoot, Thead, Tr } from "@chakra-ui/react";
 import { FunctionComponent, default as React } from "react";
 import { Link as RouterLink, useLoaderData } from "react-router-dom";
-import { OptionPositionEntry } from "../../../../routers/types";
+import { OptionPositionEntry } from "../../../../routers/positions.types";
 import { formatNumber } from "../../../utils";
 import Number from "../../Number/Number";
 import OptionRow from "./OptionRow";

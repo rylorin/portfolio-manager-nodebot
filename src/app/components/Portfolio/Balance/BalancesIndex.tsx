@@ -2,7 +2,7 @@ import { DeleteIcon, EditIcon, SearchIcon } from "@chakra-ui/icons";
 import { IconButton, Table, TableCaption, TableContainer, Tbody, Td, Tfoot, Thead, Tr } from "@chakra-ui/react";
 import { FunctionComponent, default as React } from "react";
 import { useLoaderData } from "react-router-dom";
-import { BalanceEntry } from "../../../../routers/types";
+import { BalanceEntry } from "../../../../routers/balances.types";
 import Number from "../../Number/Number";
 
 type BalancesIndexProps = Record<string, never>;

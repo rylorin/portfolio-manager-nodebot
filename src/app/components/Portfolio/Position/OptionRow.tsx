@@ -2,7 +2,7 @@ import { DeleteIcon, EditIcon, SearchIcon } from "@chakra-ui/icons";
 import { IconButton, Td, Tr } from "@chakra-ui/react";
 import { FunctionComponent, default as React } from "react";
 import { Form } from "react-router-dom";
-import { OptionPositionEntry } from "../../../../routers/types";
+import { OptionPositionEntry } from "../../../../routers/positions.types";
 import { formatNumber } from "../../../utils";
 import Number from "../../Number/Number";
 

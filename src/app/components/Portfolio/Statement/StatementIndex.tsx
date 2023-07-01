@@ -22,7 +22,7 @@ import {
 } from "@chakra-ui/react";
 import { FunctionComponent, default as React } from "react";
 import { Form, Link as RouterLink, useLoaderData, useParams } from "react-router-dom";
-import { StatementEntry } from "../../../../routers/types";
+import { StatementEntry } from "../../../../routers/statements.types";
 import Number from "../../Number/Number";
 
 type StatementIndexProps = { items?: StatementEntry[] };
