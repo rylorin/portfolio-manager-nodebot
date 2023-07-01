@@ -1,9 +1,9 @@
-export const TradeStatus = {
-  undefined: 0,
-  open: 1,
-  closed: 2,
-} as const;
-export type TradeStatus = (typeof TradeStatus)[keyof typeof TradeStatus];
+export enum TradeStatus {
+  undefined = 0,
+  open = 1,
+  closed = 2,
+}
+// export type TradeStatus = (typeof TradeStatus)[keyof typeof TradeStatus];
 
 export const TradeStrategy = {
   undefined: 0,

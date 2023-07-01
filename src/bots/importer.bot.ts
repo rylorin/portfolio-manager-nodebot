@@ -495,6 +495,7 @@ export class ImporterBot extends ITradingBot {
       .then(() => this.processAllTrades(element.Trades.Trade))
       .then(() => this.processAllCashTransactions(element.CashTransactions.CashTransaction))
       .then(() => this.processAllCorporateActions(element))
+      .then(() => logger.log(LogLevel.Info, MODULE + ".processReport", undefined, "Report loaded"))
       .catch((error) => console.error("importer bot process report:", error));
   }
 

@@ -1,21 +1,17 @@
 import { Link, Table, TableCaption, TableContainer, Tbody, Td, Tfoot, Thead, Tr } from "@chakra-ui/react";
 import React, { FunctionComponent } from "react";
 import { Link as RouterLink } from "react-router-dom";
+import { TradeStatus } from "../../../../models/trade.types";
 import { TradeEntry } from "../../../../routers/types";
 import { formatNumber } from "../../../utils";
 import Number from "../../Number/Number";
-import { tradeStatus2String } from "../utils";
 
-type TradeSynthesysTableProps = {
+type Props = {
   title?: string;
-  content: TradeEntry[];
+  content?: TradeEntry[];
 };
 
-const TradeSynthesysTable: FunctionComponent<TradeSynthesysTableProps> = ({
-  title,
-  content,
-  ..._rest
-}): JSX.Element => {
+const TradesIndex: FunctionComponent<Props> = ({ title = "Trades Index", content, ..._rest }): JSX.Element => {
   return (
     <TableContainer>
       <Table variant="simple" size="sm">
@@ -50,7 +46,7 @@ const TradeSynthesysTable: FunctionComponent<TradeSynthesysTableProps> = ({
                 <Td>{item.strategy}</Td>
                 <Td>{new Date(item.openingDate).toLocaleDateString()}</Td>
                 <Td>{item.closingDate ? new Date(item.closingDate).toLocaleDateString() : undefined}</Td>
-                <Td>{tradeStatus2String(item.status)}</Td>
+                <Td>{TradeStatus[item.status]}</Td>
                 <Td isNumeric>{formatNumber(item.duration)}</Td>
                 <Td isNumeric>{formatNumber(item.risk)}</Td>
                 <Td>
@@ -79,4 +75,4 @@ const TradeSynthesysTable: FunctionComponent<TradeSynthesysTableProps> = ({
   );
 };
 
-export default TradeSynthesysTable;
+export default TradesIndex;

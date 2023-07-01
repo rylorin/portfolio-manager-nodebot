@@ -26,5 +26,6 @@ export * from "./statement.model";
 export * from "./stock.model";
 export * from "./tax.model";
 export * from "./trade.model";
+export * from "./trade.types";
 
 export type AnyContract = Contract | Stock | Option | Bag | Cash | Future | Index;

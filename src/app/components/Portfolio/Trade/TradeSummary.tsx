@@ -2,7 +2,7 @@ import { Box, Link, Spacer, Text } from "@chakra-ui/react";
 import React, { FunctionComponent } from "react";
 import { Link as RouterLink, useLoaderData } from "react-router-dom";
 import { TradeSynthesys } from "../../../../routers/types";
-import TradeSynthesysTable from "./TradesIndexTable";
+import TradeSynthesysTable from "./TradesIndex";
 import TradesMonthlyTable from "./TradesMonthlyTable";
 
 type TradeSummaryProps = Record<string, never>;

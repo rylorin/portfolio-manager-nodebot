@@ -2,6 +2,7 @@ import { ArrowBackIcon, DeleteIcon, EditIcon } from "@chakra-ui/icons";
 import { Center, Flex, IconButton, Text, VStack } from "@chakra-ui/react";
 import React, { FunctionComponent } from "react";
 import { Link as RouterLink, useLoaderData, useNavigate } from "react-router-dom";
+import { TradeStrategy } from "../../../../models/trade.types";
 import { TradeEntry } from "../../../../routers/types";
 import { formatNumber } from "../../../utils";
 import Number from "../../Number/Number";
@@ -19,9 +20,9 @@ const TradeShow: FunctionComponent<TradeShowProps> = ({ ..._rest }): JSX.Element
       <VStack>
         <Flex justifyContent="center" gap="2">
           <Text w="90px" as="b" textAlign="right">
-            Id:
+            Trade Id:
           </Text>
-          <Text textAlign="left" w="120px">
+          <Text w="200px" textAlign="right">
             {thisTrade.id}
           </Text>
         </Flex>
@@ -29,7 +30,7 @@ const TradeShow: FunctionComponent<TradeShowProps> = ({ ..._rest }): JSX.Element
           <Text w="90px" as="b" textAlign="right">
             Open date:
           </Text>
-          <Text textAlign="left" w="120px">
+          <Text w="200px" textAlign="right">
             {new Date(thisTrade.openingDate).toLocaleString()}
           </Text>
         </Flex>
@@ -37,7 +38,7 @@ const TradeShow: FunctionComponent<TradeShowProps> = ({ ..._rest }): JSX.Element
           <Text w="90px" as="b" textAlign="right">
             Close date:
           </Text>
-          <Text textAlign="left" w="120px">
+          <Text w="200px" textAlign="right">
             {thisTrade.closingDate && new Date(thisTrade.closingDate).toLocaleString()}
           </Text>
         </Flex>
@@ -45,7 +46,7 @@ const TradeShow: FunctionComponent<TradeShowProps> = ({ ..._rest }): JSX.Element
           <Text w="90px" as="b" textAlign="right">
             Duration:
           </Text>
-          <Text w="120px" textAlign="left">
+          <Text w="200px" textAlign="right">
             {formatNumber(thisTrade.duration)}
           </Text>
         </Flex>
@@ -53,7 +54,7 @@ const TradeShow: FunctionComponent<TradeShowProps> = ({ ..._rest }): JSX.Element
           <Text w="90px" as="b" textAlign="right">
             Status:
           </Text>
-          <Text textAlign="left" w="120px">
+          <Text w="200px" textAlign="right">
             {tradeStatus2String(thisTrade.status)}
           </Text>
         </Flex>
@@ -61,15 +62,15 @@ const TradeShow: FunctionComponent<TradeShowProps> = ({ ..._rest }): JSX.Element
           <Text w="90px" as="b" textAlign="right">
             Strategy:
           </Text>
-          <Text textAlign="left" w="120px">
-            {thisTrade.strategyLabel}
+          <Text w="200px" textAlign="right">
+            {TradeStrategy[thisTrade.strategy]}
           </Text>
         </Flex>
         <Flex justifyContent="center" gap="2">
           <Text w="90px" as="b" textAlign="right">
             Symbol:
           </Text>
-          <Text w="120px" textAlign="left">
+          <Text w="200px" textAlign="right">
             {thisTrade.symbol}
           </Text>
         </Flex>
@@ -77,7 +78,7 @@ const TradeShow: FunctionComponent<TradeShowProps> = ({ ..._rest }): JSX.Element
           <Text w="90px" as="b" textAlign="right">
             Currency:
           </Text>
-          <Text w="120px" textAlign="left">
+          <Text w="200px" textAlign="right">
             {thisTrade.currency}
           </Text>
         </Flex>
@@ -85,7 +86,7 @@ const TradeShow: FunctionComponent<TradeShowProps> = ({ ..._rest }): JSX.Element
           <Text w="90px" as="b" textAlign="right">
             Risk:
           </Text>
-          <Text w="120px" textAlign="left">
+          <Text w="200px" textAlign="right">
             <Number value={thisTrade.risk} />
           </Text>
         </Flex>
@@ -93,7 +94,7 @@ const TradeShow: FunctionComponent<TradeShowProps> = ({ ..._rest }): JSX.Element
           <Text w="90px" as="b" textAlign="right">
             P&L:
           </Text>
-          <Text w="120px" textAlign="left">
+          <Text w="200px" textAlign="right">
             <Number value={thisTrade.pnl} />
           </Text>
         </Flex>
@@ -101,7 +102,7 @@ const TradeShow: FunctionComponent<TradeShowProps> = ({ ..._rest }): JSX.Element
           <Text w="90px" as="b" textAlign="right">
             APY:
           </Text>
-          <Text w="120px" textAlign="left">
+          <Text w="200px" textAlign="right">
             <Number value={thisTrade.apy} isPercent />
           </Text>
         </Flex>
@@ -109,7 +110,7 @@ const TradeShow: FunctionComponent<TradeShowProps> = ({ ..._rest }): JSX.Element
           <Text w="90px" as="b" textAlign="right">
             Notes:
           </Text>
-          <Text w="120px" textAlign="left">
+          <Text w="200px" textAlign="right">
             {thisTrade.comment}
           </Text>
         </Flex>

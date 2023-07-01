@@ -44,10 +44,12 @@ import {
 } from "./components/Portfolio/Statement/loaders";
 import TradeShow from "./components/Portfolio/Trade/TradeShow";
 import TradeSummary from "./components/Portfolio/Trade/TradeSummary";
+import TradesIndexTable from "./components/Portfolio/Trade/TradesIndex";
 import {
   tradeSummaryLoader12M,
   tradeSummaryLoaderAll,
   tradeSummaryLoaderYTD,
+  tradesMonthLoader,
   tradesShowLoader,
 } from "./components/Portfolio/Trade/loaders";
 import { action as PortfolioAction } from "./components/Portfolio/actions";
@@ -187,6 +189,11 @@ const router = createBrowserRouter([
                   { index: true, Component: TradeShow, loader: tradesShowLoader },
                   // { path: "edit", Component: TradeEdit, loader: tradesShowLoader },
                 ],
+              },
+              {
+                path: "month/:month/:year",
+                Component: TradesIndexTable,
+                loader: tradesMonthLoader,
               },
             ],
           },

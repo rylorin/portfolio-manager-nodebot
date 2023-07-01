@@ -1,6 +1,6 @@
 import { SecType } from "@stoqey/ib";
-import { StatementTypes } from "../models";
-import { TradeStatus, TradeStrategy } from "../models/types";
+import { StatementTypes, TradeStatus, TradeStrategy } from "../models";
+// import { TradeStatus, TradeStrategy } from "../models/types";
 
 export type SynthesysEntry = { stocks: number; options: number; dividends: number; interests: number; total: number };
 export type StatementsSynthesysEntries = Record<"string", SynthesysEntry>;

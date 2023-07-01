@@ -2,9 +2,9 @@ import { Optional } from "sequelize";
 import { BelongsTo, Column, DataType, ForeignKey, HasMany, Model, Table } from "sequelize-typescript";
 import { Contract } from "./contract.model";
 import { Portfolio } from "./portfolio.model";
+import { Position } from "./position.model";
 import { Statement } from "./statement.model";
-
-import { TradeStatus, TradeStrategy } from "./types";
+import { TradeStatus, TradeStrategy } from "./trade.types";
 
 export type TradeAttributes = {
   id: number;
@@ -74,4 +74,8 @@ export class Trade extends Model<TradeAttributes, TradeCreationAttributes> {
       ((this.closingDate ? this.closingDate.getTime() : Date.now()) - this.openingDate.getTime()) / 1000 / 3600 / 24
     );
   }
+
+  /** Related positions */
+  @HasMany(() => Position, "trade_unit_id")
+  declare positions: Position[];
 }

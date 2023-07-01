@@ -44,7 +44,7 @@ export const tradeSummaryLoaderAll = ({ params }): Promise<StatementsSynthesysEn
  */
 export const tradesShowLoader = ({ params }): Promise<Trade> => {
   const { portfolioId, tradeId } = params;
-  console.log("tradesShowLoader", portfolioId, tradeId);
+  // console.log("tradesShowLoader", portfolioId, tradeId);
   return fetch(`/api/portfolio/${portfolioId}/trades/id/${tradeId}`)
     .then((response) => response.json())
     .then((data) => data.trade);
@@ -55,7 +55,7 @@ export const tradesShowLoader = ({ params }): Promise<Trade> => {
  * @param param0
  * @returns
  */
-export const tradeMonthLoader = ({ params }): Promise<TradeEntry[]> => {
+export const tradesMonthLoader = ({ params }): Promise<TradeEntry[]> => {
   const { portfolioId, year, month } = params;
   return fetch(`/api/portfolio/${portfolioId}/trades/month/${year}/${month}`)
     .then((response) => response.json())

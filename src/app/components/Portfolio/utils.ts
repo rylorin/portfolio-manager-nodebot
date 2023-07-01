@@ -1,16 +1,13 @@
-import { TradeStatus } from "../../../models/types";
+import { TradeStatus } from "../../../models/trade.types";
 
 export const tradeStatus2String = (status: TradeStatus): string => {
-  if (status === TradeStatus.open) {
-    console.log("ANTOINE");
-  }
-
+  console.log("tradeStatus2String:", status, TradeStatus[status]);
   switch (status) {
-    // case TradeStatus.open:
-    case 1:
+    case TradeStatus.open:
+      // case 1:
       return "open";
-    // case TradeStatus.closed:
-    case 2:
+    case TradeStatus.closed:
+      // case 2:
       return "closed";
     default:
       return "undefined";

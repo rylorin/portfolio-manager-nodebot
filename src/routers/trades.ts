@@ -1,12 +1,44 @@
 import express from "express";
 import { Op } from "sequelize";
-import { Contract, EquityStatement, OptionStatement, Portfolio, Statement, StatementTypes, Trade } from "../models";
-import { TradeStrategy } from "../models/types";
+import {
+  Contract,
+  EquityStatement,
+  OptionStatement,
+  Portfolio,
+  Position,
+  Statement,
+  StatementTypes,
+  Trade,
+  Trade as TradeModel,
+} from "../models";
+import { TradeStrategy } from "../models/trade.types";
 import { StatementEntry, TradeEntry, TradeMonthlySynthesys, TradeSynthesys } from "./types";
 
 const router = express.Router({ mergeParams: true });
 
 type parentParams = { portfolioId: number };
+
+export const tradeModelToTradeEntry = (thisTrade: TradeModel): TradeEntry => {
+  const apy = thisTrade.risk && thisTrade.PnL ? (thisTrade.PnL / thisTrade.risk / thisTrade.duration) * 365 : undefined;
+  const trade: TradeEntry = {
+    id: thisTrade.id,
+    symbol_id: thisTrade.stock.id,
+    symbol: thisTrade.stock.symbol,
+    currency: thisTrade.currency,
+    openingDate: thisTrade.openingDate.getTime(),
+    closingDate: thisTrade.closingDate ? thisTrade.closingDate.getTime() : undefined,
+    status: thisTrade.status,
+    duration: thisTrade.duration,
+    strategy: thisTrade.strategy,
+    strategyLabel: TradeStrategy[thisTrade.strategy],
+    risk: thisTrade.risk,
+    pnl: thisTrade.PnL,
+    apy,
+    comment: thisTrade.comment,
+    statements: undefined,
+  };
+  return trade;
+};
 
 const formatDate = (when: Date): string => {
   const datestr = when.toISOString().substring(0, 7);
@@ -38,25 +70,26 @@ function makeSynthesys(trades: Trade[]): TradeSynthesys {
           : item.PnL;
       }
     } else {
-      const duration = (Date.now() - item.openingDate.getTime()) / 1000 / 3600 / 24;
-      const apy = item.risk && item.PnL ? (item.PnL / item.risk / duration) * 365 : undefined;
-      const trade: TradeEntry = {
-        id: item.id,
-        symbol_id: item.stock.id,
-        symbol: item.stock.symbol,
-        currency: item.currency,
-        openingDate: item.openingDate.getTime(),
-        closingDate: undefined,
-        status: item.status,
-        duration: item.duration,
-        strategy: item.strategy,
-        strategyLabel: TradeStrategy[item.strategy],
-        risk: item.risk,
-        pnl: item.PnL,
-        apy,
-        comment: item.comment,
-        statements: undefined,
-      };
+      // const duration = (Date.now() - item.openingDate.getTime()) / 1000 / 3600 / 24;
+      // const apy = item.risk && item.PnL ? (item.PnL / item.risk / item.duration) * 365 : undefined;
+      const trade: TradeEntry = tradeModelToTradeEntry(item);
+      //  {
+      //   id: item.id,
+      //   symbol_id: item.stock.id,
+      //   symbol: item.stock.symbol,
+      //   currency: item.currency,
+      //   openingDate: item.openingDate.getTime(),
+      //   closingDate: undefined,
+      //   status: item.status,
+      //   duration: item.duration,
+      //   strategy: item.strategy,
+      //   strategyLabel: TradeStrategy[item.strategy],
+      //   risk: item.risk,
+      //   pnl: item.PnL,
+      //   apy,
+      //   comment: item.comment,
+      //   statements: undefined,
+      // };
       theSynthesys.open.push(trade);
     }
   });
@@ -65,7 +98,7 @@ function makeSynthesys(trades: Trade[]): TradeSynthesys {
 }
 
 /**
- * Get all trades
+ * Get full trades history synthesys
  */
 router.get("/summary/all", (req, res): void => {
   const { portfolioId } = req.params as typeof req.params & parentParams;
@@ -85,7 +118,7 @@ router.get("/summary/all", (req, res): void => {
 });
 
 /**
- * Get last 12 months trades
+ * Get 12M trades history synthesys
  */
 router.get("/summary/12m", (req, res): void => {
   const { portfolioId } = req.params as typeof req.params & parentParams;
@@ -112,7 +145,7 @@ router.get("/summary/12m", (req, res): void => {
 });
 
 /**
- * Get YTD trades
+ * Get YTD trades history synthesys
  */
 router.get("/summary/ytd", (req, res): void => {
   const { portfolioId } = req.params as typeof req.params & parentParams;
@@ -148,6 +181,7 @@ router.get("/id/:tradeId(\\d+)", (req, res): void => {
       { model: Contract, as: "stock" },
       { model: Portfolio, as: "portfolio" },
       { model: Statement, as: "statements" },
+      { model: Position, as: "positions" },
     ],
     // logging: console.log,
   })
@@ -159,25 +193,26 @@ router.get("/id/:tradeId(\\d+)", (req, res): void => {
       }
     })
     .then((thisTrade) => {
-      const apy =
-        thisTrade.risk && thisTrade.PnL ? (thisTrade.PnL / thisTrade.risk / thisTrade.duration) * 365 : undefined;
-      const trade: TradeEntry = {
-        id: thisTrade.id,
-        symbol_id: thisTrade.stock.id,
-        symbol: thisTrade.stock.symbol,
-        currency: thisTrade.currency,
-        openingDate: thisTrade.openingDate.getTime(),
-        closingDate: thisTrade.closingDate ? thisTrade.closingDate.getTime() : undefined,
-        status: thisTrade.status,
-        duration: thisTrade.duration,
-        strategy: thisTrade.strategy,
-        strategyLabel: TradeStrategy[thisTrade.strategy],
-        risk: thisTrade.risk,
-        pnl: thisTrade.PnL,
-        apy,
-        comment: thisTrade.comment,
-        statements: undefined,
-      };
+      // const apy =
+      //   thisTrade.risk && thisTrade.PnL ? (thisTrade.PnL / thisTrade.risk / thisTrade.duration) * 365 : undefined;
+      const trade: TradeEntry = tradeModelToTradeEntry(thisTrade);
+      //  {
+      //   id: thisTrade.id,
+      //   symbol_id: thisTrade.stock.id,
+      //   symbol: thisTrade.stock.symbol,
+      //   currency: thisTrade.currency,
+      //   openingDate: thisTrade.openingDate.getTime(),
+      //   closingDate: thisTrade.closingDate ? thisTrade.closingDate.getTime() : undefined,
+      //   status: thisTrade.status,
+      //   duration: thisTrade.duration,
+      //   strategy: thisTrade.strategy,
+      //   strategyLabel: TradeStrategy[thisTrade.strategy],
+      //   risk: thisTrade.risk,
+      //   pnl: thisTrade.PnL,
+      //   apy,
+      //   comment: thisTrade.comment,
+      //   statements: undefined,
+      // };
       return thisTrade.statements
         ?.reduce((p, item) => {
           return p.then((statements) => {
