@@ -238,8 +238,12 @@ export class AccountUpdateBot extends ITradingBot {
     ).then();
   }
 
+  public processQueueWrapper(): void {
+    this.processQueue().catch((error) => console.error(error));
+  }
+
   public async start(): Promise<void> {
-    this.on("processQueue", () => this.processQueue());
+    this.on("processQueue", () => this.processQueueWrapper());
     const now = Date.now() - 60 * 1000; // 1 minute
     // console.log(Date.now(), now);
     await this.init();

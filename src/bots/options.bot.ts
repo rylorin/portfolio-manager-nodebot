@@ -247,9 +247,12 @@ export class OptionsCreateBot extends ITradingBot {
     setTimeout(() => this.emit("updateGreeks"), 10 * 60 * 1000); // come back after 10 mins and check again
   }
 
+  public updateGreeksWrapper(): void {
+    this.updateGreeks().catch((error) => console.error(error));
+  }
   public start(): void {
     this.on("buildOptionsList", () => this.buildOptionsList());
-    this.on("updateGreeks", () => this.updateGreeks());
+    this.on("updateGreeks", () => this.updateGreeksWrapper());
 
     setTimeout(() => this.emit("buildOptionsList"), 0 * 60 * 1000); // start after 10 mins
     // setTimeout(() => this.emit("updateGreeks"), 1 * 60 * 1000);   // start after 1 min

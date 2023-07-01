@@ -35,9 +35,12 @@ export class ContractsUpdaterBot extends ITradingBot {
     this.yahooBot = yahooBot;
   }
 
+  public updateOptionsPriceWrapper(): void {
+    this.updateOptionsPrice().catch((error) => console.error(error));
+  }
   public start(): void {
     this.on("updateHistoricalData", () => this.updateHistoricalData());
-    this.on("updateOptionsPrice", () => this.updateOptionsPrice());
+    this.on("updateOptionsPrice", () => this.updateOptionsPriceWrapper());
     this.on("buildOptionsList", () => this.buildOptionsList());
     this.on("createCashContracts", () => this.createCashContracts());
 

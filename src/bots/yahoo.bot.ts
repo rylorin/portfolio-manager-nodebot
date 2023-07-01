@@ -6,10 +6,10 @@ import { ITradingBot } from ".";
 import { greeks, option_implied_volatility } from "../black_scholes";
 import { AnyContract, Contract, Currency, Option, Stock } from "../models";
 
-const YAHOO_PRICE_FREQ: number = parseInt(process.env.YAHOO_PRICE_FREQ) || 15; // secs
-const YAHOO_PRICE_AGE: number = parseInt(process.env.YAHOO_PRICE_FREQ) || 60; // mins
-const BATCH_SIZE_YAHOO_PRICE: number = parseInt(process.env.BATCH_SIZE_YAHOO_PRICE) || 512; // units
-const NO_RISK_INTEREST_RATE: number = parseFloat(process.env.NO_RISK_INTEREST_RATE) || 0.025; // as of 2022-07-28
+const YAHOO_PRICE_FREQ: number = parseInt(process.env.YAHOO_PRICE_FREQ || "15") || 15; // secs
+const YAHOO_PRICE_AGE: number = parseInt(process.env.YAHOO_PRICE_FREQ || "60") || 60; // mins
+const BATCH_SIZE_YAHOO_PRICE: number = parseInt(process.env.BATCH_SIZE_YAHOO_PRICE || "512") || 512; // units
+const NO_RISK_INTEREST_RATE: number = parseFloat(process.env.NO_RISK_INTEREST_RATE || "0.045") || 0.025; // as of 2022-07-28
 
 type MappedQuote = {
   contract: Contract;
@@ -407,8 +407,12 @@ export class YahooUpdateBot extends ITradingBot {
     console.log("YahooUpdateBot process end");
   }
 
+  public processWrapper(): void {
+    this.process().catch((error) => console.error(error));
+  }
+
   public start(): void {
-    this.on("process", () => this.process());
+    this.on("process", () => this.processWrapper());
 
     yahooFinance.setGlobalConfig({ validation: { logErrors: true } });
     // this.printObject(await yahooFinance.quote("EURUSD=X"));
