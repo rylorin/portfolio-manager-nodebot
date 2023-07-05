@@ -554,11 +554,11 @@ export class ITradingBot extends EventEmitter {
     transaction?: Transaction,
   ): Promise<Contract> {
     const defaults = {
-      conId: ibContract.conId ,
+      conId: ibContract.conId,
       secType: ibContract.secType as ContractType,
-      symbol: ibContract.symbol ,
-      currency: ibContract.currency ,
-      exchange: (ibContract.primaryExch || ibContract.exchange),
+      symbol: ibContract.symbol,
+      currency: ibContract.currency,
+      exchange: ibContract.primaryExch || ibContract.exchange,
       name: details.longName,
     };
     return Contract.findOrCreate({
@@ -585,11 +585,11 @@ export class ITradingBot extends EventEmitter {
     transaction?: Transaction,
   ): Promise<Contract> {
     const defaults = {
-      conId: ibContract.conId ,
+      conId: ibContract.conId,
       secType: ibContract.secType as ContractType,
-      symbol: ibContract.symbol ,
-      currency: ibContract.currency ,
-      exchange: (ibContract.primaryExch || ibContract.exchange),
+      symbol: ibContract.symbol,
+      currency: ibContract.currency,
+      exchange: ibContract.primaryExch || ibContract.exchange,
       name: details.longName,
     };
     return Contract.findOrCreate({
@@ -616,11 +616,11 @@ export class ITradingBot extends EventEmitter {
     transaction?: Transaction,
   ): Promise<Contract> {
     const defaults = {
-      conId: ibContract.conId ,
+      conId: ibContract.conId,
       secType: ibContract.secType as ContractType,
-      symbol: ibContract.localSymbol ,
-      currency: ibContract.currency ,
-      exchange: ibContract.exchange ,
+      symbol: ibContract.localSymbol,
+      currency: ibContract.currency,
+      exchange: ibContract.exchange,
       name: ibContract.localSymbol,
     };
     return Contract.findOrCreate({
@@ -647,11 +647,11 @@ export class ITradingBot extends EventEmitter {
     transaction?: Transaction,
   ): Promise<Contract> {
     const defaults = {
-      conId: ibContract.conId ,
+      conId: ibContract.conId,
       secType: ibContract.secType as ContractType,
       symbol: `${ibContract.tradingClass}-${ibContract.localSymbol}`,
-      currency: ibContract.currency ,
-      exchange: ibContract.exchange ,
+      currency: ibContract.currency,
+      exchange: ibContract.exchange,
     };
     return Contract.findOrCreate({
       where: {
@@ -746,10 +746,10 @@ export class ITradingBot extends EventEmitter {
     // console.log("createOptionContract", ibContract, details);
     const contract_values = {
       // Contract part of the option
-      conId: ibContract.conId ,
+      conId: ibContract.conId,
       secType: ContractType.Option,
-      symbol: ibContract.localSymbol ,
-      currency: ibContract.currency ,
+      symbol: ibContract.localSymbol,
+      currency: ibContract.currency,
       exchange: ibContract.primaryExch || ibContract.exchange,
       name: ITradingBot.formatOptionName(ibContract),
     };
@@ -758,9 +758,9 @@ export class ITradingBot extends EventEmitter {
       id: undefined,
       stock_id: undefined,
       lastTradeDate: ITradingBot.expirationToDateString(ibContract.lastTradeDateOrContractMonth),
-      strike: ibContract.currency == "GBP" ? (ibContract.strike ) / 100 : (ibContract.strike ),
-      callOrPut: ibContract.right ,
-      multiplier: ibContract.multiplier ,
+      strike: ibContract.currency == "GBP" ? ibContract.strike / 100 : ibContract.strike,
+      callOrPut: ibContract.right,
+      multiplier: ibContract.multiplier,
       delta: ibContract.right == OptionType.Call ? 0.5 : -0.5,
     };
     const underlying = {
