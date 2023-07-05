@@ -26,7 +26,8 @@ router.get("/", (_req, res): void => {
  * Fetch a portfolio
  */
 router.get("/:portfolioId(\\d+)", (req, res): void => {
-  Portfolio.findByPk(req.params.portfolioId, {
+  const { portfolioId } = req.params;
+  Portfolio.findByPk(portfolioId, {
     include: {
       model: Contract,
     },

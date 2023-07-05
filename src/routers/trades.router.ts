@@ -1,17 +1,8 @@
 import express from "express";
 import { Op } from "sequelize";
-import {
-  Contract,
-  EquityStatement,
-  OptionStatement,
-  Portfolio,
-  Position,
-  Statement,
-  StatementTypes,
-  Trade,
-  Trade as TradeModel,
-} from "../models";
+import { Contract, Portfolio, Position, Statement, Trade, Trade as TradeModel } from "../models";
 import { TradeStrategy } from "../models/trade.types";
+import { statementModelToStatementEntry } from "./statements.router";
 import { StatementEntry } from "./statements.types";
 import { TradeEntry, TradeMonthlySynthesys, TradeSynthesys } from "./trades.types";
 
@@ -19,7 +10,7 @@ const router = express.Router({ mergeParams: true });
 
 type parentParams = { portfolioId: number };
 
-export const tradeModelToTradeEntry = (thisTrade: TradeModel): TradeEntry => {
+export const tradeModelToTradeEntry = (thisTrade: TradeModel): Promise<TradeEntry> => {
   const apy = thisTrade.risk && thisTrade.PnL ? (thisTrade.PnL / thisTrade.risk / thisTrade.duration) * 365 : undefined;
   const trade: TradeEntry = {
     id: thisTrade.id,
@@ -38,7 +29,21 @@ export const tradeModelToTradeEntry = (thisTrade: TradeModel): TradeEntry => {
     comment: thisTrade.comment,
     statements: undefined,
   };
-  return trade;
+  if (thisTrade.statements) {
+    return thisTrade.statements
+      .reduce((p, item): Promise<StatementEntry[]> => {
+        return p.then((statements) => {
+          return statementModelToStatementEntry(item).then((statement) => {
+            statements.push(statement);
+            return statements;
+          });
+        });
+      }, Promise.resolve([] as StatementEntry[]))
+      .then((statements) => {
+        trade.statements = statements;
+        return trade;
+      });
+  } else return Promise.resolve(trade);
 };
 
 const formatDate = (when: Date): string => {
@@ -46,56 +51,41 @@ const formatDate = (when: Date): string => {
   return datestr;
 };
 
-function makeSynthesys(trades: Trade[]): TradeSynthesys {
-  const theSynthesys: TradeSynthesys = { open: [], byMonth: {} as TradeMonthlySynthesys };
-  trades.forEach((item) => {
-    if (item.closingDate) {
-      // console.log(JSON.stringify(item));
-      // console.log(item.id);
-      const idx = formatDate(item.openingDate);
-      if (theSynthesys.byMonth[idx] === undefined) {
-        theSynthesys.byMonth[idx] = { count: 0, success: 0, duration: 0, min: undefined, max: undefined, total: 0 };
-      }
-      theSynthesys.byMonth[idx].count += 1;
-      theSynthesys.byMonth[idx].duration +=
-        (item.closingDate.getTime() - item.openingDate.getTime()) / 1000 / 3600 / 24;
-      if (item.PnL) {
-        // TODO: multiply by baseRate
-        if (item.PnL > 0) theSynthesys.byMonth[idx].success += 1;
-        theSynthesys.byMonth[idx].total += item.PnL;
-        theSynthesys.byMonth[idx].min = theSynthesys.byMonth[idx].min
-          ? Math.min(theSynthesys.byMonth[idx].min, item.PnL)
-          : item.PnL;
-        theSynthesys.byMonth[idx].max = theSynthesys.byMonth[idx].max
-          ? Math.max(theSynthesys.byMonth[idx].max, item.PnL)
-          : item.PnL;
-      }
-    } else {
-      // const duration = (Date.now() - item.openingDate.getTime()) / 1000 / 3600 / 24;
-      // const apy = item.risk && item.PnL ? (item.PnL / item.risk / item.duration) * 365 : undefined;
-      const trade: TradeEntry = tradeModelToTradeEntry(item);
-      //  {
-      //   id: item.id,
-      //   symbol_id: item.stock.id,
-      //   symbol: item.stock.symbol,
-      //   currency: item.currency,
-      //   openingDate: item.openingDate.getTime(),
-      //   closingDate: undefined,
-      //   status: item.status,
-      //   duration: item.duration,
-      //   strategy: item.strategy,
-      //   strategyLabel: TradeStrategy[item.strategy],
-      //   risk: item.risk,
-      //   pnl: item.PnL,
-      //   apy,
-      //   comment: item.comment,
-      //   statements: undefined,
-      // };
-      theSynthesys.open.push(trade);
-    }
-  });
-  // console.log(JSON.stringify(theSynthesys));
-  return theSynthesys;
+function makeSynthesys(trades: Trade[]): Promise<TradeSynthesys> {
+  return trades.reduce(
+    (p, item) =>
+      p.then((theSynthesys) => {
+        if (item.closingDate) {
+          // console.log(JSON.stringify(item));
+          // console.log(item.id);
+          const idx = formatDate(item.openingDate);
+          if (theSynthesys.byMonth[idx] === undefined) {
+            theSynthesys.byMonth[idx] = { count: 0, success: 0, duration: 0, min: undefined, max: undefined, total: 0 };
+          }
+          theSynthesys.byMonth[idx].count += 1;
+          theSynthesys.byMonth[idx].duration +=
+            (item.closingDate.getTime() - item.openingDate.getTime()) / 1000 / 3600 / 24;
+          if (item.PnL) {
+            // TODO: multiply by baseRate
+            if (item.PnL > 0) theSynthesys.byMonth[idx].success += 1;
+            theSynthesys.byMonth[idx].total += item.PnL;
+            theSynthesys.byMonth[idx].min = theSynthesys.byMonth[idx].min
+              ? Math.min(theSynthesys.byMonth[idx].min, item.PnL)
+              : item.PnL;
+            theSynthesys.byMonth[idx].max = theSynthesys.byMonth[idx].max
+              ? Math.max(theSynthesys.byMonth[idx].max, item.PnL)
+              : item.PnL;
+          }
+          return theSynthesys;
+        } else {
+          return tradeModelToTradeEntry(item).then((trade) => {
+            theSynthesys.open.push(trade);
+            return theSynthesys;
+          });
+        }
+      }),
+    Promise.resolve({ open: [], byMonth: {} as TradeMonthlySynthesys } as TradeSynthesys),
+  );
 }
 
 /**
@@ -114,7 +104,8 @@ router.get("/summary/all", (req, res): void => {
     include: [{ model: Contract, as: "stock" }],
     // limit: 500,
   })
-    .then((trades: Trade[]) => res.status(200).json({ tradessynthesys: makeSynthesys(trades) }))
+    .then((trades: Trade[]) => makeSynthesys(trades))
+    .then((tradessynthesys) => res.status(200).json({ tradessynthesys }))
     .catch((error) => res.status(500).json({ error }));
 });
 
@@ -141,7 +132,8 @@ router.get("/summary/12m", (req, res): void => {
     include: [{ model: Contract, as: "stock" }],
     // limit: 500,
   })
-    .then((trades: Trade[]) => res.status(200).json({ tradessynthesys: makeSynthesys(trades) }))
+    .then((trades: Trade[]) => makeSynthesys(trades))
+    .then((tradessynthesys) => res.status(200).json({ tradessynthesys }))
     .catch((error) => res.status(500).json({ error }));
 });
 
@@ -167,7 +159,8 @@ router.get("/summary/ytd", (req, res): void => {
     include: [{ model: Contract, as: "stock" }],
     // limit: 500,
   })
-    .then((trades: Trade[]) => res.status(200).json({ tradessynthesys: makeSynthesys(trades) }))
+    .then((trades: Trade[]) => makeSynthesys(trades))
+    .then((tradessynthesys) => res.status(200).json({ tradessynthesys }))
     .catch((error) => res.status(500).json({ error }));
 });
 
@@ -193,88 +186,7 @@ router.get("/id/:tradeId(\\d+)", (req, res): void => {
         throw Error("trade doesn't exist");
       }
     })
-    .then((thisTrade) => {
-      // const apy =
-      //   thisTrade.risk && thisTrade.PnL ? (thisTrade.PnL / thisTrade.risk / thisTrade.duration) * 365 : undefined;
-      const trade: TradeEntry = tradeModelToTradeEntry(thisTrade);
-      //  {
-      //   id: thisTrade.id,
-      //   symbol_id: thisTrade.stock.id,
-      //   symbol: thisTrade.stock.symbol,
-      //   currency: thisTrade.currency,
-      //   openingDate: thisTrade.openingDate.getTime(),
-      //   closingDate: thisTrade.closingDate ? thisTrade.closingDate.getTime() : undefined,
-      //   status: thisTrade.status,
-      //   duration: thisTrade.duration,
-      //   strategy: thisTrade.strategy,
-      //   strategyLabel: TradeStrategy[thisTrade.strategy],
-      //   risk: thisTrade.risk,
-      //   pnl: thisTrade.PnL,
-      //   apy,
-      //   comment: thisTrade.comment,
-      //   statements: undefined,
-      // };
-      return thisTrade.statements
-        ?.reduce((p, item) => {
-          return p.then((statements) => {
-            const statement: StatementEntry = {
-              id: item.id,
-              date: item.date.getTime(),
-              type: item.statementType,
-              currency: item.currency,
-              amount: item.amount,
-              pnl: undefined,
-              fees: undefined,
-              fxRateToBase: item.fxRateToBase,
-              description: item.description,
-              trade_id: item.trade_unit_id,
-              underlying: { id: thisTrade.stock.id, symbol: thisTrade.stock.symbol },
-            };
-            switch (item.statementType) {
-              case StatementTypes.EquityStatement:
-                return EquityStatement.findByPk(item.id).then((thisStatement) => {
-                  // console.log(value);
-                  statement.pnl = thisStatement?.realizedPnL;
-                  statement.fees = thisStatement?.fees;
-                  statements.push(statement);
-                  return statements;
-                });
-                break;
-              case StatementTypes.OptionStatement:
-                return OptionStatement.findByPk(item.id).then((thisStatement) => {
-                  statement.pnl = thisStatement?.realizedPnL;
-                  statement.fees = thisStatement?.fees;
-                  statements.push(statement);
-                  return statements;
-                });
-                break;
-              case StatementTypes.DividendStatement:
-              case StatementTypes.TaxStatement:
-              case StatementTypes.InterestStatement:
-                statement.pnl = item.amount;
-                statements.push(statement);
-                return statements;
-                break;
-              case StatementTypes.FeeStatement:
-                statement.fees = item.amount;
-                statements.push(statement);
-                return statements;
-                break;
-              case StatementTypes.CorporateStatement:
-              case StatementTypes.CashStatement:
-                statements.push(statement);
-                return statements;
-                break;
-              default:
-                throw Error("Undefined statement type: " + item.statementType);
-            }
-          });
-        }, Promise.resolve([] as StatementEntry[]))
-        .then((statements) => {
-          trade.statements = statements;
-          return trade;
-        });
-    })
+    .then((thisTrade) => tradeModelToTradeEntry(thisTrade))
     .then((trade) => {
       // console.log(trade);
       res.status(200).json({ trade });

@@ -1,4 +1,4 @@
-import { SecType } from "@stoqey/ib";
+import { ContractType } from "../models/contract.types";
 
 export type PositionEntry = {
   id: number;
@@ -6,7 +6,7 @@ export type PositionEntry = {
   quantity: number;
   contract: {
     id: number;
-    secType: SecType;
+    secType: ContractType;
     symbol: string;
     name: string;
     multiplier: number;

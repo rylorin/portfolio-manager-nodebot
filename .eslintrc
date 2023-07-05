@@ -25,14 +25,14 @@
     "@typescript-eslint/no-explicit-any": "off", // off for the moment because we have too many warnings
     "@typescript-eslint/no-floating-promises": "error",
     "@typescript-eslint/no-non-null-assertion": "off", // behavior mismatch between TSlint and TScompiler. I make a valid usage of non null assertions
-    "@typescript-eslint/no-inferrable-types": "warn",
-    "@typescript-eslint/no-misused-promises": "warn",
+    "@typescript-eslint/no-inferrable-types": "error",
+    "@typescript-eslint/no-misused-promises": "error",
     "@typescript-eslint/no-unnecessary-type-assertion": "error",
     "@typescript-eslint/no-unsafe-argument": "off", // off for the moment because we have too many warnings
     "@typescript-eslint/no-unsafe-assignment": "off", // off for the moment because we have too many warnings
-    "@typescript-eslint/no-unsafe-call": "off", // off for the moment because we have too many warnings
+    "@typescript-eslint/no-unsafe-call": "warn", // off for the moment because we have too many warnings
     "@typescript-eslint/no-unsafe-member-access": "off", // off for the moment because we have too many warnings
-    "@typescript-eslint/no-unsafe-return": "off", // off for the moment because we have too many warnings
+    "@typescript-eslint/no-unsafe-return": "error", // off for the moment because we have too many warnings
     "@typescript-eslint/no-unused-vars": [
       "error",
       {
@@ -41,19 +41,17 @@
         "varsIgnorePattern": "^_"
       }
     ],
-    "@typescript-eslint/require-await": "warn",
+    "@typescript-eslint/require-await": "error",
     "@typescript-eslint/restrict-plus-operands": "off", // off for the moment because we have too many warnings
     "@typescript-eslint/restrict-template-expressions": "off", // off for the moment because we have too many warnings
     "@typescript-eslint/unbound-method": "error",
     "no-unsafe-optional-chaining": "error",
     "no-unused-vars": "off", // off required as we use TS rule
-    // "quotes": ["error", "double"],
     "rxjs/no-async-subscribe": "warn",
     "rxjs/no-ignored-observable": "warn",
     "rxjs/no-ignored-subscription": "warn",
     "rxjs/no-unbound-methods": "warn",
     "rxjs/throw-error": "warn",
-    // "semi": ["error", "always"],
-    "strict": "warn"
+    "strict": "error"
   }
 }

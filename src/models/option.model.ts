@@ -1,10 +1,29 @@
 import { OptionType } from "@stoqey/ib";
+import { Optional } from "sequelize";
 import { BelongsTo, Column, DataType, ForeignKey, Model, Table } from "sequelize-typescript";
-
 import { Contract } from "./contract.model";
 
+export type OptionAttributes = {
+  id: number;
+
+  stock_id?: number;
+
+  lastTradeDate: string;
+  strike: number;
+  callOrPut: OptionType;
+  multiplier: number;
+  impliedVolatility: number;
+  pvDividend: number;
+  delta: number;
+  gamma: number;
+  vega: number;
+  theta: number;
+};
+
+export type OptionCreationAttributes = Optional<OptionAttributes, "id">;
+
 @Table({ tableName: "option", timestamps: true, deletedAt: false })
-export class Option extends Model {
+export class Option extends Model<OptionAttributes, OptionCreationAttributes> {
   declare id: number;
 
   @BelongsTo(() => Contract, "id")
@@ -45,7 +64,7 @@ export class Option extends Model {
   @Column({ type: DataType.FLOAT, field: "pv_dividend", defaultValue: 0 })
   declare pvDividend: number;
 
-  @Column({ type: DataType.FLOAT(1, 4), defaultValue: 0.5 })
+  @Column({ type: DataType.FLOAT(1, 4) })
   declare delta: number;
 
   @Column({ type: DataType.FLOAT })

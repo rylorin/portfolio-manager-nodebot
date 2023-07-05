@@ -72,7 +72,7 @@ const preparePositions = (portfolio: Portfolio): Promise<(PositionEntry | Option
             const engaged =
               option.strike * option.multiplier * (option.callOrPut == OptionType.Put ? item.quantity : -item.quantity);
             const duration = (Date.now() - item.createdAt.getTime()) / 1000 / 3600 / 24;
-            const apy = engaged && duration ? (-(value - item.cost) / engaged / duration) * 365 : undefined;
+            const apy = engaged && duration ? ((item.cost - value) / engaged / duration) * 365 : undefined;
             const baseRate =
               1 / (portfolio.baseRates.find((currency) => currency.currency == item.contract.currency)?.rate || 1);
             const result: OptionPositionEntry = {
@@ -108,8 +108,8 @@ const preparePositions = (portfolio: Portfolio): Promise<(PositionEntry | Option
                 symbol: option.stock.symbol,
                 price: getPrice(option.stock),
               },
-              engaged: engaged < 0 ? engaged : 0,
-              risk: engaged < 0 ? engaged * Math.abs(option.delta) : 0,
+              engaged,
+              risk: engaged * Math.abs(option.delta),
               apy,
             };
             // console.log(item.contract.currency, result);
@@ -181,8 +181,8 @@ router.post("/id/:positionId(\\d+)/SavePosition", (req, res): void => {
  * Delete a positions
  */
 router.get("/id/:positionId(\\d+)/DeletePosition", (req, res): void => {
-  const { portfolioId, positionId } = req.params as typeof req.params & parentParams;
-  console.log("DeletePosition", portfolioId, positionId);
+  const { positionId } = req.params as typeof req.params & parentParams;
+
   Position.findByPk(positionId)
     .then((position) => {
       if (position) return position.destroy();
@@ -291,7 +291,7 @@ router.get("/:positionId(\\d+)/AddToTrade/:tradeId(\\d+)", (req, res): void => {
       if (portfolio) {
         const position = portfolio.positions[0];
         if (position) {
-          return position.update({ trade_unit_id: tradeId });
+          return position.update({ trade_unit_id: parseInt(tradeId) });
         } else throw Error("position not found: " + positionId);
       } else throw Error("Portfolio or position not found");
     })

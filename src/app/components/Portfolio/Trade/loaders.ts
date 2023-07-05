@@ -1,16 +1,15 @@
-import { StatementsSynthesysEntries } from "../../../../routers/statements.types";
-import { TradeEntry } from "../../../../routers/trades.types";
+import { TradeEntry, TradeSynthesys } from "../../../../routers/trades.types";
 
 /**
  * Load year to date statements summary
  * @param param0
  * @returns
  */
-export const tradeSummaryLoaderYTD = ({ params }): Promise<StatementsSynthesysEntries> => {
+export const tradeSummaryLoaderYTD = ({ params }): Promise<TradeSynthesys> => {
   const { portfolioId } = params;
   return fetch(`/api/portfolio/${portfolioId}/trades/summary/ytd`)
     .then((response) => response.json())
-    .then((data) => data.tradessynthesys);
+    .then((data) => data.tradessynthesys as TradeSynthesys);
 };
 
 /**
@@ -18,11 +17,11 @@ export const tradeSummaryLoaderYTD = ({ params }): Promise<StatementsSynthesysEn
  * @param param0
  * @returns
  */
-export const tradeSummaryLoader12M = ({ params }): Promise<StatementsSynthesysEntries> => {
+export const tradeSummaryLoader12M = ({ params }): Promise<TradeSynthesys> => {
   const { portfolioId } = params;
   return fetch(`/api/portfolio/${portfolioId}/trades/summary/12m`)
     .then((response) => response.json())
-    .then((data) => data.tradessynthesys);
+    .then((data) => data.tradessynthesys as TradeSynthesys);
 };
 
 /**
@@ -30,16 +29,16 @@ export const tradeSummaryLoader12M = ({ params }): Promise<StatementsSynthesysEn
  * @param param0
  * @returns
  */
-export const tradeSummaryLoaderAll = ({ params }): Promise<StatementsSynthesysEntries> => {
+export const tradeSummaryLoaderAll = ({ params }): Promise<TradeSynthesys> => {
   const { portfolioId } = params;
   return fetch(`/api/portfolio/${portfolioId}/trades/summary/all`)
     .then((response) => response.json())
-    .then((data) => data.tradessynthesys);
+    .then((data) => data.tradessynthesys as TradeSynthesys);
 };
 
 /**
- * Load statement list content
- * @param param0
+ * Get one trade
+ * @param params
  * @returns
  */
 export const tradesShowLoader = ({ params }): Promise<TradeEntry> => {
@@ -47,7 +46,7 @@ export const tradesShowLoader = ({ params }): Promise<TradeEntry> => {
   // console.log("tradesShowLoader", portfolioId, tradeId);
   return fetch(`/api/portfolio/${portfolioId}/trades/id/${tradeId}`)
     .then((response) => response.json())
-    .then((data) => data.trade);
+    .then((data) => data.trade as TradeEntry);
 };
 
 /**
@@ -59,5 +58,5 @@ export const tradesMonthLoader = ({ params }): Promise<TradeEntry[]> => {
   const { portfolioId, year, month } = params;
   return fetch(`/api/portfolio/${portfolioId}/trades/month/${year}/${month}`)
     .then((response) => response.json())
-    .then((data) => data.statemententries);
+    .then((data) => data.statemententries as TradeEntry[]);
 };

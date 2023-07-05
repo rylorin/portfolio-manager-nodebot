@@ -1,19 +1,28 @@
-import { SecType as IbSecType } from "@stoqey/ib";
+import { Optional } from "sequelize";
 import { AllowNull, Column, DataType, Model, Table } from "sequelize-typescript";
+import { ContractType } from "./contract.types";
 
-export const ContracType = {
-  Stock: "STK",
-  Option: "OPT",
-  Bag: "BAG",
-  Cash: "CASH",
-  Future: "FUT",
-  FutureOption: "FOP", // maybe OPT
-  Index: "IND",
-} as const;
-export type ContracType = (typeof ContracType)[keyof typeof ContracType];
+export type ContractAttributes = {
+  id: number;
+
+  conId: number;
+  symbol: string;
+  secType: ContractType;
+  exchange: string;
+  currency: string;
+  name: string;
+  price: number;
+  bid: number;
+  ask: number;
+  previousClosePrice: number;
+  fiftyTwoWeekLow: number;
+  fiftyTwoWeekHigh: number;
+};
+
+export type ContractCreationAttributes = Optional<ContractAttributes, "id">;
 
 @Table({ tableName: "contract", timestamps: true })
-export class Contract extends Model {
+export class Contract extends Model<ContractAttributes, ContractCreationAttributes> {
   declare id: number;
 
   /** The unique IB contract identifier. */
@@ -27,7 +36,7 @@ export class Contract extends Model {
   /** The security type   */
   @AllowNull(false)
   @Column({ type: DataType.STRING })
-  declare secType: IbSecType;
+  declare secType: ContractType;
 
   /** The destination exchange. */
   @Column({ type: DataType.STRING })
@@ -57,7 +66,7 @@ export class Contract extends Model {
   get livePrice(): number {
     let value = undefined;
     if (this.getDataValue("ask") !== null && this.getDataValue("bid") !== null) {
-      value = ((this.getDataValue("ask") as number) + (this.getDataValue("bid") as number)) / 2;
+      value = (this.getDataValue("ask") + this.getDataValue("bid")) / 2;
     } else if (this.getDataValue("price") !== null) {
       value = this.getDataValue("price");
     } else {

@@ -25,7 +25,7 @@ const OptionsPositions: FunctionComponent<PositionsIndexProps> = ({ ..._rest }):
   const thePositions = useLoaderData() as OptionPositionEntry[];
 
   const compareItems = (a: OptionPositionEntry, b: OptionPositionEntry): number => {
-    let result;
+    let result: number;
     result = a.option.expiration.localeCompare(b.option.expiration);
     if (!result) {
       result = a.option.symbol.localeCompare(b.option.symbol);

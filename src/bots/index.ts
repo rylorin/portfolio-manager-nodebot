@@ -321,7 +321,7 @@ export class ITradingBot extends EventEmitter {
   }
 
   protected getOptionsPositionsSynthesisInBase(
-    underlying: number,
+    underlying?: number,
     right?: OptionType,
     short?: boolean,
     long?: boolean,
@@ -356,7 +356,10 @@ export class ITradingBot extends EventEmitter {
     return this.getOptionsPositionsSynthesisInBase(underlying.id, right).then((r) => r.quantity);
   }
 
-  protected getOptionPositionsValueInBase(underlying: number, right: OptionType): Promise<number> {
+  protected getOptionPositionsValueInBase(
+    underlying: number | undefined,
+    right: OptionType | undefined,
+  ): Promise<number> {
     return this.getOptionsPositionsSynthesisInBase(underlying, right).then((r) => r.value);
   }
 
@@ -364,7 +367,10 @@ export class ITradingBot extends EventEmitter {
     return this.getOptionsPositionsSynthesisInBase(underlying, right).then((r) => r.engaged);
   }
 
-  protected getOptionsPositionsRiskInBase(underlying: number, right: OptionType): Promise<number> {
+  protected getOptionsPositionsRiskInBase(
+    underlying: number | undefined,
+    right: OptionType | undefined,
+  ): Promise<number> {
     return this.getOptionsPositionsSynthesisInBase(underlying, right).then((r) => r.risk);
   }
 
@@ -892,3 +898,6 @@ export { OptionsCreateBot } from "./options.bot";
 export { RollOptionPositionsBot } from "./roll.bot";
 export { ContractsUpdaterBot } from "./updater.bot";
 export { YahooUpdateBot } from "./yahoo.bot";
+
+export const awaitTimeout = (delay: number): Promise<unknown> =>
+  new Promise((resolve): NodeJS.Timeout => setTimeout(resolve, delay * 1000));

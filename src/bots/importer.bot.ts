@@ -1,6 +1,6 @@
 import { IBApiNext, Contract as IbContract, SecType } from "@stoqey/ib";
 import { XMLParser } from "fast-xml-parser";
-import { ITradingBot } from ".";
+import { ITradingBot, awaitTimeout } from ".";
 import { MyTradingBotApp } from "..";
 import logger, { LogLevel } from "../logger";
 import {
@@ -65,13 +65,17 @@ const transactionStatusFromElement = (element: any): StatementStatus => {
       return StatementStatus.EXPIRED_STATUS;
     case "O":
     case "C;O":
-    case "O;P": // What does P mean?
       return StatementStatus.OPEN_STATUS;
     case "C":
       return StatementStatus.CLOSE_STATUS;
     case "O;Ex":
     case "C;Ex":
       return StatementStatus.EXERCISED_STATUS;
+    case "O;P": // What does P mean?
+    case ";P": // What does P mean?
+      console.error("undefined status:", key);
+      console.error(element);
+      return StatementStatus.UNDEFINED_STATUS;
     default:
       console.error("undefined status:", key);
       console.error(element);
@@ -98,6 +102,8 @@ const transactionDescriptionFromElement = (element: any): string => {
     case StatementStatus.CLOSE_STATUS:
       description += "Closed";
       break;
+    default:
+      description += element.notes;
   }
   return description + " " + element.quantity + " " + element.symbol + "@" + element.tradePrice + element.currency;
 };
@@ -147,7 +153,7 @@ export class ImporterBot extends ITradingBot {
 [0]   serialNumber: ''
 [0] }
   */
-  protected processSecurityInfoUnderlying(element: any): Promise<Contract | undefined> {
+  protected processSecurityInfoUnderlying(element: any): Promise<Contract> | Promise<undefined> {
     if (element.underlyingConid) {
       return this.findOrCreateContract(ibUnderlyingContractFromElement(element));
     } else return Promise.resolve(undefined);
@@ -155,20 +161,20 @@ export class ImporterBot extends ITradingBot {
 
   protected processSecurityInfo(element: any): Promise<Contract> {
     // console.log(element.symbol);
-    return this.processSecurityInfoUnderlying(element).then((_underlying) => {
-      return this.findOrCreateContract(ibContractFromElement(element));
-    });
+    return this.processSecurityInfoUnderlying(element).then((_underlying) =>
+      this.findOrCreateContract(ibContractFromElement(element)),
+    );
   }
 
-  private processAllSecuritiesInfo(element: any): Promise<void> {
+  private processAllSecuritiesInfo(element: any): Promise<any> {
     // console.log("processAllSecuritiesInfo");
     if (element instanceof Array) {
       return element.reduce(
-        (p: Promise<void>, element: any) => p.then(() => this.processSecurityInfo(element)),
-        Promise.resolve(),
+        (p: Promise<any>, element: any): Promise<any> => p.then(() => this.processSecurityInfo(element)),
+        Promise.resolve(undefined),
       );
-    } else if (element) return this.processSecurityInfo(element).then(() => undefined);
-    else return Promise.resolve();
+    } else if (element) return this.processSecurityInfo(element);
+    else return Promise.resolve(undefined);
   }
 
   /*
@@ -310,10 +316,11 @@ export class ImporterBot extends ITradingBot {
     switch (element.assetCategory) {
       case SecType.STK:
       case SecType.FUT:
-        return this.processStockTrade(element).then(() => undefined);
+      case SecType.CASH:
+        return this.processStockTrade(element).then((): void => undefined);
       case SecType.FOP:
       case SecType.OPT:
-        return this.processOptionTrade(element).then(() => undefined);
+        return this.processOptionTrade(element).then((): void => undefined);
       default:
         console.error("unsupported assetCategory:", element.assetCategory);
         console.log("processTrade", element);
@@ -329,7 +336,7 @@ export class ImporterBot extends ITradingBot {
         Promise.resolve(),
       );
     } else if (element) {
-      return this.processOneTrade(element).then(() => undefined);
+      return this.processOneTrade(element).then((): void => undefined);
     } else return Promise.resolve();
   }
 
@@ -453,15 +460,15 @@ export class ImporterBot extends ITradingBot {
       });
   }
 
-  private processAllCashTransactions(element: any): Promise<void> {
+  private processAllCashTransactions(element: any): Promise<any> {
     // console.log("processAllCashTransactions", element);
     if (element instanceof Array) {
       return element.reduce(
-        (p: Promise<void>, element: any) => p.then(() => this.processCashTransaction(element)),
+        (p: Promise<any>, element: any) => p.then(() => this.processCashTransaction(element)),
         Promise.resolve(),
       );
     } else if (element) {
-      return this.processCashTransaction(element).then(() => undefined);
+      return this.processCashTransaction(element);
     } else return Promise.resolve();
   }
 
@@ -478,9 +485,9 @@ export class ImporterBot extends ITradingBot {
     return Promise.resolve();
   }
 
-  protected processReport(element: any): void {
+  protected processReport(element: any): Promise<void> {
     console.log("AccountInformation", element.AccountInformation);
-    Portfolio.findOrCreate({
+    return Portfolio.findOrCreate({
       where: {
         account: element.AccountInformation.accountId,
         baseCurrency: element.AccountInformation.currency,
@@ -496,23 +503,27 @@ export class ImporterBot extends ITradingBot {
       .then(() => this.processAllCashTransactions(element.CashTransactions.CashTransaction))
       .then(() => this.processAllCorporateActions(element))
       .then(() => logger.log(LogLevel.Info, MODULE + ".processReport", undefined, "Report loaded"))
+      .then(() => Promise.resolve())
       .catch((error) => console.error("importer bot process report:", error));
   }
 
-  protected fetchReport(url: string): void {
+  protected fetchReport(url: string): Promise<any> {
     const parser = new XMLParser({
       ignoreAttributes: false,
       attributeNamePrefix: "",
     });
     console.log("fetching report at", url);
-    fetch(url)
+    return fetch(url)
       .then((response) => response.text())
       .then((XMLdata) => {
         const jObj = parser.parse(XMLdata);
         if (jObj.FlexQueryResponse) {
           if (jObj.FlexQueryResponse.FlexStatements.FlexStatement instanceof Array) {
+            // disable the following eslint test because I was unable to fix it
+            // eslint-disable-next-line @typescript-eslint/no-unsafe-return
             return jObj.FlexQueryResponse.FlexStatements.FlexStatement.reduce(
-              (p: Promise<void>, element: any) => p.then(() => this.processReport(element)),
+              (p: Promise<void>, element: any): Promise<void> =>
+                p.then((): Promise<void> => this.processReport(element)),
               Promise.resolve(),
             );
           } else {
@@ -520,19 +531,21 @@ export class ImporterBot extends ITradingBot {
           }
         } else if (jObj.FlexStatementResponse?.Status == "Warn" && jObj.FlexStatementResponse.ErrorCode == 1019) {
           // Retry
-          setTimeout(() => this.fetchReport(url), 1 * 1000);
+          // setTimeout(() => this.fetchReport(url), 1 * 1000);
+          return awaitTimeout(1).then(() => this.fetchReport(url));
         } else if (jObj.FlexStatementResponse?.ErrorMessage) {
           throw Error("Can t fetch data" + jObj.FlexStatementResponse.ErrorMessage);
         } else {
-          console.log(jObj);
+          console.error(jObj);
+          throw Error("Can t fetch data");
         }
       })
       .catch((error) => console.error("importer bot fetch report:", error));
   }
 
-  protected process(): void {
+  protected process(): Promise<any> {
     const parser = new XMLParser();
-    fetch(
+    return fetch(
       `https://gdcdyn.interactivebrokers.com/Universal/servlet/FlexStatementService.SendRequest?t=${this.token}&q=${this.query}&v=3`,
     )
       .then((response) => response.text())
@@ -550,8 +563,9 @@ export class ImporterBot extends ITradingBot {
   public start(): void {
     this.init()
       .then(() => {
-        this.on("process", () => this.process());
-        setTimeout(() => this.emit("process"), 10 * 1000); // start after 10 secs
+        // const awaitTimeout = (delay: number): Promise<unknown> =>
+        //   new Promise((resolve): NodeJS.Timeout => setTimeout(resolve, delay * 1000));
+        return awaitTimeout(5).then(() => this.process());
       })
       .catch((error) => console.error("start importer bot:", error));
   }

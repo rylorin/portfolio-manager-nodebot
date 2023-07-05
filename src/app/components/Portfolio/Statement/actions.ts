@@ -1,11 +1,11 @@
-import { redirect } from "react-router-dom";
+import { ActionFunctionArgs, redirect } from "react-router-dom";
 
 /**
  * Create a new trade using current statement
- * @param param0
+ * @param params
  * @returns
  */
-export const statementCreateTrade = ({ request, params }): Response => {
+export const statementCreateTrade = ({ request, params }: ActionFunctionArgs): Promise<Response> => {
   const { portfolioId, statementId } = params;
   return request
     .formData()
@@ -19,10 +19,10 @@ export const statementCreateTrade = ({ request, params }): Response => {
 
 /**
  * Guess trade of current statement
- * @param param0
+ * @param params
  * @returns
  */
-export const statementGuessTrade = ({ request, params }): Response => {
+export const statementGuessTrade = ({ request, params }: ActionFunctionArgs): Promise<Response> => {
   const { portfolioId, statementId } = params;
   return request
     .formData()
@@ -36,10 +36,10 @@ export const statementGuessTrade = ({ request, params }): Response => {
 
 /**
  * Unlink current statement from trade
- * @param param0
+ * @param params
  * @returns
  */
-export const statementUnlinkTrade = ({ request, params }): Response => {
+export const statementUnlinkTrade = ({ request, params }: ActionFunctionArgs): Promise<Response> => {
   const { portfolioId, statementId } = params;
   return request
     .formData()
@@ -53,10 +53,10 @@ export const statementUnlinkTrade = ({ request, params }): Response => {
 
 /**
  * Add current statement to given trade
- * @param param0
+ * @param params
  * @returns
  */
-export const statementAddToTrade = ({ request, params }): Response => {
+export const statementAddToTrade = ({ request, params }: ActionFunctionArgs): Promise<Response> => {
   const { portfolioId, statementId, tradeId } = params;
   return request
     .formData()
@@ -70,10 +70,10 @@ export const statementAddToTrade = ({ request, params }): Response => {
 
 /**
  * Delete a statement
- * @param param0
+ * @param params
  * @returns
  */
-export const statementDelete = ({ request, params }): Response => {
+export const statementDelete = ({ request, params }: ActionFunctionArgs): Promise<Response> => {
   const { portfolioId, statementId } = params;
   // console.log("statementDelete", portfolioId, statementId);
   return request

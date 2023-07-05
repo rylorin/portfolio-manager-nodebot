@@ -1,18 +1,26 @@
+import { Optional } from "sequelize";
 import { BelongsTo, Column, DataType, ForeignKey, Model, Table } from "sequelize-typescript";
 import { Contract } from "./contract.model";
 import { Portfolio } from "./portfolio.model";
 import { Trade } from "./trade.model";
 
-@Table({ tableName: "position", timestamps: true })
-export class Position extends Model {
-  declare id: number;
+export type PositionAttributes = {
+  id: number;
 
-  /** Related Contract */
-  @ForeignKey(() => Contract)
-  @Column
-  declare contract_id: number;
-  @BelongsTo(() => Contract, "contract_id")
-  declare contract: Contract;
+  portfolio_id: number;
+  contract_id: number;
+  trade_unit_id?: number;
+
+  cost: number;
+  quantity: number;
+  createdAt: Date;
+};
+
+export type PositionCreationAttributes = Optional<PositionAttributes, "id" | "createdAt">;
+
+@Table({ tableName: "position", timestamps: true })
+export class Position extends Model<PositionAttributes, PositionCreationAttributes> {
+  declare id: number;
 
   /** Portfolio */
   @ForeignKey(() => Portfolio)
@@ -20,6 +28,13 @@ export class Position extends Model {
   declare portfolio_id: number;
   @BelongsTo(() => Portfolio, "portfolio_id")
   declare portfolio: Portfolio;
+
+  /** Related Contract */
+  @ForeignKey(() => Contract)
+  @Column
+  declare contract_id: number;
+  @BelongsTo(() => Contract, "contract_id")
+  declare contract: Contract;
 
   /** cost basis */
   @Column({ type: DataType.FLOAT })

@@ -23,12 +23,12 @@ export class CashManagementBot extends ITradingBot {
       extra_cash = benchmark_balance_in_base;
     } else if (this.portfolio.cashStrategy == 2) {
       // options value: cash needed to close all options positions
-      let opt_value = await this.getOptionPositionsValueInBase(null, null);
+      let opt_value = await this.getOptionPositionsValueInBase(undefined, undefined);
       opt_value = Math.max(opt_value, 0);
       extra_cash = balance_in_base - opt_value;
     } else if (this.portfolio.cashStrategy == 3) {
       // option risk: cash to cover options risk
-      let opt_value = await this.getOptionsPositionsRiskInBase(null, OptionType.Put);
+      let opt_value = await this.getOptionsPositionsRiskInBase(undefined, OptionType.Put);
       opt_value = Math.max(opt_value, 0);
       extra_cash = balance_in_base - opt_value;
     } else {

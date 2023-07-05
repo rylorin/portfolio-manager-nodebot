@@ -5,7 +5,7 @@
 import { exit } from "process";
 import winston, { Logger as WinstonLogger, createLogger, format, transports } from "winston";
 
-require("dotenv").config(); // eslint-disable-line @typescript-eslint/no-var-requires
+require("dotenv").config(); // eslint-disable-line @typescript-eslint/no-var-requires,@typescript-eslint/no-unsafe-call
 
 export const LogLevel = {
   Fatal: 0,

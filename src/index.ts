@@ -26,6 +26,7 @@ import {
   Currency,
   DividendStatement,
   EquityStatement,
+  FeeStatement,
   Future,
   Index,
   InterestStatement,
@@ -108,6 +109,7 @@ export class MyTradingBotApp extends IBApiNextApp {
         TaxStatement,
         DividendStatement,
         InterestStatement,
+        FeeStatement,
       ],
       // models: [__dirname + '/models/*.model.js'], // Not working with ts-node-dev
       modelMatch: (filename, member) => {

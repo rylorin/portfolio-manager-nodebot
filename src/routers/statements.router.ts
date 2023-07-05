@@ -21,6 +21,55 @@ const router = express.Router({ mergeParams: true });
 
 type parentParams = { portfolioId: number };
 
+export const statementModelToStatementEntry = (item: Statement): Promise<StatementEntry> => {
+  const statement: StatementEntry = {
+    id: item.id,
+    date: item.date.getTime(),
+    type: item.statementType,
+    currency: item.currency,
+    amount: item.amount,
+    pnl: undefined,
+    fees: undefined,
+    fxRateToBase: item.fxRateToBase,
+    description: item.description,
+    trade_id: item.trade_unit_id,
+    underlying: item.stock ? { id: item.stock.id, symbol: item.stock.symbol } : undefined,
+  };
+  switch (item.statementType) {
+    case StatementTypes.EquityStatement:
+      return EquityStatement.findByPk(item.id).then((thisStatement) => {
+        // console.log(value);
+        statement.pnl = thisStatement?.realizedPnL;
+        statement.fees = thisStatement?.fees;
+        return statement;
+      });
+      break;
+    case StatementTypes.OptionStatement:
+      return OptionStatement.findByPk(item.id).then((thisStatement) => {
+        statement.pnl = thisStatement?.realizedPnL;
+        statement.fees = thisStatement?.fees;
+        return statement;
+      });
+      break;
+    case StatementTypes.DividendStatement:
+    case StatementTypes.TaxStatement:
+    case StatementTypes.InterestStatement:
+      statement.pnl = item.amount;
+      return Promise.resolve(statement);
+      break;
+    case StatementTypes.FeeStatement:
+      statement.fees = item.amount;
+      return Promise.resolve(statement);
+      break;
+    case StatementTypes.CorporateStatement:
+    case StatementTypes.CashStatement:
+      return Promise.resolve(statement);
+      break;
+    default:
+      throw Error("Undefined statement type: " + item.statementType);
+  }
+};
+
 const formatDate = (when: Date): string => {
   const datestr = when.toISOString().substring(0, 7);
   return datestr;
@@ -147,66 +196,10 @@ router.get("/month/:year(\\d+)/:month(\\d+)", (req, res): void => {
     .then((statements: Statement[]): Promise<StatementEntry[]> => {
       return statements.reduce((p: Promise<StatementEntry[]>, item: Statement) => {
         return p.then((value: StatementEntry[]) => {
-          // console.log('item:', JSON.stringify(item));
-          // console.log('item:', item);
-          const thisItem: StatementEntry = {
-            id: item.id,
-            date: item.date.getTime(),
-            type: item.statementType,
-            currency: item.currency,
-            fxRateToBase: item.fxRateToBase,
-            amount: item.amount,
-            pnl: undefined,
-            fees: undefined,
-            underlying: item.stock ? { id: item.stock.id, symbol: item.stock.symbol } : undefined,
-            trade_id: item.trade_unit_id,
-            description: item.description,
-          };
-          switch (item.statementType) {
-            case StatementTypes.EquityStatement:
-              return EquityStatement.findByPk(item.id).then((statement) => {
-                // console.log(value);
-                thisItem.pnl = statement?.realizedPnL;
-                thisItem.fees = statement?.fees;
-                value.push(thisItem);
-                return value;
-              });
-              break;
-            case StatementTypes.OptionStatement:
-              return OptionStatement.findByPk(item.id).then((statement) => {
-                thisItem.pnl = statement?.realizedPnL;
-                thisItem.fees = statement?.fees;
-                value.push(thisItem);
-                return value;
-              });
-              break;
-            case StatementTypes.DividendStatement:
-              thisItem.pnl = item.amount;
-              value.push(thisItem);
-              break;
-            case StatementTypes.TaxStatement:
-              thisItem.pnl = item.amount;
-              value.push(thisItem);
-              break;
-            case StatementTypes.InterestStatement:
-              thisItem.pnl = item.amount;
-              value.push(thisItem);
-              break;
-            case StatementTypes.FeeStatement:
-              thisItem.fees = item.amount;
-              value.push(thisItem);
-              break;
-            case StatementTypes.CorporateStatement:
-              value.push(thisItem);
-              break;
-            case StatementTypes.CashStatement:
-              value.push(thisItem);
-              break;
-            default:
-              throw Error("Undefined statement type: " + item.statementType);
-          }
-          // console.log(value);
-          return Promise.resolve(value);
+          return statementModelToStatementEntry(item).then((statement) => {
+            value.push(statement);
+            return value;
+          });
         });
       }, Promise.resolve([] as StatementEntry[]));
     })
@@ -233,8 +226,8 @@ router.get("/:statementId(\\d+)/CreateTrade", (req, res): void => {
           openingDate: statement.date,
           strategy: TradeStrategy.undefined,
         };
-        return Trade.create(trade, { logging: console.log }).then((trade) =>
-          statement.update({ trade_unit_id: trade.id }, { logging: console.log }),
+        return Trade.create(trade, { logging: false }).then((trade) =>
+          statement.update({ trade_unit_id: trade.id }, { logging: false }),
         );
       } else {
         throw Error("statement doesn't exist");

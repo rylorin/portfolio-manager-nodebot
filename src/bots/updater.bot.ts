@@ -609,7 +609,7 @@ export class ContractsUpdaterBot extends ITradingBot {
           .then(() => {
             /* void */
           })
-          .catch((err) => {
+          .catch((err: { code: number; error: { message: string } }) => {
             if (
               err.code == 200 || // 'No security definition has been found for the request'
               err.code == 354 || // 'Requested market data is not subscribed.Delayed market data is not available.WBD NASDAQ.NMS/TOP/ALL'
