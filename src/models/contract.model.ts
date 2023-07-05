@@ -4,22 +4,23 @@ import { ContractType } from "./contract.types";
 
 export type ContractAttributes = {
   id: number;
+  updatedAt: Date;
 
   conId: number;
   symbol: string;
   secType: ContractType;
   exchange: string;
   currency: string;
-  name: string;
-  price: number;
-  bid: number;
-  ask: number;
-  previousClosePrice: number;
-  fiftyTwoWeekLow: number;
-  fiftyTwoWeekHigh: number;
+  name?: string;
+  price?: number;
+  bid?: number;
+  ask?: number;
+  previousClosePrice?: number;
+  fiftyTwoWeekLow?: number;
+  fiftyTwoWeekHigh?: number;
 };
 
-export type ContractCreationAttributes = Optional<ContractAttributes, "id">;
+export type ContractCreationAttributes = Optional<ContractAttributes, "id" | "updatedAt">;
 
 @Table({ tableName: "contract", timestamps: true })
 export class Contract extends Model<ContractAttributes, ContractCreationAttributes> {

@@ -5,6 +5,7 @@ import { Contract } from "./contract.model";
 
 export type OptionAttributes = {
   id: number;
+  updatedAt: Date;
 
   stock_id?: number;
 
@@ -12,15 +13,15 @@ export type OptionAttributes = {
   strike: number;
   callOrPut: OptionType;
   multiplier: number;
-  impliedVolatility: number;
-  pvDividend: number;
-  delta: number;
-  gamma: number;
-  vega: number;
-  theta: number;
+  impliedVolatility?: number;
+  pvDividend?: number;
+  delta?: number;
+  gamma?: number;
+  vega?: number;
+  theta?: number;
 };
 
-export type OptionCreationAttributes = Optional<OptionAttributes, "id">;
+export type OptionCreationAttributes = Optional<OptionAttributes, "id" | "updatedAt">;
 
 @Table({ tableName: "option", timestamps: true, deletedAt: false })
 export class Option extends Model<OptionAttributes, OptionCreationAttributes> {

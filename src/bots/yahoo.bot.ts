@@ -222,7 +222,7 @@ export class YahooUpdateBot extends ITradingBot {
         promises.push(
           r.contract
             .update(
-              { ask: null, bid: null, updatedAt: new Date() },
+              { ask: undefined, bid: undefined },
               {
                 /* logging: console.log, */
               },

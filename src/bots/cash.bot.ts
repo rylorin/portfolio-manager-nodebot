@@ -1,4 +1,4 @@
-import { OptionType, OrderAction } from "@stoqey/ib";
+import { Contract as IbContract, OptionType, OrderAction } from "@stoqey/ib";
 import { Op } from "sequelize";
 import { ITradingBot } from ".";
 import { OpenOrder } from "../models";
@@ -70,13 +70,13 @@ export class CashManagementBot extends ITradingBot {
       );
       if (units_to_buy - units_to_sell < 0)
         await this.api
-          .placeNewOrder(benchmark, ITradingBot.BenchmarkOrder(OrderAction.SELL, units_to_sell))
+          .placeNewOrder(benchmark as IbContract, ITradingBot.BenchmarkOrder(OrderAction.SELL, units_to_sell))
           .then((orderId: number) => {
             console.log("orderid:", orderId.toString());
           });
       else if (units_to_buy - units_to_sell > 0)
         await this.api
-          .placeNewOrder(benchmark, ITradingBot.BenchmarkOrder(OrderAction.BUY, units_to_buy))
+          .placeNewOrder(benchmark as IbContract, ITradingBot.BenchmarkOrder(OrderAction.BUY, units_to_buy))
           .then((orderId: number) => {
             console.log("orderid:", orderId.toString());
           });

@@ -84,7 +84,7 @@ export class OptionsCreateBot extends ITradingBot {
       .getSecDefOptParams(
         stock.symbol,
         "", // exchange but only empty string returns results
-        stock.secType,
+        stock.secType as SecType,
         stock.conId,
       )
       .catch((err: IBApiNextError) => {
@@ -102,7 +102,7 @@ export class OptionsCreateBot extends ITradingBot {
         );
         if (stock["options_age"] * 24 > OPTIONS_LIST_BUILD_FREQ) {
           console.log("iterateToBuildOptionList: option contracts list need refreshing");
-          return this.findOrCreateContract(stock).then((contract) =>
+          return this.findOrCreateContract(stock as IbContract).then((contract) =>
             this.requestSecDefOptParams(contract).then((params) => this.iterateSecDefOptParams(contract, params)),
           );
         }
@@ -165,7 +165,7 @@ export class OptionsCreateBot extends ITradingBot {
           stock_id: stock.id,
           updatedAt: {
             [Op.or]: [
-              null,
+              undefined,
               {
                 [Op.lt]: stock.contract.updatedAt,
               },

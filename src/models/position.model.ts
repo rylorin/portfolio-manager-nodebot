@@ -6,6 +6,8 @@ import { Trade } from "./trade.model";
 
 export type PositionAttributes = {
   id: number;
+  createdAt: Date;
+  updatedAt: Date;
 
   portfolio_id: number;
   contract_id: number;
@@ -13,10 +15,9 @@ export type PositionAttributes = {
 
   cost: number;
   quantity: number;
-  createdAt: Date;
 };
 
-export type PositionCreationAttributes = Optional<PositionAttributes, "id" | "createdAt">;
+export type PositionCreationAttributes = Optional<PositionAttributes, "id" | "createdAt" | "updatedAt">;
 
 @Table({ tableName: "position", timestamps: true })
 export class Position extends Model<PositionAttributes, PositionCreationAttributes> {

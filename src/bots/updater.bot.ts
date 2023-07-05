@@ -72,7 +72,7 @@ export class ContractsUpdaterBot extends ITradingBot {
         {
           conId: contract.conId ?? undefined,
           symbol: contract.symbol,
-          secType: contract.secType,
+          secType: contract.secType as SecType,
           exchange: "SMART",
           currency: contract.currency,
         },
@@ -349,7 +349,7 @@ export class ContractsUpdaterBot extends ITradingBot {
         updatedAt: {
           [Op.or]: {
             [Op.lt]: new Date(now),
-            [Op.is]: null,
+            [Op.is]: undefined,
           },
         },
         exchange: {
@@ -476,7 +476,7 @@ export class ContractsUpdaterBot extends ITradingBot {
       .getSecDefOptParams(
         stock.symbol,
         "", // exchange but only empty string returns results
-        stock.secType,
+        stock.secType as SecType,
         stock.conId,
       )
       .catch((err: IBApiNextError) => {
@@ -590,7 +590,7 @@ export class ContractsUpdaterBot extends ITradingBot {
       }
       const ibContract: IbContract = {
         conId: contract.conId,
-        secType: contract.secType,
+        secType: contract.secType as SecType,
         symbol: contract.symbol,
         currency: contract.currency,
         exchange: contract.exchange,
@@ -625,9 +625,8 @@ export class ContractsUpdaterBot extends ITradingBot {
                 );
                 return Contract.update(
                   {
-                    ask: null,
-                    bid: null,
-                    updatedAt: new Date(),
+                    ask: undefined,
+                    bid: undefined,
                   },
                   {
                     where: { id: contract.id },
@@ -658,7 +657,7 @@ export class ContractsUpdaterBot extends ITradingBot {
         updatedAt: {
           [Op.or]: {
             [Op.lt]: new Date(now),
-            [Op.is]: null,
+            [Op.is]: undefined,
           },
         },
       },

@@ -216,7 +216,7 @@ export class AccountUpdateBot extends ITradingBot {
       {
         where: {
           portfolio_id: this.portfolio.id,
-          [Op.or]: [{ updatedAt: { [Op.lt]: new Date(now) } }, { updatedAt: null }],
+          [Op.or]: [{ updatedAt: { [Op.lt]: new Date(now) } }, { updatedAt: undefined }],
         },
         // logging: console.log,
       },
