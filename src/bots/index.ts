@@ -65,14 +65,14 @@ export class ITradingBot extends EventEmitter {
    * Print a warning message to console
    */
   warn(message: string): void {
-    console.error(colors.bold.yellow(`[${new Date().toLocaleTimeString()}] (${module}) Warning: ${message}`));
+    console.error(colors.bold.yellow(`[${new Date().toLocaleTimeString()}] Warning: ${message}`));
   }
 
   /**
    * Print and error to console and exit the app with error code, unless -watch argument is present.
    */
   error(message: string): void {
-    console.error(colors.bold.red(`[${new Date().toLocaleTimeString()}] (${module}) Error: ${message}`));
+    console.error(colors.bold.red(`[${new Date().toLocaleTimeString()}] Error: ${message}`));
   }
 
   protected static expirationToDate(lastTradeDateOrContractMonth: string): Date {

@@ -232,11 +232,11 @@ export class RollOptionPositionsBot extends ITradingBot {
           const stock: Contract = await Contract.findByPk(opt.stock.id, {});
           const price = stock.livePrice;
           // console.log(price);
-          if (price != null && opt.callOrPut == "P" && price < opt.strike) {
+          if (price != null && opt.callOrPut == OptionType.Put && price < opt.strike) {
             // this.printObject(opt);
             // this.printObject(stock);
             result.push(position);
-          } else if (price != null && opt.callOrPut == "C" && price > opt.strike) {
+          } else if (price != null && opt.callOrPut == OptionType.Call && price > opt.strike) {
             // this.printObject(opt);
             // this.printObject(stock);
             result.push(position);
