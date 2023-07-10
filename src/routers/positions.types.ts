@@ -13,7 +13,7 @@ export type PositionEntry = {
     currency: string;
     price: number;
   };
-  trade_id: number;
+  trade_id: number | undefined;
   price: number;
   value: number;
   pru: number;

@@ -1,39 +1,58 @@
-import { Optional } from "sequelize";
-import { BelongsTo, Column, DataType, ForeignKey, Model, Table } from "sequelize-typescript";
+import {
+  Association,
+  CreationOptional,
+  ForeignKey,
+  InferAttributes,
+  InferCreationAttributes,
+  NonAttribute,
+} from "sequelize";
+import { BelongsTo, Column, DataType, Model, Table } from "sequelize-typescript";
 import { Contract } from "./contract.model";
 import { Portfolio } from "./portfolio.model";
 import { Trade } from "./trade.model";
 
-export type PositionAttributes = {
-  id: number;
-  createdAt: Date;
-  updatedAt: Date;
+// export type PositionAttributes = {
+//   id: number;
+//   createdAt: Date;
+//   updatedAt: Date;
 
-  portfolio_id: number;
-  contract_id: number;
-  trade_unit_id?: number;
+//   portfolio_id: number;
+//   contract_id: number;
+//   trade_unit_id?: number;
 
-  cost: number;
-  quantity: number;
-};
+//   cost: number;
+//   quantity: number;
+// };
 
-export type PositionCreationAttributes = Optional<PositionAttributes, "id" | "createdAt" | "updatedAt">;
+// export type PositionCreationAttributes = Optional<
+//   PositionAttributes,
+//   "id" | "createdAt" | "updatedAt" | "trade_unit_id"
+// >;
 
 @Table({ tableName: "position", timestamps: true })
-export class Position extends Model<PositionAttributes, PositionCreationAttributes> {
-  declare id: number;
+export class Position extends Model<
+  InferAttributes<Position>,
+  InferCreationAttributes<Position, { omit: "contract" | "portfolio" | "trade" }>
+> {
+  // id can be undefined during creation when using `autoIncrement`
+  declare id: CreationOptional<number>;
+  // timestamps!
+  // createdAt can be undefined during creation
+  declare createdAt: CreationOptional<Date>;
+  // updatedAt can be undefined during creation
+  declare updatedAt: CreationOptional<Date>;
 
   /** Portfolio */
-  @ForeignKey(() => Portfolio)
-  @Column
-  declare portfolio_id: number;
+  // @ForeignKey(() => Portfolio)
+  // @Column
+  declare portfolio_id: ForeignKey<Portfolio["id"]>;
   @BelongsTo(() => Portfolio, "portfolio_id")
   declare portfolio: Portfolio;
 
   /** Related Contract */
-  @ForeignKey(() => Contract)
-  @Column
-  declare contract_id: number;
+  // @ForeignKey(() => Contract)
+  // @Column
+  declare contract_id: ForeignKey<Contract["id"]>;
   @BelongsTo(() => Contract, "contract_id")
   declare contract: Contract;
 
@@ -45,12 +64,20 @@ export class Position extends Model<PositionAttributes, PositionCreationAttribut
   @Column({ type: DataType.FLOAT })
   declare quantity: number;
 
-  get averagePrice(): number {
+  get averagePrice(): NonAttribute<number> {
     return this.getDataValue("cost") / this.getDataValue("quantity");
   }
 
-  /** trade */
+  /** Optional related trade */
+  // @ForeignKey(() => Trade)
+  // @Column
+  declare trade_unit_id?: ForeignKey<Trade["id"]>;
   @BelongsTo(() => Trade, "trade_unit_id")
-  declare trade: Trade;
-  declare trade_unit_id: number;
+  declare trade?: Trade;
+
+  declare static associations: {
+    portfolio: Association<Position, Portfolio>;
+    contract: Association<Position, Contract>;
+    trade: Association<Position, Trade>;
+  };
 }

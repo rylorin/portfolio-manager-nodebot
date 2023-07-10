@@ -2,12 +2,11 @@ import { ArrowBackIcon, DeleteIcon, EditIcon } from "@chakra-ui/icons";
 import { Center, Flex, IconButton, Text, VStack } from "@chakra-ui/react";
 import React, { FunctionComponent } from "react";
 import { Link as RouterLink, useLoaderData, useNavigate } from "react-router-dom";
-import { TradeStrategy } from "../../../../models/trade.types";
 import { TradeEntry } from "../../../../routers/trades.types";
 import { formatNumber } from "../../../utils";
 import Number from "../../Number/Number";
 import StatementIndex from "../Statement/StatementIndex";
-import { tradeStatus2String } from "../utils";
+import { tradeStatus2String, tradeStrategy2String } from "../utils";
 
 type TradeShowProps = Record<string, never>;
 
@@ -15,6 +14,7 @@ const TradeShow: FunctionComponent<TradeShowProps> = ({ ..._rest }): JSX.Element
   const thisTrade = useLoaderData() as TradeEntry;
   const navigate = useNavigate();
 
+  // console.log(thisTrade);
   return (
     <>
       <VStack>
@@ -63,7 +63,7 @@ const TradeShow: FunctionComponent<TradeShowProps> = ({ ..._rest }): JSX.Element
             Strategy:
           </Text>
           <Text w="200px" textAlign="right">
-            {TradeStrategy[thisTrade.strategy]}
+            {tradeStrategy2String(thisTrade.strategy)}
           </Text>
         </Flex>
         <Flex justifyContent="center" gap="2">

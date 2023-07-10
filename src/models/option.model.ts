@@ -41,13 +41,18 @@ export class Option extends Model<OptionAttributes, OptionCreationAttributes> {
   get lastTradeDate(): Date {
     return new Date(this.getDataValue("lastTradeDate"));
   }
-  set lastTradeDate(value: Date) {
-    // Format date to YYYY-MM-DD
-    const day: number = value.getDate();
-    const month: number = value.getMonth() + 1;
-    const year: number = value.getFullYear();
-    const lastTradeDate: string = year + "-" + (month < 10 ? "0" + month : month) + "-" + (day < 10 ? "0" + day : day);
-    this.setDataValue("lastTradeDate", lastTradeDate);
+  set lastTradeDate(value: Date | string) {
+    if (value instanceof Date) {
+      // Format date to YYYY-MM-DD
+      const day: number = value.getDate();
+      const month: number = value.getMonth() + 1;
+      const year: number = value.getFullYear();
+      const lastTradeDate: string =
+        year + "-" + (month < 10 ? "0" + month : month) + "-" + (day < 10 ? "0" + day : day);
+      this.setDataValue("lastTradeDate", lastTradeDate);
+    } else if (typeof value == "string") {
+      this.setDataValue("lastTradeDate", value.substring(0, 10));
+    }
   }
 
   @Column({ type: DataType.FLOAT })

@@ -1,5 +1,6 @@
 import { BelongsTo, Column, DataType, ForeignKey, Model, Table } from "sequelize-typescript";
 import { Contract, Statement } from ".";
+import { Option } from "./option.model";
 
 @Table({ tableName: "trade_option", timestamps: false, createdAt: false, updatedAt: false })
 export class OptionStatement extends Model {
@@ -38,4 +39,6 @@ export class OptionStatement extends Model {
   declare contract_id: number;
   @BelongsTo(() => Contract, "contract_id")
   declare contract: Contract;
+  @BelongsTo(() => Option, "contract_id")
+  declare option: Option;
 }

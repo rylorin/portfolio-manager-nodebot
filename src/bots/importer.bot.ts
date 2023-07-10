@@ -65,19 +65,18 @@ const transactionStatusFromElement = (element: any): StatementStatus => {
       return StatementStatus.EXPIRED_STATUS;
     case "O":
     case "C;O":
+    case "O;P": // What does P mean?
       return StatementStatus.OPEN_STATUS;
     case "C":
+    case "C;P":
       return StatementStatus.CLOSE_STATUS;
     case "O;Ex":
     case "C;Ex":
       return StatementStatus.EXERCISED_STATUS;
-    case "O;P": // What does P mean?
     case ";P": // What does P mean?
-      console.error("undefined status:", key);
-      console.error(element);
       return StatementStatus.UNDEFINED_STATUS;
     default:
-      console.error("undefined status:", key);
+      console.error("unknown status:", key);
       console.error(element);
       throw Error("undefined status: " + key);
       return StatementStatus.UNDEFINED_STATUS;

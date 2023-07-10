@@ -1,4 +1,4 @@
-import { IBApiNextError, OpenOrder as IbOpenOrder, Position as IbPosition, SecType } from "@stoqey/ib";
+import { IBApiNextError, OpenOrder as IbOpenOrder, Position as IbPosition, OrderAction, SecType } from "@stoqey/ib";
 import { Subscription } from "rxjs";
 import { Op, Transaction } from "sequelize";
 import { ITradingBot } from ".";
@@ -46,17 +46,17 @@ export class AccountUpdateBot extends ITradingBot {
       this.qProcessing++;
       if (this.orderq.length > 0) {
         console.log(`processOrderQueue ${this.orderq.length} item(s)`);
-        const item = this.orderq.shift();
+        const item = this.orderq.shift()!;
         await this.updateOpenOrder(item);
         console.log("processOrderQueue done");
       } else if (this.positionq.length > 0) {
         console.log(`processPositionQueue ${this.positionq.length} item(s)`);
-        const item = this.positionq.shift();
+        const item = this.positionq.shift()!;
         await this.updatePosition(item);
         console.log("processPositionQueue done");
       } else if (this.cashq.length > 0) {
         console.log(`processCashQueue ${this.cashq.length} item(s)`);
-        const item = this.cashq.shift();
+        const item = this.cashq.shift()!;
         await this.updateCashPosition(item);
         console.log("procesCashQueue done");
       }
@@ -81,7 +81,7 @@ export class AccountUpdateBot extends ITradingBot {
                 // permId: order.order.permId,
                 // portfolioId: this.portfolio.id,
                 // contract_id: contract.id,
-                actionType: order.order.action == leg.action ? "BUY" : "SELL",
+                actionType: order.order.action == (leg.action as OrderAction) ? OrderAction.BUY : OrderAction.SELL,
                 totalQty: order.order.totalQuantity * leg.ratio,
                 cashQty: order.order.cashQty * leg.ratio,
                 lmtPrice: undefined,
@@ -179,13 +179,13 @@ export class AccountUpdateBot extends ITradingBot {
     const defaults = {
       portfolio_id: this.portfolio.id,
       quantity: pos.pos,
-      cost: pos.avgCost * pos.pos,
+      cost: pos.avgCost! * pos.pos, // eslint-disable-line @typescript-eslint/no-unnecessary-type-assertion
       updatedAt: new Date(),
     };
     return this.findOrCreateContract(pos.contract).then((contract) =>
       Position.findOrCreate({
         where: { contract_id: contract.id },
-        defaults: defaults,
+        defaults: { ...defaults, contract_id: contract.id },
       }).then(([position, created]) => {
         if (created) return position;
         else {
@@ -216,7 +216,7 @@ export class AccountUpdateBot extends ITradingBot {
       {
         where: {
           portfolio_id: this.portfolio.id,
-          [Op.or]: [{ updatedAt: { [Op.lt]: new Date(now) } }, { updatedAt: undefined }],
+          [Op.or]: [{ updatedAt: { [Op.lt]: new Date(now) } }, { updatedAt: { [Op.is]: undefined } }],
         },
         // logging: console.log,
       },

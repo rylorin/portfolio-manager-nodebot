@@ -1,14 +1,68 @@
+import { OptionType } from "@stoqey/ib";
 import express from "express";
 import { Op } from "sequelize";
-import { Contract, Portfolio, Position, Statement, Trade, Trade as TradeModel } from "../models";
-import { TradeStrategy } from "../models/trade.types";
+import logger, { LogLevel } from "../logger";
+import {
+  Contract,
+  Option,
+  OptionStatement,
+  Portfolio,
+  Position,
+  Statement,
+  StatementTypes,
+  Trade,
+  Trade as TradeModel,
+} from "../models";
+import { TradeStatus, TradeStrategy } from "../models/trade.types";
 import { statementModelToStatementEntry } from "./statements.router";
 import { StatementEntry } from "./statements.types";
 import { TradeEntry, TradeMonthlySynthesys, TradeSynthesys } from "./trades.types";
 
+const MODULE = "TradesRouter";
+
 const router = express.Router({ mergeParams: true });
 
 type parentParams = { portfolioId: number };
+
+export const updateTradeDetails = (thisTrade: Trade): Promise<Trade> => {
+  // sort statements by date
+  const items = thisTrade?.statements.sort((a, b) => a.date.getTime() - b.date.getTime());
+  if (thisTrade && items?.length) {
+    if (!thisTrade.openingDate) thisTrade.openingDate = items[0].date;
+    if (thisTrade.status == TradeStatus.closed && !thisTrade.closingDate)
+      thisTrade.openingDate = items[items.length - 1].date;
+    return items
+      .reduce(
+        (p, item): Promise<Trade> =>
+          p.then((thisTrade) => {
+            switch (item.statementType) {
+              case StatementTypes.OptionStatement:
+                return OptionStatement.findByPk(item.id, {
+                  include: [
+                    { model: Contract, as: "contract", required: true },
+                    { model: Option, as: "option", required: true },
+                  ],
+                }).then((statement) => {
+                  if (statement) {
+                    console.log(JSON.stringify(statement));
+                    if (!thisTrade.strategy) {
+                      if (statement.option.callOrPut == OptionType.Put)
+                        if (statement.quantity < 0) thisTrade.strategy = TradeStrategy["short put"];
+                        else thisTrade.strategy = TradeStrategy["long put"];
+                    }
+                    return thisTrade;
+                  } else throw Error("Option statement not found. id: " + item.id);
+                });
+                break;
+            }
+            return thisTrade;
+          }),
+        Promise.resolve(thisTrade),
+      )
+      .then((thisTrade) => thisTrade.save());
+  }
+  return Promise.resolve(thisTrade);
+};
 
 export const tradeModelToTradeEntry = (thisTrade: TradeModel): Promise<TradeEntry> => {
   const apy = thisTrade.risk && thisTrade.PnL ? (thisTrade.PnL / thisTrade.risk / thisTrade.duration) * 365 : undefined;
@@ -31,14 +85,17 @@ export const tradeModelToTradeEntry = (thisTrade: TradeModel): Promise<TradeEntr
   };
   if (thisTrade.statements) {
     return thisTrade.statements
-      .reduce((p, item): Promise<StatementEntry[]> => {
-        return p.then((statements) => {
-          return statementModelToStatementEntry(item).then((statement) => {
-            statements.push(statement);
-            return statements;
+      .reduce(
+        (p, item): Promise<StatementEntry[]> => {
+          return p.then((statements) => {
+            return statementModelToStatementEntry(item).then((statement) => {
+              statements.push(statement);
+              return statements;
+            });
           });
-        });
-      }, Promise.resolve([] as StatementEntry[]))
+        },
+        Promise.resolve([] as StatementEntry[]),
+      )
       .then((statements) => {
         trade.statements = statements;
         return trade;
@@ -181,18 +238,42 @@ router.get("/id/:tradeId(\\d+)", (req, res): void => {
   })
     .then((trade) => {
       if (trade) {
-        return trade;
+        return tradeModelToTradeEntry(trade);
       } else {
         throw Error("trade doesn't exist");
       }
     })
-    .then((thisTrade) => tradeModelToTradeEntry(thisTrade))
     .then((trade) => {
       // console.log(trade);
       res.status(200).json({ trade });
     })
     .catch((error) => {
       console.error(error);
+      res.status(500).json({ error });
+    });
+});
+
+/**
+ * Save a trade
+ */
+router.post("/id/:tradeId(\\d+)/SaveTrade", (req, res): void => {
+  const { _portfolioId, tradeId } = req.params as typeof req.params & parentParams;
+  const data = req.body as TradeEntry;
+
+  Trade.findByPk(tradeId, { include: [{ model: Statement, as: "statements", required: false }] })
+    .then((trade) => {
+      console.log(JSON.stringify(trade));
+      if (trade)
+        return trade.update({
+          comment: data.comment,
+        });
+      else throw Error("trade not found");
+    })
+    .then((trade) => updateTradeDetails(trade))
+    .then((trade) => res.status(200).json({ trade }))
+    .catch((error) => {
+      console.error(error);
+      logger.log(LogLevel.Error, MODULE + ".SaveTrade", undefined, error);
       res.status(500).json({ error });
     });
 });

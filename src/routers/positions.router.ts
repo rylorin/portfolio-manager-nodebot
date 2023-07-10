@@ -25,102 +25,107 @@ const getPrice = (item: Contract): number => {
 // };
 
 const preparePositions = (portfolio: Portfolio): Promise<(PositionEntry | OptionPositionEntry)[]> => {
-  return portfolio.positions.reduce((p, item) => {
-    return p.then((positions) => {
-      switch (item.contract.secType) {
-        case SecType.STK: {
-          const price = getPrice(item.contract);
-          const value = price * item.quantity;
-          const baseRate =
-            1 / (portfolio.baseRates.find((currency) => currency.currency == item.contract.currency)?.rate || 1);
-          const result: PositionEntry = {
-            id: item.id,
-            openDate: item.createdAt,
-            quantity: item.quantity,
-            contract: {
-              id: item.contract.id,
-              secType: item.contract.secType,
-              symbol: item.contract.symbol,
-              name: item.contract.name,
-              multiplier: 1,
-              currency: item.contract.currency,
-              price: getPrice(item.contract),
-            },
-            trade_id: item.trade_unit_id,
-            price,
-            value,
-            pru: item.cost / item.quantity,
-            cost: item.cost,
-            pnl: value - item.cost,
-            baseRate,
-          };
-          // console.log(item.contract.currency, result);
-          positions.push(result);
-          return positions;
-        }
-        case SecType.OPT:
-          return Option.findByPk(item.contract.id, {
-            include: [
-              { model: Contract, as: "contract" },
-              { model: Contract, as: "stock" },
-            ],
-          }).then((option) => {
-            if (!option) throw Error("Option contract not found");
-            // console.log("option:", JSON.stringify(option));
+  return portfolio.positions.reduce(
+    (p, item: Position) => {
+      return p.then((positions) => {
+        switch (item.contract?.secType) {
+          case SecType.STK: {
             const price = getPrice(item.contract);
-            const value = price * item.quantity * option.multiplier;
-            const engaged =
-              option.strike * option.multiplier * (option.callOrPut == OptionType.Put ? item.quantity : -item.quantity);
-            const duration = (Date.now() - item.createdAt.getTime()) / 1000 / 3600 / 24;
-            const apy = engaged && duration ? ((item.cost - value) / engaged / duration) * 365 : undefined;
+            const value = price * item.quantity;
             const baseRate =
               1 / (portfolio.baseRates.find((currency) => currency.currency == item.contract.currency)?.rate || 1);
-            const result: OptionPositionEntry = {
+            const result: PositionEntry = {
               id: item.id,
-              openDate: item.createdAt,
+              openDate: item.createdAt.getTime(),
               quantity: item.quantity,
               contract: {
                 id: item.contract.id,
                 secType: item.contract.secType,
                 symbol: item.contract.symbol,
                 name: item.contract.name,
-                multiplier: option.multiplier,
+                multiplier: 1,
                 currency: item.contract.currency,
                 price: getPrice(item.contract),
               },
               trade_id: item.trade_unit_id,
               price,
               value,
-              pru: item.cost / item.quantity / option.multiplier,
+              pru: item.cost / item.quantity,
               cost: item.cost,
               pnl: value - item.cost,
               baseRate,
-              option: {
-                id: item.contract.id,
-                symbol: option.stock.symbol,
-                expiration: option.lastTradeDate.toISOString().substring(0, 10),
-                strike: option.strike,
-                type: option.callOrPut,
-                delta: option.delta,
-              },
-              stock: {
-                id: option.stock.id,
-                symbol: option.stock.symbol,
-                price: getPrice(option.stock),
-              },
-              engaged,
-              risk: engaged * Math.abs(option.delta),
-              apy,
             };
             // console.log(item.contract.currency, result);
             positions.push(result);
             return positions;
-          });
-        default:
-          throw Error("unimplemented sectype: " + item.contract.secType);
-      }
-    });
-  }, Promise.resolve([] as (PositionEntry | OptionPositionEntry)[]));
+          }
+          case SecType.OPT:
+            return Option.findByPk(item.contract.id, {
+              include: [
+                { model: Contract, as: "contract" },
+                { model: Contract, as: "stock" },
+              ],
+            }).then((option) => {
+              if (!option) throw Error("Option contract not found");
+              // console.log("option:", JSON.stringify(option));
+              const price = getPrice(item.contract);
+              const value = price * item.quantity * option.multiplier;
+              const engaged =
+                option.strike *
+                option.multiplier *
+                (option.callOrPut == OptionType.Put ? item.quantity : -item.quantity);
+              const duration = (Date.now() - item.createdAt.getTime()) / 1000 / 3600 / 24;
+              const apy = engaged && duration ? ((item.cost - value) / engaged / duration) * 365 : undefined;
+              const baseRate =
+                1 / (portfolio.baseRates.find((currency) => currency.currency == item.contract.currency)?.rate || 1);
+              const result: OptionPositionEntry = {
+                id: item.id,
+                openDate: item.createdAt.getTime(),
+                quantity: item.quantity,
+                contract: {
+                  id: item.contract.id,
+                  secType: item.contract.secType,
+                  symbol: item.contract.symbol,
+                  name: item.contract.name,
+                  multiplier: option.multiplier,
+                  currency: item.contract.currency,
+                  price: getPrice(item.contract),
+                },
+                trade_id: item.trade_unit_id,
+                price,
+                value,
+                pru: item.cost / item.quantity / option.multiplier,
+                cost: item.cost,
+                pnl: value - item.cost,
+                baseRate,
+                option: {
+                  id: item.contract.id,
+                  symbol: option.stock.symbol,
+                  expiration: option.lastTradeDate.toISOString().substring(0, 10),
+                  strike: option.strike,
+                  type: option.callOrPut,
+                  delta: option.delta,
+                },
+                stock: {
+                  id: option.stock.id,
+                  symbol: option.stock.symbol,
+                  price: getPrice(option.stock),
+                },
+                engaged,
+                risk: engaged * Math.abs(option.delta),
+                apy,
+              };
+              // console.log(item.contract.currency, result);
+              positions.push(result);
+              return positions;
+            });
+          default:
+            throw Error("unimplemented sectype: " + item.contract.secType);
+        }
+      });
+    },
+    Promise.resolve([] as (PositionEntry | OptionPositionEntry)[]),
+  );
 };
 
 /**
@@ -253,7 +258,7 @@ router.get("/:positionId(\\d+)/GuessTrade", (req, res): void => {
               contract_id: position.contract.id,
             },
             order: [["statement", "date", "DESC"]],
-            logging: console.log,
+            // logging: console.log,
             include: [{ model: Statement, as: "statement", where: { portfolio_id: portfolioId }, required: true }],
           })
             .then((statement) => {

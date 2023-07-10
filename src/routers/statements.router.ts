@@ -16,10 +16,29 @@ import {
 } from "../models";
 import { TradeStatus, TradeStrategy } from "../models/trade.types";
 import { StatementEntry, StatementsSynthesysEntries } from "./statements.types";
+import { updateTradeDetails } from "./trades.router";
 
 const router = express.Router({ mergeParams: true });
 
 type parentParams = { portfolioId: number };
+
+const updateStatementTrade = (statement: Statement): Promise<Statement> => {
+  return Trade.findByPk(statement.trade_unit_id, {
+    include: [
+      { model: Contract, as: "stock" },
+      { model: Portfolio, as: "portfolio" },
+      { model: Statement, as: "statements" },
+      // { model: Position, as: "positions" },
+    ],
+  })
+    .then((thisTrade): Promise<Statement> => {
+      if (thisTrade) return updateTradeDetails(thisTrade).then(() => statement);
+      return Promise.resolve(statement);
+    })
+    .then((statement) => {
+      return Promise.resolve(statement);
+    });
+};
 
 export const statementModelToStatementEntry = (item: Statement): Promise<StatementEntry> => {
   const statement: StatementEntry = {
@@ -76,43 +95,46 @@ const formatDate = (when: Date): string => {
 };
 
 const makeSynthesys = (statements: Statement[]): Promise<StatementsSynthesysEntries> => {
-  return statements.reduce((p: Promise<StatementsSynthesysEntries>, item: Statement) => {
-    return p.then((value: StatementsSynthesysEntries) => {
-      // console.log('item:', JSON.stringify(item));
-      const idx = formatDate(item.date);
-      if (value[idx] === undefined) {
-        value[idx] = { stocks: 0, options: 0, dividends: 0, interests: 0, total: 0 };
-      }
-      switch (item.statementType) {
-        case StatementTypes.EquityStatement:
-          return EquityStatement.findByPk(item.id).then((statement) => {
-            value[idx].stocks += statement ? statement.realizedPnL * item.fxRateToBase : 0;
-            value[idx].total += statement ? statement.realizedPnL * item.fxRateToBase : 0;
-            // console.log(value);
-            return value;
-          });
-          break;
-        case StatementTypes.OptionStatement:
-          return OptionStatement.findByPk(item.id).then((statement) => {
-            value[idx].options += statement ? statement.realizedPnL * item.fxRateToBase : 0;
-            value[idx].total += statement ? statement.realizedPnL * item.fxRateToBase : 0;
-            // console.log(value);
-            return value;
-          });
-          break;
-        case StatementTypes.DividendStatement:
-          value[idx].dividends += item.amount * item.fxRateToBase;
-          value[idx].total += item.amount * item.fxRateToBase;
-          break;
-        case StatementTypes.InterestStatement:
-          value[idx].interests += item.amount * item.fxRateToBase;
-          value[idx].total += item.amount * item.fxRateToBase;
-          break;
-      }
-      // console.log(value);
-      return Promise.resolve(value);
-    });
-  }, Promise.resolve({} as StatementsSynthesysEntries));
+  return statements.reduce(
+    (p: Promise<StatementsSynthesysEntries>, item: Statement) => {
+      return p.then((value: StatementsSynthesysEntries) => {
+        // console.log('item:', JSON.stringify(item));
+        const idx = formatDate(item.date);
+        if (value[idx] === undefined) {
+          value[idx] = { stocks: 0, options: 0, dividends: 0, interests: 0, total: 0 };
+        }
+        switch (item.statementType) {
+          case StatementTypes.EquityStatement:
+            return EquityStatement.findByPk(item.id).then((statement) => {
+              value[idx].stocks += statement ? statement.realizedPnL * item.fxRateToBase : 0;
+              value[idx].total += statement ? statement.realizedPnL * item.fxRateToBase : 0;
+              // console.log(value);
+              return value;
+            });
+            break;
+          case StatementTypes.OptionStatement:
+            return OptionStatement.findByPk(item.id).then((statement) => {
+              value[idx].options += statement ? statement.realizedPnL * item.fxRateToBase : 0;
+              value[idx].total += statement ? statement.realizedPnL * item.fxRateToBase : 0;
+              // console.log(value);
+              return value;
+            });
+            break;
+          case StatementTypes.DividendStatement:
+            value[idx].dividends += item.amount * item.fxRateToBase;
+            value[idx].total += item.amount * item.fxRateToBase;
+            break;
+          case StatementTypes.InterestStatement:
+            value[idx].interests += item.amount * item.fxRateToBase;
+            value[idx].total += item.amount * item.fxRateToBase;
+            break;
+        }
+        // console.log(value);
+        return Promise.resolve(value);
+      });
+    },
+    Promise.resolve({} as StatementsSynthesysEntries),
+  );
 };
 
 /**
@@ -194,14 +216,17 @@ router.get("/month/:year(\\d+)/:month(\\d+)", (req, res): void => {
     include: [{ model: Contract }, { model: Portfolio }, { model: Trade }],
   })
     .then((statements: Statement[]): Promise<StatementEntry[]> => {
-      return statements.reduce((p: Promise<StatementEntry[]>, item: Statement) => {
-        return p.then((value: StatementEntry[]) => {
-          return statementModelToStatementEntry(item).then((statement) => {
-            value.push(statement);
-            return value;
+      return statements.reduce(
+        (p: Promise<StatementEntry[]>, item: Statement) => {
+          return p.then((value: StatementEntry[]) => {
+            return statementModelToStatementEntry(item).then((statement) => {
+              value.push(statement);
+              return value;
+            });
           });
-        });
-      }, Promise.resolve([] as StatementEntry[]));
+        },
+        Promise.resolve([] as StatementEntry[]),
+      );
     })
     .then((statemententries: StatementEntry[]) => res.status(200).json({ statemententries }))
     .catch((error) => res.status(500).json({ error }));
@@ -233,6 +258,7 @@ router.get("/:statementId(\\d+)/CreateTrade", (req, res): void => {
         throw Error("statement doesn't exist");
       }
     })
+    .then((statement) => updateStatementTrade(statement))
     .then((statement) => res.status(200).json({ statement }))
     .catch((error) => res.status(500).json({ error }));
 });
@@ -310,6 +336,7 @@ router.get("/:statementId(\\d+)/GuessTrade", (req, res): void => {
         throw Error("statement doesn't exist");
       }
     })
+    .then((statement) => updateStatementTrade(statement))
     .then((statement) => res.status(200).json({ statement }))
     .catch((error) => res.status(500).json({ error }));
 });
@@ -330,6 +357,7 @@ router.get("/:statementId(\\d+)/AddToTrade/:tradeId(\\d+)", (req, res): void => 
         throw Error("statement doesn't exist");
       }
     })
+    .then((statement) => updateStatementTrade(statement))
     .then((statement) => res.status(200).json({ statement }))
     .catch((error) => res.status(500).json({ error }));
 });
@@ -348,6 +376,7 @@ router.get("/:statementId(\\d+)/UnlinkTrade", (req, res): void => {
         throw Error("statement not found: " + statementId);
       }
     })
+    .then((statement) => updateStatementTrade(statement))
     .then((statement) => res.status(200).json({ statement }))
     .catch((error) => res.status(500).json({ error }));
 });
@@ -356,8 +385,8 @@ router.get("/:statementId(\\d+)/UnlinkTrade", (req, res): void => {
  * Get a statement
  */
 router.get("/id/:statementId(\\d+)", (req, res): void => {
-  const { portfolioId, statementId } = req.params as typeof req.params & parentParams;
-  console.log("statement", portfolioId, statementId);
+  const { _portfolioId, statementId } = req.params as typeof req.params & parentParams;
+  // console.log("statement", portfolioId, statementId);
   Statement.findByPk(statementId, {
     include: [{ model: Contract }, { model: Portfolio }],
   })
@@ -383,6 +412,8 @@ router.get("/:statementId(\\d+)/DeleteStatement", (req, res): void => {
       if (statement) {
         // console.log(JSON.stringify(statement));
         switch (statement.statementType) {
+          case StatementTypes.EquityStatement:
+            return statement;
           case StatementTypes.TaxStatement:
             return TaxStatement.destroy({ where: { id: statement.id } }).then((_count) => statement);
             break;
