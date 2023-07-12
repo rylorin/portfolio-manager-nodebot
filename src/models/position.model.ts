@@ -71,7 +71,7 @@ export class Position extends Model<
   /** Optional related trade */
   // @ForeignKey(() => Trade)
   // @Column
-  declare trade_unit_id?: ForeignKey<Trade["id"]>;
+  declare trade_unit_id: ForeignKey<Trade["id"]> | null;
   @BelongsTo(() => Trade, "trade_unit_id")
   declare trade?: Trade;
 

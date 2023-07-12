@@ -86,12 +86,13 @@ const PositionsIndex: FunctionComponent<PositionsIndexProps> = ({ ..._rest }): J
                         <Link to={`/portfolio/${portfolioId}/trades/id/${item.trade_id}`} as={RouterLink}>
                           {item.trade_id}
                         </Link>
-                        <Form method="post" action={`UnlinkTrade/${item.id}`} className="inline">
+                        <Form method="post" action={`${item.id}/UnlinkTrade`} className="inline">
                           <IconButton
                             aria-label="Remove trade association"
                             icon={<SmallCloseIcon />}
                             size="xs"
                             variant="ghost"
+                            type="submit"
                           />
                         </Form>
                       </>

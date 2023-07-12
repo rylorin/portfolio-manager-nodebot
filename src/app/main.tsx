@@ -19,6 +19,7 @@ import {
   positionDelete,
   positionGuessTrade,
   positionSave,
+  positionUnlinkTrade,
 } from "./components/Portfolio/Position/actions";
 import {
   positionShowLoader,
@@ -143,6 +144,7 @@ const router = createBrowserRouter([
                   { path: "DeletePosition/:positionId", action: positionDelete },
                   { path: "GuessTrade/:positionId", action: positionGuessTrade },
                   { path: "AddToTrade/:positionId/:tradeId", action: positionAddToTrade },
+                  { path: ":positionId/UnlinkTrade", action: positionUnlinkTrade },
                 ],
               },
               {

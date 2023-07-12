@@ -47,7 +47,7 @@ const preparePositions = (portfolio: Portfolio): Promise<(PositionEntry | Option
                 currency: item.contract.currency,
                 price: getPrice(item.contract),
               },
-              trade_id: item.trade_unit_id,
+              trade_id: item.trade_unit_id ? item.trade_unit_id : undefined,
               price,
               value,
               pru: item.cost / item.quantity,
@@ -91,7 +91,7 @@ const preparePositions = (portfolio: Portfolio): Promise<(PositionEntry | Option
                   currency: item.contract.currency,
                   price: getPrice(item.contract),
                 },
-                trade_id: item.trade_unit_id,
+                trade_id: item.trade_unit_id ? item.trade_unit_id : undefined,
                 price,
                 value,
                 pru: item.cost / item.quantity / option.multiplier,
@@ -299,6 +299,25 @@ router.get("/:positionId(\\d+)/AddToTrade/:tradeId(\\d+)", (req, res): void => {
           return position.update({ trade_unit_id: parseInt(tradeId) });
         } else throw Error("position not found: " + positionId);
       } else throw Error("Portfolio or position not found");
+    })
+    .then((position) => res.status(200).json({ position }))
+    .catch((error) => res.status(500).json({ error }));
+});
+
+/**
+ * Remove a position from it's trade
+ */
+router.get("/:positionId(\\d+)/UnlinkTrade", (req, res): void => {
+  const { _portfolioId, positionId } = req.params as typeof req.params & parentParams;
+  logger.log(LogLevel.Debug, MODULE + ".UnlinkTrade", undefined, req.params);
+  Position.findByPk(positionId)
+    .then((position) => {
+      if (position) {
+        return position.update({ trade_unit_id: null });
+      } else {
+        console.error("Position not found:", positionId);
+        throw Error("Position not found: " + positionId);
+      }
     })
     .then((position) => res.status(200).json({ position }))
     .catch((error) => res.status(500).json({ error }));

@@ -61,6 +61,7 @@ export const positionGuessTrade = ({ request, params }: ActionFunctionArgs): Pro
 /**
  * Add a position to a given trade
  * @param param
+ * @param request
  * @returns
  */
 export const positionAddToTrade = ({ request, params }: ActionFunctionArgs): Promise<Response> => {
@@ -70,6 +71,25 @@ export const positionAddToTrade = ({ request, params }: ActionFunctionArgs): Pro
     .then((formData: Iterable<readonly [PropertyKey, any]>) => {
       const _data = Object.fromEntries(formData);
       return fetch(`/api/portfolio/${portfolioId}/positions/${positionId}/AddToTrade/${tradeId}`);
+    })
+    .then((response: Response) => response.json())
+    .then((_data) => redirect("../"));
+};
+
+/**
+ * Unlink trade from position
+ * @param params
+ * @param request
+ * @returns
+ */
+export const positionUnlinkTrade = ({ request, params }: ActionFunctionArgs): Promise<Response> => {
+  const { portfolioId, positionId } = params;
+  // console.log("positionUnlinkTrade", portfolioId, positionId);
+  return request
+    .formData()
+    .then((formData: Iterable<readonly [PropertyKey, any]>) => {
+      const _data = Object.fromEntries(formData);
+      return fetch(`/api/portfolio/${portfolioId}/positions/${positionId}/UnlinkTrade`);
     })
     .then((response: Response) => response.json())
     .then((_data) => redirect("../"));

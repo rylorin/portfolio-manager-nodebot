@@ -37,6 +37,7 @@ export const statementGuessTrade = ({ request, params }: ActionFunctionArgs): Pr
 /**
  * Unlink current statement from trade
  * @param params
+ * @param request
  * @returns
  */
 export const statementUnlinkTrade = ({ request, params }: ActionFunctionArgs): Promise<Response> => {
