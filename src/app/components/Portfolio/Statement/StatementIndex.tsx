@@ -67,7 +67,7 @@ const StatementIndex: FunctionComponent<StatementIndexProps> = ({ items, ..._res
                 <Tr key={item.id}>
                   <Td>
                     <Tooltip label={new Date(item.date).toLocaleTimeString()} placement="auto" hasArrow={true}>
-                      <Link to={`../id/${item.id}`} as={RouterLink}>
+                      <Link to={`/portfolio/${portfolioId}/statements/id/${item.id}`} as={RouterLink}>
                         {new Date(item.date).toLocaleDateString()}
                       </Link>
                     </Tooltip>
@@ -83,7 +83,7 @@ const StatementIndex: FunctionComponent<StatementIndexProps> = ({ items, ..._res
                     <Number value={item.fees} decimals={2} />
                   </Td>
                   <Td>
-                    <Link to={`../${portfolioId}/symbol/${item.underlying?.id}`} as={RouterLink}>
+                    <Link to={`/${portfolioId}/symbol/${item.underlying?.id}`} as={RouterLink}>
                       {item.underlying?.symbol}
                     </Link>
                   </Td>

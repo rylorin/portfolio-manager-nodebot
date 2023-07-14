@@ -49,7 +49,7 @@ const PortfolioEdit: FunctionComponent<PortfolioShowProps> = ({ ..._rest }): JSX
         <Center w="40px" h="40px">
           <ArrowBackIcon onClick={(): void => navigate(-1)} />
         </Center>
-        <RouterLink to={`../${thisPortfolio.id}`}>
+        <RouterLink to={`../`}>
           <Center w="40px" h="40px">
             <CheckIcon />
           </Center>

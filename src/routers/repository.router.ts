@@ -18,6 +18,18 @@ router.get("/options/:optionId(\\d+)", (req, res): void => {
 });
 
 /**
+ * Fetch a single contract
+ */
+router.get("/contracts/:contractId(\\d+)", (req, res): void => {
+  const { contractId } = req.params;
+  Contract.findByPk(contractId)
+    .then((contract) => {
+      res.status(200).json({ contract });
+    })
+    .catch((error) => res.status(500).json({ error }));
+});
+
+/**
  * Catch all
  */
 router.get("*", (req, _res, next): void => {

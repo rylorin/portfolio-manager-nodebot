@@ -39,7 +39,7 @@ export const statementSummaryLoaderAll = ({ params }: LoaderFunctionArgs): Promi
 };
 
 /**
- * Load statement list content
+ * Load a single statement
  * @param params
  * @returns
  */
