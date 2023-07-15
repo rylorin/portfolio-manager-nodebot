@@ -16,5 +16,7 @@ export type StatementEntry = {
   trade_id: number | undefined;
   underlying: { id: number; symbol: string } | undefined;
   quantity: number | undefined;
-  option: { id: number; symbol: string; expiry: number; strike: number; callOrPut: "C" | "P" } | undefined;
+  option:
+    | { id: number; symbol: string; expiry: number; strike: number; callOrPut: "C" | "P"; multiplier: number }
+    | undefined;
 };

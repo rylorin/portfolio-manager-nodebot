@@ -199,7 +199,7 @@ const router = createBrowserRouter([
                     children: [
                       { index: true, Component: TradeShow, loader: tradesShowLoader },
                       { path: "edit", Component: TradeEdit, loader: tradesShowLoader, action: tradeSave },
-                      { path: "Delete", action: tradeDelete },
+                      { path: "delete", action: tradeDelete },
                     ],
                   },
                   {

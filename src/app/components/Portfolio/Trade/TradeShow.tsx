@@ -15,7 +15,7 @@ import {
   VStack,
 } from "@chakra-ui/react";
 import React, { FunctionComponent } from "react";
-import { Link as RouterLink, useLoaderData, useNavigate, useParams } from "react-router-dom";
+import { Form, Link as RouterLink, useLoaderData, useNavigate, useParams } from "react-router-dom";
 import { TradeEntry } from "../../../../routers/trades.types";
 import { formatNumber } from "../../../utils";
 import Number from "../../Number/Number";
@@ -141,11 +141,12 @@ const TradeShow: FunctionComponent<TradeShowProps> = ({ ..._rest }): JSX.Element
               <EditIcon />
             </Center>
           </RouterLink>
-          <RouterLink to="Delete">
-            <Center w="40px" h="40px">
-              <DeleteIcon />
-            </Center>
-          </RouterLink>
+          {/* <Form method="post" action="edit" className="inline">
+            <IconButton aria-label="Remove trade association" icon={<EditIcon />} variant="ghost" type="submit" />
+          </Form> */}
+          <Form method="post" action="delete" className="inline">
+            <IconButton aria-label="Remove trade association" icon={<DeleteIcon />} variant="ghost" type="submit" />
+          </Form>
         </Flex>
         {thisTrade.positions && thisTrade.positions.length && <PositionsTable content={thisTrade.positions} />}
         {thisTrade.statements && <StatementsTable content={thisTrade.statements} />}

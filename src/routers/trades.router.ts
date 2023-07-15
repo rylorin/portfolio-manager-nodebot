@@ -27,8 +27,14 @@ export const updateTradeDetails = (thisTrade: Trade): Promise<Trade> => {
       .reduce(
         (p, item): Promise<Trade> =>
           p.then((thisTrade) => {
+            let risk = 0;
+            thisTrade.risk = 0;
             return statementModelToStatementEntry(item).then((statement_entry) => {
               switch (statement_entry.type) {
+                case StatementTypes.EquityStatement:
+                  risk += statement_entry.quantity ;
+                  thisTrade.risk = Math.max(Math.abs(risk), thisTrade.risk);
+                  break;
                 case StatementTypes.OptionStatement:
                   if (!thisTrade.strategy) {
                     // eslint-disable-next-line @typescript-eslint/no-unnecessary-type-assertion
@@ -38,6 +44,9 @@ export const updateTradeDetails = (thisTrade: Trade): Promise<Trade> => {
                       else thisTrade.strategy = TradeStrategy["long put"];
                     }
                   }
+                  risk +=
+                    statement_entry.option.strike * statement_entry.option.multiplier * statement_entry.quantity;
+                  thisTrade.risk = Math.max(Math.abs(risk), thisTrade.risk);
                   break;
               }
               // eslint-disable-next-line @typescript-eslint/no-unnecessary-type-assertion
@@ -333,11 +342,18 @@ router.post("/id/:tradeId(\\d+)/SaveTrade", (req, res): void => {
  * Delete a trade
  */
 router.delete("/id/:tradeId(\\d+)/DeleteTrade", (req, res): void => {
-  const { _portfolioId, tradeId } = req.params as typeof req.params & parentParams;
+  const { portfolioId, tradeId } = req.params as typeof req.params & parentParams;
+  logger.log(LogLevel.Debug, MODULE + ".SaveTrade", undefined, portfolioId, tradeId);
 
-  Trade.findByPk(tradeId, {
-    include: [{ model: Statement, as: "statements", required: false, include: [{ model: Contract, as: "stock" }] }],
-  })
+  Position.update({ trade_unit_id: null }, { where: { portfolio_id: portfolioId, trade_unit_id: tradeId } })
+    .then(() =>
+      Statement.update({ trade_unit_id: null }, { where: { portfolio_id: portfolioId, trade_unit_id: tradeId } }),
+    )
+    .then(() =>
+      Trade.findByPk(tradeId, {
+        include: [{ model: Statement, as: "statements", required: false, include: [{ model: Contract, as: "stock" }] }],
+      }),
+    )
     .then((trade) => {
       if (trade) return trade.destroy();
       else throw Error("trade not found");

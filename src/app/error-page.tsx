@@ -1,3 +1,4 @@
+import { Text } from "@chakra-ui/react";
 import React from "react";
 import { isRouteErrorResponse, useRouteError } from "react-router-dom";
 import Layout from "./components/Layout/Layout";
@@ -14,6 +15,7 @@ export default function ErrorPage(): JSX.Element {
         <p>
           <strong>{isRouteErrorResponse(error) && <>Error {error.status} </>}</strong>
           <i>{error.statusText || error.message}</i>
+          <Text>{error.error.message}</Text>
         </p>
       </div>
     </Layout>

@@ -84,6 +84,7 @@ export const statementModelToStatementEntry = (item: Statement): Promise<Stateme
             strike: thisStatement.option.strike,
             expiry: thisStatement.option.expiry,
             callOrPut: thisStatement.option.callOrPut,
+            multiplier: thisStatement.option.multiplier,
           };
         }
         return statement;
