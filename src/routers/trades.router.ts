@@ -32,7 +32,7 @@ export const updateTradeDetails = (thisTrade: Trade): Promise<Trade> => {
             return statementModelToStatementEntry(item).then((statement_entry) => {
               switch (statement_entry.type) {
                 case StatementTypes.EquityStatement:
-                  risk += statement_entry.quantity ;
+                  risk += statement_entry.amount;
                   thisTrade.risk = Math.max(Math.abs(risk), thisTrade.risk);
                   break;
                 case StatementTypes.OptionStatement:
