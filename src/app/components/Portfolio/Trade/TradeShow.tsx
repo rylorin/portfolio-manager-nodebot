@@ -6,7 +6,8 @@ import { TradeEntry } from "../../../../routers/trades.types";
 import { formatNumber } from "../../../utils";
 import Number from "../../Number/Number";
 import { ContractLink } from "../Contract/links";
-import StatementIndex from "../Statement/StatementsTable";
+import PositionsTable from "../Position/PositionsTable";
+import StatementsTable from "../Statement/StatementsTable";
 import { tradeStatus2String, tradeStrategy2String } from "../utils";
 
 type TradeShowProps = Record<string, never>;
@@ -132,7 +133,8 @@ const TradeShow: FunctionComponent<TradeShowProps> = ({ ..._rest }): JSX.Element
             </Center>
           </RouterLink>
         </Flex>
-        <StatementIndex content={thisTrade.statements} />
+        {thisTrade.positions && <PositionsTable content={thisTrade.positions} />}
+        {thisTrade.statements && <StatementsTable content={thisTrade.statements} />}
       </VStack>
     </>
   );

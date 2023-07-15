@@ -1,4 +1,5 @@
 import { TradeStatus, TradeStrategy } from "../models";
+import { PositionEntry } from "./positions.types";
 import { StatementEntry } from "./statements.types";
 
 export type TradeEntry = {
@@ -16,9 +17,10 @@ export type TradeEntry = {
   pnl: number | undefined;
   apy: number | undefined;
   comment: string | undefined;
-  // fxRateToBase: number;
   statements: StatementEntry[] | undefined;
+  positions: PositionEntry[] | undefined;
 };
+
 export type TradeMonthlySynthesysEntry = {
   count: number;
   success: number;

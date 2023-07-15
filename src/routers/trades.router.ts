@@ -2,8 +2,9 @@ import { OptionType } from "@stoqey/ib";
 import express from "express";
 import { Op } from "sequelize";
 import logger, { LogLevel } from "../logger";
-import { Contract, Portfolio, Position, Statement, StatementTypes, Trade, Trade as TradeModel } from "../models";
+import { Contract, Currency, Portfolio, Position, Statement, StatementTypes, Trade } from "../models";
 import { TradeStatus, TradeStrategy } from "../models/trade.types";
+import { preparePositions } from "./positions.router";
 import { statementModelToStatementEntry } from "./statements.router";
 import { StatementEntry } from "./statements.types";
 import { TradeEntry, TradeMonthlySynthesys, TradeSynthesys } from "./trades.types";
@@ -51,9 +52,9 @@ export const updateTradeDetails = (thisTrade: Trade): Promise<Trade> => {
   return Promise.resolve(thisTrade);
 };
 
-export const tradeModelToTradeEntry = (thisTrade: TradeModel): Promise<TradeEntry> => {
-  const apy = thisTrade.risk && thisTrade.PnL ? (thisTrade.PnL / thisTrade.risk / thisTrade.duration) * 365 : undefined;
-  const trade: TradeEntry = {
+export const tradeModelToTradeEntry = (thisTrade: Trade): Promise<TradeEntry> => {
+  // const apy = thisTrade.risk && thisTrade.PnL ? (thisTrade.PnL / thisTrade.risk / thisTrade.duration) * 365 : undefined;
+  return Promise.resolve({
     id: thisTrade.id,
     symbol_id: thisTrade.stock.id,
     symbol: thisTrade.stock.symbol,
@@ -66,28 +67,50 @@ export const tradeModelToTradeEntry = (thisTrade: TradeModel): Promise<TradeEntr
     strategyLabel: TradeStrategy[thisTrade.strategy],
     risk: thisTrade.risk,
     pnl: thisTrade.PnL,
-    apy,
+    apy: thisTrade.risk && thisTrade.PnL ? (thisTrade.PnL / thisTrade.risk / thisTrade.duration) * 365 : undefined,
     comment: thisTrade.comment,
     statements: undefined,
-  };
-  if (thisTrade.statements) {
-    return thisTrade.statements
-      .reduce(
-        (p, item): Promise<StatementEntry[]> => {
-          return p.then((statements) => {
-            return statementModelToStatementEntry(item).then((statement) => {
-              statements.push(statement);
-              return statements;
-            });
+    positions: undefined,
+  } as TradeEntry)
+    .then((trade_entry) => {
+      if (thisTrade.statements) {
+        return thisTrade.statements
+          .reduce(
+            (p, item): Promise<StatementEntry[]> => {
+              return p.then((statements) => {
+                return statementModelToStatementEntry(item).then((statement) => {
+                  statements.push(statement);
+                  return statements;
+                });
+              });
+            },
+            Promise.resolve([] as StatementEntry[]),
+          )
+          .then((statements) => {
+            trade_entry.statements = statements;
+            return trade_entry;
           });
-        },
-        Promise.resolve([] as StatementEntry[]),
-      )
-      .then((statements) => {
-        trade.statements = statements;
-        return trade;
+      } else return trade_entry;
+    })
+    .then((trade_entry) => {
+      return Portfolio.findByPk(thisTrade.portfolio_id, {
+        include: [
+          {
+            model: Position,
+            as: "positions",
+            where: { trade_unit_id: thisTrade.id },
+            include: [{ model: Contract, as: "contract" }],
+          },
+          { model: Currency, as: "baseRates" },
+        ],
+      }).then((portfolio) => {
+        if (!portfolio) throw Error("portfolio not found: " + thisTrade.portfolio_id);
+        return preparePositions(portfolio).then((positions) => {
+          trade_entry.positions = positions;
+          return trade_entry;
+        });
       });
-  } else return Promise.resolve(trade);
+    });
 };
 
 const formatDate = (when: Date): string => {
@@ -219,7 +242,7 @@ router.get("/id/:tradeId(\\d+)", (req, res): void => {
       { model: Contract, as: "stock" },
       { model: Portfolio, as: "portfolio" },
       { model: Statement, as: "statements", include: [{ model: Contract, as: "stock" }] },
-      { model: Position, as: "positions" },
+      { model: Position, as: "positions", include: [{ model: Contract, as: "contract" }] },
     ],
     // logging: console.log,
   })

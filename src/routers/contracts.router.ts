@@ -125,11 +125,11 @@ router.get("/id/:contractId(\\d+)", (req, res): void => {
           return contract;
         });
     })
-    .then((value) => {
-      // Display value for debugging
-      console.log(value);
-      return value;
-    })
+    // .then((value) => {
+    //   // Display value for debugging
+    //   console.log(value);
+    //   return value;
+    // })
     .then((contract) => res.status(200).json({ contract }))
     .catch((error) => {
       console.error(error);
