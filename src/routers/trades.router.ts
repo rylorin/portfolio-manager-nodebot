@@ -33,7 +33,8 @@ export const updateTradeDetails = (thisTrade: Trade): Promise<Trade> => {
               switch (statement_entry.type) {
                 case StatementTypes.EquityStatement:
                   risk += statement_entry.amount;
-                  thisTrade.risk = Math.max(Math.abs(risk), thisTrade.risk);
+                  // eslint-disable-next-line @typescript-eslint/no-unnecessary-type-assertion
+                  thisTrade.risk = Math.max(Math.abs(risk), thisTrade.risk!);
                   break;
                 case StatementTypes.OptionStatement:
                   if (!thisTrade.strategy) {
@@ -44,9 +45,10 @@ export const updateTradeDetails = (thisTrade: Trade): Promise<Trade> => {
                       else thisTrade.strategy = TradeStrategy["long put"];
                     }
                   }
-                  risk +=
-                    statement_entry.option.strike * statement_entry.option.multiplier * statement_entry.quantity;
-                  thisTrade.risk = Math.max(Math.abs(risk), thisTrade.risk);
+                  risk += // eslint-disable-next-line @typescript-eslint/no-unnecessary-type-assertion
+                    statement_entry.option!.strike * statement_entry.option!.multiplier * statement_entry.quantity!;
+                  // eslint-disable-next-line @typescript-eslint/no-unnecessary-type-assertion
+                  thisTrade.risk = Math.max(Math.abs(risk), thisTrade.risk!);
                   break;
               }
               // eslint-disable-next-line @typescript-eslint/no-unnecessary-type-assertion
