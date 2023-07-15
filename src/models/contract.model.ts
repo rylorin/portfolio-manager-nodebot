@@ -1,4 +1,4 @@
-import { Optional } from "sequelize";
+import { CreationOptional, InferAttributes, InferCreationAttributes, Optional } from "sequelize";
 import { AllowNull, Column, DataType, Model, Table } from "sequelize-typescript";
 import { ContractType } from "./contract.types";
 
@@ -23,8 +23,14 @@ export type ContractAttributes = {
 export type ContractCreationAttributes = Optional<ContractAttributes, "id" | "updatedAt">;
 
 @Table({ tableName: "contract", timestamps: true })
-export class Contract extends Model<ContractAttributes, ContractCreationAttributes> {
-  declare id: number;
+export class Contract extends Model<InferAttributes<Contract>, InferCreationAttributes<Contract, { omit: "name" }>> {
+  // id can be undefined during creation when using `autoIncrement`
+  declare id: CreationOptional<number>;
+  // timestamps!
+  // createdAt can be undefined during creation
+  declare createdAt: CreationOptional<Date>;
+  // updatedAt can be undefined during creation
+  declare updatedAt: CreationOptional<Date>;
 
   /** The unique IB contract identifier. */
   @Column({ type: DataType.INTEGER, field: "con_id" })
@@ -53,16 +59,16 @@ export class Contract extends Model<ContractAttributes, ContractCreationAttribut
   declare name: string;
 
   @Column({ type: DataType.FLOAT(6, 3) })
-  declare price: number;
+  declare price?: number;
 
   @Column({ type: DataType.FLOAT(6, 3) })
-  declare bid: number;
+  declare bid?: number;
 
   @Column({ type: DataType.FLOAT(6, 3) })
-  declare ask: number;
+  declare ask?: number;
 
   @Column({ type: DataType.FLOAT(6, 3), field: "previous_close_price" })
-  declare previousClosePrice: number;
+  declare previousClosePrice?: number;
 
   get livePrice(): number {
     let value = undefined;
@@ -81,4 +87,7 @@ export class Contract extends Model<ContractAttributes, ContractCreationAttribut
 
   @Column({ type: DataType.FLOAT(6, 3), field: "fifty_two_week_high" })
   declare fiftyTwoWeekHigh?: number;
+
+  // @HasMany(() => Position, { sourceKey: "id", foreignKey: "contract_id" })
+  // declare positions: Position[];
 }

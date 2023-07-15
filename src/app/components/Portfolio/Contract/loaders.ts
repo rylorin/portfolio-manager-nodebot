@@ -8,7 +8,7 @@ import { ContractEntry } from "../../../../routers/repository.types";
  */
 export const contractShowLoader = ({ params }: LoaderFunctionArgs): Promise<ContractEntry> => {
   const { portfolioId, contractId } = params;
-  return fetch(`/api/portfolio/${portfolioId}/contract/id/${contractId}`)
+  return fetch(`/api/portfolio/${portfolioId}/contracts/id/${contractId}`)
     .then((response) => response.json())
     .then((data) => data.contract as ContractEntry);
 };

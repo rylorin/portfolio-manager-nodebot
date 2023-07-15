@@ -31,6 +31,7 @@ export const updateTradeDetails = (thisTrade: Trade): Promise<Trade> => {
     if (!thisTrade.openingDate) thisTrade.openingDate = items[0].date;
     if (thisTrade.status == TradeStatus.closed && !thisTrade.closingDate)
       thisTrade.openingDate = items[items.length - 1].date;
+    // thisTrade.PnL=0;
     return items
       .reduce(
         (p, item): Promise<Trade> =>
@@ -262,9 +263,12 @@ router.post("/id/:tradeId(\\d+)/SaveTrade", (req, res): void => {
 
   Trade.findByPk(tradeId, { include: [{ model: Statement, as: "statements", required: false }] })
     .then((trade) => {
-      console.log(JSON.stringify(trade));
+      // console.log(JSON.stringify(trade));
       if (trade)
         return trade.update({
+          status: data.status,
+          strategy: data.strategy,
+          risk: data.risk,
           comment: data.comment,
         });
       else throw Error("trade not found");

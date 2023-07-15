@@ -1,16 +1,18 @@
 import { ArrowBackIcon, DeleteIcon, EditIcon } from "@chakra-ui/icons";
-import { Center, Flex, IconButton, Text, VStack } from "@chakra-ui/react";
+import { Center, Flex, IconButton, Link, Text, VStack } from "@chakra-ui/react";
 import React, { FunctionComponent } from "react";
-import { Link as RouterLink, useLoaderData, useNavigate } from "react-router-dom";
+import { Link as RouterLink, useLoaderData, useNavigate, useParams } from "react-router-dom";
 import { TradeEntry } from "../../../../routers/trades.types";
 import { formatNumber } from "../../../utils";
 import Number from "../../Number/Number";
+import { ContractLink } from "../Contract/links";
 import StatementIndex from "../Statement/StatementIndex";
 import { tradeStatus2String, tradeStrategy2String } from "../utils";
 
 type TradeShowProps = Record<string, never>;
 
 const TradeShow: FunctionComponent<TradeShowProps> = ({ ..._rest }): JSX.Element => {
+  const { portfolioId } = useParams();
   const thisTrade = useLoaderData() as TradeEntry;
   const navigate = useNavigate();
 
@@ -71,7 +73,9 @@ const TradeShow: FunctionComponent<TradeShowProps> = ({ ..._rest }): JSX.Element
             Symbol:
           </Text>
           <Text w="200px" textAlign="right">
-            {thisTrade.symbol}
+            <Link to={ContractLink.toItem(portfolioId, thisTrade.symbol_id)} as={RouterLink}>
+              {thisTrade.symbol}
+            </Link>
           </Text>
         </Flex>
         <Flex justifyContent="center" gap="2">
@@ -128,7 +132,7 @@ const TradeShow: FunctionComponent<TradeShowProps> = ({ ..._rest }): JSX.Element
             </Center>
           </RouterLink>
         </Flex>
-        <StatementIndex items={thisTrade.statements} />
+        <StatementIndex content={thisTrade.statements} />
       </VStack>
     </>
   );

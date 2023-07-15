@@ -48,7 +48,7 @@ import {
 import TradeEdit from "./components/Portfolio/Trade/TradeEdit";
 import TradeShow from "./components/Portfolio/Trade/TradeShow";
 import TradeSummary from "./components/Portfolio/Trade/TradeSummary";
-import TradesIndexTable from "./components/Portfolio/Trade/TradesIndex";
+import TradesTable from "./components/Portfolio/Trade/TradesTable";
 import { tradeSave } from "./components/Portfolio/Trade/actions";
 import {
   tradeSummaryLoader12M,
@@ -203,7 +203,7 @@ const router = createBrowserRouter([
                   },
                   {
                     path: "month/:month/:year",
-                    Component: TradesIndexTable,
+                    Component: TradesTable,
                     loader: tradesMonthLoader,
                   },
                 ],
@@ -215,7 +215,7 @@ const router = createBrowserRouter([
                 action: PortfolioAction,
                 children: [
                   { index: true },
-                  { path: ":contractId", Component: ContractShow, loader: contractShowLoader },
+                  { path: "id/:contractId", Component: ContractShow, loader: contractShowLoader },
                 ],
               },
             ],

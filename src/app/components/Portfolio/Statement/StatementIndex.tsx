@@ -24,17 +24,18 @@ import { FunctionComponent, default as React } from "react";
 import { Form, Link as RouterLink, useLoaderData, useParams } from "react-router-dom";
 import { StatementEntry } from "../../../../routers/statements.types";
 import Number from "../../Number/Number";
+import { TradeLink } from "../Trade/links";
 
-type StatementIndexProps = { items?: StatementEntry[] };
+type Props = { content?: StatementEntry[] };
 
 /**
  * Statements list component
- * @param param0
+ * @param param
  * @returns
  */
-const StatementIndex: FunctionComponent<StatementIndexProps> = ({ items, ..._rest }): JSX.Element => {
+const StatementIndex: FunctionComponent<Props> = ({ content, ..._rest }): JSX.Element => {
   const { portfolioId } = useParams();
-  const theStatements = items || (useLoaderData() as StatementEntry[]);
+  const theStatements = content || (useLoaderData() as StatementEntry[]);
   let previousId: number;
 
   const savePrevious = (value: number): undefined => {
@@ -83,14 +84,14 @@ const StatementIndex: FunctionComponent<StatementIndexProps> = ({ items, ..._res
                     <Number value={item.fees} decimals={2} />
                   </Td>
                   <Td>
-                    <Link to={`/${portfolioId}/symbol/${item.underlying?.id}`} as={RouterLink}>
+                    <Link to={`/portfolio/${portfolioId}/symbols/${item.underlying?.id}`} as={RouterLink}>
                       {item.underlying?.symbol}
                     </Link>
                   </Td>
                   <Td>
                     {item.underlying && item.trade_id && (
                       <>
-                        <Link to={`/portfolio/${portfolioId}/trades/id/${item.trade_id}`} as={RouterLink}>
+                        <Link to={TradeLink.toItem(portfolioId, item.trade_id)} as={RouterLink}>
                           {item.trade_id}
                         </Link>
                         <Form method="post" action={`UnlinkTrade/${item.id}`} className="inline">

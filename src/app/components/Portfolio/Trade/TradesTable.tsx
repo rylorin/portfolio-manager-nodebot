@@ -1,17 +1,20 @@
 import { Link, Table, TableCaption, TableContainer, Tbody, Td, Tfoot, Thead, Tr } from "@chakra-ui/react";
 import React, { FunctionComponent } from "react";
-import { Link as RouterLink } from "react-router-dom";
+import { Link as RouterLink, useParams } from "react-router-dom";
 import { TradeStatus } from "../../../../models/trade.types";
 import { TradeEntry } from "../../../../routers/trades.types";
 import { formatNumber } from "../../../utils";
 import Number from "../../Number/Number";
+import { TradeLink } from "./links";
 
 type Props = {
   title?: string;
   content?: TradeEntry[];
 };
 
-const TradesIndex: FunctionComponent<Props> = ({ title = "Trades Index", content, ..._rest }): JSX.Element => {
+const TradesTable: FunctionComponent<Props> = ({ title = "Trades Index", content, ..._rest }): JSX.Element => {
+  const { portfolioId } = useParams();
+
   return (
     <TableContainer>
       <Table variant="simple" size="sm">
@@ -38,7 +41,7 @@ const TradesIndex: FunctionComponent<Props> = ({ title = "Trades Index", content
             .map((item) => (
               <Tr key={item.id}>
                 <Td>
-                  <Link to={`../../id/${item.id}/`} as={RouterLink}>
+                  <Link to={TradeLink.toItem(portfolioId, item.id)} as={RouterLink}>
                     {item.id}
                   </Link>
                 </Td>
@@ -75,4 +78,4 @@ const TradesIndex: FunctionComponent<Props> = ({ title = "Trades Index", content
   );
 };
 
-export default TradesIndex;
+export default TradesTable;

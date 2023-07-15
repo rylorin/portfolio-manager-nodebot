@@ -11,14 +11,14 @@ export type PositionEntry = {
     name: string;
     multiplier: number;
     currency: string;
-    price: number;
+    price: number | undefined;
   };
   trade_id: number | undefined;
-  price: number;
-  value: number;
+  price: number | undefined;
+  value: number | undefined;
   pru: number;
   cost: number;
-  pnl: number;
+  pnl: number | undefined;
   baseRate: number;
 };
 
@@ -34,7 +34,7 @@ export type OptionPositionEntry = PositionEntry & {
   stock: {
     id: number;
     symbol: string;
-    price: number;
+    price: number | undefined;
   };
   engaged: number;
   risk: number;

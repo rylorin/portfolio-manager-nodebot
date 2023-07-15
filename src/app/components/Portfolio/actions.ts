@@ -1,4 +1,4 @@
-export const action = (): string => {
+export const action = (): null => {
   console.log("Portfolio action called");
-  return "qqch";
+  return null;
 };

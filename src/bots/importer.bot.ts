@@ -74,9 +74,10 @@ const transactionStatusFromElement = (element: any): StatementStatus => {
     case "C;Ex":
       return StatementStatus.EXERCISED_STATUS;
     case ";P": // What does P mean?
+    case "":
       return StatementStatus.UNDEFINED_STATUS;
     default:
-      console.error("unknown status:", key);
+      console.error("unknown status: ", key);
       console.error(element);
       throw Error("undefined status: " + key);
       return StatementStatus.UNDEFINED_STATUS;

@@ -10,28 +10,18 @@ export const router = express.Router({ mergeParams: true });
 
 type parentParams = { portfolioId: number };
 
-const getPrice = (item: Contract): number => {
-  return item.price || (item.ask + item.bid) / 2 || item.previousClosePrice;
+const getPrice = (item: Contract): number | undefined => {
+  return item.price ? item.price : item.ask && item.bid ? (item.ask + item.bid) / 2 : item.previousClosePrice;
 };
 
-// const getMultiplier = (item: Position): Promise<number> => {
-//   switch (item.contract.secType) {
-//     case ContracType.Option:
-//       return Option.findByPk(item.contract.id).then((option) => option?.multiplier || 100);
-//       break;
-//   }
-//   // default value
-//   return Promise.resolve(1);
-// };
-
-const preparePositions = (portfolio: Portfolio): Promise<(PositionEntry | OptionPositionEntry)[]> => {
+export const preparePositions = (portfolio: Portfolio): Promise<(PositionEntry | OptionPositionEntry)[]> => {
   return portfolio.positions.reduce(
     (p, item: Position) => {
       return p.then((positions) => {
         switch (item.contract?.secType) {
           case SecType.STK: {
             const price = getPrice(item.contract);
-            const value = price * item.quantity;
+            const value = price ? price * item.quantity : undefined;
             const baseRate =
               1 / (portfolio.baseRates.find((currency) => currency.currency == item.contract.currency)?.rate || 1);
             const result: PositionEntry = {
@@ -52,7 +42,7 @@ const preparePositions = (portfolio: Portfolio): Promise<(PositionEntry | Option
               value,
               pru: item.cost / item.quantity,
               cost: item.cost,
-              pnl: value - item.cost,
+              pnl: value ? value - item.cost : undefined,
               baseRate,
             };
             // console.log(item.contract.currency, result);
@@ -69,13 +59,13 @@ const preparePositions = (portfolio: Portfolio): Promise<(PositionEntry | Option
               if (!option) throw Error("Option contract not found");
               // console.log("option:", JSON.stringify(option));
               const price = getPrice(item.contract);
-              const value = price * item.quantity * option.multiplier;
+              const value = price ? price * item.quantity * option.multiplier : undefined;
               const engaged =
                 option.strike *
                 option.multiplier *
                 (option.callOrPut == OptionType.Put ? item.quantity : -item.quantity);
               const duration = (Date.now() - item.createdAt.getTime()) / 1000 / 3600 / 24;
-              const apy = engaged && duration ? ((item.cost - value) / engaged / duration) * 365 : undefined;
+              const apy = engaged && duration && value ? ((item.cost - value) / engaged / duration) * 365 : undefined;
               const baseRate =
                 1 / (portfolio.baseRates.find((currency) => currency.currency == item.contract.currency)?.rate || 1);
               const result: OptionPositionEntry = {
@@ -96,7 +86,7 @@ const preparePositions = (portfolio: Portfolio): Promise<(PositionEntry | Option
                 value,
                 pru: item.cost / item.quantity / option.multiplier,
                 cost: item.cost,
-                pnl: value - item.cost,
+                pnl: value ? value - item.cost : undefined,
                 baseRate,
                 option: {
                   id: item.contract.id,

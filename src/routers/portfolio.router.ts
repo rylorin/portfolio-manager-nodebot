@@ -1,6 +1,7 @@
 import express from "express";
 import { Contract, Portfolio } from "../models";
 import balances from "./balances.router";
+import contracts from "./contracts.router";
 import positions from "./positions.router";
 import statements from "./statements.router";
 import trades from "./trades.router";
@@ -57,6 +58,11 @@ router.use("/:portfolioId(\\d+)/balances", balances);
  * Trades subrouter
  */
 router.use("/:portfolioId(\\d+)/trades", trades);
+
+/**
+ * Contracts subrouter
+ */
+router.use("/:portfolioId(\\d+)/contracts", contracts);
 
 /**
  * Catch all

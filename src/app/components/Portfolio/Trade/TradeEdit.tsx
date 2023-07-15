@@ -3,11 +3,10 @@ import { Flex, IconButton, Text, VStack } from "@chakra-ui/react";
 import { Field, Formik, FormikProps } from "formik";
 import React, { FunctionComponent } from "react";
 import { Form, useLoaderData, useNavigate, useSubmit } from "react-router-dom";
-import { TradeStrategy } from "../../../../models/trade.types";
+import { TradeStatus, TradeStrategy } from "../../../../models/trade.types";
 import { TradeEntry } from "../../../../routers/trades.types";
 import { formatNumber } from "../../../utils";
 import Number from "../../Number/Number";
-import { tradeStatus2String } from "../utils";
 
 type Props = Record<string, never>;
 
@@ -65,7 +64,13 @@ const TradeEdit: FunctionComponent<Props> = ({ ..._rest }): JSX.Element => {
                   Status:
                 </Text>
                 <Text w="200px" textAlign="right">
-                  {tradeStatus2String(thisTrade.status)}
+                  <Field as="select" name="status" w="200px">
+                    {Object.keys(TradeStatus).map((k, v) => (
+                      <option value={v} key={`v${v}`}>
+                        {k}
+                      </option>
+                    ))}
+                  </Field>
                 </Text>
               </Flex>
               <Flex justifyContent="center" gap="2">
@@ -73,7 +78,13 @@ const TradeEdit: FunctionComponent<Props> = ({ ..._rest }): JSX.Element => {
                   Strategy:
                 </Text>
                 <Text w="200px" textAlign="right">
-                  {TradeStrategy[thisTrade.strategy]}
+                  <Field as="select" name="strategy" w="200px">
+                    {Object.keys(TradeStrategy).map((k, v) => (
+                      <option value={v} key={`v${v}`}>
+                        {k}
+                      </option>
+                    ))}
+                  </Field>
                 </Text>
               </Flex>
               <Flex justifyContent="center" gap="2">
@@ -96,8 +107,8 @@ const TradeEdit: FunctionComponent<Props> = ({ ..._rest }): JSX.Element => {
                 <Text w="90px" as="b" textAlign="right">
                   Risk:
                 </Text>
-                <Text w="200px" textAlign="right">
-                  <Number value={thisTrade.risk} />
+                <Text w="200px">
+                  <Field name="risk" type="number" />
                 </Text>
               </Flex>
               <Flex justifyContent="center" gap="2">
@@ -120,7 +131,7 @@ const TradeEdit: FunctionComponent<Props> = ({ ..._rest }): JSX.Element => {
                 <Text w="90px" as="b" textAlign="right">
                   Notes:
                 </Text>
-                <Text w="200px" textAlign="right">
+                <Text w="200px">
                   <Field name="comment" type="text" as="textarea" />
                 </Text>
               </Flex>

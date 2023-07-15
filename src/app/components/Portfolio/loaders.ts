@@ -2,7 +2,7 @@ import { Portfolio as PortfolioModel } from "../../../models/portfolio.model";
 
 /**
  * Load portfolio list content
- * @param param0
+ * @param params
  * @returns
  */
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
