@@ -28,9 +28,9 @@ import {
   positionsIndexLoader,
   positionsOptionsLoader,
 } from "./components/Portfolio/Position/loaders";
-import { default as StatementIndex } from "./components/Portfolio/Statement/StatementIndex";
 import { default as StatementShow } from "./components/Portfolio/Statement/StatementShow";
 import { default as StatementSummary } from "./components/Portfolio/Statement/StatementSummary";
+import { default as StatementIndex } from "./components/Portfolio/Statement/StatementsTable";
 import {
   statementAddToTrade,
   statementCreateTrade,

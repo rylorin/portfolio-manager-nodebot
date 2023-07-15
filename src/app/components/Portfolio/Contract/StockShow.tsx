@@ -3,6 +3,7 @@ import { FunctionComponent, default as React } from "react";
 import { TradeStatus } from "../../../../models/trade.types";
 import { ContractEntry } from "../../../../routers/contracts.types";
 import PositionsTable from "../Position/PositionsTable";
+import StatementsTable from "../Statement/StatementsTable";
 import TradesTable from "../Trade/TradesTable";
 
 type Props = { thisContract: ContractEntry };
@@ -27,6 +28,7 @@ const StockShow: FunctionComponent<Props> = ({ thisContract, ..._rest }): JSX.El
         title="Closed trades"
         content={thisContract.trades.filter((item) => item.status == TradeStatus.closed)}
       />
+      <StatementsTable content={thisContract.statements} />
     </>
   );
 };

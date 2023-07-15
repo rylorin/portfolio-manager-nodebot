@@ -6,7 +6,7 @@ import { TradeEntry } from "../../../../routers/trades.types";
 import { formatNumber } from "../../../utils";
 import Number from "../../Number/Number";
 import { ContractLink } from "../Contract/links";
-import StatementIndex from "../Statement/StatementIndex";
+import StatementIndex from "../Statement/StatementsTable";
 import { tradeStatus2String, tradeStrategy2String } from "../utils";
 
 type TradeShowProps = Record<string, never>;

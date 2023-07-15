@@ -1,10 +1,13 @@
 import { SecType } from "@stoqey/ib";
 import { default as express } from "express";
 import logger, { LogLevel } from "../logger";
-import { Balance, Contract, Currency, Portfolio, Position, Trade } from "../models";
+import { Balance, Contract, Currency, Portfolio, Position, Statement, Trade } from "../models";
 import { BalanceEntry } from "./balances.types";
+import { ContractEntry } from "./contracts.types";
 import { preparePositions } from "./positions.router";
 import { OptionPositionEntry, PositionEntry } from "./positions.types";
+import { statementModelToStatementEntry } from "./statements.router";
+import { StatementEntry } from "./statements.types";
 import { tradeModelToTradeEntry } from "./trades.router";
 import { TradeEntry } from "./trades.types";
 
@@ -51,39 +54,82 @@ router.get("/id/:contractId(\\d+)", (req, res): void => {
   Contract.findByPk(contractId)
     .then((contract) => {
       if (!contract) throw Error("Contract not found: " + contractId);
+      // Create ContractEntry from Contract model
+      return {
+        id: contract.id,
+        conId: contract.conId,
+        symbol: contract.symbol,
+        secType: contract.secType,
+        exchange: contract.exchange,
+        currency: contract.currency,
+        name: contract.name,
+        price: contract.price,
+        bid: contract.bid,
+        ask: contract.ask,
+        previousClosePrice: contract.previousClosePrice,
+        fiftyTwoWeekLow: contract.fiftyTwoWeekLow,
+        fiftyTwoWeekHigh: contract.fiftyTwoWeekHigh,
+      } as ContractEntry;
+    })
+    .then((contract) => {
+      // Add positions
       return getAllPositionsRelatedToContract(portfolioId, parseInt(contractId)).then((positions) => {
-        return Trade.findAll({
-          where: { portfolio_id: portfolioId, symbol_id: contractId },
-          include: [{ model: Contract, as: "stock" }],
-        }).then((trades) => {
-          logger.log(LogLevel.Trace, MODULE + ".GetContract", undefined, "trades", trades);
-          return trades
-            .reduce(
-              (p: Promise<TradeEntry[]>, item: Trade): Promise<TradeEntry[]> => {
-                logger.log(LogLevel.Trace, MODULE + ".GetContract", undefined, "item", item);
-                return p.then((entries) => {
-                  return tradeModelToTradeEntry(item).then((entry) => {
-                    entries.push(entry);
-                    return entries;
-                  });
-                });
-              },
-              Promise.resolve([] as TradeEntry[]),
-            )
-            .then((trade_entries) => {
-              return {
-                ...contract.dataValues,
-                positions,
-                trades: trade_entries,
-              };
-            });
-        });
+        contract.positions = positions;
+        return contract;
       });
     })
-    // .then((value) => {
-    //   console.log(value);
-    //   return value;
-    // })
+    .then((contract) => {
+      // Add trades
+      return Trade.findAll({
+        where: { portfolio_id: portfolioId, symbol_id: contractId },
+        include: [{ model: Contract, as: "stock" }],
+      })
+        .then((trades) => {
+          logger.log(LogLevel.Trace, MODULE + ".GetContract", undefined, "trades", trades);
+          return trades.reduce(
+            (p: Promise<TradeEntry[]>, item: Trade): Promise<TradeEntry[]> => {
+              logger.log(LogLevel.Trace, MODULE + ".GetContract", undefined, "item", item);
+              return p.then((entries) => {
+                return tradeModelToTradeEntry(item).then((entry) => {
+                  entries.push(entry);
+                  return entries;
+                });
+              });
+            },
+            Promise.resolve([] as TradeEntry[]),
+          );
+        })
+        .then((trade_entries) => {
+          contract.trades = trade_entries;
+          return contract;
+        });
+    })
+    .then((contract) => {
+      // Add statements
+      return Statement.findAll({ where: { portfolio_id: portfolioId, stock_id: contractId } })
+        .then((statements) => {
+          return statements.reduce(
+            (p, statement) => {
+              return p.then((entries) => {
+                return statementModelToStatementEntry(statement).then((entry) => {
+                  entries.push(entry);
+                  return entries;
+                });
+              });
+            },
+            Promise.resolve([] as StatementEntry[]),
+          );
+        })
+        .then((statement_entries) => {
+          contract.statements = statement_entries;
+          return contract;
+        });
+    })
+    .then((value) => {
+      // Display value for debugging
+      console.log(value);
+      return value;
+    })
     .then((contract) => res.status(200).json({ contract }))
     .catch((error) => {
       console.error(error);

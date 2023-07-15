@@ -34,7 +34,7 @@ type Props = { content?: StatementEntry[] };
  * @param param
  * @returns
  */
-const StatementIndex: FunctionComponent<Props> = ({ content, ..._rest }): JSX.Element => {
+const StatementsTable: FunctionComponent<Props> = ({ content, ..._rest }): JSX.Element => {
   const { portfolioId } = useParams();
   const theStatements = content || (useLoaderData() as StatementEntry[]);
   let previousId: number;
@@ -194,4 +194,4 @@ const StatementIndex: FunctionComponent<Props> = ({ content, ..._rest }): JSX.El
   );
 };
 
-export default StatementIndex;
+export default StatementsTable;
