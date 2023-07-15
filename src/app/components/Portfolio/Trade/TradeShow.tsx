@@ -1,5 +1,19 @@
 import { ArrowBackIcon, DeleteIcon, EditIcon } from "@chakra-ui/icons";
-import { Center, Flex, IconButton, Link, Text, VStack } from "@chakra-ui/react";
+import {
+  Center,
+  Flex,
+  IconButton,
+  Link,
+  Table,
+  TableCaption,
+  TableContainer,
+  Tbody,
+  Td,
+  Text,
+  Thead,
+  Tr,
+  VStack,
+} from "@chakra-ui/react";
 import React, { FunctionComponent } from "react";
 import { Link as RouterLink, useLoaderData, useNavigate, useParams } from "react-router-dom";
 import { TradeEntry } from "../../../../routers/trades.types";
@@ -74,8 +88,8 @@ const TradeShow: FunctionComponent<TradeShowProps> = ({ ..._rest }): JSX.Element
             Symbol:
           </Text>
           <Text w="200px" textAlign="right">
-            <Link to={ContractLink.toItem(portfolioId, thisTrade.symbol_id)} as={RouterLink}>
-              {thisTrade.symbol}
+            <Link to={ContractLink.toItem(portfolioId, thisTrade.underlying.symbol_id)} as={RouterLink}>
+              {thisTrade.underlying.symbol}
             </Link>
           </Text>
         </Flex>
@@ -133,8 +147,32 @@ const TradeShow: FunctionComponent<TradeShowProps> = ({ ..._rest }): JSX.Element
             </Center>
           </RouterLink>
         </Flex>
-        {thisTrade.positions && <PositionsTable content={thisTrade.positions} />}
+        {thisTrade.positions && thisTrade.positions.length && <PositionsTable content={thisTrade.positions} />}
         {thisTrade.statements && <StatementsTable content={thisTrade.statements} />}
+        {thisTrade.virtuals && (
+          <>
+            <TableContainer>
+              <Table variant="simple" size="sm" className="table-tiny">
+                <TableCaption>Virtual positions ({thisTrade.virtuals.length})</TableCaption>
+                <Thead>
+                  <Tr>
+                    <Td>Id</Td>
+                    <Td>Symbol</Td>
+                    <Td>Quantity</Td>
+                  </Tr>
+                </Thead>
+                <Tbody>
+                  {thisTrade.virtuals.map((item) => (
+                    <Tr key={item.contract_id}>
+                      <Td>{item.symbol}</Td>
+                      <Td>{item.quantity}</Td>
+                    </Tr>
+                  ))}
+                </Tbody>
+              </Table>
+            </TableContainer>
+          </>
+        )}
       </VStack>
     </>
   );

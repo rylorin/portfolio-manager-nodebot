@@ -47,8 +47,8 @@ const TradesTable: FunctionComponent<Props> = ({ title = "Trades Index", content
                   </Link>
                 </Td>
                 <Td>
-                  <Link to={ContractLink.toItem(portfolioId, item.symbol_id)} as={RouterLink}>
-                    {item.symbol}
+                  <Link to={ContractLink.toItem(portfolioId, item.underlying.symbol_id)} as={RouterLink}>
+                    {item.underlying.symbol}
                   </Link>
                 </Td>
                 <Td>{item.strategy}</Td>

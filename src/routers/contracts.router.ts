@@ -50,7 +50,7 @@ const getAllPositionsRelatedToContract = (
  */
 router.get("/id/:contractId(\\d+)", (req, res): void => {
   const { portfolioId, contractId } = req.params as typeof req.params & parentParams;
-  console.log("contract", portfolioId, contractId);
+  // console.log("contract", portfolioId, contractId);
   Contract.findByPk(contractId)
     .then((contract) => {
       if (!contract) throw Error("Contract not found: " + contractId);
@@ -106,7 +106,10 @@ router.get("/id/:contractId(\\d+)", (req, res): void => {
     })
     .then((contract) => {
       // Add statements
-      return Statement.findAll({ where: { portfolio_id: portfolioId, stock_id: contractId } })
+      return Statement.findAll({
+        where: { portfolio_id: portfolioId, stock_id: contractId },
+        include: [{ model: Contract, as: "stock" }],
+      })
         .then((statements) => {
           return statements.reduce(
             (p, statement) => {

@@ -7,7 +7,7 @@ import { TradeStatus, TradeStrategy } from "../models/trade.types";
 import { preparePositions } from "./positions.router";
 import { statementModelToStatementEntry } from "./statements.router";
 import { StatementEntry } from "./statements.types";
-import { TradeEntry, TradeMonthlySynthesys, TradeSynthesys } from "./trades.types";
+import { TradeEntry, TradeMonthlySynthesys, TradeSynthesys, VirtualPositionEntry } from "./trades.types";
 
 const MODULE = "TradesRouter";
 
@@ -53,18 +53,19 @@ export const updateTradeDetails = (thisTrade: Trade): Promise<Trade> => {
 };
 
 export const tradeModelToTradeEntry = (thisTrade: Trade): Promise<TradeEntry> => {
-  // const apy = thisTrade.risk && thisTrade.PnL ? (thisTrade.PnL / thisTrade.risk / thisTrade.duration) * 365 : undefined;
+  // Init TradeEntry
   return Promise.resolve({
     id: thisTrade.id,
-    symbol_id: thisTrade.stock.id,
-    symbol: thisTrade.stock.symbol,
+    underlying: {
+      symbol_id: thisTrade.stock.id,
+      symbol: thisTrade.stock.symbol,
+    },
     currency: thisTrade.currency,
     openingDate: thisTrade.openingDate.getTime(),
     closingDate: thisTrade.closingDate ? thisTrade.closingDate.getTime() : undefined,
     status: thisTrade.status,
     duration: thisTrade.duration,
     strategy: thisTrade.strategy,
-    strategyLabel: TradeStrategy[thisTrade.strategy],
     risk: thisTrade.risk,
     pnl: thisTrade.PnL,
     apy: thisTrade.risk && thisTrade.PnL ? (thisTrade.PnL / thisTrade.risk / thisTrade.duration) * 365 : undefined,
@@ -73,6 +74,7 @@ export const tradeModelToTradeEntry = (thisTrade: Trade): Promise<TradeEntry> =>
     positions: undefined,
   } as TradeEntry)
     .then((trade_entry) => {
+      // Add statements
       if (thisTrade.statements) {
         return thisTrade.statements
           .reduce(
@@ -93,6 +95,7 @@ export const tradeModelToTradeEntry = (thisTrade: Trade): Promise<TradeEntry> =>
       } else return trade_entry;
     })
     .then((trade_entry) => {
+      // Add positions
       return Portfolio.findByPk(thisTrade.portfolio_id, {
         include: [
           {
@@ -100,6 +103,7 @@ export const tradeModelToTradeEntry = (thisTrade: Trade): Promise<TradeEntry> =>
             as: "positions",
             where: { trade_unit_id: thisTrade.id },
             include: [{ model: Contract, as: "contract" }],
+            required: false,
           },
           { model: Currency, as: "baseRates" },
         ],
@@ -110,6 +114,39 @@ export const tradeModelToTradeEntry = (thisTrade: Trade): Promise<TradeEntry> =>
           return trade_entry;
         });
       });
+    })
+    .then((trade_entry) => {
+      // Add virtual positions
+      const virtuals: Record<number, VirtualPositionEntry> = {};
+      trade_entry.statements?.forEach((item) => {
+        switch (item.type) {
+          case StatementTypes.EquityStatement:
+            if (item.underlying && item.quantity) {
+              if (virtuals[item.underlying.id]) virtuals[item.underlying.id].quantity += item.quantity;
+              else
+                virtuals[item.underlying.id] = {
+                  contract_id: item.underlying.id,
+                  symbol: item.underlying.symbol,
+                  quantity: item.quantity,
+                };
+            }
+            break;
+          case StatementTypes.OptionStatement:
+            if (item.option && item.quantity) {
+              if (virtuals[item.option.id]) virtuals[item.option.id].quantity += item.quantity;
+              else
+                virtuals[item.option.id] = {
+                  contract_id: item.option.id,
+                  symbol: item.option.symbol,
+                  quantity: item.quantity,
+                };
+            }
+            break;
+        }
+      });
+      // console.log(Object.values(virtuals));
+      trade_entry.virtuals = Object.values(virtuals);
+      return trade_entry;
     });
 };
 

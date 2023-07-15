@@ -2,23 +2,35 @@ import { TradeStatus, TradeStrategy } from "../models";
 import { PositionEntry } from "./positions.types";
 import { StatementEntry } from "./statements.types";
 
-export type TradeEntry = {
-  id: number;
-  symbol_id: number;
+export type VirtualPositionEntry = {
+  contract_id: number;
   symbol: string;
+  quantity: number;
+};
+
+/**
+ * Trade entry data transfered between frontend and backend
+ */
+export type TradeEntry = {
+  /** unique trade id */
+  id: number;
+  underlying: {
+    symbol_id: number;
+    symbol: string;
+  };
   currency: string;
   openingDate: number;
   closingDate: number | undefined;
   status: TradeStatus;
   duration: number;
   strategy: TradeStrategy;
-  strategyLabel: string;
   risk: number | undefined;
   pnl: number | undefined;
   apy: number | undefined;
   comment: string | undefined;
   statements: StatementEntry[] | undefined;
   positions: PositionEntry[] | undefined;
+  virtuals: VirtualPositionEntry[] | undefined;
 };
 
 export type TradeMonthlySynthesysEntry = {

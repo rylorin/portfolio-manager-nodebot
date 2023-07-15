@@ -63,8 +63,8 @@ export class Trade extends Model<TradeAttributes, TradeCreationAttributes> {
   @Column({ type: DataType.FLOAT })
   declare risk?: number;
 
-  @Column({ type: DataType.STRING })
-  declare comment?: string;
+  @Column({ type: DataType.STRING, defaultValue: "" })
+  declare comment: string;
 
   @HasMany(() => Statement, { foreignKey: "trade_unit_id" })
   declare statements: Statement[];

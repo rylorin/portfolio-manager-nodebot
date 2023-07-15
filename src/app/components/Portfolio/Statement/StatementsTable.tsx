@@ -92,7 +92,7 @@ const StatementsTable: FunctionComponent<Props> = ({ content, ..._rest }): JSX.E
                     )}
                   </Td>
                   <Td>
-                    {item.underlying && item.trade_id && (
+                    {item.trade_id && (
                       <>
                         <Link to={TradeLink.toItem(portfolioId, item.trade_id)} as={RouterLink}>
                           {item.trade_id}

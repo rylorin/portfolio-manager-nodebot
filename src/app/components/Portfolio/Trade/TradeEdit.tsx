@@ -92,7 +92,7 @@ const TradeEdit: FunctionComponent<Props> = ({ ..._rest }): JSX.Element => {
                   Symbol:
                 </Text>
                 <Text w="200px" textAlign="right">
-                  {thisTrade.symbol}
+                  {thisTrade.underlying.symbol}
                 </Text>
               </Flex>
               <Flex justifyContent="center" gap="2">
