@@ -126,7 +126,7 @@ const TradeShow: FunctionComponent<TradeShowProps> = ({ ..._rest }): JSX.Element
               <EditIcon />
             </Center>
           </RouterLink>
-          <RouterLink to="delete_but_edit">
+          <RouterLink to="Delete">
             <Center w="40px" h="40px">
               <DeleteIcon />
             </Center>

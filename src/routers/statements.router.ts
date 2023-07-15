@@ -6,6 +6,7 @@ import {
   EquityStatement,
   FeeStatement,
   InterestStatement,
+  Option,
   OptionStatement,
   Portfolio,
   Statement,
@@ -53,20 +54,38 @@ export const statementModelToStatementEntry = (item: Statement): Promise<Stateme
     description: item.description,
     trade_id: item.trade_unit_id,
     underlying: item.stock ? { id: item.stock.id, symbol: item.stock.symbol } : undefined,
+    quantity: undefined,
+    option: undefined,
   };
   switch (item.statementType) {
     case StatementTypes.EquityStatement:
       return EquityStatement.findByPk(item.id).then((thisStatement) => {
         // console.log(value);
+        statement.quantity = thisStatement?.quantity;
         statement.pnl = thisStatement?.realizedPnL;
         statement.fees = thisStatement?.fees;
         return statement;
       });
       break;
     case StatementTypes.OptionStatement:
-      return OptionStatement.findByPk(item.id).then((thisStatement) => {
-        statement.pnl = thisStatement?.realizedPnL;
-        statement.fees = thisStatement?.fees;
+      return OptionStatement.findByPk(item.id, {
+        include: [
+          { model: Contract, as: "contract" },
+          { model: Option, as: "option" },
+        ],
+      }).then((thisStatement) => {
+        if (thisStatement) {
+          statement.quantity = thisStatement.quantity;
+          statement.pnl = thisStatement.realizedPnL;
+          statement.fees = thisStatement.fees;
+          statement.option = {
+            id: thisStatement.contract_id,
+            symbol: thisStatement.contract.symbol,
+            strike: thisStatement.option.strike,
+            expiry: thisStatement.option.expiry,
+            callOrPut: thisStatement.option.callOrPut,
+          };
+        }
         return statement;
       });
       break;

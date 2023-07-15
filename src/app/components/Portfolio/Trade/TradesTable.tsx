@@ -1,10 +1,11 @@
 import { Link, Table, TableCaption, TableContainer, Tbody, Td, Tfoot, Thead, Tr } from "@chakra-ui/react";
 import React, { FunctionComponent } from "react";
 import { Link as RouterLink, useParams } from "react-router-dom";
-import { TradeStatus } from "../../../../models/trade.types";
 import { TradeEntry } from "../../../../routers/trades.types";
 import { formatNumber } from "../../../utils";
 import Number from "../../Number/Number";
+import { ContractLink } from "../Contract/links";
+import { tradeStatus2String } from "../utils";
 import { TradeLink } from "./links";
 
 type Props = {
@@ -45,11 +46,15 @@ const TradesTable: FunctionComponent<Props> = ({ title = "Trades Index", content
                     {item.id}
                   </Link>
                 </Td>
-                <Td>{item.symbol}</Td>
+                <Td>
+                  <Link to={ContractLink.toItem(portfolioId, item.symbol_id)} as={RouterLink}>
+                    {item.symbol}
+                  </Link>
+                </Td>
                 <Td>{item.strategy}</Td>
                 <Td>{new Date(item.openingDate).toLocaleDateString()}</Td>
                 <Td>{item.closingDate ? new Date(item.closingDate).toLocaleDateString() : undefined}</Td>
-                <Td>{TradeStatus[item.status]}</Td>
+                <Td>{tradeStatus2String(item.status)}</Td>
                 <Td isNumeric>{formatNumber(item.duration)}</Td>
                 <Td isNumeric>{formatNumber(item.risk)}</Td>
                 <Td>

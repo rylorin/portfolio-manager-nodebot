@@ -54,6 +54,9 @@ export class Option extends Model<OptionAttributes, OptionCreationAttributes> {
       this.setDataValue("lastTradeDate", value.substring(0, 10));
     }
   }
+  get expiry(): number {
+    return parseInt(this.getDataValue("lastTradeDate").replaceAll("-", ""));
+  }
 
   @Column({ type: DataType.FLOAT })
   declare strike: number;

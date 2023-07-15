@@ -49,7 +49,7 @@ import TradeEdit from "./components/Portfolio/Trade/TradeEdit";
 import TradeShow from "./components/Portfolio/Trade/TradeShow";
 import TradeSummary from "./components/Portfolio/Trade/TradeSummary";
 import TradesTable from "./components/Portfolio/Trade/TradesTable";
-import { tradeSave } from "./components/Portfolio/Trade/actions";
+import { tradeDelete, tradeSave } from "./components/Portfolio/Trade/actions";
 import {
   tradeSummaryLoader12M,
   tradeSummaryLoaderAll,
@@ -199,6 +199,7 @@ const router = createBrowserRouter([
                     children: [
                       { index: true, Component: TradeShow, loader: tradesShowLoader },
                       { path: "edit", Component: TradeEdit, loader: tradesShowLoader, action: tradeSave },
+                      { path: "Delete", action: tradeDelete },
                     ],
                   },
                   {

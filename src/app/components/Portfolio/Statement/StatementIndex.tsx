@@ -24,6 +24,7 @@ import { FunctionComponent, default as React } from "react";
 import { Form, Link as RouterLink, useLoaderData, useParams } from "react-router-dom";
 import { StatementEntry } from "../../../../routers/statements.types";
 import Number from "../../Number/Number";
+import { ContractLink } from "../Contract/links";
 import { TradeLink } from "../Trade/links";
 
 type Props = { content?: StatementEntry[] };
@@ -84,9 +85,11 @@ const StatementIndex: FunctionComponent<Props> = ({ content, ..._rest }): JSX.El
                     <Number value={item.fees} decimals={2} />
                   </Td>
                   <Td>
-                    <Link to={`/portfolio/${portfolioId}/symbols/${item.underlying?.id}`} as={RouterLink}>
-                      {item.underlying?.symbol}
-                    </Link>
+                    {item.underlying && (
+                      <Link to={ContractLink.toItem(portfolioId, item.underlying.id)} as={RouterLink}>
+                        {item.underlying.symbol}
+                      </Link>
+                    )}
                   </Td>
                   <Td>
                     {item.underlying && item.trade_id && (
