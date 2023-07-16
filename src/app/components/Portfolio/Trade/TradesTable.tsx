@@ -1,6 +1,6 @@
 import { Link, Table, TableCaption, TableContainer, Tbody, Td, Tfoot, Thead, Tr } from "@chakra-ui/react";
 import React, { FunctionComponent } from "react";
-import { Link as RouterLink, useParams } from "react-router-dom";
+import { Link as RouterLink, useLoaderData, useParams } from "react-router-dom";
 import { TradeEntry } from "../../../../routers/trades.types";
 import { formatNumber } from "../../../utils";
 import Number from "../../Number/Number";
@@ -15,12 +15,13 @@ type Props = {
 
 const TradesTable: FunctionComponent<Props> = ({ title = "Trades Index", content, ..._rest }): JSX.Element => {
   const { portfolioId } = useParams();
+  const theTrades = content || (useLoaderData() as TradeEntry[]);
 
   return (
     <TableContainer>
       <Table variant="simple" size="sm">
         <TableCaption>
-          {title} ({content.length})
+          {title} ({theTrades.length})
         </TableCaption>
         <Thead>
           <Tr>
@@ -37,7 +38,7 @@ const TradesTable: FunctionComponent<Props> = ({ title = "Trades Index", content
           </Tr>
         </Thead>
         <Tbody>
-          {content
+          {theTrades
             .sort((a, b) => (a.closingDate ? b.closingDate - a.closingDate : b.openingDate - a.openingDate))
             .map((item) => (
               <Tr key={item.id}>

@@ -203,7 +203,7 @@ const router = createBrowserRouter([
                     ],
                   },
                   {
-                    path: "month/:month/:year",
+                    path: "month/:year/:month",
                     Component: TradesTable,
                     loader: tradesMonthLoader,
                   },

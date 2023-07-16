@@ -17,7 +17,7 @@ type parentParams = { portfolioId: number };
 
 export const updateTradeDetails = (thisTrade: Trade): Promise<Trade> => {
   // sort statements by date
-  const items = thisTrade?.statements.sort((a, b) => a.date.getTime() - b.date.getTime());
+  const items = thisTrade.statements.sort((a, b) => a.date.getTime() - b.date.getTime());
   if (thisTrade && items?.length) {
     thisTrade.openingDate = items[0].date;
     if (thisTrade.status == TradeStatus.closed && !thisTrade.closingDate)
@@ -63,7 +63,14 @@ export const updateTradeDetails = (thisTrade: Trade): Promise<Trade> => {
   return Promise.resolve(thisTrade);
 };
 
-export const tradeModelToTradeEntry = (thisTrade: Trade): Promise<TradeEntry> => {
+export const tradeModelToTradeEntry = (
+  thisTrade: Trade,
+  _options: { with_statements: boolean; with_positions: boolean; with_virtuals: boolean } = {
+    with_statements: false,
+    with_positions: false,
+    with_virtuals: false,
+  },
+): Promise<TradeEntry> => {
   // Init TradeEntry
   return Promise.resolve({
     id: thisTrade.id,
@@ -171,8 +178,6 @@ function makeSynthesys(trades: Trade[]): Promise<TradeSynthesys> {
     (p, item) =>
       p.then((theSynthesys) => {
         if (item.closingDate) {
-          // console.log(JSON.stringify(item));
-          // console.log(item.id);
           const idx = formatDate(item.openingDate);
           if (theSynthesys.byMonth[idx] === undefined) {
             theSynthesys.byMonth[idx] = { count: 0, success: 0, duration: 0, min: undefined, max: undefined, total: 0 };
@@ -280,7 +285,43 @@ router.get("/summary/ytd", (req, res): void => {
 });
 
 /**
- * Get a trade
+ * Get trades closed during a given month
+ */
+router.get("/month/:year(\\d+)/:month(\\d+)", (req, res): void => {
+  const { portfolioId, year, month } = req.params as typeof req.params & parentParams;
+  const yearval = parseInt(year);
+  const monthval = parseInt(month);
+
+  Trade.findAll({
+    where: {
+      portfolio_id: portfolioId,
+      openingDate: {
+        [Op.gte]: new Date(yearval, monthval - 1, 1),
+        [Op.lt]: new Date(monthval < 12 ? yearval : yearval + 1, monthval < 12 ? monthval : 0, 1),
+      },
+      status: TradeStatus.closed,
+    },
+    include: [{ model: Contract, as: "stock" }],
+    // limit: 500,
+  })
+    .then((trades: Trade[]) =>
+      trades.reduce(
+        (p, item) =>
+          p.then((trades) =>
+            tradeModelToTradeEntry(item).then((trade) => {
+              trades.push(trade);
+              return trades;
+            }),
+          ),
+        Promise.resolve([] as TradeEntry[]),
+      ),
+    )
+    .then((trades) => res.status(200).json({ trades }))
+    .catch((error) => res.status(500).json({ error }));
+});
+
+/**
+ * Get a single trade
  */
 router.get("/id/:tradeId(\\d+)", (req, res): void => {
   const { _portfolioId, tradeId } = req.params as typeof req.params & parentParams;
@@ -296,7 +337,7 @@ router.get("/id/:tradeId(\\d+)", (req, res): void => {
   })
     .then((trade) => {
       if (trade) {
-        return tradeModelToTradeEntry(trade);
+        return tradeModelToTradeEntry(trade, { with_statements: true, with_positions: true, with_virtuals: true });
       } else {
         throw Error("trade doesn't exist");
       }

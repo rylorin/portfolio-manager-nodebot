@@ -58,5 +58,5 @@ export const tradesMonthLoader = ({ params }): Promise<TradeEntry[]> => {
   const { portfolioId, year, month } = params;
   return fetch(`/api/portfolio/${portfolioId}/trades/month/${year}/${month}`)
     .then((response) => response.json())
-    .then((data) => data.statemententries as TradeEntry[]);
+    .then((data) => data.trades as TradeEntry[]);
 };
