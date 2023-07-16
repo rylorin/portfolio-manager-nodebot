@@ -13,7 +13,6 @@ import {
   StatementTypes,
   TaxStatement,
   Trade,
-  TradeCreationAttributes,
 } from "../models";
 import { TradeStatus, TradeStrategy } from "../models/trade.types";
 import { StatementEntry, StatementsSynthesysEntries } from "./statements.types";
@@ -263,13 +262,14 @@ router.get("/:statementId(\\d+)/CreateTrade", (req, res): void => {
   })
     .then((statement) => {
       if (statement) {
-        const trade: TradeCreationAttributes = {
+        const trade = {
           portfolio_id: portfolioId,
           symbol_id: statement.stock.id,
           currency: statement.currency,
           status: TradeStatus.open,
           openingDate: statement.date,
           strategy: TradeStrategy.undefined,
+          comment: "",
         };
         return Trade.create(trade, { logging: false }).then((trade) =>
           statement.update({ trade_unit_id: trade.id }, { logging: false }),

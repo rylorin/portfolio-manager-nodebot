@@ -113,6 +113,14 @@ const TradeEdit: FunctionComponent<Props> = ({ ..._rest }): JSX.Element => {
               </Flex>
               <Flex justifyContent="center" gap="2">
                 <Text w="90px" as="b" textAlign="right">
+                  P&L (Base):
+                </Text>
+                <Text w="200px" textAlign="right">
+                  <Number value={thisTrade.pnlInBase} />
+                </Text>
+              </Flex>
+              <Flex justifyContent="center" gap="2">
+                <Text w="90px" as="b" textAlign="right">
                   P&L:
                 </Text>
                 <Text w="200px" textAlign="right">

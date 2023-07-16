@@ -16,13 +16,14 @@ const router = express.Router({ mergeParams: true });
 type parentParams = { portfolioId: number };
 
 export const updateTradeDetails = (thisTrade: Trade): Promise<Trade> => {
-  // sort statements by date
-  const items = thisTrade.statements.sort((a, b) => a.date.getTime() - b.date.getTime());
-  if (thisTrade && items?.length) {
+  if (thisTrade && thisTrade.statements?.length) {
+    // sort statements by date
+    const items = thisTrade.statements.sort((a, b) => a.date.getTime() - b.date.getTime());
     thisTrade.openingDate = items[0].date;
     if (thisTrade.status == TradeStatus.closed && !thisTrade.closingDate)
       thisTrade.closingDate = items[items.length - 1].date;
     thisTrade.PnL = 0;
+    thisTrade.pnlInBase = 0;
     return items
       .reduce(
         (p, item): Promise<Trade> =>
@@ -51,8 +52,12 @@ export const updateTradeDetails = (thisTrade: Trade): Promise<Trade> => {
                   thisTrade.risk = Math.max(Math.abs(risk), thisTrade.risk!);
                   break;
               }
-              // eslint-disable-next-line @typescript-eslint/no-unnecessary-type-assertion
-              if (statement_entry.pnl) thisTrade.PnL! += statement_entry.pnl;
+              if (statement_entry.pnl) {
+                // eslint-disable-next-line @typescript-eslint/no-unnecessary-type-assertion
+                thisTrade.PnL! += statement_entry.pnl;
+                // eslint-disable-next-line @typescript-eslint/no-unnecessary-type-assertion
+                thisTrade.pnlInBase! += statement_entry.pnl * statement_entry.fxRateToBase;
+              }
               return thisTrade;
             });
           }),
@@ -75,8 +80,8 @@ export const tradeModelToTradeEntry = (
   return Promise.resolve({
     id: thisTrade.id,
     underlying: {
-      symbol_id: thisTrade.stock.id,
-      symbol: thisTrade.stock.symbol,
+      symbol_id: thisTrade.underlying.id,
+      symbol: thisTrade.underlying.symbol,
     },
     currency: thisTrade.currency,
     openingDate: thisTrade.openingDate.getTime(),
@@ -86,10 +91,12 @@ export const tradeModelToTradeEntry = (
     strategy: thisTrade.strategy,
     risk: thisTrade.risk,
     pnl: thisTrade.PnL,
+    pnlInBase: thisTrade.pnlInBase,
     apy: thisTrade.risk && thisTrade.PnL ? (thisTrade.PnL / thisTrade.risk / thisTrade.duration) * 365 : undefined,
     comment: thisTrade.comment,
     statements: undefined,
     positions: undefined,
+    virtuals: undefined,
   } as TradeEntry)
     .then((trade_entry) => {
       // Add statements
@@ -185,7 +192,16 @@ function makeSynthesys(trades: Trade[]): Promise<TradeSynthesys> {
           theSynthesys.byMonth[idx].count += 1;
           theSynthesys.byMonth[idx].duration +=
             (item.closingDate.getTime() - item.openingDate.getTime()) / 1000 / 3600 / 24;
-          if (item.PnL) {
+          if (item.pnlInBase) {
+            if (item.pnlInBase > 0) theSynthesys.byMonth[idx].success += 1;
+            theSynthesys.byMonth[idx].total += item.pnlInBase;
+            theSynthesys.byMonth[idx].min = theSynthesys.byMonth[idx].min
+              ? Math.min(theSynthesys.byMonth[idx].min, item.pnlInBase)
+              : item.pnlInBase;
+            theSynthesys.byMonth[idx].max = theSynthesys.byMonth[idx].max
+              ? Math.max(theSynthesys.byMonth[idx].max, item.pnlInBase)
+              : item.pnlInBase;
+          } else if (item.PnL) {
             // TODO: multiply by baseRate
             if (item.PnL > 0) theSynthesys.byMonth[idx].success += 1;
             theSynthesys.byMonth[idx].total += item.PnL;
@@ -221,12 +237,16 @@ router.get("/summary/all", (req, res): void => {
         [Op.gte]: new Date(2021, 0, 1),
       },
     },
-    include: [{ model: Contract, as: "stock" }],
+    include: [{ model: Contract, as: "underlying" }],
     // limit: 500,
   })
     .then((trades: Trade[]) => makeSynthesys(trades))
     .then((tradessynthesys) => res.status(200).json({ tradessynthesys }))
-    .catch((error) => res.status(500).json({ error }));
+    .catch((error) => {
+      console.error(error);
+      logger.log(LogLevel.Error, MODULE + ".SummaryAll", undefined, error);
+      res.status(500).json({ error });
+    });
 });
 
 /**
@@ -249,7 +269,7 @@ router.get("/summary/12m", (req, res): void => {
         },
       },
     },
-    include: [{ model: Contract, as: "stock" }],
+    include: [{ model: Contract, as: "underlying" }],
     // limit: 500,
   })
     .then((trades: Trade[]) => makeSynthesys(trades))
@@ -276,12 +296,16 @@ router.get("/summary/ytd", (req, res): void => {
         },
       },
     },
-    include: [{ model: Contract, as: "stock" }],
+    include: [{ model: Contract, as: "underlying" }],
     // limit: 500,
   })
     .then((trades: Trade[]) => makeSynthesys(trades))
     .then((tradessynthesys) => res.status(200).json({ tradessynthesys }))
-    .catch((error) => res.status(500).json({ error }));
+    .catch((error) => {
+      console.error(error);
+      logger.log(LogLevel.Error, MODULE + ".SummaryYtd", undefined, error);
+      res.status(500).json({ error });
+    });
 });
 
 /**
@@ -301,7 +325,7 @@ router.get("/month/:year(\\d+)/:month(\\d+)", (req, res): void => {
       },
       status: TradeStatus.closed,
     },
-    include: [{ model: Contract, as: "stock" }],
+    include: [{ model: Contract, as: "underlying" }],
     // limit: 500,
   })
     .then((trades: Trade[]) =>
@@ -328,7 +352,7 @@ router.get("/id/:tradeId(\\d+)", (req, res): void => {
   // console.log("get trade", portfolioId, tradeId);
   Trade.findByPk(tradeId, {
     include: [
-      { model: Contract, as: "stock" },
+      { model: Contract, as: "underlying" },
       { model: Portfolio, as: "portfolio" },
       { model: Statement, as: "statements", include: [{ model: Contract, as: "stock" }] },
       { model: Position, as: "positions", include: [{ model: Contract, as: "contract" }] },

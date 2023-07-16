@@ -58,10 +58,10 @@ const TradesTable: FunctionComponent<Props> = ({ title = "Trades Index", content
                 <Td>{tradeStatus2String(item.status)}</Td>
                 <Td isNumeric>{formatNumber(item.duration)}</Td>
                 <Td isNumeric>{formatNumber(item.risk)}</Td>
-                <Td>
+                <Td isNumeric>
                   <Number value={item.pnl} />
                 </Td>
-                <Td>
+                <Td isNumeric>
                   <Number value={item.apy} decimals={1} isPercent />
                 </Td>
               </Tr>

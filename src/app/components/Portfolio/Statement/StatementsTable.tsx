@@ -74,7 +74,11 @@ const StatementsTable: FunctionComponent<Props> = ({ content, ..._rest }): JSX.E
                       </Link>
                     </Tooltip>
                   </Td>
-                  <Td>{item.currency}</Td>
+                  <Td>
+                    <Tooltip label={item.fxRateToBase} placement="auto" hasArrow={true}>
+                      {item.currency}
+                    </Tooltip>
+                  </Td>
                   <Td isNumeric>
                     <Number value={item.amount} decimals={2} />
                   </Td>

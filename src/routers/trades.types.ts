@@ -26,6 +26,7 @@ export type TradeEntry = {
   strategy: TradeStrategy;
   risk: number | undefined;
   pnl: number | undefined;
+  pnlInBase: number | undefined;
   apy: number | undefined;
   comment: string | undefined;
   statements: StatementEntry[] | undefined;
