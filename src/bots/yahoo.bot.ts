@@ -36,6 +36,8 @@ export class YahooUpdateBot extends ITradingBot {
     // this.printObject(contract);
     let quote: MappedQuote = undefined;
     if (contract instanceof Contract) {
+      // VALUE is no more tradable, CME not supported by Yahoo?, LSE no more supported by Yahoo?
+      if (contract.exchange == "VALUE" || contract.exchange == "CME" || contract.exchange == "LSE") return;
       if (contract.secType == SecType.STK) {
         quote = { contract, symbol: YahooUpdateBot.getYahooTicker(contract) };
       } else if (contract.secType == SecType.OPT) {
@@ -63,11 +65,9 @@ export class YahooUpdateBot extends ITradingBot {
       this.error("enqueueContract unhandled contract type (2)");
     }
     const index = this.requestsQ.findIndex((p) => p.symbol == quote.symbol);
-    if (index !== -1) {
-      this.requestsQ.splice(index, 1);
+    if (index < 0) {
+      this.requestsQ.push(quote);
     }
-    this.requestsQ.push(quote);
-    // setTimeout(() => this.emit("processQueue"), 100);
   }
 
   protected static getYahooTicker(contract: Contract): string {
@@ -84,7 +84,7 @@ export class YahooUpdateBot extends ITradingBot {
     } else if ($exchange == "TSEJ") {
       $ticker = $ticker + ".T";
     } else if ($exchange == "AEB") {
-      $ticker = $ticker + ".AS";
+      $ticker = $ticker + ".AX";
     } else if ($exchange == "FWB" || $exchange == "IBIS" || $exchange == "IBIS2") {
       $ticker = ($ticker[$ticker.length - 1] == "d" ? $ticker.substring(0, $ticker.length - 1) : $ticker) + ".DE";
     } else if ($exchange == "SEHK") {

@@ -1,8 +1,9 @@
-import { TradeLink } from "./Trade/links";
+import { StatementLink } from "../Statement/links";
+import { TradeLink } from "../Trade/links";
 
 export const links = (portfolioId: string): Record<string, string> => {
   const result: Record<string, string> = {};
-  result[`/portfolio/${portfolioId}/statements/summary/ytd`] = "Statements";
+  result[StatementLink.toIndex(portfolioId)] = "Statements";
   result[`/portfolio/${portfolioId}/orders`] = "Open Orders";
   result[`/portfolio/${portfolioId}/positions/all`] = "Positions";
   result[`/portfolio/${portfolioId}/balances`] = "Balances";

@@ -22,7 +22,7 @@ import Number from "../../Number/Number";
 import { ContractLink } from "../Contract/links";
 import PositionsTable from "../Position/PositionsTable";
 import StatementsTable from "../Statement/StatementsTable";
-import { tradeStatus2String, tradeStrategy2String } from "../utils";
+import { tradeStatus2String, tradeStrategy2String } from "./utils";
 
 type TradeShowProps = Record<string, never>;
 

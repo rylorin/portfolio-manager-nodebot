@@ -1,10 +1,14 @@
 import express from "express";
+import logger, { LogLevel } from "../logger";
 import { Contract, Portfolio } from "../models";
+import { Setting } from "../models/setting.model";
 import balances from "./balances.router";
 import contracts from "./contracts.router";
 import positions from "./positions.router";
 import statements from "./statements.router";
 import trades from "./trades.router";
+
+const MODULE = "PortfolioRouter";
 
 const router = express.Router();
 
@@ -29,14 +33,21 @@ router.get("/", (_req, res): void => {
 router.get("/:portfolioId(\\d+)", (req, res): void => {
   const { portfolioId } = req.params;
   Portfolio.findByPk(portfolioId, {
-    include: {
-      model: Contract,
-    },
+    include: [
+      {
+        model: Contract,
+      },
+      { model: Setting, as: "settings", include: [{ model: Contract, as: "contract" }] },
+    ],
   })
     .then((portfolio: Portfolio) => {
       res.status(200).json({ portfolio });
     })
-    .catch((error) => res.status(500).json({ error }));
+    .catch((error) => {
+      console.error(error);
+      logger.log(LogLevel.Error, MODULE + ".GetPortfolio", undefined, error.msg);
+      res.status(500).json({ error });
+    });
 });
 
 /**

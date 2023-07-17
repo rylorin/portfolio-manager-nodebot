@@ -5,8 +5,8 @@ import { TradeEntry } from "../../../../routers/trades.types";
 import { formatNumber } from "../../../utils";
 import Number from "../../Number/Number";
 import { ContractLink } from "../Contract/links";
-import { tradeStatus2String } from "../utils";
 import { TradeLink } from "./links";
+import { tradeStatus2String } from "./utils";
 
 type Props = {
   title?: string;

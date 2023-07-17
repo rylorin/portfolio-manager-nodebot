@@ -1,9 +1,9 @@
 import { Box, Flex, Text } from "@chakra-ui/layout";
 import { FunctionComponent, default as React, useEffect, useState } from "react";
 import { useParams } from "react-router-dom";
-import { Portfolio as PortfolioModel } from "../../../models/portfolio.model";
-import { obfuscate } from "../../utils";
-import SideBar from "../NavBar/SideBar";
+import { Portfolio as PortfolioModel } from "../../../../models/portfolio.model";
+import { obfuscate } from "../../../utils";
+import SideBar from "../../NavBar/SideBar";
 import { links } from "./links";
 
 type PortfolioLayoutProps = {

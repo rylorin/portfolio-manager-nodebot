@@ -6,7 +6,7 @@ import { greeks, option_implied_volatility } from "../black_scholes";
 import { Contract, Option, Stock } from "../models";
 
 const OPTIONS_LIST_BUILD_FREQ: number = parseInt(process.env.OPTIONS_LIST_BUILD_FREQ) || 24; // hours
-const OPTIONS_PRICE_TIMEFRAME: number = parseInt(process.env.OPTIONS_PRICE_TIMEFRAME) || 999; // days
+const OPTIONS_PRICE_TIMEFRAME: number = parseInt(process.env.OPTIONS_PRICE_TIMEFRAME) || 366; // days
 const NO_RISK_INTEREST_RATE: number = parseFloat(process.env.NO_RISK_INTEREST_RATE) || 0.0175;
 
 export class OptionsCreateBot extends ITradingBot {

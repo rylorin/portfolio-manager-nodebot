@@ -107,8 +107,8 @@ const TradeEdit: FunctionComponent<Props> = ({ ..._rest }): JSX.Element => {
                 <Text w="90px" as="b" textAlign="right">
                   Risk:
                 </Text>
-                <Text w="200px">
-                  <Field name="risk" type="number" />
+                <Text w="200px" textAlign="right">
+                  <Number value={thisTrade.risk} />
                 </Text>
               </Flex>
               <Flex justifyContent="center" gap="2">

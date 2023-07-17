@@ -15,6 +15,7 @@ import colors from "colors";
 import EventEmitter from "events";
 import { Op, Transaction } from "sequelize";
 import { MyTradingBotApp } from "..";
+import logger from "../logger";
 import {
   Bag,
   Balance,
@@ -72,7 +73,8 @@ export class ITradingBot extends EventEmitter {
    * Print and error to console and exit the app with error code, unless -watch argument is present.
    */
   error(message: string): void {
-    console.error(colors.bold.red(`[${new Date().toLocaleTimeString()}] Error: ${message}`));
+    // console.error(colors.bold.red(`[${new Date().toLocaleTimeString()}] Error: ${message}`));
+    logger.error(undefined, message);
   }
 
   protected static expirationToDate(lastTradeDateOrContractMonth: string): Date {

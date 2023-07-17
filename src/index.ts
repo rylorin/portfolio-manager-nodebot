@@ -40,6 +40,7 @@ import {
   TaxStatement,
   Trade,
 } from "./models";
+import { Setting } from "./models/setting.model";
 import { Statement } from "./models/statement.model";
 import StartServer from "./server";
 
@@ -110,6 +111,7 @@ export class MyTradingBotApp extends IBApiNextApp {
         DividendStatement,
         InterestStatement,
         FeeStatement,
+        Setting,
       ],
       // models: [__dirname + '/models/*.model.js'], // Not working with ts-node-dev
       modelMatch: (filename, member) => {

@@ -130,16 +130,21 @@ class Logger {
    * @param asset asset related to message
    * @param args message (strings) to log
    */
-  public log(level: LogLevel, module: string, asset?: string | undefined, ...args: any[]): void {
+  public log(level: LogLevel, module: string | undefined, asset?: string | undefined, ...args: any[]): void {
     let mainmodule: string;
     let submodule: string;
-    const [s0, s1] = module.split(".");
-    if (s1) {
-      mainmodule = s0;
-      submodule = s1;
+    if (module) {
+      const [s0, s1] = module.split(".");
+      if (s1) {
+        mainmodule = s0;
+        submodule = s1;
+      } else {
+        mainmodule = "default";
+        submodule = s0;
+      }
     } else {
       mainmodule = "default";
-      submodule = s0;
+      submodule = "default";
     }
     const message: string = args
       .map((value) => {
@@ -160,9 +165,8 @@ class Logger {
    * Display an error notification (and log it)
    * @param title title of the notification
    * @param description content of the notification
-   * @param id an id for this notification to prevent duplicates
    */
-  public error(title: string, description: string): void {
+  public error(title: string | undefined, description: string): void {
     this.log(LogLevel.Error, title, undefined, description);
   }
 
@@ -170,7 +174,6 @@ class Logger {
    * Display a warning notification (and log it)
    * @param title title of the notification
    * @param description content of the notification
-   * @param id an id for this notification to prevent duplicates
    */
   public warn(title: string, description: string): void {
     this.log(LogLevel.Warning, title, undefined, description);
@@ -180,7 +183,6 @@ class Logger {
    * Display an info notification (and log it)
    * @param title title of the notification
    * @param description content of the notification
-   * @param id an id for this notification to prevent duplicates
    */
   public info(title: string, description: string): void {
     this.log(LogLevel.Info, title, undefined, description);

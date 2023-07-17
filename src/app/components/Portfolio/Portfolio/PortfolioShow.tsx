@@ -4,6 +4,7 @@ import React, { FunctionComponent } from "react";
 import { Link as RouterLink, useLoaderData } from "react-router-dom";
 import { Portfolio as PortfolioModel } from "../../../../models/portfolio.model";
 import { obfuscate } from "../../../utils";
+import SettingsTable from "./SettingsTable";
 
 type PortfolioShowProps = Record<string, never>;
 
@@ -58,6 +59,8 @@ const PortfolioShow: FunctionComponent<PortfolioShowProps> = ({ ..._rest }): JSX
           </Center>
         </RouterLink>
       </Flex>
+
+      <SettingsTable content={thisPortfolio.settings} />
     </>
   );
 };

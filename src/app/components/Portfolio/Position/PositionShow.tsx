@@ -5,6 +5,7 @@ import { Link as RouterLink, useLoaderData, useNavigate, useParams } from "react
 import { PositionEntry } from "../../../../routers/positions.types";
 import { formatNumber } from "../../../utils";
 import Number from "../../Number/Number";
+import { ContractLink } from "../Contract/links";
 
 type PositionShowProps = Record<string, never>;
 
@@ -37,7 +38,9 @@ const PositionShow: FunctionComponent<PositionShowProps> = ({ ..._rest }): JSX.E
             Symbol:
           </Text>
           <Text w="200px" textAlign="right">
-            {thisPosition.contract.symbol}
+            <Link to={ContractLink.toItem(portfolioId, thisPosition.contract.id)} as={RouterLink}>
+              {thisPosition.contract.symbol}
+            </Link>
           </Text>
         </Flex>
         <Flex justifyContent="center" gap="2">

@@ -7,11 +7,12 @@ import BalancesIndex from "./components/Portfolio/Balance/BalancesIndex";
 import { balancesIndexLoader } from "./components/Portfolio/Balance/loaders";
 import ContractShow from "./components/Portfolio/Contract/ContractShow";
 import { contractShowLoader } from "./components/Portfolio/Contract/loaders";
+import PortfolioLayout from "./components/Portfolio/Layout/PortfolioLayout";
+import { action as PortfolioAction } from "./components/Portfolio/Layout/actions";
 import PortfolioEdit from "./components/Portfolio/Portfolio/PortfolioEdit";
-import { default as PortfolioShow } from "./components/Portfolio/Portfolio/PortfolioShow";
+import PortfolioShow from "./components/Portfolio/Portfolio/PortfolioShow";
 import { portfolioLoader } from "./components/Portfolio/Portfolio/loaders";
 import { default as PortfolioIndex } from "./components/Portfolio/PortfolioIndex";
-import PortfolioLayout from "./components/Portfolio/PortfolioLayout";
 import OptionsPositions from "./components/Portfolio/Position/OptionsPositions";
 import PositionEdit from "./components/Portfolio/Position/PositionEdit";
 import PositionShow from "./components/Portfolio/Position/PositionShow";
@@ -57,7 +58,6 @@ import {
   tradesMonthLoader,
   tradesShowLoader,
 } from "./components/Portfolio/Trade/loaders";
-import { action as PortfolioAction } from "./components/Portfolio/actions";
 import { portfolioIndexLoader } from "./components/Portfolio/loaders";
 import ErrorPage from "./error-page";
 import "./globals.css";
@@ -88,8 +88,14 @@ const router = createBrowserRouter([
               </PortfolioLayout>
             ),
             children: [
-              { index: true, Component: PortfolioShow, loader: portfolioLoader },
-              { path: "edit", Component: PortfolioEdit, loader: portfolioLoader },
+              /* Portfolio parameters */
+              {
+                path: "parameters",
+                children: [
+                  { index: true, Component: PortfolioShow, loader: portfolioLoader },
+                  { path: "edit", Component: PortfolioEdit, loader: portfolioLoader },
+                ],
+              },
 
               /* Statements */
               {

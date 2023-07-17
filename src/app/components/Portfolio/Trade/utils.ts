@@ -1,4 +1,4 @@
-import { TradeStatus, TradeStrategy } from "../../../models/trade.types";
+import { TradeStatus, TradeStrategy } from "../../../../models/trade.types";
 
 export const tradeStatus2String = (status: TradeStatus): string => {
   switch (status) {

@@ -82,7 +82,7 @@ router.get("/id/:contractId(\\d+)", (req, res): void => {
       // Add trades
       return Trade.findAll({
         where: { portfolio_id: portfolioId, symbol_id: contractId },
-        include: [{ model: Contract, as: "stock" }],
+        include: [{ model: Contract, as: "underlying" }],
       })
         .then((trades) => {
           logger.log(LogLevel.Trace, MODULE + ".GetContract", undefined, "trades", trades);

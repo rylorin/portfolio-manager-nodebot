@@ -3,16 +3,10 @@ import React from "react";
 import { Link as RouterLink, useLoaderData } from "react-router-dom";
 import { Portfolio as PortfolioModel } from "../../../models/portfolio.model";
 import { obfuscate } from "../../utils";
+import { StatementLink } from "./Statement/links";
 
 const PortfolioIndex = (): JSX.Element => {
-  // const [portfolios, setPortfolios] = useState([] as PortfolioModel[]);
   const portfolios = useLoaderData() as PortfolioModel[];
-
-  // useEffect(() => {
-  //   fetch("/api/portfolio")
-  //     .then((response) => response.json())
-  //     .then((data) => setPortfolios(data.data));
-  // }, []);
 
   return (
     <TableContainer>
@@ -29,7 +23,7 @@ const PortfolioIndex = (): JSX.Element => {
           {portfolios.map((item) => (
             <Tr key={item.id}>
               <Td>
-                <Link to={`${item.id}`} as={RouterLink}>
+                <Link to={StatementLink.toIndex(item.id)} as={RouterLink}>
                   {item.name}
                 </Link>
               </Td>
