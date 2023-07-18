@@ -1,4 +1,5 @@
-import { StatementTypes } from "../models";
+import { OptionType } from "@stoqey/ib";
+import { StatementTypes } from "../models/statement.types";
 
 export type SynthesysEntry = { stocks: number; options: number; dividends: number; interests: number; total: number };
 export type StatementsSynthesysEntries = Record<"string", SynthesysEntry>;
@@ -13,10 +14,10 @@ export type StatementEntry = {
   fees: number | undefined;
   fxRateToBase: number;
   description: string;
-  trade_id: number | undefined;
+  trade_id: number | null;
   underlying: { id: number; symbol: string } | undefined;
   quantity: number | undefined;
   option:
-    | { id: number; symbol: string; expiry: number; strike: number; callOrPut: "C" | "P"; multiplier: number }
+    | { id: number; symbol: string; expiry: number; strike: number; callOrPut: OptionType; multiplier: number }
     | undefined;
 };

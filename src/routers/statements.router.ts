@@ -10,10 +10,10 @@ import {
   OptionStatement,
   Portfolio,
   Statement,
-  StatementTypes,
   TaxStatement,
   Trade,
 } from "../models";
+import { StatementTypes } from "../models/statement.types";
 import { TradeStatus, TradeStrategy } from "../models/trade.types";
 import { StatementEntry, StatementsSynthesysEntries } from "./statements.types";
 import { updateTradeDetails } from "./trades.router";
@@ -23,21 +23,23 @@ const router = express.Router({ mergeParams: true });
 type parentParams = { portfolioId: number };
 
 const updateStatementTrade = (statement: Statement): Promise<Statement> => {
-  return Trade.findByPk(statement.trade_unit_id, {
-    include: [
-      { model: Contract, as: "stock" },
-      { model: Portfolio, as: "portfolio" },
-      { model: Statement, as: "statements" },
-      // { model: Position, as: "positions" },
-    ],
-  })
-    .then((thisTrade): Promise<Statement> => {
-      if (thisTrade) return updateTradeDetails(thisTrade).then(() => statement);
-      return Promise.resolve(statement);
-    })
-    .then((statement) => {
-      return Promise.resolve(statement);
-    });
+  return statement.trade_unit_id
+    ? Trade.findByPk(statement.trade_unit_id, {
+        include: [
+          { model: Contract, as: "stock" },
+          { model: Portfolio, as: "portfolio" },
+          { model: Statement, as: "statements" },
+          // { model: Position, as: "positions" },
+        ],
+      })
+        .then((thisTrade): Promise<Statement> => {
+          if (thisTrade) return updateTradeDetails(thisTrade).then(() => statement);
+          return Promise.resolve(statement);
+        })
+        .then((statement) => {
+          return Promise.resolve(statement);
+        })
+    : Promise.resolve(statement);
 };
 
 export const statementModelToStatementEntry = (item: Statement): Promise<StatementEntry> => {
@@ -372,7 +374,7 @@ router.get("/:statementId(\\d+)/AddToTrade/:tradeId(\\d+)", (req, res): void => 
   })
     .then((statement) => {
       if (statement) {
-        return statement.update({ trade_unit_id: tradeId });
+        return statement.update({ trade_unit_id: parseInt(tradeId) });
       } else {
         throw Error("statement doesn't exist");
       }

@@ -1,5 +1,5 @@
 import { ArrowBackIcon, CheckIcon } from "@chakra-ui/icons";
-import { Flex, IconButton, Text, VStack } from "@chakra-ui/react";
+import { Flex, IconButton, Select, Text, Textarea, VStack } from "@chakra-ui/react";
 import { Field, Formik, FormikProps } from "formik";
 import React, { FunctionComponent } from "react";
 import { Form, useLoaderData, useNavigate, useSubmit } from "react-router-dom";
@@ -19,8 +19,17 @@ const TradeEdit: FunctionComponent<Props> = ({ ..._rest }): JSX.Element => {
     <Formik
       initialValues={thisTrade}
       onSubmit={(values, _actions): void => {
-        // console.log(values);
-        submit(values, { method: "post" });
+        // console.log("submit values", values);
+        submit(
+          values,
+          // {
+          //   ...values,
+          // Select values are returned as string, therefore we have to convert them to numbers, if needed
+          //   status: parseInt(values.status as unknown as string),
+          //   strategy: parseInt(values.strategy as unknown as string),
+          // },
+          { method: "post" },
+        );
       }}
     >
       {(formik: FormikProps<TradeEntry>): JSX.Element => {
@@ -63,29 +72,29 @@ const TradeEdit: FunctionComponent<Props> = ({ ..._rest }): JSX.Element => {
                 <Text w="90px" as="b" textAlign="right">
                   Status:
                 </Text>
-                <Text w="200px" textAlign="right">
-                  <Field as="select" name="status" w="200px">
-                    {Object.keys(TradeStatus).map((k, v) => (
-                      <option value={v} key={`v${v}`}>
-                        {k}
-                      </option>
-                    ))}
-                  </Field>
-                </Text>
+                {/* <Select w="200px" name="status" variant="outline" value={formik.values.status}> */}
+                <Field as={Select} name="status" w="200px" type="number" variant="outline">
+                  {Object.keys(TradeStatus).map((k, v) => (
+                    <option value={v} key={`v${v}`}>
+                      {k}
+                    </option>
+                  ))}
+                </Field>
+                {/* </Select> */}
               </Flex>
               <Flex justifyContent="center" gap="2">
                 <Text w="90px" as="b" textAlign="right">
                   Strategy:
                 </Text>
-                <Text w="200px" textAlign="right">
-                  <Field as="select" name="strategy" w="200px">
-                    {Object.keys(TradeStrategy).map((k, v) => (
-                      <option value={v} key={`v${v}`}>
-                        {k}
-                      </option>
-                    ))}
-                  </Field>
-                </Text>
+                <Field as={Select} name="strategy" w="200px" type="number" variant="outline">
+                  {/* <Select name="strategy" w="200px" variant="outline" value={formik.values.strategy}> */}
+                  {Object.keys(TradeStrategy).map((k, v) => (
+                    <option value={v} key={`v${v}`}>
+                      {k}
+                    </option>
+                  ))}
+                  {/* </Select> */}
+                </Field>
               </Flex>
               <Flex justifyContent="center" gap="2">
                 <Text w="90px" as="b" textAlign="right">
@@ -140,7 +149,7 @@ const TradeEdit: FunctionComponent<Props> = ({ ..._rest }): JSX.Element => {
                   Notes:
                 </Text>
                 <Text w="200px">
-                  <Field name="comment" type="text" as="textarea" />
+                  <Field name="comment" type="text" as={Textarea} variant="outline" />
                 </Text>
               </Flex>
 

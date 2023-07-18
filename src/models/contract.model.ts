@@ -1,4 +1,4 @@
-import { CreationOptional, InferAttributes, InferCreationAttributes, Optional } from "sequelize";
+import { CreationOptional, InferAttributes, InferCreationAttributes, NonAttribute, Optional } from "sequelize";
 import { AllowNull, Column, DataType, Model, Table } from "sequelize-typescript";
 import { ContractType } from "./contract.types";
 
@@ -70,7 +70,7 @@ export class Contract extends Model<InferAttributes<Contract>, InferCreationAttr
   @Column({ type: DataType.FLOAT(6, 3), field: "previous_close_price" })
   declare previousClosePrice?: number;
 
-  get livePrice(): number {
+  get livePrice(): NonAttribute<number> {
     let value = undefined;
     if (this.getDataValue("ask") !== null && this.getDataValue("bid") !== null) {
       value = (this.getDataValue("ask") + this.getDataValue("bid")) / 2;

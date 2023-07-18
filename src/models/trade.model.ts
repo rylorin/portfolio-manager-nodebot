@@ -51,8 +51,8 @@ export class Trade extends Model<
   @BelongsTo(() => Contract, "symbol_id")
   declare underlying: Contract;
 
-  @Column({ type: DataType.SMALLINT, defaultValue: 0 })
-  declare strategy: TradeStrategy;
+  @Column({ type: DataType.SMALLINT })
+  declare status: TradeStatus;
 
   @Column({ type: DataType.DATE, field: "opening_date" })
   declare openingDate: Date;
@@ -60,8 +60,8 @@ export class Trade extends Model<
   @Column({ type: DataType.DATE, field: "closing_date" })
   declare closingDate?: Date;
 
-  @Column({ type: DataType.SMALLINT })
-  declare status: TradeStatus;
+  @Column({ type: DataType.SMALLINT, defaultValue: 0 })
+  declare strategy: TradeStrategy;
 
   @Column({ type: DataType.FLOAT, field: "pn_l" })
   declare PnL?: number;
@@ -72,6 +72,7 @@ export class Trade extends Model<
   @Column({ type: DataType.STRING(3) })
   declare currency: string;
 
+  /** Risk of this trade. A negative number represents the risk of loss of this trade */
   @Column({ type: DataType.FLOAT })
   declare risk?: number;
 

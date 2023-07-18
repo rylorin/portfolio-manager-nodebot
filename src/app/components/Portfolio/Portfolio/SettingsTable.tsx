@@ -22,6 +22,7 @@ const SettingsTable: FunctionComponent<Props> = ({ content, ..._rest }): JSX.Ele
           <Thead>
             <Tr>
               <Td>Symbol</Td>
+              <Td>NAV Ratio</Td>
             </Tr>
           </Thead>
           <Tbody>
@@ -30,6 +31,9 @@ const SettingsTable: FunctionComponent<Props> = ({ content, ..._rest }): JSX.Ele
               .map((item) => (
                 <Tr key={item.id}>
                   <Td>{item.contract.symbol}</Td>
+                  <Td isNumeric>
+                    <Number value={item.navRatio} decimals={1} isPercent />
+                  </Td>
                 </Tr>
               ))}
           </Tbody>
@@ -37,7 +41,7 @@ const SettingsTable: FunctionComponent<Props> = ({ content, ..._rest }): JSX.Ele
             <Tr>
               <Td fontWeight="bold">Total</Td>
               <Td>
-                <Number value={theSettings.reduce((p, item) => (p += item.navRatio), 0)} fontWeight="bold" />
+                <Number value={theSettings.reduce((p, item) => (p += item.navRatio), 0)} isPercent fontWeight="bold" />
               </Td>
               <Td></Td>
             </Tr>

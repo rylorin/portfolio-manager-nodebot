@@ -81,7 +81,7 @@ export class AccountUpdateBot extends ITradingBot {
                 // permId: order.order.permId,
                 // portfolioId: this.portfolio.id,
                 // contract_id: contract.id,
-                actionType: order.order.action == (leg.action as OrderAction) ? OrderAction.BUY : OrderAction.SELL,
+                actionType: order.order.action == leg.action ? OrderAction.BUY : OrderAction.SELL,
                 totalQty: order.order.totalQuantity * leg.ratio,
                 cashQty: order.order.cashQty * leg.ratio,
                 lmtPrice: undefined,

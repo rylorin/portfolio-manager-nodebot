@@ -13,13 +13,14 @@ export const tradeSave = ({ request, params }: ActionFunctionArgs): Promise<Resp
     .formData()
     .then((formData: Iterable<readonly [PropertyKey, any]>) => {
       const data = Object.fromEntries(formData);
-      // console.log("tradeSave:", data);
+      // console.log("trade save ", data);
       return fetch(`/api/portfolio/${portfolioId}/trades/id/${tradeId}/SaveTrade`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
         },
-        body: JSON.stringify(data),
+        // Select values are returned as string (not all???!!!), therefore we have to convert them to numbers, if needed
+        body: JSON.stringify({ ...data, strategy: parseInt(data.strategy) }),
       });
     })
     .then((response: Response) => response.json())

@@ -13,9 +13,9 @@ import {
   Portfolio,
   Statement,
   StatementStatus,
-  StatementTypes,
   TaxStatement,
 } from "../models";
+import { StatementTypes } from "../models/statement.types";
 
 const MODULE = "ImporterBot";
 
@@ -105,7 +105,16 @@ const transactionDescriptionFromElement = (element: any): string => {
     default:
       description += element.notes;
   }
-  return description + " " + element.quantity + " " + element.symbol + "@" + element.tradePrice + element.currency;
+  return (
+    description +
+    " " +
+    element.quantity +
+    " " +
+    (element.assetCategory == "STK" ? element.symbol : element.description) +
+    "@" +
+    element.tradePrice +
+    element.currency
+  );
 };
 
 export class ImporterBot extends ITradingBot {

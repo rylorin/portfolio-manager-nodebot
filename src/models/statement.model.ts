@@ -1,19 +1,9 @@
-import { BelongsTo, Column, DataType, ForeignKey, Model, Table } from "sequelize-typescript";
+import { CreationOptional, ForeignKey, InferAttributes, InferCreationAttributes } from "sequelize";
+import { BelongsTo, Column, DataType, Model, Table } from "sequelize-typescript";
 import { Contract } from "./contract.model";
 import { Portfolio } from "./portfolio.model";
+import { StatementTypes } from "./statement.types";
 import { Trade } from "./trade.model";
-
-export const StatementTypes = {
-  EquityStatement: "Trade",
-  OptionStatement: "TradeOption",
-  DividendStatement: "Dividend",
-  TaxStatement: "Tax",
-  InterestStatement: "Interest",
-  FeeStatement: "OtherFee",
-  CorporateStatement: "CorporateStatement",
-  CashStatement: "Cash",
-} as const;
-export type StatementTypes = (typeof StatementTypes)[keyof typeof StatementTypes];
 
 // type StatementAttributes = {
 //   id: number;
@@ -43,8 +33,24 @@ export type StatementTypes = (typeof StatementTypes)[keyof typeof StatementTypes
 // }
 
 @Table({ tableName: "statement", timestamps: true })
-export class Statement extends Model {
-  declare id: number;
+export class Statement extends Model<
+  InferAttributes<Statement>,
+  InferCreationAttributes<Statement, { omit: "stock" | "portfolio" | "trade" }>
+> {
+  // id can be undefined during creation when using `autoIncrement`
+  declare id: CreationOptional<number>;
+  // timestamps!
+  // createdAt can be undefined during creation
+  declare createdAt: CreationOptional<Date>;
+  // updatedAt can be undefined during creation
+  declare updatedAt: CreationOptional<Date>;
+
+  /** Portfolio */
+  // @ForeignKey(() => Portfolio)
+  // @Column
+  declare portfolio_id: ForeignKey<Portfolio["id"]>;
+  @BelongsTo(() => Portfolio, "portfolio_id")
+  declare portfolio: Portfolio;
 
   @Column({ type: DataType.ENUM(typeof StatementTypes), field: "statement_type" })
   declare statementType: StatementTypes;
@@ -67,24 +73,13 @@ export class Statement extends Model {
   @Column({ type: DataType.FLOAT, field: "fx_rate_to_base" })
   declare fxRateToBase: number;
 
-  /** Portfolio */
-  @ForeignKey(() => Portfolio)
-  @Column
-  declare portfolio_id: number;
-  @BelongsTo(() => Portfolio, "portfolio_id")
-  declare portfolio: Portfolio;
-
   /** Related underlying */
-  @ForeignKey(() => Contract)
-  @Column
-  declare stock_id?: number;
+  declare stock_id: ForeignKey<Contract["id"]>;
   @BelongsTo(() => Contract, "stock_id")
   declare stock: Contract;
 
   /** Trade */
-  @ForeignKey(() => Trade)
-  @Column
-  declare trade_unit_id?: number;
+  declare trade_unit_id: ForeignKey<Trade["id"]> | null;
   @BelongsTo(() => Trade, "trade_unit_id")
   declare trade: Trade;
 }

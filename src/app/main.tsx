@@ -128,6 +128,7 @@ const router = createBrowserRouter([
                     action: PortfolioAction,
                     children: [
                       { index: true, Component: StatementShow, loader: statementShowLoader },
+                      { path: "edit", Component: StatementShow, loader: statementShowLoader },
                       { path: "CreateTrade", action: statementCreateTrade },
                       { path: "GuessTrade", action: statementGuessTrade },
                       { path: "AddToTrade/:tradeId", action: statementAddToTrade },
@@ -222,7 +223,16 @@ const router = createBrowserRouter([
                 action: PortfolioAction,
                 children: [
                   { index: true },
-                  { path: "id/:contractId", Component: ContractShow, loader: contractShowLoader },
+                  {
+                    path: "id/:contractId",
+                    Component: ContractShow,
+                    loader: contractShowLoader,
+                    children: [
+                      { path: "GuessTrade/:positionId", action: positionGuessTrade },
+                      { path: "AddToTrade/:positionId/:tradeId", action: positionAddToTrade },
+                      { path: ":positionId/UnlinkTrade", action: positionUnlinkTrade },
+                    ],
+                  },
                 ],
               },
             ],

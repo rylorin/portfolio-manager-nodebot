@@ -15,7 +15,7 @@ export default function ErrorPage(): JSX.Element {
         <p>
           <strong>{isRouteErrorResponse(error) && <>Error {error.status} </>}</strong>
           <i>{error.statusText || error.message}</i>
-          <Text>{error.error.message}</Text>
+          <Text>{error.error?.message}</Text>
         </p>
       </div>
     </Layout>

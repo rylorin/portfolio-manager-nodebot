@@ -117,13 +117,13 @@ export class ITradingBot extends EventEmitter {
     const leg1: ComboLeg = {
       conId: buyleg,
       ratio: 1,
-      action: "BUY",
+      action: OrderAction.BUY,
       exchange: "SMART",
     };
     const leg2: ComboLeg = {
       conId: sellleg,
       ratio: 1,
-      action: "SELL",
+      action: OrderAction.SELL,
       exchange: "SMART",
     };
     contract.comboLegs = [leg2, leg1];
@@ -399,7 +399,7 @@ export class ITradingBot extends EventEmitter {
     underlying: number,
     right?: OptionType,
   ): Promise<OptionsSynthesis> {
-    const result = { value: 0, engaged: 0, risk: 0, quantity: 0, options: [] };
+    const result: OptionsSynthesis = { value: 0, engaged: 0, risk: 0, quantity: 0, options: [] };
     for (const order of orders) {
       const where: { id: number; stock_id: number; callOrPut?: OptionType } = {
         id: order.contract.id,
@@ -416,7 +416,7 @@ export class ITradingBot extends EventEmitter {
             currency: order.contract.currency,
           },
         }).then((currency) => {
-          if (opt !== null) {
+          if (opt !== null && currency) {
             result.quantity += order.remainingQty * opt.multiplier;
             result.value +=
               (order.remainingQty *
@@ -556,11 +556,11 @@ export class ITradingBot extends EventEmitter {
     transaction?: Transaction,
   ): Promise<Contract> {
     const defaults = {
-      conId: ibContract.conId,
+      conId: ibContract.conId!, // eslint-disable-line @typescript-eslint/no-unnecessary-type-assertion
       secType: ibContract.secType as ContractType,
-      symbol: ibContract.symbol,
-      currency: ibContract.currency,
-      exchange: ibContract.primaryExch || ibContract.exchange,
+      symbol: ibContract.symbol!, // eslint-disable-line @typescript-eslint/no-unnecessary-type-assertion
+      currency: ibContract.currency!, // eslint-disable-line @typescript-eslint/no-unnecessary-type-assertion
+      exchange: ibContract.primaryExch || ibContract.exchange!, // eslint-disable-line @typescript-eslint/no-unnecessary-type-assertion
       name: details.longName,
     };
     return Contract.findOrCreate({
@@ -574,7 +574,16 @@ export class ITradingBot extends EventEmitter {
       // logging: console.log,
     }).then(([contract, created]) => {
       if (created) {
-        return Stock.create({ id: contract.id }, { transaction: transaction }).then(() => Promise.resolve(contract));
+        return Stock.create(
+          {
+            id: contract.id,
+            industry: details.industry,
+            category: details.category,
+            subcategory: details.subcategory,
+            description: details.marketName,
+          },
+          { transaction: transaction },
+        ).then(() => Promise.resolve(contract));
       } else {
         return contract.update(defaults, { transaction: transaction });
       }
@@ -587,11 +596,11 @@ export class ITradingBot extends EventEmitter {
     transaction?: Transaction,
   ): Promise<Contract> {
     const defaults = {
-      conId: ibContract.conId,
+      conId: ibContract.conId!, // eslint-disable-line @typescript-eslint/no-unnecessary-type-assertion
       secType: ibContract.secType as ContractType,
-      symbol: ibContract.symbol,
-      currency: ibContract.currency,
-      exchange: ibContract.primaryExch || ibContract.exchange,
+      symbol: ibContract.symbol!, // eslint-disable-line @typescript-eslint/no-unnecessary-type-assertion
+      currency: ibContract.currency!, // eslint-disable-line @typescript-eslint/no-unnecessary-type-assertion
+      exchange: ibContract.primaryExch || ibContract.exchange!, // eslint-disable-line @typescript-eslint/no-unnecessary-type-assertion
       name: details.longName,
     };
     return Contract.findOrCreate({
@@ -618,11 +627,11 @@ export class ITradingBot extends EventEmitter {
     transaction?: Transaction,
   ): Promise<Contract> {
     const defaults = {
-      conId: ibContract.conId,
+      conId: ibContract.conId!, // eslint-disable-line @typescript-eslint/no-unnecessary-type-assertion
       secType: ibContract.secType as ContractType,
-      symbol: ibContract.localSymbol,
-      currency: ibContract.currency,
-      exchange: ibContract.exchange,
+      symbol: ibContract.localSymbol!, // eslint-disable-line @typescript-eslint/no-unnecessary-type-assertion
+      currency: ibContract.currency!, // eslint-disable-line @typescript-eslint/no-unnecessary-type-assertion
+      exchange: ibContract.exchange!, // eslint-disable-line @typescript-eslint/no-unnecessary-type-assertion
       name: ibContract.localSymbol,
     };
     return Contract.findOrCreate({
@@ -649,11 +658,11 @@ export class ITradingBot extends EventEmitter {
     transaction?: Transaction,
   ): Promise<Contract> {
     const defaults = {
-      conId: ibContract.conId,
+      conId: ibContract.conId!, // eslint-disable-line @typescript-eslint/no-unnecessary-type-assertion
       secType: ibContract.secType as ContractType,
       symbol: `${ibContract.tradingClass}-${ibContract.localSymbol}`,
-      currency: ibContract.currency,
-      exchange: ibContract.exchange,
+      currency: ibContract.currency!, // eslint-disable-line @typescript-eslint/no-unnecessary-type-assertion
+      exchange: ibContract.exchange!, // eslint-disable-line @typescript-eslint/no-unnecessary-type-assertion
     };
     return Contract.findOrCreate({
       where: {
@@ -748,11 +757,12 @@ export class ITradingBot extends EventEmitter {
     // console.log("createOptionContract", ibContract, details);
     const contract_values = {
       // Contract part of the option
-      conId: ibContract.conId,
+      conId: ibContract.conId!, // eslint-disable-line @typescript-eslint/no-unnecessary-type-assertion
       secType: ContractType.Option,
-      symbol: ibContract.localSymbol,
-      currency: ibContract.currency,
-      exchange: ibContract.primaryExch || ibContract.exchange,
+      symbol: ibContract.localSymbol!, // eslint-disable-line @typescript-eslint/no-unnecessary-type-assertion
+      currency: ibContract.currency!, // eslint-disable-line @typescript-eslint/no-unnecessary-type-assertion
+      // eslint-disable-next-line @typescript-eslint/no-unnecessary-type-assertion
+      exchange: ibContract.primaryExch || ibContract.exchange!,
       name: ITradingBot.formatOptionName(ibContract),
     };
     const opt_values: OptionCreationAttributes = {
@@ -760,9 +770,10 @@ export class ITradingBot extends EventEmitter {
       id: undefined,
       stock_id: undefined,
       lastTradeDate: ITradingBot.expirationToDateString(ibContract.lastTradeDateOrContractMonth),
-      strike: ibContract.currency == "GBP" ? ibContract.strike / 100 : ibContract.strike,
-      callOrPut: ibContract.right,
-      multiplier: ibContract.multiplier,
+      // eslint-disable-next-line @typescript-eslint/no-unnecessary-type-assertion
+      strike: ibContract.currency == "GBP" ? ibContract.strike! / 100 : ibContract.strike!,
+      callOrPut: ibContract.right!, // eslint-disable-line @typescript-eslint/no-unnecessary-type-assertion
+      multiplier: ibContract.multiplier!, // eslint-disable-line @typescript-eslint/no-unnecessary-type-assertion
       delta: ibContract.right == OptionType.Call ? 0.5 : -0.5,
     };
     const underlying = {
@@ -894,7 +905,8 @@ export class ITradingBot extends EventEmitter {
         if (err.name == "SequelizeTimeoutError") this.app.stop();
       }
       // rollback changes
-      if (!transaction_) await transaction.rollback();
+      // eslint-disable-next-line @typescript-eslint/no-unnecessary-type-assertion,@typescript-eslint/no-non-null-assertion
+      if (!transaction_) await transaction!.rollback();
       // and propagate exception
       throw err;
     }

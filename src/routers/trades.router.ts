@@ -16,42 +16,97 @@ const router = express.Router({ mergeParams: true });
 type parentParams = { portfolioId: number };
 
 export const updateTradeDetails = (thisTrade: Trade): Promise<Trade> => {
+  logger.log(LogLevel.Trace, MODULE + ".updateTradeDetails", thisTrade.underlying?.symbol, thisTrade);
   if (thisTrade && thisTrade.statements?.length) {
     // sort statements by date
     const items = thisTrade.statements.sort((a, b) => a.date.getTime() - b.date.getTime());
     thisTrade.openingDate = items[0].date;
     if (thisTrade.status == TradeStatus.closed && !thisTrade.closingDate)
       thisTrade.closingDate = items[items.length - 1].date;
+    else if (thisTrade.status != TradeStatus.closed) thisTrade.closingDate = undefined;
     thisTrade.PnL = 0;
     thisTrade.pnlInBase = 0;
+    thisTrade.risk = 0;
     return items
       .reduce(
         (p, item): Promise<Trade> =>
           p.then((thisTrade) => {
-            let risk = 0;
-            thisTrade.risk = 0;
             return statementModelToStatementEntry(item).then((statement_entry) => {
+              let risk = 0;
               switch (statement_entry.type) {
                 case StatementTypes.EquityStatement:
-                  risk += statement_entry.amount;
-                  // eslint-disable-next-line @typescript-eslint/no-unnecessary-type-assertion
-                  thisTrade.risk = Math.max(Math.abs(risk), thisTrade.risk!);
+                  if (!thisTrade.strategy) {
+                    // eslint-disable-next-line @typescript-eslint/no-unnecessary-type-assertion
+                    if (statement_entry.quantity! < 0) thisTrade.strategy = TradeStrategy["short stock"];
+                    else thisTrade.strategy = TradeStrategy["long stock"];
+                  }
+                  switch (thisTrade.strategy) {
+                    case TradeStrategy["short put"]:
+                    case TradeStrategy["the wheel"]:
+                      break;
+                  }
+                  //   risk += statement_entry.amount;
+                  // // eslint-disable-next-line @typescript-eslint/no-unnecessary-type-assertion
+                  // thisTrade.risk = Math.max(Math.abs(risk), thisTrade.risk!);
                   break;
                 case StatementTypes.OptionStatement:
+                  logger.log(
+                    LogLevel.Trace,
+                    MODULE + ".updateTradeDetails",
+                    thisTrade.underlying?.symbol,
+                    "TradeOption statement_entry",
+                    statement_entry,
+                  );
                   if (!thisTrade.strategy) {
                     // eslint-disable-next-line @typescript-eslint/no-unnecessary-type-assertion
                     if (statement_entry.option!.callOrPut == OptionType.Put) {
                       // eslint-disable-next-line @typescript-eslint/no-unnecessary-type-assertion
                       if (statement_entry.quantity! < 0) thisTrade.strategy = TradeStrategy["short put"];
                       else thisTrade.strategy = TradeStrategy["long put"];
+                      // eslint-disable-next-line @typescript-eslint/no-unnecessary-type-assertion
+                    } else if (statement_entry.option!.callOrPut == OptionType.Call) {
+                      // eslint-disable-next-line @typescript-eslint/no-unnecessary-type-assertion
+                      if (statement_entry.quantity! < 0) thisTrade.strategy = TradeStrategy["short call"];
+                      else thisTrade.strategy = TradeStrategy["long call"];
                     }
                   }
-                  risk += // eslint-disable-next-line @typescript-eslint/no-unnecessary-type-assertion
-                    statement_entry.option!.strike * statement_entry.option!.multiplier * statement_entry.quantity!;
-                  // eslint-disable-next-line @typescript-eslint/no-unnecessary-type-assertion
-                  thisTrade.risk = Math.max(Math.abs(risk), thisTrade.risk!);
+                  switch (thisTrade.strategy) {
+                    case TradeStrategy["short put"]:
+                    case TradeStrategy["the wheel"]:
+                      // eslint-disable-next-line @typescript-eslint/no-unnecessary-type-assertion
+                      if (statement_entry.quantity! < 0 && statement_entry.option!.callOrPut == OptionType.Put)
+                        risk = // eslint-disable-next-line @typescript-eslint/no-unnecessary-type-assertion
+                          statement_entry.option!.strike *
+                          // eslint-disable-next-line @typescript-eslint/no-unnecessary-type-assertion
+                          statement_entry.option!.multiplier *
+                          // eslint-disable-next-line @typescript-eslint/no-unnecessary-type-assertion
+                          statement_entry.quantity!;
+                      logger.log(
+                        LogLevel.Trace,
+                        MODULE + ".updateTradeDetails",
+                        thisTrade.underlying?.symbol,
+                        "strategy",
+                        thisTrade.strategy,
+                        "risk",
+                        thisTrade.risk,
+                        risk,
+                      );
+                      break;
+                    default:
+                      logger.log(
+                        LogLevel.Trace,
+                        MODULE + ".updateTradeDetails",
+                        thisTrade.underlying?.symbol,
+                        "strategy ignored",
+                        thisTrade.strategy,
+                        "risk",
+                        risk,
+                      );
+                  }
                   break;
               }
+              // eslint-disable-next-line @typescript-eslint/no-unnecessary-type-assertion
+              thisTrade.risk = Math.min(risk, thisTrade.risk!);
               if (statement_entry.pnl) {
                 // eslint-disable-next-line @typescript-eslint/no-unnecessary-type-assertion
                 thisTrade.PnL! += statement_entry.pnl;
@@ -92,7 +147,7 @@ export const tradeModelToTradeEntry = (
     risk: thisTrade.risk,
     pnl: thisTrade.PnL,
     pnlInBase: thisTrade.pnlInBase,
-    apy: thisTrade.risk && thisTrade.PnL ? (thisTrade.PnL / thisTrade.risk / thisTrade.duration) * 365 : undefined,
+    apy: thisTrade.risk && thisTrade.PnL ? (thisTrade.PnL / -thisTrade.risk) * (365 / thisTrade.duration) : undefined,
     comment: thisTrade.comment,
     statements: undefined,
     positions: undefined,
@@ -349,7 +404,7 @@ router.get("/month/:year(\\d+)/:month(\\d+)", (req, res): void => {
  */
 router.get("/id/:tradeId(\\d+)", (req, res): void => {
   const { _portfolioId, tradeId } = req.params as typeof req.params & parentParams;
-  // console.log("get trade", portfolioId, tradeId);
+
   Trade.findByPk(tradeId, {
     include: [
       { model: Contract, as: "underlying" },
@@ -367,7 +422,6 @@ router.get("/id/:tradeId(\\d+)", (req, res): void => {
       }
     })
     .then((trade) => {
-      // console.log(trade);
       res.status(200).json({ trade });
     })
     .catch((error) => {
@@ -380,27 +434,35 @@ router.get("/id/:tradeId(\\d+)", (req, res): void => {
  * Save a trade
  */
 router.post("/id/:tradeId(\\d+)/SaveTrade", (req, res): void => {
-  const { _portfolioId, tradeId } = req.params as typeof req.params & parentParams;
+  const { portfolioId, tradeId } = req.params as typeof req.params & parentParams;
   const data = req.body as TradeEntry;
+  logger.log(LogLevel.Debug, MODULE + ".SaveTrade", undefined, portfolioId, tradeId, data);
 
   Trade.findByPk(tradeId, {
-    include: [{ model: Statement, as: "statements", required: false, include: [{ model: Contract, as: "stock" }] }],
+    include: [
+      { model: Contract, as: "underlying", required: false },
+      {
+        model: Statement,
+        as: "statements",
+        required: false,
+        include: [{ model: Contract, as: "stock", required: false }],
+      },
+    ],
   })
     .then((trade) => {
-      if (trade)
-        return trade.update({
-          status: data.status,
-          strategy: data.strategy,
-          risk: data.risk,
-          comment: data.comment,
-        });
-      else throw Error("trade not found");
+      if (trade) {
+        trade.status = data.status;
+        trade.strategy = data.strategy;
+        trade.comment = data.comment ? data.comment : "";
+        return trade;
+      } else throw Error(`trade id ${tradeId} not found!`);
     })
     .then((trade) => updateTradeDetails(trade))
+    .then((trade) => trade.save())
     .then((trade) => res.status(200).json({ trade }))
     .catch((error) => {
       console.error(error);
-      logger.log(LogLevel.Error, MODULE + ".SaveTrade", undefined, error);
+      logger.log(LogLevel.Error, MODULE + ".SaveTrade", undefined, JSON.stringify(error));
       res.status(500).json({ error });
     });
 });
@@ -410,7 +472,7 @@ router.post("/id/:tradeId(\\d+)/SaveTrade", (req, res): void => {
  */
 router.delete("/id/:tradeId(\\d+)/DeleteTrade", (req, res): void => {
   const { portfolioId, tradeId } = req.params as typeof req.params & parentParams;
-  logger.log(LogLevel.Debug, MODULE + ".SaveTrade", undefined, portfolioId, tradeId);
+  logger.log(LogLevel.Debug, MODULE + ".DeleteTrade", undefined, portfolioId, tradeId);
 
   Position.update({ trade_unit_id: null }, { where: { portfolio_id: portfolioId, trade_unit_id: tradeId } })
     .then(() =>
@@ -428,7 +490,7 @@ router.delete("/id/:tradeId(\\d+)/DeleteTrade", (req, res): void => {
     .then(() => res.status(200).end())
     .catch((error) => {
       console.error(error);
-      logger.log(LogLevel.Error, MODULE + ".SaveTrade", undefined, error);
+      logger.log(LogLevel.Error, MODULE + ".DeleteTrade", undefined, JSON.stringify(error));
       res.status(500).json({ error });
     });
 });

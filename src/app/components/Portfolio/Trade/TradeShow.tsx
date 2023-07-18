@@ -1,6 +1,5 @@
 import { ArrowBackIcon, DeleteIcon, EditIcon } from "@chakra-ui/icons";
 import {
-  Center,
   Flex,
   IconButton,
   Link,
@@ -24,9 +23,9 @@ import PositionsTable from "../Position/PositionsTable";
 import StatementsTable from "../Statement/StatementsTable";
 import { tradeStatus2String, tradeStrategy2String } from "./utils";
 
-type TradeShowProps = Record<string, never>;
+type Props = Record<string, never>;
 
-const TradeShow: FunctionComponent<TradeShowProps> = ({ ..._rest }): JSX.Element => {
+const TradeShow: FunctionComponent<Props> = ({ ..._rest }): JSX.Element => {
   const { portfolioId } = useParams();
   const thisTrade = useLoaderData() as TradeEntry;
   const navigate = useNavigate();
@@ -80,7 +79,7 @@ const TradeShow: FunctionComponent<TradeShowProps> = ({ ..._rest }): JSX.Element
             Strategy:
           </Text>
           <Text w="200px" textAlign="right">
-            {tradeStrategy2String(thisTrade.strategy)}
+            {tradeStrategy2String(thisTrade.strategy)} ({thisTrade.strategy})
           </Text>
         </Flex>
         <Flex justifyContent="center" gap="2">
@@ -137,23 +136,17 @@ const TradeShow: FunctionComponent<TradeShowProps> = ({ ..._rest }): JSX.Element
           <Text w="90px" as="b" textAlign="right">
             Notes:
           </Text>
-          <Text w="200px" textAlign="right">
-            {thisTrade.comment}
-          </Text>
+          <Text w="200px">{thisTrade.comment}</Text>
         </Flex>
 
         <Flex justifyContent="center" gap="2" mt="1">
           <IconButton aria-label="Back" icon={<ArrowBackIcon />} variant="ghost" onClick={(): void => navigate(-1)} />
-          <RouterLink to="edit">
-            <Center w="40px" h="40px">
-              <EditIcon />
-            </Center>
-          </RouterLink>
+          <IconButton aria-label="Edit" icon={<EditIcon />} variant="ghost" as={RouterLink} to="edit" />
           {/* <Form method="post" action="edit" className="inline">
             <IconButton aria-label="Remove trade association" icon={<EditIcon />} variant="ghost" type="submit" />
           </Form> */}
           <Form method="post" action="delete" className="inline">
-            <IconButton aria-label="Remove trade association" icon={<DeleteIcon />} variant="ghost" type="submit" />
+            <IconButton aria-label="Delete" icon={<DeleteIcon />} variant="ghost" type="submit" />
           </Form>
         </Flex>
         {thisTrade.positions && thisTrade.positions.length && <PositionsTable content={thisTrade.positions} />}
