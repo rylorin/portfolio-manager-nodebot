@@ -1,26 +1,6 @@
-import { CreationOptional, InferAttributes, InferCreationAttributes, NonAttribute, Optional } from "sequelize";
+import { CreationOptional, InferAttributes, InferCreationAttributes, NonAttribute } from "sequelize";
 import { AllowNull, Column, DataType, Model, Table } from "sequelize-typescript";
 import { ContractType } from "./contract.types";
-
-export type ContractAttributes = {
-  id: number;
-  updatedAt: Date;
-
-  conId: number;
-  symbol: string;
-  secType: ContractType;
-  exchange: string;
-  currency: string;
-  name?: string;
-  price?: number;
-  bid?: number;
-  ask?: number;
-  previousClosePrice?: number;
-  fiftyTwoWeekLow?: number;
-  fiftyTwoWeekHigh?: number;
-};
-
-export type ContractCreationAttributes = Optional<ContractAttributes, "id" | "updatedAt">;
 
 @Table({ tableName: "contract", timestamps: true })
 export class Contract extends Model<InferAttributes<Contract>, InferCreationAttributes<Contract, { omit: "name" }>> {
@@ -59,16 +39,16 @@ export class Contract extends Model<InferAttributes<Contract>, InferCreationAttr
   declare name: string;
 
   @Column({ type: DataType.FLOAT(6, 3) })
-  declare price?: number;
+  declare price?: number | null;
 
   @Column({ type: DataType.FLOAT(6, 3) })
-  declare bid?: number;
+  declare bid?: number | null;
 
   @Column({ type: DataType.FLOAT(6, 3) })
-  declare ask?: number;
+  declare ask?: number | null;
 
   @Column({ type: DataType.FLOAT(6, 3), field: "previous_close_price" })
-  declare previousClosePrice?: number;
+  declare previousClosePrice?: number | null;
 
   get livePrice(): NonAttribute<number> {
     let value = undefined;

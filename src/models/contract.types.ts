@@ -1,3 +1,5 @@
+import { Optional } from "sequelize";
+
 export const ContractType = {
   Stock: "STK",
   Option: "OPT",
@@ -8,3 +10,23 @@ export const ContractType = {
   Index: "IND",
 } as const;
 export type ContractType = (typeof ContractType)[keyof typeof ContractType];
+
+export type ContractAttributes = {
+  id: number;
+  updatedAt: Date;
+
+  conId: number;
+  symbol: string;
+  secType: ContractType;
+  exchange: string;
+  currency: string;
+  name?: string;
+  price?: number;
+  bid?: number;
+  ask?: number;
+  previousClosePrice?: number;
+  fiftyTwoWeekLow?: number;
+  fiftyTwoWeekHigh?: number;
+};
+
+export type ContractCreationAttributes = Optional<ContractAttributes, "id" | "updatedAt">;

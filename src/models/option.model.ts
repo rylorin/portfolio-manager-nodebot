@@ -1,31 +1,20 @@
 import { OptionType } from "@stoqey/ib";
-import { Optional } from "sequelize";
+import { CreationOptional, InferAttributes, InferCreationAttributes, NonAttribute } from "sequelize";
 import { BelongsTo, Column, DataType, ForeignKey, Model, Table } from "sequelize-typescript";
 import { Contract } from "./contract.model";
 
-export type OptionAttributes = {
-  id: number;
-  updatedAt: Date;
-
-  stock_id?: number;
-
-  lastTradeDate: string;
-  strike: number;
-  callOrPut: OptionType;
-  multiplier: number;
-  impliedVolatility?: number;
-  pvDividend?: number;
-  delta?: number;
-  gamma?: number;
-  vega?: number;
-  theta?: number;
-};
-
-export type OptionCreationAttributes = Optional<OptionAttributes, "id" | "updatedAt">;
-
 @Table({ tableName: "option", timestamps: true, deletedAt: false })
-export class Option extends Model<OptionAttributes, OptionCreationAttributes> {
-  declare id: number;
+export class Option extends Model<
+  InferAttributes<Option>,
+  InferCreationAttributes<Option, { omit: "contract" | "stock" }>
+> {
+  // id can be undefined during creation when using `autoIncrement`
+  declare id: CreationOptional<number>;
+  // timestamps!
+  // createdAt can be undefined during creation
+  declare createdAt: CreationOptional<Date>;
+  // updatedAt can be undefined during creation
+  declare updatedAt: CreationOptional<Date>;
 
   @BelongsTo(() => Contract, "id")
   declare contract: Contract;
@@ -43,19 +32,22 @@ export class Option extends Model<OptionAttributes, OptionCreationAttributes> {
   }
   set lastTradeDate(value: Date | string) {
     if (value instanceof Date) {
-      // Format date to YYYY-MM-DD
-      const day: number = value.getDate();
-      const month: number = value.getMonth() + 1;
-      const year: number = value.getFullYear();
-      const lastTradeDate: string =
-        year + "-" + (month < 10 ? "0" + month : month) + "-" + (day < 10 ? "0" + day : day);
-      this.setDataValue("lastTradeDate", lastTradeDate);
+      // // Format date to YYYY-MM-DD
+      // const day: number = value.getDate();
+      // const month: number = value.getMonth() + 1;
+      // const year: number = value.getFullYear();
+      // const lastTradeDate: string =
+      //   year + "-" + (month < 10 ? "0" + month : month) + "-" + (day < 10 ? "0" + day : day);
+      // this.setDataValue("lastTradeDate", (lastTradeDate));
+      this.setDataValue("lastTradeDate", value);
     } else if (typeof value == "string") {
-      this.setDataValue("lastTradeDate", value.substring(0, 10));
+      this.setDataValue("lastTradeDate", new Date(value.substring(0, 10)));
     }
   }
-  get expiry(): number {
-    return parseInt(this.getDataValue("lastTradeDate").replaceAll("-", ""));
+
+  get expiry(): NonAttribute<number> {
+    // Format date to YYYYMMDD
+    return parseInt((this.getDataValue("lastTradeDate") as unknown as string).substring(0, 10).replaceAll("-", ""));
   }
 
   @Column({ type: DataType.FLOAT })

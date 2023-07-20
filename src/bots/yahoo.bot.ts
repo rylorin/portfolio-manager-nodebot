@@ -4,7 +4,10 @@ import yahooFinance from "yahoo-finance2";
 import { Quote } from "yahoo-finance2/dist/esm/src/modules/quote";
 import { ITradingBot } from ".";
 import { greeks, option_implied_volatility } from "../black_scholes";
+import logger, { LogLevel } from "../logger";
 import { AnyContract, Contract, Currency, Option, Stock } from "../models";
+
+const MODULE = "YahooBot";
 
 const YAHOO_PRICE_FREQ: number = parseInt(process.env.YAHOO_PRICE_FREQ || "15") || 15; // secs
 const YAHOO_PRICE_AGE: number = parseInt(process.env.YAHOO_PRICE_FREQ || "60") || 60; // mins
@@ -32,16 +35,21 @@ export class YahooUpdateBot extends ITradingBot {
   private lastFetch = 0;
 
   public async enqueueContract(contract: AnyContract): Promise<void> {
-    // console.log("enqueueContract");
-    // this.printObject(contract);
-    let quote: MappedQuote = undefined;
+    let quote: MappedQuote | undefined = undefined;
     if (contract instanceof Contract) {
+      contract.changed("updatedAt", true);
+      await contract.update(
+        { ask: null, bid: null, price: null, previousClosePrice: null },
+        {
+          logging: console.log,
+        },
+      );
       // VALUE is no more tradable, CME not supported by Yahoo?, LSE no more supported by Yahoo?
-      if (contract.exchange == "VALUE" || contract.exchange == "CME" || contract.exchange == "LSE") return;
+      if (contract.exchange == "VALUE" || contract.exchange == "CME" || contract.currency != "USD") return;
       if (contract.secType == SecType.STK) {
         quote = { contract, symbol: YahooUpdateBot.getYahooTicker(contract) };
       } else if (contract.secType == SecType.OPT) {
-        const option: Option = await Option.findByPk(contract.id);
+        const option: Option | null = await Option.findByPk(contract.id);
         quote = { contract, symbol: YahooUpdateBot.formatOptionName(option) };
       } else if (contract.secType == SecType.CASH) {
         quote = {
@@ -52,11 +60,25 @@ export class YahooUpdateBot extends ITradingBot {
         this.error("enqueueContract unhandled contract type (1)");
       }
     } else if (contract instanceof Stock) {
+      contract.changed("updatedAt", true);
+      await contract.update(
+        { ask: null, bid: null, price: null, previousClosePrice: null },
+        {
+          logging: console.log,
+        },
+      );
       quote = {
         contract: contract.contract,
         symbol: YahooUpdateBot.getYahooTicker(contract.contract),
       };
     } else if (contract instanceof Option) {
+      contract.changed("updatedAt", true);
+      await contract.update(
+        {},
+        {
+          logging: console.log,
+        },
+      );
       quote = {
         contract: contract.contract,
         symbol: YahooUpdateBot.formatOptionName(contract),
@@ -217,18 +239,19 @@ export class YahooUpdateBot extends ITradingBot {
           );
         }
       } else {
-        console.log("no Yahoo quote for:", r.symbol);
-        r.contract.changed("updatedAt", true);
-        promises.push(
-          r.contract
-            .update(
-              { ask: undefined, bid: undefined },
-              {
-                /* logging: console.log, */
-              },
-            )
-            .then(),
-        );
+        // console.log("no Yahoo quote for:", r.symbol);
+        logger.log(LogLevel.Debug, MODULE + ".iterateResults", "no Yahoo quote for:", r.symbol, r);
+        // r.contract.changed("updatedAt", true);
+        // promises.push(
+        //   r.contract
+        //     .update(
+        //       { ask: undefined, bid: undefined },
+        //       {
+        //          logging: console.log,
+        //       },
+        //     )
+        //     .then(),
+        // );
       }
     }
     return Promise.all(promises);

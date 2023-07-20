@@ -617,16 +617,19 @@ export class ContractsUpdaterBot extends ITradingBot {
               err.code == 10091 || // 'Part of requested market data requires additional subscription for API. See link in 'Market Data Connections' dialog for more details.Delayed market data is not available.SPY ARCA/TOP/ALL'
               err.code == 10168 // 'Requested market data is not subscribed. Delayed market data is not enabled.'
             ) {
-              if (this.yahooBot) {
+              if (this.yahooBot && contract.exchange != "VALUE") {
                 return this.yahooBot.enqueueContract(aContract);
               } else {
                 console.log(
                   `fetchContractsPrices failed for contract id ${contract.id} ${contract.conId} ${contract.secType} ${contract.symbol} ${contract.currency} @ ${contract.exchange} with error ${err.code}: '${err.error?.message}'`,
                 );
+                // contract.changed("updatedAt", true);
                 return Contract.update(
                   {
-                    ask: undefined,
-                    bid: undefined,
+                    ask: null,
+                    bid: null,
+                    price: null,
+                    previousClosePrice: null,
                   },
                   {
                     where: { id: contract.id },

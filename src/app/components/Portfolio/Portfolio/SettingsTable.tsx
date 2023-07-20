@@ -40,7 +40,7 @@ const SettingsTable: FunctionComponent<Props> = ({ content, ..._rest }): JSX.Ele
           <Tfoot>
             <Tr>
               <Td fontWeight="bold">Total</Td>
-              <Td>
+              <Td isNumeric>
                 <Number value={theSettings.reduce((p, item) => (p += item.navRatio), 0)} isPercent fontWeight="bold" />
               </Td>
               <Td></Td>

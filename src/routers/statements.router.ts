@@ -1,5 +1,6 @@
 import express from "express";
 import { Op } from "sequelize";
+import logger, { LogLevel } from "../logger";
 import {
   Contract,
   DividendStatement,
@@ -17,6 +18,8 @@ import { StatementTypes } from "../models/statement.types";
 import { TradeStatus, TradeStrategy } from "../models/trade.types";
 import { StatementEntry, StatementsSynthesysEntries } from "./statements.types";
 import { updateTradeDetails } from "./trades.router";
+
+const MODULE = "StatementsRouter";
 
 const router = express.Router({ mergeParams: true });
 
@@ -250,7 +253,11 @@ router.get("/month/:year(\\d+)/:month(\\d+)", (req, res): void => {
       );
     })
     .then((statemententries: StatementEntry[]) => res.status(200).json({ statemententries }))
-    .catch((error) => res.status(500).json({ error }));
+    .catch((error) => {
+      console.error(error);
+      logger.log(LogLevel.Error, MODULE + ".Month", undefined, JSON.stringify(error));
+      res.status(500).json({ error });
+    });
 });
 
 /**

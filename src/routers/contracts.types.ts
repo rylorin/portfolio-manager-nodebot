@@ -1,5 +1,6 @@
-import { OptionAttributes } from "../models";
+// import { OptionAttributes } from "../models";
 import { ContractType } from "../models/contract.types";
+import { OptionAttributes } from "../models/option.types";
 import { OptionPositionEntry, PositionEntry } from "./positions.types";
 import { StatementEntry } from "./statements.types";
 import { TradeEntry } from "./trades.types";

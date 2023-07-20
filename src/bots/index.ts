@@ -26,12 +26,12 @@ import {
   Index,
   OpenOrder,
   Option,
-  OptionCreationAttributes,
   Portfolio,
   Position,
   Stock,
 } from "../models";
 import { ContractType } from "../models/contract.types";
+import { OptionCreationAttributes } from "../models/option.types";
 
 type OptionsSynthesis = {
   value: number;
@@ -769,7 +769,8 @@ export class ITradingBot extends EventEmitter {
       // option specific fields
       id: undefined,
       stock_id: undefined,
-      lastTradeDate: ITradingBot.expirationToDateString(ibContract.lastTradeDateOrContractMonth),
+      // eslint-disable-next-line @typescript-eslint/no-unnecessary-type-assertion
+      lastTradeDate: ITradingBot.expirationToDate(ibContract.lastTradeDateOrContractMonth!),
       // eslint-disable-next-line @typescript-eslint/no-unnecessary-type-assertion
       strike: ibContract.currency == "GBP" ? ibContract.strike! / 100 : ibContract.strike!,
       callOrPut: ibContract.right!, // eslint-disable-line @typescript-eslint/no-unnecessary-type-assertion
