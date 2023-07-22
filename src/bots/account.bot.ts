@@ -2,7 +2,10 @@ import { IBApiNextError, OpenOrder as IbOpenOrder, Position as IbPosition, Order
 import { Subscription } from "rxjs";
 import { Op, Transaction } from "sequelize";
 import { ITradingBot } from ".";
+import logger, { LogLevel } from "../logger";
 import { Balance, Contract, OpenOrder, Position } from "../models";
+
+const MODULE = "AccountBot";
 
 export class AccountUpdateBot extends ITradingBot {
   private orderq: IbOpenOrder[] = [];
@@ -68,7 +71,8 @@ export class AccountUpdateBot extends ITradingBot {
 
   private createAndUpdateLegs(order: IbOpenOrder, transaction: Transaction): Promise<IbOpenOrder> {
     if (order.contract.secType == SecType.BAG) {
-      return order.contract.comboLegs?.reduce(
+      // eslint-disable-next-line @typescript-eslint/no-unnecessary-type-assertion
+      return order.contract.comboLegs!.reduce(
         (p, leg) =>
           p.then(() =>
             this.findOrCreateContract({ conId: leg.conId }, transaction).then((contract) => {
@@ -82,12 +86,18 @@ export class AccountUpdateBot extends ITradingBot {
                 // portfolioId: this.portfolio.id,
                 // contract_id: contract.id,
                 actionType: order.order.action == leg.action ? OrderAction.BUY : OrderAction.SELL,
-                totalQty: order.order.totalQuantity * leg.ratio,
-                cashQty: order.order.cashQty * leg.ratio,
+                // eslint-disable-next-line @typescript-eslint/no-unnecessary-type-assertion
+                totalQty: order.order.totalQuantity ? order.order.totalQuantity * leg.ratio! : undefined,
+                // eslint-disable-next-line @typescript-eslint/no-unnecessary-type-assertion
+                cashQty: order.order.cashQty ? order.order.cashQty * leg.ratio! : undefined,
                 lmtPrice: undefined,
                 auxPrice: undefined,
                 status: order.orderState.status,
-                remainingQty: order.orderStatus?.remaining * leg.ratio,
+                remainingQty: order.orderStatus
+                  ? order.orderStatus?.remaining * leg.ratio! // eslint-disable-line @typescript-eslint/no-unnecessary-type-assertion
+                  : order.order.totalQuantity
+                  ? order.order.totalQuantity * leg.ratio! // eslint-disable-line @typescript-eslint/no-unnecessary-type-assertion
+                  : undefined,
                 orderId: order.orderId,
                 clientId: order.order.clientId,
               };
@@ -175,24 +185,47 @@ export class AccountUpdateBot extends ITradingBot {
   }
 
   protected updatePosition(pos: IbPosition): Promise<Position> {
-    // this.printObject(pos);
+    logger.log(LogLevel.Trace, MODULE + ".updatePosition", pos.contract.symbol, pos);
     const defaults = {
       portfolio_id: this.portfolio.id,
       quantity: pos.pos,
       cost: pos.avgCost! * pos.pos, // eslint-disable-line @typescript-eslint/no-unnecessary-type-assertion
-      updatedAt: new Date(),
+      // updatedAt: new Date(), // force update
     };
     return this.findOrCreateContract(pos.contract).then((contract) =>
       Position.findOrCreate({
         where: { contract_id: contract.id },
         defaults: { ...defaults, contract_id: contract.id },
-      }).then(([position, created]) => {
-        if (created) return position;
-        else {
-          position.changed("updatedAt", true); // force update
-          return position.update(defaults);
-        }
-      }),
+      })
+        .then(([position, created]) => {
+          if (created) return position;
+          else {
+            position.changed("quantity", true); // force update
+            return position.update(defaults, { logging: console.log });
+          }
+        })
+        .then((position) => {
+          // update contract price, then return position
+          switch (contract.secType) {
+            case SecType.STK:
+              if (pos.avgCost) {
+                if (pos.marketValue) contract.price = pos.marketValue / pos.pos;
+                contract.changed("price", true); // force update
+                return contract.save({ logging: console.log }).then(() => position);
+              }
+              break;
+            case SecType.OPT:
+              if (pos.avgCost && pos.contract.multiplier) {
+                if (pos.marketValue) contract.price = pos.marketValue / pos.pos / pos.contract.multiplier;
+                contract.changed("price", true); // force update
+                return contract.save({ logging: console.log }).then(() => position);
+              }
+              break;
+            default:
+              logger.warn(MODULE + ".updatePosition", "to be implemented " + JSON.stringify(pos));
+          }
+          return position;
+        }),
     );
   }
 
@@ -263,8 +296,8 @@ export class AccountUpdateBot extends ITradingBot {
       next: (data) => {
         console.log("got next event", data.all.length, "open orders");
         console.log(`${data.added?.length} orders added, ${data.changed?.length} changed`);
-        if (data.added?.length > 0) this.iterateOpenOrdersForUpdate(data.added);
-        if (data.changed?.length > 0) this.iterateOpenOrdersForUpdate(data.changed);
+        if (data.added && data.added.length > 0) this.iterateOpenOrdersForUpdate(data.added);
+        if (data.changed && data.changed.length > 0) this.iterateOpenOrdersForUpdate(data.changed);
       },
       error: (err: IBApiNextError) => {
         this.app.error(`getOpenOrders failed with '${err.error.message}'`);

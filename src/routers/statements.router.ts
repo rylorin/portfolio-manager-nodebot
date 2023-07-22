@@ -26,6 +26,7 @@ const router = express.Router({ mergeParams: true });
 type parentParams = { portfolioId: number };
 
 const updateStatementTrade = (statement: Statement): Promise<Statement> => {
+  logger.debug(MODULE + ".updateStatementTrade", statement);
   return statement.trade_unit_id
     ? Trade.findByPk(statement.trade_unit_id, {
         include: [
@@ -36,6 +37,7 @@ const updateStatementTrade = (statement: Statement): Promise<Statement> => {
         ],
       })
         .then((thisTrade): Promise<Statement> => {
+          logger.debug(MODULE + ".updateStatementTrade", "thisTrade", thisTrade);
           if (thisTrade) return updateTradeDetails(thisTrade).then(() => statement);
           return Promise.resolve(statement);
         })
@@ -374,8 +376,8 @@ router.get("/:statementId(\\d+)/GuessTrade", (req, res): void => {
  * Add a statement to an existing trade
  */
 router.get("/:statementId(\\d+)/AddToTrade/:tradeId(\\d+)", (req, res): void => {
-  const { _portfolioId, statementId, tradeId } = req.params as typeof req.params & parentParams;
-  // console.log("CreateTrade", portfolioId, statementId);
+  const { portfolioId, statementId, tradeId } = req.params as typeof req.params & parentParams;
+  logger.debug(MODULE + ".AddToTrade", portfolioId, statementId, tradeId);
   Statement.findByPk(statementId, {
     include: [{ model: Contract }, { model: Portfolio }],
   })

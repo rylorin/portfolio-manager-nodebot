@@ -15,6 +15,12 @@ const router = express.Router({ mergeParams: true });
 
 type parentParams = { portfolioId: number };
 
+/**
+ * updateTradeDetails automatically update some trade's details
+ * TODO: redesign using all components positions and their associated risks :/
+ * @param thisTrade
+ * @returns
+ */
 export const updateTradeDetails = (thisTrade: Trade): Promise<Trade> => {
   logger.log(LogLevel.Trace, MODULE + ".updateTradeDetails", thisTrade.underlying?.symbol, thisTrade);
   if (thisTrade && thisTrade.statements?.length) {
@@ -91,6 +97,22 @@ export const updateTradeDetails = (thisTrade: Trade): Promise<Trade> => {
                         thisTrade.risk,
                         risk,
                       );
+                      break;
+                    case TradeStrategy["buy write"]:
+                      // eslint-disable-next-line @typescript-eslint/no-unnecessary-type-assertion
+                      if (
+                        statement_entry.quantity! < 0 &&
+                        statement_entry.option!.callOrPut == OptionType.Call &&
+                        // Opening statement (within 10 first minutes)
+                        statement_entry.date - thisTrade.openingDate.getTime() < 10 * 60 * 1000
+                      ) {
+                        risk = // eslint-disable-next-line @typescript-eslint/no-unnecessary-type-assertion
+                          statement_entry.option!.strike *
+                          // eslint-disable-next-line @typescript-eslint/no-unnecessary-type-assertion
+                          statement_entry.option!.multiplier *
+                          // eslint-disable-next-line @typescript-eslint/no-unnecessary-type-assertion
+                          statement_entry.quantity!;
+                      }
                       break;
                     default:
                       logger.log(

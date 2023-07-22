@@ -37,7 +37,7 @@ export class YahooUpdateBot extends ITradingBot {
   public async enqueueContract(contract: AnyContract): Promise<void> {
     let quote: MappedQuote | undefined = undefined;
     if (contract instanceof Contract) {
-      contract.changed("updatedAt", true);
+      contract.changed("price", true);
       await contract.update(
         { ask: null, bid: null, price: null, previousClosePrice: null },
         {
@@ -60,25 +60,11 @@ export class YahooUpdateBot extends ITradingBot {
         this.error("enqueueContract unhandled contract type (1)");
       }
     } else if (contract instanceof Stock) {
-      contract.changed("updatedAt", true);
-      await contract.update(
-        { ask: null, bid: null, price: null, previousClosePrice: null },
-        {
-          logging: console.log,
-        },
-      );
       quote = {
         contract: contract.contract,
         symbol: YahooUpdateBot.getYahooTicker(contract.contract),
       };
     } else if (contract instanceof Option) {
-      contract.changed("updatedAt", true);
-      await contract.update(
-        {},
-        {
-          logging: console.log,
-        },
-      );
       quote = {
         contract: contract.contract,
         symbol: YahooUpdateBot.formatOptionName(contract),
@@ -165,7 +151,7 @@ export class YahooUpdateBot extends ITradingBot {
           updatedAt: new Date(),
         };
         if (r.quote?.regularMarketPreviousClose) prices.previousClosePrice = r.quote?.regularMarketPreviousClose;
-        r.contract.changed("updatedAt", true);
+        r.contract.changed("price", true);
         promises.push(r.contract.update(prices).then());
         if (r.contract.secType == SecType.STK) {
           const stock_values = {

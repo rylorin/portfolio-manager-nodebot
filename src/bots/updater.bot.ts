@@ -14,18 +14,21 @@ import { MutableMarketData } from "@stoqey/ib/dist/core/api-next/api/market/muta
 import { Op, QueryTypes } from "sequelize";
 import { ITradingBot, YahooUpdateBot } from ".";
 import { MyTradingBotApp } from "..";
+import logger from "../logger";
 import { AnyContract, Contract, Currency, Option, Position, Stock } from "../models";
 
-const HISTORICAL_DATA_REFRESH_FREQ: number = parseInt(process.env.HISTORICAL_DATA_REFRESH_FREQ) || 12 * 60;
-const STOCKS_PRICES_REFRESH_FREQ: number = parseInt(process.env.STOCKS_PRICES_REFRESH_FREQ) || 15; // mins
-const FX_RATES_REFRESH_FREQ: number = parseInt(process.env.FX_RATES_REFRESH_FREQ) || 60; // mins
-const OPTIONS_LIST_BUILD_FREQ: number = parseInt(process.env.OPTIONS_LIST_BUILD_FREQ) || 24; // hours
-const BATCH_SIZE_OPTIONS_PRICE: number = parseInt(process.env.BATCH_SIZE_OPTIONS_PRICE) || 95; // units
-const OPTIONS_PRICE_DTE_FREQ: number = parseInt(process.env.OPTIONS_PRICE_DTE_FREQ) || 15; // mins
-const OPTIONS_PRICE_WEEK_FREQ: number = parseInt(process.env.OPTIONS_PRICE_WEEK_FREQ) || 60; // mins
-const OPTIONS_PRICE_MONTH_FREQ: number = parseInt(process.env.OPTIONS_PRICE_MONTH_FREQ) || 90; // mins
-const OPTIONS_PRICE_OTHER_FREQ: number = parseInt(process.env.OPTIONS_PRICE_OTHER_FREQ) || 120; // mins
-const OPTIONS_PRICE_TIMEFRAME: number = parseInt(process.env.OPTIONS_PRICE_TIMEFRAME) || 130; // days
+const MODULE = "UpdaterBot";
+
+const HISTORICAL_DATA_REFRESH_FREQ: number = parseInt(process.env.HISTORICAL_DATA_REFRESH_FREQ as string) || 12 * 60;
+const STOCKS_PRICES_REFRESH_FREQ: number = parseInt(process.env.STOCKS_PRICES_REFRESH_FREQ as string) || 15; // mins
+const FX_RATES_REFRESH_FREQ: number = parseInt(process.env.FX_RATES_REFRESH_FREQ as string) || 60; // mins
+const OPTIONS_LIST_BUILD_FREQ: number = parseInt(process.env.OPTIONS_LIST_BUILD_FREQ as string) || 24; // hours
+const BATCH_SIZE_OPTIONS_PRICE: number = parseInt(process.env.BATCH_SIZE_OPTIONS_PRICE as string) || 95; // units
+const OPTIONS_PRICE_DTE_FREQ: number = parseInt(process.env.OPTIONS_PRICE_DTE_FREQ as string) || 15; // mins
+const OPTIONS_PRICE_WEEK_FREQ: number = parseInt(process.env.OPTIONS_PRICE_WEEK_FREQ as string) || 60; // mins
+const OPTIONS_PRICE_MONTH_FREQ: number = parseInt(process.env.OPTIONS_PRICE_MONTH_FREQ as string) || 90; // mins
+const OPTIONS_PRICE_OTHER_FREQ: number = parseInt(process.env.OPTIONS_PRICE_OTHER_FREQ as string) || 120; // mins
+const OPTIONS_PRICE_TIMEFRAME: number = parseInt(process.env.OPTIONS_PRICE_TIMEFRAME as string) || 130; // days
 
 export class ContractsUpdaterBot extends ITradingBot {
   private yahooBot: YahooUpdateBot | undefined = undefined;
@@ -51,7 +54,7 @@ export class ContractsUpdaterBot extends ITradingBot {
   }
 
   private updateHistoricalVolatility(id: number, bars: Bar[]): Promise<void> {
-    const histVol: number = bars[bars.length - 1].close;
+    const histVol: number = bars[bars.length - 1].close!;
     // console.log(`updateHistoricalVolatility got ${histVol} for contract id ${id}`)
     return Stock.update(
       {
@@ -135,32 +138,32 @@ export class ContractsUpdaterBot extends ITradingBot {
     return this.api.getMarketDataSnapshot(ibContract, "", false);
   }
 
-  private updateContratPrice(contract: Contract, marketData: MutableMarketData): Promise<number> {
+  private updateContratPrice(contract: Contract, marketData: MutableMarketData): Promise<number | undefined | null> {
     // console.log(`updateContratPrice got data for ${contract.secType} contract ${contract.symbol} id ${contract.id}`);
     // this.app.printObject(marketData);
     const dataset: {
-      bid?: number;
-      ask?: number;
-      price?: number;
-      previousClosePrice?: number;
+      bid?: number | null;
+      ask?: number | null;
+      price?: number | null;
+      previousClosePrice?: number | null;
     } = {};
     const optdataset: {
-      pvDividend?: number;
-      delta?: number;
-      gamma?: number;
-      impliedVolatility?: number;
-      vega?: number;
-      theta?: number;
+      pvDividend?: number | null;
+      delta?: number | null;
+      gamma?: number | null;
+      impliedVolatility?: number | null;
+      vega?: number | null;
+      theta?: number | null;
     } = {};
     marketData.forEach((tick, type: TickType) => {
       if (type == IBApiTickType.BID) {
-        dataset.bid = tick.value > 0 ? tick.value : null;
+        dataset.bid = (tick.value as number) > 0 ? tick.value : null;
       } else if (type == IBApiTickType.ASK) {
-        dataset.ask = tick.value > 0 ? tick.value : null;
+        dataset.ask = (tick.value as number) > 0 ? tick.value : null;
       } else if (type == IBApiTickType.LAST) {
-        dataset.price = tick.value > 0 ? tick.value : null;
+        dataset.price = (tick.value as number) > 0 ? tick.value : null;
       } else if (type == IBApiTickType.CLOSE) {
-        dataset.previousClosePrice = tick.value > 0 ? tick.value : null;
+        dataset.previousClosePrice = (tick.value as number) > 0 ? tick.value : null;
       } else if (
         [
           IBApiTickType.BID_SIZE,
@@ -179,7 +182,7 @@ export class ContractsUpdaterBot extends ITradingBot {
         optdataset.pvDividend = tick.value;
       } else if (type == IBApiNextTickType.LAST_OPTION_PRICE) {
         if (!dataset.price) {
-          dataset.price = tick.value > 0 ? tick.value : null;
+          dataset.price = (tick.value as number) > 0 ? tick.value : null;
         }
       } else if (type == IBApiNextTickType.LAST_OPTION_DELTA) {
         if (tick.value) {
@@ -203,11 +206,11 @@ export class ContractsUpdaterBot extends ITradingBot {
           optdataset.impliedVolatility = tick.value;
         }
       } else if (type == IBApiNextTickType.MODEL_OPTION_PRICE) {
-        if (!dataset.price && tick.value > 0) {
+        if (!dataset.price && (tick.value as number) > 0) {
           dataset.price = tick.value;
         }
       } else if (type == IBApiNextTickType.MODEL_OPTION_IV) {
-        if (!optdataset.impliedVolatility && tick.value > 0) {
+        if (!optdataset.impliedVolatility && (tick.value as number) > 0) {
           optdataset.impliedVolatility = tick.value;
         }
       } else if (type == IBApiNextTickType.MODEL_OPTION_DELTA) {
@@ -393,6 +396,9 @@ export class ContractsUpdaterBot extends ITradingBot {
           if (position.contract.secType == SecType.STK) {
             return Stock.findByPk(position.contract.id, {
               include: { association: "contract", required: true },
+            }).then((contract) => {
+              if (contract) return contract;
+              else throw Error("Can not find Stock id: " + position.contract.id);
             });
           } else if (position.contract.secType == SecType.OPT) {
             return Option.findByPk(position.contract.id, {
@@ -408,9 +414,15 @@ export class ContractsUpdaterBot extends ITradingBot {
                   required: true,
                 },
               ],
+            }).then((contract) => {
+              if (contract) return contract;
+              else throw Error("Can not find Option id: " + position.contract.id);
             });
           } else {
-            return Contract.findByPk(position.contract.id);
+            return Contract.findByPk(position.contract.id).then((contract) => {
+              if (contract) return contract;
+              else throw Error("Can not find Contract id: " + position.contract.id);
+            });
           }
         }),
       ),
@@ -574,20 +586,26 @@ export class ContractsUpdaterBot extends ITradingBot {
     });
   }
 
+  private getBaseContract(aContract: AnyContract): Contract {
+    let contract: Contract;
+    if (aContract instanceof Contract) {
+      contract = aContract;
+    } else if (aContract instanceof Stock) {
+      contract = aContract.contract;
+    } else if (aContract instanceof Option) {
+      contract = aContract.contract;
+    } else {
+      logger.error(MODULE + ".fetchContractsPrices", "fetchContractsPrices unhandled contract type");
+      throw Error("fetchContractsPrices unhandled contract type");
+    }
+    return contract;
+  }
+
   private fetchContractsPrices(contracts: AnyContract[]): Promise<void> {
     // fetch all contracts in parallel
     const promises: Promise<void>[] = [];
     for (const aContract of contracts) {
-      let contract: Contract = undefined;
-      if (aContract instanceof Contract) {
-        contract = aContract;
-      } else if (aContract instanceof Stock) {
-        contract = aContract.contract;
-      } else if (aContract instanceof Option) {
-        contract = aContract.contract;
-      } else {
-        this.error("fetchContractsPrices unhandled contract type");
-      }
+      const contract = this.getBaseContract(aContract);
       const ibContract: IbContract = {
         conId: contract.conId,
         secType: contract.secType as SecType,
@@ -610,42 +628,29 @@ export class ContractsUpdaterBot extends ITradingBot {
             /* void */
           })
           .catch((err: { code: number; error: { message: string } }) => {
-            if (
-              err.code == 200 || // 'No security definition has been found for the request'
-              err.code == 354 || // 'Requested market data is not subscribed.Delayed market data is not available.WBD NASDAQ.NMS/TOP/ALL'
-              err.code == 10090 || // 'Part of requested market data is not subscribed. Subscription-independent ticks are still active.Delayed market data is not available.XLV ARCA/TOP/ALL'
-              err.code == 10091 || // 'Part of requested market data requires additional subscription for API. See link in 'Market Data Connections' dialog for more details.Delayed market data is not available.SPY ARCA/TOP/ALL'
-              err.code == 10168 // 'Requested market data is not subscribed. Delayed market data is not enabled.'
-            ) {
-              if (this.yahooBot && contract.exchange != "VALUE") {
+            // err.code == 200 || // 'No security definition has been found for the request'
+            // err.code == 354 || // 'Requested market data is not subscribed.Delayed market data is not available.WBD NASDAQ.NMS/TOP/ALL'
+            // err.code == 10090 || // 'Part of requested market data is not subscribed. Subscription-independent ticks are still active.Delayed market data is not available.XLV ARCA/TOP/ALL'
+            // err.code == 10091 || // 'Part of requested market data requires additional subscription for API. See link in 'Market Data Connections' dialog for more details.Delayed market data is not available.SPY ARCA/TOP/ALL'
+            // err.code == 10168 ||// 'Requested market data is not subscribed. Delayed market data is not enabled.'
+            // err.code==10197 // 'No market data during competing live session'
+
+            // mark contract as updated
+            contract.ask = null;
+            contract.bid = null;
+            contract.price = null;
+            contract.changed("price", true);
+            return contract.save().then(() => {
+              if (this.yahooBot && contract.exchange != "VALUE" && contract.currency == "USD") {
                 return this.yahooBot.enqueueContract(aContract);
               } else {
-                console.log(
-                  `fetchContractsPrices failed for contract id ${contract.id} ${contract.conId} ${contract.secType} ${contract.symbol} ${contract.currency} @ ${contract.exchange} with error ${err.code}: '${err.error?.message}'`,
+                logger.info(
+                  MODULE + ".fetchContractsPrices",
+                  `Failed for contract id ${contract.id} ${contract.conId} ${contract.secType} ${contract.symbol} ${contract.currency} @ ${contract.exchange} with error ${err.code}: '${err.error?.message}'`,
                 );
-                // contract.changed("updatedAt", true);
-                return Contract.update(
-                  {
-                    ask: null,
-                    bid: null,
-                    price: null,
-                    previousClosePrice: null,
-                  },
-                  {
-                    where: { id: contract.id },
-                    // logging: console.log,
-                  },
-                ).then();
+                return Promise.resolve();
               }
-            } else {
-              // silently ignore any other error
-              // console.log("fetchContractsPrices error ignored", err);
-              console.log(
-                `fetchContractsPrices failed for contract id ${contract.id} ${contract.conId} ${contract.secType} ${contract.symbol} ${contract.currency} @ ${contract.exchange} with error ${err.code}: '${err.error?.message}'`,
-              );
-              this.printObject(ibContract);
-            }
-            return Promise.resolve();
+            });
           }),
       );
     }

@@ -267,13 +267,14 @@ export class ImporterBot extends ITradingBot {
         },
       }).then(([statement, created]) => {
         if (created) {
+          logger.log(LogLevel.Debug, MODULE + ".processStockTrade", element.symbol, element);
           return EquityStatement.create({
             id: statement.id,
             quantity: element.quantity,
             price: element.price,
             proceeds: element.proceeds,
             fees: element.ibCommission,
-            realizedPnL: element.realizedPnL,
+            realizedPnL: element.fifoPnlRealized,
             status: transactionStatusFromElement(element),
           });
         } else {
@@ -331,8 +332,8 @@ export class ImporterBot extends ITradingBot {
       case SecType.OPT:
         return this.processOptionTrade(element).then((): void => undefined);
       default:
-        console.error("unsupported assetCategory:", element.assetCategory);
-        console.log("processTrade", element);
+        logger.error(MODULE + ".processOneTrade", "Unsupported assetCategory: " + element.assetCategory);
+        logger.debug(element);
         throw Error("unsupported assetCategory: " + element.assetCategory);
     }
   }
@@ -521,7 +522,7 @@ export class ImporterBot extends ITradingBot {
       ignoreAttributes: false,
       attributeNamePrefix: "",
     });
-    console.log("fetching report at", url);
+    logger.info(MODULE + ".fetchReport", "Fetching report at " + url);
     return fetch(url)
       .then((response) => response.text())
       .then((XMLdata) => {
@@ -540,7 +541,6 @@ export class ImporterBot extends ITradingBot {
           }
         } else if (jObj.FlexStatementResponse?.Status == "Warn" && jObj.FlexStatementResponse.ErrorCode == 1019) {
           // Retry
-          // setTimeout(() => this.fetchReport(url), 1 * 1000);
           return awaitTimeout(1).then(() => this.fetchReport(url));
         } else if (jObj.FlexStatementResponse?.ErrorMessage) {
           throw Error("Can t fetch data" + jObj.FlexStatementResponse.ErrorMessage);

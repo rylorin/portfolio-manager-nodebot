@@ -101,7 +101,7 @@ const StatementsTable: FunctionComponent<Props> = ({ content, ..._rest }): JSX.E
                         <Link to={TradeLink.toItem(portfolioId, item.trade_id)} as={RouterLink}>
                           {item.trade_id}
                         </Link>
-                        <Form method="post" action={`UnlinkTrade/${item.id}`} className="inline">
+                        <Form method="post" action={`StatementUnlinkTrade/${item.id}`} className="inline">
                           <IconButton
                             aria-label="Remove trade association"
                             icon={<SmallCloseIcon />}
@@ -114,7 +114,7 @@ const StatementsTable: FunctionComponent<Props> = ({ content, ..._rest }): JSX.E
                     )}
                     {item.underlying && !item.trade_id && (
                       <>
-                        <Form method="post" action={`CreateTrade/${item.id}`} className="inline">
+                        <Form method="post" action={`StatementCreateTrade/${item.id}`} className="inline">
                           <IconButton
                             aria-label="New trade"
                             icon={<PlusSquareIcon />}
@@ -123,7 +123,7 @@ const StatementsTable: FunctionComponent<Props> = ({ content, ..._rest }): JSX.E
                             type="submit"
                           />
                         </Form>
-                        <Form method="post" action={`GuessTrade/${item.id}`} className="inline">
+                        <Form method="post" action={`StatementGuessTrade/${item.id}`} className="inline">
                           <IconButton
                             aria-label="Guess trade"
                             icon={<QuestionOutlineIcon />}
@@ -133,7 +133,11 @@ const StatementsTable: FunctionComponent<Props> = ({ content, ..._rest }): JSX.E
                           />
                         </Form>
                         {previousId && (
-                          <Form method="post" action={`AddToTrade/${item.id}/${previousId}`} className="inline">
+                          <Form
+                            method="post"
+                            action={`StatementAddToTrade/${item.id}/${previousId}`}
+                            className="inline"
+                          >
                             <IconButton
                               aria-label="Above trade"
                               icon={<ArrowUpIcon />}
@@ -148,14 +152,14 @@ const StatementsTable: FunctionComponent<Props> = ({ content, ..._rest }): JSX.E
                   </Td>
                   <Td>{item.description}</Td>
                   <Td>
-                    <IconButton aria-label="New trade" icon={<SearchIcon />} size="xs" variant="link" />
-                    <IconButton aria-label="Guess trade" icon={<EditIcon />} size="xs" variant="ghost" />
+                    <IconButton aria-label="Show detail" icon={<SearchIcon />} size="xs" variant="ghost" />
+                    <IconButton aria-label="Edit details" icon={<EditIcon />} size="xs" variant="ghost" />
                     <Form method="post" action={`DeleteStatement/${item.id}`} className="inline">
                       <IconButton
                         aria-label="Delete statement"
                         icon={<DeleteIcon />}
                         size="xs"
-                        variant="link"
+                        variant="ghost"
                         type="submit"
                       />
                     </Form>

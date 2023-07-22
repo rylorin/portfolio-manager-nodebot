@@ -516,7 +516,8 @@ export class ITradingBot extends EventEmitter {
         currency: currency,
       },
     }).then((balance) => {
-      return balance.quantity / this.base_rates[balance.currency];
+      if (balance) return balance.quantity / this.base_rates[balance.currency];
+      else return 0;
     });
   }
 

@@ -60,22 +60,22 @@ export class Option extends Model<
   declare multiplier: number;
 
   @Column({ type: DataType.FLOAT(3, 5), field: "implied_volatility" })
-  declare impliedVolatility: number;
+  declare impliedVolatility: number | null;
 
   @Column({ type: DataType.FLOAT, field: "pv_dividend", defaultValue: 0 })
-  declare pvDividend: number;
+  declare pvDividend: number | null;
 
   @Column({ type: DataType.FLOAT(1, 4) })
-  declare delta: number;
+  declare delta: number | null;
 
   @Column({ type: DataType.FLOAT })
-  declare gamma: number;
+  declare gamma: number | null;
 
   @Column({ type: DataType.FLOAT })
-  declare vega: number;
+  declare vega: number | null;
 
   @Column({ type: DataType.FLOAT })
-  declare theta: number;
+  declare theta: number | null;
 
   get dte(): number {
     const dte: number = Math.floor(

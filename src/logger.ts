@@ -163,33 +163,38 @@ class Logger {
 
   /**
    * Display an error notification (and log it)
-   * @param title title of the notification
-   * @param description content of the notification
+   * @param module module reporting the notification
+   * @param args content of the notification
    */
-  public error(title: string | undefined, description: string): void {
-    this.log(LogLevel.Error, title, undefined, description);
+  public error(module: string, ...args: any[]): void {
+    this.log(LogLevel.Error, module, undefined, ...args);
   }
 
   /**
    * Display a warning notification (and log it)
-   * @param title title of the notification
-   * @param description content of the notification
+   * @param module module reporting the notification
+   * @param args content of the notification
    */
-  public warn(title: string, description: string): void {
-    this.log(LogLevel.Warning, title, undefined, description);
+  public warn(module: string, ...args: any[]): void {
+    this.log(LogLevel.Warning, module, undefined, ...args);
   }
 
   /**
    * Display an info notification (and log it)
-   * @param title title of the notification
-   * @param description content of the notification
+   * @param module module reporting the notification
+   * @param args content of the notification
    */
-  public info(title: string, description: string): void {
-    this.log(LogLevel.Info, title, undefined, description);
+  public info(module: string, ...args: any[]): void {
+    this.log(LogLevel.Info, module, undefined, ...args);
   }
 
-  public debug(...args: any[]): void {
-    this.log(LogLevel.Debug, "title", undefined, ...args);
+  /**
+   * Display a debug notification (and log it)
+   * @param module module reporting the notification
+   * @param args content of the notification
+   */
+  public debug(module: string, ...args: any[]): void {
+    this.log(LogLevel.Debug, module, undefined, ...args);
   }
 }
 

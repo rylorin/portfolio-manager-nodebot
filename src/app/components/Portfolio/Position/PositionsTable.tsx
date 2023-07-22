@@ -58,7 +58,7 @@ const PositionsTable: FunctionComponent<Props> = ({ content, ..._rest }): JSX.El
                         <Link to={`/portfolio/${portfolioId}/trades/id/${item.trade_id}`} as={RouterLink}>
                           {item.trade_id}
                         </Link>
-                        <Form method="post" action={`${item.id}/UnlinkTrade`} className="inline">
+                        <Form method="post" action={`${item.id}/PositionUnlinkTrade`} className="inline">
                           <IconButton
                             aria-label="Remove trade association"
                             icon={<SmallCloseIcon />}
@@ -71,7 +71,7 @@ const PositionsTable: FunctionComponent<Props> = ({ content, ..._rest }): JSX.El
                     )}
                     {!item.trade_id && (
                       <>
-                        <Form method="post" action={`GuessTrade/${item.id}`} className="inline">
+                        <Form method="post" action={`PositionGuessTrade/${item.id}`} className="inline">
                           <IconButton
                             aria-label="Guess trade"
                             icon={<QuestionOutlineIcon />}
@@ -81,7 +81,7 @@ const PositionsTable: FunctionComponent<Props> = ({ content, ..._rest }): JSX.El
                           />
                         </Form>
                         {previousId && (
-                          <Form method="post" action={`AddToTrade/${item.id}/${previousId}`} className="inline">
+                          <Form method="post" action={`PositionAddToTrade/${item.id}/${previousId}`} className="inline">
                             <IconButton
                               aria-label="Copy above trade"
                               icon={<ArrowUpIcon />}
