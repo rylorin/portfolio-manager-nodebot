@@ -102,7 +102,9 @@ const OptionsPositions: FunctionComponent<PositionsIndexProps> = ({ ..._rest }):
       </Box>
       <TableContainer>
         <Table variant="simple" size="sm" className="table-tiny">
-          <TableCaption>Statements index ({thePositions.length})</TableCaption>
+          <TableCaption>
+            Statements index ({thePositions.reduce((p, item) => ("option" in item ? p + 1 : p), 0 as number)})
+          </TableCaption>
           <Thead>
             <Tr>
               <Td>Units</Td>

@@ -305,45 +305,6 @@ export class ContractsUpdaterBot extends ITradingBot {
     });
   }
 
-  // private iterateContractsForSerialPriceUpdate(contracts: Contract[]): Promise<void> {
-  //   // fetch all contracts one after the previous one
-  //   return contracts.reduce((p, contract) => {
-  //     return p.then(() => this.requestContractPrice(contract)
-  //       .then((marketData) => this.updateContratPrice(contract, marketData)).then(() => { / void */; })
-  //       .catch(() =>
-  //         Contract.update({
-  //           price: null, ask: null, bid: null,
-  //         }, {
-  //           where: { id: contract.id }
-  //         }).then()
-  //       )
-  //     );
-  //   }, Promise.resolve()); // initial
-  // }
-
-  // private findStocksNeedingPriceUpdate(limit: number): Promise<Contract[]> {
-  //   return this.app.sequelize.query(`
-  //     SELECT
-  //         DISTINCT(contract.symbol), SUM(trading_parameters.nav_ratio) nav_ratio_sum,
-  //         stock.historical_volatility,
-  //         (julianday('now') - julianday(contract.updatedAt)) age,
-  //         contract.*
-  //       FROM trading_parameters, contract, stock
-  //       WHERE trading_parameters.stock_id = contract.id
-  //         AND trading_parameters.stock_id = stock.id
-  //         AND age > ?
-  //       GROUP BY contract.symbol
-  //       ORDER BY contract.updatedAt
-  //       LIMIT ?
-  //       `,
-  //     {
-  //       model: Contract,
-  //       mapToModel: true, // pass true here if you have any mapped fields
-  //       replacements: [STOCKS_PRICES_REFRESH_FREQ / 1440, limit],
-  //       // logging: console.log,
-  //     });
-  // }
-
   private findStockContractsToUpdatePrice(limit: number): Promise<Contract[]> {
     const now: number = Date.now() - STOCKS_PRICES_REFRESH_FREQ * 60 * 1000;
     return Contract.findAll({
@@ -356,7 +317,7 @@ export class ContractsUpdaterBot extends ITradingBot {
           },
         },
         exchange: {
-          [Op.ne]: "VALUE", // Contracts that are not tradable (removed, merges, ...) are on VALUE exchange
+          [Op.ne]: "VALUE", // Contracts that are not tradable (removed, merges, ...) are on 'VALUE' exchange
         },
       },
       limit: limit,
@@ -595,8 +556,8 @@ export class ContractsUpdaterBot extends ITradingBot {
     } else if (aContract instanceof Option) {
       contract = aContract.contract;
     } else {
-      logger.error(MODULE + ".fetchContractsPrices", "fetchContractsPrices unhandled contract type");
-      throw Error("fetchContractsPrices unhandled contract type");
+      logger.error(MODULE + ".getBaseContract", "Unhandled contract type");
+      throw Error("getBaseContract unhandled contract type");
     }
     return contract;
   }
@@ -621,26 +582,22 @@ export class ContractsUpdaterBot extends ITradingBot {
       } else if (contract.currency == "USD") {
         ibContract.exchange = "SMART"; // nothing except SMART seems to work for USD
       }
+      // mark contract as updated
+      contract.changed("price", true);
       promises.push(
-        this.requestContractPrice(ibContract)
-          .then((marketData) => this.updateContratPrice(contract, marketData))
-          .then(() => {
-            /* void */
-          })
-          .catch((err: { code: number; error: { message: string } }) => {
-            // err.code == 200 || // 'No security definition has been found for the request'
-            // err.code == 354 || // 'Requested market data is not subscribed.Delayed market data is not available.WBD NASDAQ.NMS/TOP/ALL'
-            // err.code == 10090 || // 'Part of requested market data is not subscribed. Subscription-independent ticks are still active.Delayed market data is not available.XLV ARCA/TOP/ALL'
-            // err.code == 10091 || // 'Part of requested market data requires additional subscription for API. See link in 'Market Data Connections' dialog for more details.Delayed market data is not available.SPY ARCA/TOP/ALL'
-            // err.code == 10168 ||// 'Requested market data is not subscribed. Delayed market data is not enabled.'
-            // err.code==10197 // 'No market data during competing live session'
-
-            // mark contract as updated
-            contract.ask = null;
-            contract.bid = null;
-            contract.price = null;
-            contract.changed("price", true);
-            return contract.save().then(() => {
+        contract.save().then((contract) =>
+          this.requestContractPrice(ibContract)
+            .then((marketData) => this.updateContratPrice(contract, marketData))
+            .then((_price) => {
+              /* void */
+            })
+            .catch((err: { code: number; error: { message: string } }) => {
+              // err.code == 200 || // 'No security definition has been found for the request'
+              // err.code == 354 || // 'Requested market data is not subscribed.Delayed market data is not available.WBD NASDAQ.NMS/TOP/ALL'
+              // err.code == 10090 || // 'Part of requested market data is not subscribed. Subscription-independent ticks are still active.Delayed market data is not available.XLV ARCA/TOP/ALL'
+              // err.code == 10091 || // 'Part of requested market data requires additional subscription for API. See link in 'Market Data Connections' dialog for more details.Delayed market data is not available.SPY ARCA/TOP/ALL'
+              // err.code == 10168 ||// 'Requested market data is not subscribed. Delayed market data is not enabled.'
+              // err.code==10197 // 'No market data during competing live session'
               if (this.yahooBot && contract.exchange != "VALUE" && contract.currency == "USD") {
                 return this.yahooBot.enqueueContract(aContract);
               } else {
@@ -650,8 +607,8 @@ export class ContractsUpdaterBot extends ITradingBot {
                 );
                 return Promise.resolve();
               }
-            });
-          }),
+            }),
+        ),
       );
     }
     return Promise.all(promises).then(() => this.yahooBot?.processQ());

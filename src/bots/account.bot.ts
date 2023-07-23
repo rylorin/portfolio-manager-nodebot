@@ -7,6 +7,8 @@ import { Balance, Contract, OpenOrder, Position } from "../models";
 
 const MODULE = "AccountBot";
 
+const sequelize_logging = (...args): void => logger.trace(MODULE + ".squelize", ...args);
+
 export class AccountUpdateBot extends ITradingBot {
   private orderq: IbOpenOrder[] = [];
   private qProcessing = 0;
@@ -190,7 +192,6 @@ export class AccountUpdateBot extends ITradingBot {
       portfolio_id: this.portfolio.id,
       quantity: pos.pos,
       cost: pos.avgCost! * pos.pos, // eslint-disable-line @typescript-eslint/no-unnecessary-type-assertion
-      // updatedAt: new Date(), // force update
     };
     return this.findOrCreateContract(pos.contract).then((contract) =>
       Position.findOrCreate({
@@ -201,7 +202,7 @@ export class AccountUpdateBot extends ITradingBot {
           if (created) return position;
           else {
             position.changed("quantity", true); // force update
-            return position.update(defaults, { logging: console.log });
+            return position.update(defaults, { logging: sequelize_logging });
           }
         })
         .then((position) => {
@@ -209,16 +210,20 @@ export class AccountUpdateBot extends ITradingBot {
           switch (contract.secType) {
             case SecType.STK:
               if (pos.avgCost) {
-                if (pos.marketValue) contract.price = pos.marketValue / pos.pos;
-                contract.changed("price", true); // force update
-                return contract.save({ logging: console.log }).then(() => position);
+                if (pos.marketValue) {
+                  contract.price = pos.marketValue / pos.pos;
+                  contract.changed("price", true); // force update
+                }
+                return contract.save().then(() => position);
               }
               break;
             case SecType.OPT:
               if (pos.avgCost && pos.contract.multiplier) {
-                if (pos.marketValue) contract.price = pos.marketValue / pos.pos / pos.contract.multiplier;
-                contract.changed("price", true); // force update
-                return contract.save({ logging: console.log }).then(() => position);
+                if (pos.marketValue) {
+                  contract.price = pos.marketValue / pos.pos / pos.contract.multiplier;
+                  contract.changed("price", true); // force update
+                }
+                return contract.save({ logging: sequelize_logging }).then(() => position);
               }
               break;
             default:

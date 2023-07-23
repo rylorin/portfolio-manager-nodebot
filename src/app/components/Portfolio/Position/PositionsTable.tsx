@@ -116,7 +116,15 @@ const PositionsTable: FunctionComponent<Props> = ({ content, ..._rest }): JSX.El
                       />
                     </Form>
                     <IconButton aria-label="Edit position" icon={<EditIcon />} size="xs" variant="ghost" />
-                    <IconButton aria-label="Delete position" icon={<DeleteIcon />} size="xs" variant="ghost" />
+                    <Form method="post" action={`DeletePosition/${item.id}`} className="inline">
+                      <IconButton
+                        aria-label="Delete position"
+                        icon={<DeleteIcon />}
+                        size="xs"
+                        variant="ghost"
+                        type="submit"
+                      />
+                    </Form>
                     {savePrevious(item.trade_id)}
                   </Td>
                 </Tr>

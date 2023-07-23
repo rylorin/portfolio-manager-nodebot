@@ -3,7 +3,13 @@ import { AllowNull, Column, DataType, Model, Table } from "sequelize-typescript"
 import { ContractType } from "./contract.types";
 
 @Table({ tableName: "contract", timestamps: true })
-export class Contract extends Model<InferAttributes<Contract>, InferCreationAttributes<Contract, { omit: "name" }>> {
+export class Contract extends Model<
+  InferAttributes<Contract>,
+  InferCreationAttributes<
+    Contract,
+    { omit: "name" | "price" | "ask" | "bid" | "previousClosePrice" | "fiftyTwoWeekLow" | "fiftyTwoWeekHigh" }
+  >
+> {
   // id can be undefined during creation when using `autoIncrement`
   declare id: CreationOptional<number>;
   // timestamps!
@@ -39,16 +45,16 @@ export class Contract extends Model<InferAttributes<Contract>, InferCreationAttr
   declare name: string;
 
   @Column({ type: DataType.FLOAT(6, 3) })
-  declare price?: number | null;
+  declare price: number | null;
 
   @Column({ type: DataType.FLOAT(6, 3) })
-  declare bid?: number | null;
+  declare bid: number | null;
 
   @Column({ type: DataType.FLOAT(6, 3) })
-  declare ask?: number | null;
+  declare ask: number | null;
 
   @Column({ type: DataType.FLOAT(6, 3), field: "previous_close_price" })
-  declare previousClosePrice?: number | null;
+  declare previousClosePrice: number | null;
 
   get livePrice(): NonAttribute<number> {
     let value = undefined;
@@ -63,10 +69,10 @@ export class Contract extends Model<InferAttributes<Contract>, InferCreationAttr
   }
 
   @Column({ type: DataType.FLOAT(6, 3), field: "fifty_two_week_low" })
-  declare fiftyTwoWeekLow?: number;
+  declare fiftyTwoWeekLow: number | null;
 
   @Column({ type: DataType.FLOAT(6, 3), field: "fifty_two_week_high" })
-  declare fiftyTwoWeekHigh?: number;
+  declare fiftyTwoWeekHigh: number | null;
 
   // @HasMany(() => Position, { sourceKey: "id", foreignKey: "contract_id" })
   // declare positions: Position[];

@@ -14,7 +14,7 @@ export type PositionEntry = {
     price: number | undefined;
   };
   trade_id: number | undefined;
-  price: number | undefined;
+  price: number | undefined; // current unit price
   value: number | undefined;
   pru: number;
   cost: number;
@@ -29,7 +29,7 @@ export type OptionPositionEntry = PositionEntry & {
     expiration: string;
     strike: number;
     type: string;
-    delta: number;
+    delta: number | undefined;
   };
   stock: {
     id: number;
@@ -37,6 +37,6 @@ export type OptionPositionEntry = PositionEntry & {
     price: number | undefined;
   };
   engaged: number;
-  risk: number;
+  risk: number | undefined;
   apy: number | undefined;
 };

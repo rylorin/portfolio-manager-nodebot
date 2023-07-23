@@ -10,7 +10,7 @@ export const router = express.Router({ mergeParams: true });
 
 type parentParams = { portfolioId: number };
 
-const getPrice = (item: Contract): number | undefined => {
+const getPrice = (item: Contract): number | null => {
   return item.price ? item.price : item.ask && item.bid ? (item.ask + item.bid) / 2 : item.previousClosePrice;
 };
 
@@ -35,10 +35,10 @@ export const preparePositions = (portfolio: Portfolio): Promise<(PositionEntry |
                 name: item.contract.name,
                 multiplier: 1,
                 currency: item.contract.currency,
-                price: getPrice(item.contract),
+                price: getPrice(item.contract) || undefined,
               },
               trade_id: item.trade_unit_id ? item.trade_unit_id : undefined,
-              price,
+              price: price ? price : undefined,
               value,
               pru: item.cost / item.quantity,
               cost: item.cost,
@@ -79,10 +79,10 @@ export const preparePositions = (portfolio: Portfolio): Promise<(PositionEntry |
                   name: item.contract.name,
                   multiplier: option.multiplier,
                   currency: item.contract.currency,
-                  price: getPrice(item.contract),
+                  price: getPrice(item.contract) || undefined,
                 },
                 trade_id: item.trade_unit_id ? item.trade_unit_id : undefined,
-                price,
+                price: price ? price : undefined,
                 value,
                 pru: item.cost / item.quantity / option.multiplier,
                 cost: item.cost,
@@ -94,15 +94,15 @@ export const preparePositions = (portfolio: Portfolio): Promise<(PositionEntry |
                   expiration: option.lastTradeDate.toISOString().substring(0, 10),
                   strike: option.strike,
                   type: option.callOrPut,
-                  delta: option.delta,
+                  delta: option.delta || undefined,
                 },
                 stock: {
                   id: option.stock.id,
                   symbol: option.stock.symbol,
-                  price: getPrice(option.stock),
+                  price: getPrice(option.stock) || undefined,
                 },
                 engaged,
-                risk: engaged * Math.abs(option.delta),
+                risk: option.delta ? engaged * Math.abs(option.delta) : undefined,
                 apy,
               };
               // console.log(item.contract.currency, result);

@@ -196,6 +196,15 @@ class Logger {
   public debug(module: string, ...args: any[]): void {
     this.log(LogLevel.Debug, module, undefined, ...args);
   }
+
+  /**
+   * Display a trace message (and log it)
+   * @param module module reporting the notification
+   * @param args content of the notification
+   */
+  public trace(module: string, ...args: any[]): void {
+    this.log(LogLevel.Trace, module, undefined, ...args);
+  }
 }
 
 /** singleton instance of Logger */
