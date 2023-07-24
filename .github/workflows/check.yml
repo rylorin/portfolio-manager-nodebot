@@ -21,4 +21,4 @@ jobs:
       - name: Prepare
         run: yarn install --frozen-lockfile
       - name: Quality Check
-        run: yarn test
+        run: yarn qc
