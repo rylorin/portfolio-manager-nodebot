@@ -27,7 +27,7 @@
     "prepare": "husky install",
     "prepublishOnly": "yarn build",
     "qc": "yarn lint && tsc --noEmit && prettier --check . && stylelint \"**/*.css\"",
-    "release": "yarn lint && yarn test && yarn doc && yarn build",
+    "release": "yarn lint && yarn qc && yarn doc && yarn build",
     "serve": "vite preview",
     "server:build": "tsc --project tsconfig.server.json",
     "server:dev": "ts-node-dev --project tsconfig.server.json src/index -server -import",
