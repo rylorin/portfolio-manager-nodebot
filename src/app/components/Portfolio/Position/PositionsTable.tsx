@@ -5,6 +5,8 @@ import { Form, Link as RouterLink, useLoaderData, useParams } from "react-router
 import { PositionEntry } from "../../../../routers/positions.types";
 import { formatNumber } from "../../../utils";
 import Number from "../../Number/Number";
+import { ContractLink } from "../Contract/links";
+import { PositionLink } from "./links";
 
 type Props = { content?: PositionEntry[] };
 
@@ -50,7 +52,11 @@ const PositionsTable: FunctionComponent<Props> = ({ content, ..._rest }): JSX.El
               .map((item) => (
                 <Tr key={item.id}>
                   <Td isNumeric>{formatNumber(item.quantity)}</Td>
-                  <Td>{item.contract.symbol}</Td>
+                  <Td>
+                    <Link to={ContractLink.toItem(portfolioId, item.contract.id)} as={RouterLink}>
+                      {item.contract.symbol}
+                    </Link>
+                  </Td>
                   <Td>{item.contract.name}</Td>
                   <Td>
                     {item.trade_id && (
@@ -106,7 +112,7 @@ const PositionsTable: FunctionComponent<Props> = ({ content, ..._rest }): JSX.El
                     <Number value={(item.pnl / item.cost) * Math.sign(item.quantity)} decimals={1} isPercent />
                   </Td>
                   <Td>
-                    <Form method="post" action={`id/${item.id}`} className="inline">
+                    <Form method="post" action={`${PositionLink.toItem(portfolioId, item.id)}`} className="inline">
                       <IconButton
                         aria-label="Show position"
                         icon={<SearchIcon />}

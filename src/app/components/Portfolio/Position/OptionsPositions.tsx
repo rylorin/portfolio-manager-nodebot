@@ -1,6 +1,6 @@
 import { Box, Link, Spacer, Table, TableCaption, TableContainer, Tbody, Td, Tfoot, Thead, Tr } from "@chakra-ui/react";
 import { FunctionComponent, default as React } from "react";
-import { Link as RouterLink, useLoaderData } from "react-router-dom";
+import { Link as RouterLink, useLoaderData, useParams } from "react-router-dom";
 import { OptionPositionEntry } from "../../../../routers/positions.types";
 import { formatNumber } from "../../../utils";
 import Number from "../../Number/Number";
@@ -12,6 +12,7 @@ type ItemRowType = OptionPositionEntry | TotalEntry;
 type PositionsIndexProps = Record<string, never>;
 
 type DataRowProps = {
+  portfolioId: number;
   item: ItemRowType;
 };
 
@@ -21,7 +22,7 @@ type DataRowProps = {
  * @returns
  */
 const OptionsPositions: FunctionComponent<PositionsIndexProps> = ({ ..._rest }): JSX.Element => {
-  // const bg = useColorModeValue("gray.200", "gray.900");
+  const { portfolioId } = useParams();
   const thePositions = useLoaderData() as OptionPositionEntry[];
 
   const compareItems = (a: OptionPositionEntry, b: OptionPositionEntry): number => {
@@ -81,8 +82,8 @@ const OptionsPositions: FunctionComponent<PositionsIndexProps> = ({ ..._rest }):
     return result;
   };
 
-  const DataRow: FunctionComponent<DataRowProps> = ({ item, ..._rest }): JSX.Element => {
-    if ("option" in item) return <OptionRow item={item} />;
+  const DataRow: FunctionComponent<DataRowProps> = ({ portfolioId, item, ..._rest }): JSX.Element => {
+    if ("option" in item) return <OptionRow item={item} portfolioId={portfolioId} />;
     else return <SubTotalRow subTotal={item} />;
   };
 
@@ -125,7 +126,7 @@ const OptionsPositions: FunctionComponent<PositionsIndexProps> = ({ ..._rest }):
           </Thead>
           <Tbody>
             {positions.map((item) => (
-              <DataRow item={item} key={item.id} />
+              <DataRow portfolioId={parseInt(portfolioId)} item={item} key={item.id} />
             ))}
           </Tbody>
           <Tfoot>

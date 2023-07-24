@@ -5,10 +5,11 @@ import { Form } from "react-router-dom";
 import { OptionPositionEntry } from "../../../../routers/positions.types";
 import { formatNumber } from "../../../utils";
 import Number from "../../Number/Number";
+import { PositionLink } from "./links";
 
-type Props = { item: OptionPositionEntry };
+type Props = { portfolioId: number; item: OptionPositionEntry };
 
-const OptionRow: FunctionComponent<Props> = ({ item, ..._rest }): JSX.Element => {
+const OptionRow: FunctionComponent<Props> = ({ portfolioId, item, ..._rest }): JSX.Element => {
   const getITM = (item: OptionPositionEntry): number => {
     if (!item.stock.price) return undefined;
     else if (item.option.type == "P") {
@@ -46,7 +47,7 @@ const OptionRow: FunctionComponent<Props> = ({ item, ..._rest }): JSX.Element =>
         <Td isNumeric>{formatNumber(item.engaged)}</Td>
         <Td isNumeric>{formatNumber(item.risk)}</Td>
         <Td>
-          <Form method="post" action={`id/${item.id}`} className="inline">
+          <Form method="post" action={`${PositionLink.toItem(portfolioId, item.id)}`} className="inline">
             <IconButton aria-label="Show position" icon={<SearchIcon />} size="xs" variant="ghost" type="submit" />
           </Form>
           <IconButton aria-label="Guess trade" icon={<EditIcon />} size="xs" variant="ghost" />

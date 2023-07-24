@@ -573,10 +573,12 @@ export class ContractsUpdaterBot extends ITradingBot {
         symbol: contract.symbol,
         currency: contract.currency,
         exchange: contract.exchange,
-        lastTradeDateOrContractMonth: contract["lastTradeDateOrContractMonth"],
-        strike: contract["strike"],
-        right: contract["right"],
       };
+      if (contract instanceof Option) {
+        ibContract.lastTradeDateOrContractMonth = `${contract.expiry}`;
+        ibContract.strike = contract.strike;
+        ibContract.right = contract.callOrPut;
+      }
       if (contract.secType == SecType.CASH) {
         ibContract.symbol = contract.symbol.substring(0, 3);
       } else if (contract.currency == "USD") {

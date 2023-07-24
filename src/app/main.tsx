@@ -147,14 +147,6 @@ const router = createBrowserRouter([
                     path: "all",
                     children: [
                       { index: true, Component: PositionsIndex, loader: positionsIndexLoader },
-                      {
-                        path: "id/:positionId",
-                        action: PortfolioAction,
-                        children: [
-                          { index: true, Component: PositionShow, loader: positionShowLoader },
-                          { path: "edit", Component: PositionEdit, loader: positionShowLoader, action: positionSave },
-                        ],
-                      },
                       { path: "DeletePosition/:positionId", action: positionDelete },
                       { path: "PositionGuessTrade/:positionId", action: positionGuessTrade },
                       { path: "PositionAddToTrade/:positionId/:tradeId", action: positionAddToTrade },
@@ -165,15 +157,23 @@ const router = createBrowserRouter([
                     path: "options",
                     children: [
                       { index: true, Component: OptionsPositions, loader: positionsOptionsLoader },
-                      {
-                        path: "id/:positionId",
-                        action: PortfolioAction,
-                        children: [
-                          { index: true, Component: PositionShow, loader: positionShowLoader },
-                          { path: "edit", Component: PositionEdit, loader: positionShowLoader },
-                        ],
-                      },
+                      // {
+                      //   path: "id/:positionId",
+                      //   action: PortfolioAction,
+                      //   children: [
+                      //     { index: true, Component: PositionShow, loader: positionShowLoader },
+                      //     { path: "edit", Component: PositionEdit, loader: positionShowLoader },
+                      //   ],
+                      // },
                       { path: "DeletePosition/:positionId", action: positionDelete },
+                    ],
+                  },
+                  {
+                    path: "id/:positionId",
+                    action: PortfolioAction,
+                    children: [
+                      { index: true, Component: PositionShow, loader: positionShowLoader },
+                      { path: "edit", Component: PositionEdit, loader: positionShowLoader, action: positionSave },
                     ],
                   },
                 ],
@@ -207,11 +207,14 @@ const router = createBrowserRouter([
                       { index: true, Component: TradeShow, loader: tradesShowLoader },
                       { path: "edit", Component: TradeEdit, loader: tradesShowLoader, action: tradeSave },
                       { path: "delete", action: tradeDelete },
+
                       { path: "StatementCreateTrade/:statementId", action: statementCreateTrade },
                       { path: "StatementGuessTrade/:statementId", action: statementGuessTrade },
                       { path: "StatementAddToTrade/:statementId/:tradeId", action: statementAddToTrade },
                       { path: "StatementUnlinkTrade/:statementId", action: statementUnlinkTrade },
                       { path: "DeleteStatement/:statementId", action: statementDelete },
+
+                      { path: ":positionId/PositionUnlinkTrade", action: positionUnlinkTrade },
                     ],
                   },
                   {

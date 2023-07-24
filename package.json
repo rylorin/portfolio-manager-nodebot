@@ -12,6 +12,7 @@
     "LICENSE"
   ],
   "scripts": {
+    "_tsc": "./node_modules/.bin/tsc",
     "build": "yarn run server:build && yarn run client:build && yarn run storybook:build",
     "build:ib": "cd ./node_modules/@stoqey/ib && yarn && yarn build",
     "build:watch": "yarn tsc --watch",
@@ -25,15 +26,14 @@
     "lint": "eslint . --ext .ts,.tsx",
     "prepare": "husky install",
     "prepublishOnly": "yarn build",
+    "qc": "yarn lint && tsc --noEmit && prettier --check . && stylelint \"**/*.css\"",
     "release": "yarn lint && yarn test && yarn doc && yarn build",
     "serve": "vite preview",
     "server:build": "tsc --project tsconfig.server.json",
     "server:dev": "ts-node-dev --project tsconfig.server.json src/index -server -import",
     "start": "node dist/index.js -server",
     "storybook": "storybook dev -p 6006",
-    "storybook:build": "storybook build -o dist/storybook",
-    "test": "yarn lint && tsc --noEmit && prettier --check . && stylelint \"**/*.css\"",
-    "tsc": "./node_modules/.bin/tsc"
+    "storybook:build": "storybook build -o dist/storybook"
   },
   "dependencies": {
     "@chakra-ui/icons": "^2.1.0",
