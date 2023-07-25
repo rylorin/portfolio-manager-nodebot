@@ -6,6 +6,7 @@ import { PositionEntry } from "../../../../routers/positions.types";
 import { formatNumber } from "../../../utils";
 import Number from "../../Number/Number";
 import { ContractLink } from "../Contract/links";
+import { PositionLink } from "./links";
 
 type PositionShowProps = Record<string, never>;
 
@@ -126,10 +127,8 @@ const PositionShow: FunctionComponent<PositionShowProps> = ({ ..._rest }): JSX.E
 
         <Flex justifyContent="center" gap="2" mt="1">
           <IconButton aria-label="Back" icon={<ArrowBackIcon />} variant="ghost" onClick={(): void => navigate(-1)} />
-          <RouterLink to="edit">
-            <Center w="40px" h="40px">
-              <EditIcon />
-            </Center>
+          <RouterLink to={`${PositionLink.editItem(portfolioId, thisPosition.id)}`}>
+            <IconButton aria-label="Edit position" icon={<EditIcon />} variant="ghost" type="submit" />
           </RouterLink>
           <RouterLink to="delete_but_edit">
             <Center w="40px" h="40px">

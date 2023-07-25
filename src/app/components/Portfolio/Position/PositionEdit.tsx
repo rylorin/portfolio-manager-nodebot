@@ -1,8 +1,8 @@
 import { ArrowBackIcon, CheckIcon } from "@chakra-ui/icons";
-import { Flex, IconButton, Link, Text, VStack } from "@chakra-ui/react";
+import { Flex, IconButton, Text, VStack } from "@chakra-ui/react";
 import { Field, Formik, FormikProps } from "formik";
 import { FunctionComponent, default as React } from "react";
-import { Form, Link as RouterLink, useLoaderData, useNavigate, useParams, useSubmit } from "react-router-dom";
+import { Form, useLoaderData, useNavigate, useParams, useSubmit } from "react-router-dom";
 import { PositionEntry } from "../../../../routers/positions.types";
 import { formatNumber } from "../../../utils";
 import Number from "../../Number/Number";
@@ -10,7 +10,7 @@ import Number from "../../Number/Number";
 type PositionEditProps = Record<string, never>;
 
 const PositionEdit: FunctionComponent<PositionEditProps> = ({ ..._rest }): JSX.Element => {
-  const { portfolioId } = useParams();
+  const { _portfolioId } = useParams();
   const thisPosition = useLoaderData() as PositionEntry;
   const navigate = useNavigate();
   const submit = useSubmit();
@@ -51,12 +51,6 @@ const PositionEdit: FunctionComponent<PositionEditProps> = ({ ..._rest }): JSX.E
                   {thisPosition.contract.symbol}
                 </Text>
               </Flex>
-              {/* <Flex justifyContent="center" gap="2">
-                <Text w="90px" as="b" textAlign="right">
-                  Quantity:
-                </Text>
-                <Input type="number" value={formik.values.quantity} onChange={formik.handleChange} id="quantity" />
-              </Flex> */}
               <Flex justifyContent="center" gap="2">
                 <Text w="90px" as="b" textAlign="right">
                   Quantity:
@@ -131,11 +125,9 @@ const PositionEdit: FunctionComponent<PositionEditProps> = ({ ..._rest }): JSX.E
                 <Text w="90px" as="b" textAlign="right">
                   Trade:
                 </Text>
-                <Link to={`/portfolio/${portfolioId}/trades/id/${thisPosition.trade_id}`} as={RouterLink}>
-                  <Text w="200px" textAlign="right">
-                    {thisPosition.trade_id}
-                  </Text>
-                </Link>
+                <Text w="200px">
+                  <Field name="trade_id" type="number" />
+                </Text>
               </Flex>
 
               <Flex justifyContent="center" gap="2" mt="1">

@@ -72,8 +72,8 @@ const OptionsPositions: FunctionComponent<PositionsIndexProps> = ({ ..._rest }):
         subTotal.units += Math.abs(item.quantity);
         subTotal.cost += item.cost * item.baseRate;
         subTotal.value += item.value * item.baseRate;
-        subTotal.engaged += item.engaged * item.baseRate;
-        subTotal.risk += item.risk * item.baseRate;
+        subTotal.engaged += item.engaged < 0 ? item.engaged * item.baseRate : 0;
+        subTotal.risk += item.risk < 0 ? item.risk * item.baseRate : 0;
         subTotal.pnl += item.pnl * item.baseRate;
         // console.log(subTotal);
         result.push(item);
@@ -145,10 +145,10 @@ const OptionsPositions: FunctionComponent<PositionsIndexProps> = ({ ..._rest }):
               </Td>
               <Td></Td>
               <Td isNumeric>
-                <Number value={thePositions.reduce((p, v) => (p += (v.engaged || 0) * v.baseRate), 0)} />
+                <Number value={thePositions.reduce((p, v) => (p += v.engaged < 0 ? v.engaged * v.baseRate : 0), 0)} />
               </Td>
               <Td isNumeric>
-                <Number value={thePositions.reduce((p, v) => (p += (v.risk || 0) * v.baseRate), 0)} />
+                <Number value={thePositions.reduce((p, v) => (p += v.risk < 0 ? v.risk * v.baseRate : 0), 0)} />
               </Td>
               <Td></Td>
             </Tr>

@@ -7,3 +7,7 @@
 form.inline {
   display: inline;
 }
+
+form.inline-flex {
+  display: inline-flex;
+}

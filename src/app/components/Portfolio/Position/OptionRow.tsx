@@ -1,7 +1,7 @@
 import { DeleteIcon, EditIcon, SearchIcon } from "@chakra-ui/icons";
 import { IconButton, Td, Tr } from "@chakra-ui/react";
 import { FunctionComponent, default as React } from "react";
-import { Form } from "react-router-dom";
+import { Form, Link as RouterLink } from "react-router-dom";
 import { OptionPositionEntry } from "../../../../routers/positions.types";
 import { formatNumber } from "../../../utils";
 import Number from "../../Number/Number";
@@ -47,10 +47,12 @@ const OptionRow: FunctionComponent<Props> = ({ portfolioId, item, ..._rest }): J
         <Td isNumeric>{formatNumber(item.engaged)}</Td>
         <Td isNumeric>{formatNumber(item.risk)}</Td>
         <Td>
-          <Form method="post" action={`${PositionLink.toItem(portfolioId, item.id)}`} className="inline">
-            <IconButton aria-label="Show position" icon={<SearchIcon />} size="xs" variant="ghost" type="submit" />
-          </Form>
-          <IconButton aria-label="Guess trade" icon={<EditIcon />} size="xs" variant="ghost" />
+          <RouterLink to={`${PositionLink.toItem(portfolioId, item.id)}`}>
+            <IconButton aria-label="Show position" icon={<SearchIcon />} size="xs" variant="ghost" />
+          </RouterLink>
+          <RouterLink to={`${PositionLink.editItem(portfolioId, item.id)}`}>
+            <IconButton aria-label="Edit position" icon={<EditIcon />} size="xs" variant="ghost" />
+          </RouterLink>
           <Form method="post" action={`DeletePosition/${item.id}`} className="inline">
             <IconButton aria-label="Delete position" icon={<DeleteIcon />} size="xs" variant="ghost" type="submit" />
           </Form>

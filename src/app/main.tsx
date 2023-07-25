@@ -141,7 +141,6 @@ const router = createBrowserRouter([
               /* Positions */
               {
                 path: "positions",
-                action: PortfolioAction,
                 children: [
                   {
                     path: "all",
@@ -157,20 +156,11 @@ const router = createBrowserRouter([
                     path: "options",
                     children: [
                       { index: true, Component: OptionsPositions, loader: positionsOptionsLoader },
-                      // {
-                      //   path: "id/:positionId",
-                      //   action: PortfolioAction,
-                      //   children: [
-                      //     { index: true, Component: PositionShow, loader: positionShowLoader },
-                      //     { path: "edit", Component: PositionEdit, loader: positionShowLoader },
-                      //   ],
-                      // },
                       { path: "DeletePosition/:positionId", action: positionDelete },
                     ],
                   },
                   {
                     path: "id/:positionId",
-                    action: PortfolioAction,
                     children: [
                       { index: true, Component: PositionShow, loader: positionShowLoader },
                       { path: "edit", Component: PositionEdit, loader: positionShowLoader, action: positionSave },

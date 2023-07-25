@@ -5,6 +5,7 @@ import { Contract, Currency, Option, OptionStatement, Portfolio, Position, State
 import { OptionPositionEntry, PositionEntry } from "./positions.types";
 
 const MODULE = "PositionsRouter";
+const sequelize_logging = (...args: any[]): void => logger.trace(MODULE + ".squelize", ...args);
 
 export const router = express.Router({ mergeParams: true });
 
@@ -15,6 +16,7 @@ const getPrice = (item: Contract): number | null => {
 };
 
 export const preparePositions = (portfolio: Portfolio): Promise<(PositionEntry | OptionPositionEntry)[]> => {
+  logger.trace(MODULE + ".preparePositions", portfolio);
   return portfolio.positions.reduce(
     (p, item: Position) => {
       return p.then((positions) => {
@@ -64,8 +66,11 @@ export const preparePositions = (portfolio: Portfolio): Promise<(PositionEntry |
                 option.strike *
                 option.multiplier *
                 (option.callOrPut == OptionType.Put ? item.quantity : -item.quantity);
-              const duration = (Date.now() - item.createdAt.getTime()) / 1000 / 3600 / 24;
-              const apy = engaged && duration && value ? ((item.cost - value) / engaged / duration) * 365 : undefined;
+              const duration = Math.max(
+                (option.lastTradeDate.getTime() - item.createdAt.getTime()) / 1000 / 3600 / 24,
+                1,
+              );
+              const apy = engaged && duration ? (item.cost / engaged / duration) * 360 : undefined;
               const baseRate =
                 1 / (portfolio.baseRates.find((currency) => currency.currency == item.contract.currency)?.rate || 1);
               const result: OptionPositionEntry = {
@@ -133,7 +138,7 @@ router.get("/index", (req, res): void => {
       },
       { model: Currency, as: "baseRates" },
     ],
-    // logging: console.log,
+    logging: sequelize_logging,
   })
     .then((portfolio) => {
       if (portfolio) {
@@ -167,7 +172,7 @@ router.post("/id/:positionId(\\d+)/SavePosition", (req, res): void => {
     .then((position) => res.status(200).json({ position }))
     .catch((error) => {
       console.error(error);
-      logger.log(LogLevel.Error, MODULE + ".SavePosition", undefined, error);
+      logger.log(LogLevel.Error, MODULE + ".SavePosition", undefined, JSON.stringify(error));
       res.status(500).json({ error });
     });
 });

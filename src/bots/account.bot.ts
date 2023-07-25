@@ -7,7 +7,7 @@ import { Balance, Contract, OpenOrder, Position } from "../models";
 
 const MODULE = "AccountBot";
 
-const sequelize_logging = (...args): void => logger.trace(MODULE + ".squelize", ...args);
+const sequelize_logging = (...args: any[]): void => logger.trace(MODULE + ".squelize", ...args);
 
 export class AccountUpdateBot extends ITradingBot {
   private orderq: IbOpenOrder[] = [];

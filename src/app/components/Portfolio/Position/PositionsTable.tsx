@@ -112,16 +112,12 @@ const PositionsTable: FunctionComponent<Props> = ({ content, ..._rest }): JSX.El
                     <Number value={(item.pnl / item.cost) * Math.sign(item.quantity)} decimals={1} isPercent />
                   </Td>
                   <Td>
-                    <Form method="post" action={`${PositionLink.toItem(portfolioId, item.id)}`} className="inline">
-                      <IconButton
-                        aria-label="Show position"
-                        icon={<SearchIcon />}
-                        size="xs"
-                        variant="ghost"
-                        type="submit"
-                      />
-                    </Form>
-                    <IconButton aria-label="Edit position" icon={<EditIcon />} size="xs" variant="ghost" />
+                    <RouterLink to={`${PositionLink.toItem(portfolioId, item.id)}`}>
+                      <IconButton aria-label="Show position" icon={<SearchIcon />} size="xs" variant="ghost" />
+                    </RouterLink>
+                    <RouterLink to={`${PositionLink.editItem(portfolioId, item.id)}`}>
+                      <IconButton aria-label="Edit position" icon={<EditIcon />} size="xs" variant="ghost" />
+                    </RouterLink>
                     <Form method="post" action={`DeletePosition/${item.id}`} className="inline">
                       <IconButton
                         aria-label="Delete position"
