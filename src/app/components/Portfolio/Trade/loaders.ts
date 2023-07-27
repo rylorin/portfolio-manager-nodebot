@@ -1,3 +1,4 @@
+import { LoaderFunctionArgs } from "react-router-dom";
 import { TradeEntry, TradeSynthesys } from "../../../../routers/trades.types";
 
 /**
@@ -5,7 +6,7 @@ import { TradeEntry, TradeSynthesys } from "../../../../routers/trades.types";
  * @param param0
  * @returns
  */
-export const tradeSummaryLoaderYTD = ({ params }): Promise<TradeSynthesys> => {
+export const tradeSummaryLoaderYTD = ({ params }: LoaderFunctionArgs): Promise<TradeSynthesys> => {
   const { portfolioId } = params;
   return fetch(`/api/portfolio/${portfolioId}/trades/summary/ytd`)
     .then((response) => response.json())
@@ -17,7 +18,7 @@ export const tradeSummaryLoaderYTD = ({ params }): Promise<TradeSynthesys> => {
  * @param param0
  * @returns
  */
-export const tradeSummaryLoader12M = ({ params }): Promise<TradeSynthesys> => {
+export const tradeSummaryLoader12M = ({ params }: LoaderFunctionArgs): Promise<TradeSynthesys> => {
   const { portfolioId } = params;
   return fetch(`/api/portfolio/${portfolioId}/trades/summary/12m`)
     .then((response) => response.json())
@@ -29,7 +30,7 @@ export const tradeSummaryLoader12M = ({ params }): Promise<TradeSynthesys> => {
  * @param param0
  * @returns
  */
-export const tradeSummaryLoaderAll = ({ params }): Promise<TradeSynthesys> => {
+export const tradeSummaryLoaderAll = ({ params }: LoaderFunctionArgs): Promise<TradeSynthesys> => {
   const { portfolioId } = params;
   return fetch(`/api/portfolio/${portfolioId}/trades/summary/all`)
     .then((response) => response.json())
@@ -41,7 +42,7 @@ export const tradeSummaryLoaderAll = ({ params }): Promise<TradeSynthesys> => {
  * @param params
  * @returns
  */
-export const tradesShowLoader = ({ params }): Promise<TradeEntry> => {
+export const tradesShowLoader = ({ params }: LoaderFunctionArgs): Promise<TradeEntry> => {
   const { portfolioId, tradeId } = params;
   // console.log("tradesShowLoader", portfolioId, tradeId);
   return fetch(`/api/portfolio/${portfolioId}/trades/id/${tradeId}`)
@@ -54,7 +55,7 @@ export const tradesShowLoader = ({ params }): Promise<TradeEntry> => {
  * @param param0
  * @returns
  */
-export const tradesMonthLoader = ({ params }): Promise<TradeEntry[]> => {
+export const tradesMonthLoader = ({ params }: LoaderFunctionArgs): Promise<TradeEntry[]> => {
   const { portfolioId, year, month } = params;
   return fetch(`/api/portfolio/${portfolioId}/trades/month/${year}/${month}`)
     .then((response) => response.json())

@@ -1,3 +1,4 @@
+import { LoaderFunction, LoaderFunctionArgs } from "react-router-dom";
 import { Portfolio as PortfolioModel } from "../../../models/portfolio.model";
 
 /**
@@ -6,7 +7,7 @@ import { Portfolio as PortfolioModel } from "../../../models/portfolio.model";
  * @returns
  */
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
-export const portfolioIndexLoader = ({ params }): Promise<PortfolioModel[]> => {
+export const portfolioIndexLoader: LoaderFunction = ({ params }: LoaderFunctionArgs): Promise<PortfolioModel[]> => {
   return fetch("/api/portfolio")
     .then((response) => response.json())
     .then((data) => data.portfolios as PortfolioModel[]);

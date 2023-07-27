@@ -114,7 +114,7 @@ export const statementModelToStatementEntry = (item: Statement): Promise<Stateme
       return Promise.resolve(statement);
       break;
     default:
-      throw Error("Undefined statement type: " + item.statementType);
+      throw Error("Undefined statement type: " + Object.keys(TradeStrategy)[item.statementType]);
   }
 };
 

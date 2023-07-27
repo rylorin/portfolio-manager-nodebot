@@ -162,12 +162,14 @@ export class ImporterBot extends ITradingBot {
 [0]   serialNumber: ''
 [0] }
   */
+  // eslint-disable-next-line @typescript-eslint/explicit-module-boundary-types
   protected processSecurityInfoUnderlying(element: any): Promise<Contract> | Promise<undefined> {
     if (element.underlyingConid) {
       return this.findOrCreateContract(ibUnderlyingContractFromElement(element));
     } else return Promise.resolve(undefined);
   }
 
+  // eslint-disable-next-line @typescript-eslint/explicit-module-boundary-types
   protected processSecurityInfo(element: any): Promise<Contract> {
     // console.log(element.symbol);
     return this.processSecurityInfoUnderlying(element).then((_underlying) =>
@@ -250,6 +252,7 @@ export class ImporterBot extends ITradingBot {
 [0]   accruedInt: '0'
 [0] }
   */
+  // eslint-disable-next-line @typescript-eslint/explicit-module-boundary-types
   protected processStockTrade(element: any): Promise<EquityStatement | null> {
     return this.processSecurityInfo(element).then((contract) =>
       Statement.findOrCreate({
@@ -284,6 +287,7 @@ export class ImporterBot extends ITradingBot {
     );
   }
 
+  // eslint-disable-next-line @typescript-eslint/explicit-module-boundary-types
   protected processOptionTrade(element: any): Promise<Statement> {
     // console.log("processStockTrade", element);
     return this.processSecurityInfoUnderlying(element).then((contract) =>
@@ -322,6 +326,7 @@ export class ImporterBot extends ITradingBot {
     );
   }
 
+  // eslint-disable-next-line @typescript-eslint/explicit-module-boundary-types
   protected processOneTrade(element: any): Promise<void> {
     switch (element.assetCategory) {
       case SecType.STK:
@@ -391,6 +396,7 @@ export class ImporterBot extends ITradingBot {
 [0]   levelOfDetail: 'DETAIL'
 [0] }
   */
+  // eslint-disable-next-line @typescript-eslint/explicit-module-boundary-types
   protected processCashTransaction(element: any): Promise<Statement | null> {
     // console.log("processCashTransaction", element);
     let statementType: StatementTypes;
@@ -482,6 +488,7 @@ export class ImporterBot extends ITradingBot {
     } else return Promise.resolve();
   }
 
+  // eslint-disable-next-line @typescript-eslint/explicit-module-boundary-types
   protected processCorporateAction(element: any): void {
     console.log("processCorporateAction", element);
   }
@@ -496,6 +503,7 @@ export class ImporterBot extends ITradingBot {
     return Promise.resolve();
   }
 
+  // eslint-disable-next-line @typescript-eslint/explicit-module-boundary-types
   protected processReport(element: any): Promise<void> {
     console.log("AccountInformation", element.AccountInformation);
     return Portfolio.findOrCreate({

@@ -1,3 +1,4 @@
+import { LoaderFunctionArgs } from "react-router-dom";
 import { OptionEntry } from "../../../../routers/repository.types";
 
 /**
@@ -5,7 +6,7 @@ import { OptionEntry } from "../../../../routers/repository.types";
  * @param params
  * @returns
  */
-export const optionShowLoader = ({ params }): Promise<OptionEntry> => {
+export const optionShowLoader = ({ params }: LoaderFunctionArgs): Promise<OptionEntry> => {
   const { optionId } = params;
   // console.log("tradesShowLoader", portfolioId, tradeId);
   return fetch(`/api/repository/options/${optionId}`)
