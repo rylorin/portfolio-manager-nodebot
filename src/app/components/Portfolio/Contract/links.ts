@@ -1,4 +1,4 @@
 export const ContractLink = {
-  toItem: (portfolioId, contractId): string =>
+  toItem: (portfolioId: number | string, contractId: number | string): string =>
     portfolioId && contractId ? `/portfolio/${portfolioId}/contracts/id/${contractId}/` : "#",
 };

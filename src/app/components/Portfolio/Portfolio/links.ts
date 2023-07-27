@@ -1,3 +1,3 @@
 export const PortfolioLink = {
-  toIndex: (portfolioId): string => `/portfolio/${portfolioId}/parameters`,
+  toIndex: (portfolioId: number | string): string => `/portfolio/${portfolioId}/parameters`,
 };

@@ -73,7 +73,7 @@ export const updateTradeDetails = (thisTrade: Trade): Promise<Trade> => {
                       // eslint-disable-next-line @typescript-eslint/no-unnecessary-type-assertion
                     } else if (statement_entry.option!.callOrPut == OptionType.Call) {
                       // eslint-disable-next-line @typescript-eslint/no-unnecessary-type-assertion
-                      if (statement_entry.quantity! < 0) thisTrade.strategy = TradeStrategy["short call"];
+                      if (statement_entry.quantity! < 0) thisTrade.strategy = TradeStrategy["covered short call"];
                       else thisTrade.strategy = TradeStrategy["long call"];
                     }
                   }

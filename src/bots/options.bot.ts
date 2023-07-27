@@ -5,9 +5,15 @@ import { ITradingBot } from ".";
 import { greeks, option_implied_volatility } from "../black_scholes";
 import { Contract, Option, Stock } from "../models";
 
-const OPTIONS_LIST_BUILD_FREQ: number = parseInt(process.env.OPTIONS_LIST_BUILD_FREQ) || 24; // hours
-const OPTIONS_PRICE_TIMEFRAME: number = parseInt(process.env.OPTIONS_PRICE_TIMEFRAME) || 366; // days
-const NO_RISK_INTEREST_RATE: number = parseFloat(process.env.NO_RISK_INTEREST_RATE) || 0.0175;
+const OPTIONS_LIST_BUILD_FREQ: number = process.env.OPTIONS_LIST_BUILD_FREQ
+  ? parseInt(process.env.OPTIONS_LIST_BUILD_FREQ)
+  : 24; // hours
+const OPTIONS_PRICE_TIMEFRAME: number = process.env.OPTIONS_PRICE_TIMEFRAME
+  ? parseInt(process.env.OPTIONS_PRICE_TIMEFRAME)
+  : 180; // days
+const NO_RISK_INTEREST_RATE: number = process.env.NO_RISK_INTEREST_RATE
+  ? parseFloat(process.env.NO_RISK_INTEREST_RATE)
+  : 0.05;
 
 export class OptionsCreateBot extends ITradingBot {
   private async iterateSecDefOptParamsForExpStrikes(
@@ -185,7 +191,7 @@ export class OptionsCreateBot extends ITradingBot {
       const promises: Promise<void>[] = [];
       for (const option of options) {
         if (option.dte >= 0) {
-          let iv_ = undefined;
+          let iv_: number | undefined;
           if (stock.contract.livePrice) {
             try {
               iv_ = option_implied_volatility(

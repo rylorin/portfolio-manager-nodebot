@@ -1,4 +1,5 @@
 export const TradeLink = {
-  toIndex: (portfolioId): string => `/portfolio/${portfolioId}/trades/summary/ytd`,
-  toItem: (portfolioId, tradeId): string => `/portfolio/${portfolioId}/trades/id/${tradeId}/`,
+  toIndex: (portfolioId: number | string): string => `/portfolio/${portfolioId}/trades/summary/ytd`,
+  toItem: (portfolioId: number | string, tradeId: number | string): string =>
+    `/portfolio/${portfolioId}/trades/id/${tradeId}/`,
 };

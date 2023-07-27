@@ -1,6 +1,6 @@
 export const PositionLink = {
-  toItem: (portfolioId, positionId): string =>
+  toItem: (portfolioId: number | string, positionId: number | string): string =>
     portfolioId && positionId ? `/portfolio/${portfolioId}/positions/id/${positionId}/` : "#",
-  editItem: (portfolioId, positionId): string =>
+  editItem: (portfolioId: number | string, positionId: number | string): string =>
     portfolioId && positionId ? `/portfolio/${portfolioId}/positions/id/${positionId}/edit` : "#",
 };

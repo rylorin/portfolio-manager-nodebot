@@ -14,15 +14,15 @@
     "moduleResolution": "Node",
     "noImplicitAny": false, // TODO set to true once all data hava a type
     "noImplicitReturns": true,
-    "noUnusedLocals": false, // TODO set to true when fixed
-    "noUnusedParameters": false, // TODO set to true when fixed
+    "noUnusedLocals": false, // eslint rule in charge of this check
+    "noUnusedParameters": false, // eslint rule in charge of this check
     "outDir": "./dist",
     "resolveJsonModule": true,
     "rootDir": "./src",
     "skipLibCheck": true,
     "sourceMap": true,
     "strict": true,
-    "strictNullChecks": false,
+    "strictNullChecks": false, // TODO set to true when fixed
     "target": "ESNext",
     "types": ["node"],
     "typeRoots": [

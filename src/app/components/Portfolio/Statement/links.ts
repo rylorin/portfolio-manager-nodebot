@@ -1,3 +1,3 @@
 export const StatementLink = {
-  toIndex: (portfolioId): string => `/portfolio/${portfolioId}/statements/summary/ytd`,
+  toIndex: (portfolioId: number | string): string => `/portfolio/${portfolioId}/statements/summary/ytd`,
 };
