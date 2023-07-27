@@ -441,15 +441,15 @@ export class ImporterBot extends ITradingBot {
           switch (statementType) {
             case StatementTypes.TaxStatement:
               {
-                const idx = element.description.indexOf("(");
-                const country = element.description.substring(idx + 1, idx + 3);
+                const idx = (element.description as string).indexOf("(");
+                const country = (element.description as string).substring(idx + 1, idx + 3);
                 return TaxStatement.create({ id: statement.id, country }).then((_taxStatement) => statement);
               }
               break;
             case StatementTypes.DividendStatement:
               {
-                const idx = element.description.indexOf("(");
-                const country = element.description.substring(idx + 1, idx + 3);
+                const idx = (element.description as string).indexOf("(");
+                const country = (element.description as string).substring(idx + 1, idx + 3);
                 return DividendStatement.create({ id: statement.id, country }).then((_dividendStatement) => statement);
               }
               break;
@@ -488,6 +488,7 @@ export class ImporterBot extends ITradingBot {
 
   private processAllCorporateActions(element: any): Promise<void> {
     if (element.CorporateActions.CorporateAction instanceof Array) {
+      // eslint-disable-next-line @typescript-eslint/no-unsafe-call
       element.CorporateActions.CorporateAction.forEach((element) => this.processCorporateAction(element));
     } else if (element.CorporateActions.CorporateAction) {
       this.processCorporateAction(element.CorporateActions.CorporateAction);
@@ -530,7 +531,7 @@ export class ImporterBot extends ITradingBot {
         if (jObj.FlexQueryResponse) {
           if (jObj.FlexQueryResponse.FlexStatements.FlexStatement instanceof Array) {
             // disable the following eslint test because I was unable to fix it
-            // eslint-disable-next-line @typescript-eslint/no-unsafe-return
+            // eslint-disable-next-line @typescript-eslint/no-unsafe-return,@typescript-eslint/no-unsafe-call
             return jObj.FlexQueryResponse.FlexStatements.FlexStatement.reduce(
               (p: Promise<void>, element: any): Promise<void> =>
                 p.then((): Promise<void> => this.processReport(element)),

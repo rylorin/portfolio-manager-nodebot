@@ -2,6 +2,7 @@
  * Logging facility
  * @author Guerrilla Team
  */
+import stringify from "json-stringify-safe";
 import { exit } from "process";
 import winston, { Logger as WinstonLogger, createLogger, format, transports } from "winston";
 
@@ -123,6 +124,15 @@ class Logger {
   //   return '\u001b[' + brightBlue[0] + 'm' + s + '\u001b[' + brightBlue[1] + 'm';
   // }
 
+  private itemToString(value): string {
+    if (value === undefined) return "undefined";
+    else if (value === null) return "null";
+    else if (typeof value === "string") return value.replaceAll("\n", "\\n");
+    else if (typeof value === "number") return String(value);
+    else return stringify(value as any) as string; // eslint-disable-line @typescript-eslint/no-unsafe-call
+    // Object.entries(value).
+  }
+
   /**
    * Log one line
    * @param level level of message
@@ -146,15 +156,7 @@ class Logger {
       mainmodule = "default";
       submodule = "default";
     }
-    const message: string = args
-      .map((value) => {
-        if (value === undefined) return "undefined";
-        else if (value === null) return "null";
-        else if (typeof value === "string") return value.replaceAll("\n", "\\n");
-        else if (typeof value === "number") return String(value);
-        else return JSON.stringify(value);
-      })
-      .join(", ");
+    const message: string = args.map((value) => this.itemToString(value)).join(", ");
     if (this.loggers[mainmodule])
       this.loggers[mainmodule].log({ level: Logger.level2string(level), message, service: submodule, asset });
     this.loggers["default"].log({ level: Logger.level2string(level), message, service: module, asset });

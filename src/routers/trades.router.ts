@@ -10,6 +10,7 @@ import { StatementEntry } from "./statements.types";
 import { TradeEntry, TradeMonthlySynthesys, TradeSynthesys, VirtualPositionEntry } from "./trades.types";
 
 const MODULE = "TradesRouter";
+const _sequelize_logging = (...args: any[]): void => logger.trace(MODULE + ".squelize", ...args);
 
 const router = express.Router({ mergeParams: true });
 

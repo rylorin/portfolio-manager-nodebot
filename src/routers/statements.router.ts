@@ -20,31 +20,34 @@ import { StatementEntry, StatementsSynthesysEntries } from "./statements.types";
 import { updateTradeDetails } from "./trades.router";
 
 const MODULE = "StatementsRouter";
+const sequelize_logging = (...args: any[]): void => logger.trace(MODULE + ".squelize", ...args);
 
 const router = express.Router({ mergeParams: true });
 
 type parentParams = { portfolioId: number };
 
 const updateStatementTrade = (statement: Statement): Promise<Statement> => {
-  logger.debug(MODULE + ".updateStatementTrade", statement);
-  return statement.trade_unit_id
-    ? Trade.findByPk(statement.trade_unit_id, {
-        include: [
-          { model: Contract, as: "stock" },
-          { model: Portfolio, as: "portfolio" },
-          { model: Statement, as: "statements" },
-          // { model: Position, as: "positions" },
-        ],
+  logger.trace(MODULE + ".updateStatementTrade", "statement", statement);
+  if (statement.trade_unit_id) {
+    logger.trace(MODULE + ".updateStatementTrade", "trade_unit_id", statement.trade_unit_id);
+    return Trade.findByPk(statement.trade_unit_id, {
+      include: [
+        { model: Contract, as: "underlying" },
+        { model: Portfolio, as: "portfolio" },
+        { model: Statement, as: "statements" },
+        // { model: Position, as: "positions" },
+      ],
+      logging: sequelize_logging,
+    })
+      .then((thisTrade): Promise<Statement> => {
+        logger.trace(MODULE + ".updateStatementTrade", "thisTrade", thisTrade);
+        if (thisTrade) return updateTradeDetails(thisTrade).then(() => statement);
+        return Promise.resolve(statement);
       })
-        .then((thisTrade): Promise<Statement> => {
-          logger.debug(MODULE + ".updateStatementTrade", "thisTrade", thisTrade);
-          if (thisTrade) return updateTradeDetails(thisTrade).then(() => statement);
-          return Promise.resolve(statement);
-        })
-        .then((statement) => {
-          return Promise.resolve(statement);
-        })
-    : Promise.resolve(statement);
+      .then((statement) => {
+        return Promise.resolve(statement);
+      });
+  } else return Promise.resolve(statement);
 };
 
 export const statementModelToStatementEntry = (item: Statement): Promise<StatementEntry> => {
@@ -267,7 +270,7 @@ router.get("/month/:year(\\d+)/:month(\\d+)", (req, res): void => {
  */
 router.get("/:statementId(\\d+)/CreateTrade", (req, res): void => {
   const { portfolioId, statementId } = req.params as typeof req.params & parentParams;
-  console.log("CreateTrade", portfolioId, statementId);
+  logger.debug(MODULE + ".CreateTrade", portfolioId, statementId);
   Statement.findByPk(statementId, {
     include: [{ model: Contract }, { model: Portfolio }],
   })
@@ -291,7 +294,11 @@ router.get("/:statementId(\\d+)/CreateTrade", (req, res): void => {
     })
     .then((statement) => updateStatementTrade(statement))
     .then((statement) => res.status(200).json({ statement }))
-    .catch((error) => res.status(500).json({ error }));
+    .catch((error) => {
+      console.error(error);
+      logger.error(MODULE + ".CreateTrade", undefined, JSON.stringify(error));
+      res.status(500).json({ error });
+    });
 });
 
 /**

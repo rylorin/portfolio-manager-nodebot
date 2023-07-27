@@ -5,7 +5,7 @@ import { Contract, Currency, Option, OptionStatement, Portfolio, Position, State
 import { OptionPositionEntry, PositionEntry } from "./positions.types";
 
 const MODULE = "PositionsRouter";
-const sequelize_logging = (...args: any[]): void => logger.trace(MODULE + ".squelize", ...args);
+const _sequelize_logging = (...args: any[]): void => logger.trace(MODULE + ".squelize", ...args);
 
 export const router = express.Router({ mergeParams: true });
 
@@ -128,6 +128,7 @@ export const preparePositions = (portfolio: Portfolio): Promise<(PositionEntry |
  */
 router.get("/index", (req, res): void => {
   const { portfolioId } = req.params as typeof req.params & parentParams;
+  logger.trace(MODULE + ".PositionsIndex", portfolioId);
 
   Portfolio.findByPk(portfolioId, {
     include: [
@@ -138,7 +139,7 @@ router.get("/index", (req, res): void => {
       },
       { model: Currency, as: "baseRates" },
     ],
-    logging: sequelize_logging,
+    logging: console.log,
   })
     .then((portfolio) => {
       if (portfolio) {
@@ -146,7 +147,11 @@ router.get("/index", (req, res): void => {
       } else throw Error("Portfolio not found");
     })
     .then((positions: PositionEntry[]) => res.status(200).json({ positions }))
-    .catch((error) => res.status(500).json({ error }));
+    .catch((error) => {
+      console.error(error);
+      logger.log(LogLevel.Error, MODULE + ".PositionsIndex", undefined, JSON.stringify(error));
+      res.status(500).json({ error });
+    });
 });
 
 /**
