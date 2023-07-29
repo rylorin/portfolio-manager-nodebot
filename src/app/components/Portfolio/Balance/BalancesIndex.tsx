@@ -1,7 +1,7 @@
 import { DeleteIcon, EditIcon, SearchIcon } from "@chakra-ui/icons";
 import { IconButton, Table, TableCaption, TableContainer, Tbody, Td, Tfoot, Thead, Tr } from "@chakra-ui/react";
 import { FunctionComponent, default as React } from "react";
-import { useLoaderData } from "react-router-dom";
+import { Form, useLoaderData } from "react-router-dom";
 import { BalanceEntry } from "../../../../routers/balances.types";
 import Number from "../../Number/Number";
 
@@ -37,9 +37,17 @@ const BalancesIndex: FunctionComponent<BalancesIndexProps> = ({ ..._rest }): JSX
                     <Number value={item.quantity} decimals={2} />
                   </Td>
                   <Td>
-                    <IconButton aria-label="New trade" icon={<SearchIcon />} size="xs" variant="link" />
+                    <IconButton aria-label="New trade" icon={<SearchIcon />} size="xs" variant="ghost" />
                     <IconButton aria-label="Guess trade" icon={<EditIcon />} size="xs" variant="ghost" />
-                    <IconButton aria-label="Above trade" icon={<DeleteIcon />} size="xs" variant="link" />
+                    <Form method="post" action={`DeleteBalance/${item.id}`} className="inline">
+                      <IconButton
+                        aria-label="Delete balance"
+                        icon={<DeleteIcon />}
+                        size="xs"
+                        variant="ghost"
+                        type="submit"
+                      />
+                    </Form>
                   </Td>
                 </Tr>
               ))}

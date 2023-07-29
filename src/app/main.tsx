@@ -4,6 +4,7 @@ import { createRoot } from "react-dom/client";
 import { Outlet, RouterProvider, createBrowserRouter } from "react-router-dom";
 import Layout from "./components/Layout/Layout";
 import BalancesIndex from "./components/Portfolio/Balance/BalancesIndex";
+import { balanceDelete } from "./components/Portfolio/Balance/actions";
 import { balancesIndexLoader } from "./components/Portfolio/Balance/loaders";
 import ContractShow from "./components/Portfolio/Contract/ContractShow";
 import { contractShowLoader } from "./components/Portfolio/Contract/loaders";
@@ -173,7 +174,10 @@ const router = createBrowserRouter([
               {
                 path: "balances",
                 action: PortfolioAction,
-                children: [{ index: true, Component: BalancesIndex, loader: balancesIndexLoader }],
+                children: [
+                  { index: true, Component: BalancesIndex, loader: balancesIndexLoader },
+                  { path: "DeleteBalance/:balanceId", action: balanceDelete },
+                ],
               },
 
               /* Trades */

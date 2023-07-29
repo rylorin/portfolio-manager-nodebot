@@ -3,7 +3,7 @@ import { Balance } from "../../../../models";
 
 /**
  * Load all balances
- * @param param0
+ * @param params
  * @returns
  */
 export const balancesIndexLoader = ({ params }: LoaderFunctionArgs): Promise<Balance[]> => {
