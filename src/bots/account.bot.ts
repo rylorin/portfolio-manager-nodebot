@@ -79,29 +79,29 @@ export class AccountUpdateBot extends ITradingBot {
           p.then(() =>
             this.findOrCreateContract({ conId: leg.conId }, transaction).then((contract) => {
               const where = {
-                permId: order.order.permId,
+                permId: order.order.permId!,
                 portfolioId: this.portfolio.id,
                 contract_id: contract.id,
               };
               const values = {
+                ...where,
                 // permId: order.order.permId,
                 // portfolioId: this.portfolio.id,
                 // contract_id: contract.id,
                 actionType: order.order.action == leg.action ? OrderAction.BUY : OrderAction.SELL,
                 // eslint-disable-next-line @typescript-eslint/no-unnecessary-type-assertion
-                totalQty: order.order.totalQuantity ? order.order.totalQuantity * leg.ratio! : undefined,
+                totalQty: order.order.totalQuantity! * leg.ratio!,
                 // eslint-disable-next-line @typescript-eslint/no-unnecessary-type-assertion
                 cashQty: order.order.cashQty ? order.order.cashQty * leg.ratio! : undefined,
                 lmtPrice: undefined,
                 auxPrice: undefined,
-                status: order.orderState.status,
+                status: order.orderState.status!,
                 remainingQty: order.orderStatus
-                  ? order.orderStatus?.remaining * leg.ratio! // eslint-disable-line @typescript-eslint/no-unnecessary-type-assertion
-                  : order.order.totalQuantity
-                  ? order.order.totalQuantity * leg.ratio! // eslint-disable-line @typescript-eslint/no-unnecessary-type-assertion
-                  : undefined,
+                  ? order.orderStatus.remaining! * leg.ratio! // eslint-disable-line @typescript-eslint/no-unnecessary-type-assertion
+                  : order.order.totalQuantity! * leg.ratio!, // eslint-disable-line @typescript-eslint/no-unnecessary-type-assertion
+
                 orderId: order.orderId,
-                clientId: order.order.clientId,
+                clientId: order.order.clientId!,
               };
               return OpenOrder.findOrCreate({
                 where: where,
@@ -133,22 +133,22 @@ export class AccountUpdateBot extends ITradingBot {
         console.log("contract found", contract.id);
         return OpenOrder.findOrCreate({
           where: {
-            perm_Id: order.order.permId,
+            permId: order.order.permId,
             portfolioId: this.portfolio.id,
           },
           defaults: {
-            permId: order.order.permId,
+            permId: order.order.permId!,
             portfolioId: this.portfolio.id,
             contract_id: contract.id,
-            actionType: order.order.action,
+            actionType: order.order.action!,
             lmtPrice: order.order.lmtPrice,
             auxPrice: order.order.auxPrice,
-            status: order.orderState.status,
-            totalQty: order.order.totalQuantity,
+            status: order.orderState.status!,
+            totalQty: order.order.totalQuantity!,
             cashQty: order.order.cashQty,
-            remainingQty: order.orderStatus?.remaining,
+            remainingQty: order.orderStatus ? order.orderStatus.remaining! : order.order.totalQuantity!,
             orderId: order.orderId,
-            clientId: order.order.clientId,
+            clientId: order.order.clientId!,
           },
           transaction: transaction,
           // logging: console.log,
@@ -242,7 +242,7 @@ export class AccountUpdateBot extends ITradingBot {
     };
     return Balance.findOrCreate({
       where: where,
-      defaults: { quantity: pos.balance },
+      defaults: { ...where, quantity: pos.balance },
     }).then(([balance, _created]) => balance.update({ quantity: pos.balance }));
   }
 
@@ -269,7 +269,8 @@ export class AccountUpdateBot extends ITradingBot {
       {
         where: {
           portfolio_id: this.portfolio.id,
-          [Op.or]: [{ updatedAt: { [Op.lt]: new Date(now) } }, { updatedAt: null }],
+          updatedAt: { [Op.lt]: new Date(now) },
+          // [Op.or]: [{ updatedAt: { [Op.lt]: new Date(now) } }, { updatedAt: null }],
         },
         // logging: console.log,
       },
@@ -291,7 +292,8 @@ export class AccountUpdateBot extends ITradingBot {
       return OpenOrder.destroy({
         where: {
           portfolio_id: this.portfolio.id,
-          [Op.or]: [{ updatedAt: { [Op.lt]: new Date(now) } }, { updatedAt: null }],
+          updatedAt: { [Op.lt]: new Date(now) },
+          // [Op.or]: [{ updatedAt: { [Op.lt]: new Date(now) } }, { updatedAt: null }],
         },
         // logging: console.log,
       });

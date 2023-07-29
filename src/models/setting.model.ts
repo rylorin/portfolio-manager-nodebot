@@ -37,4 +37,10 @@ export class Setting extends Model<
   /** rollPutStrategy */
   @Column({ type: DataType.SMALLINT, field: "roll_Put_Strategy" })
   declare rollPutStrategy: number;
+
+  @Column({ type: DataType.SMALLINT, field: "roll_call_strategy" })
+  declare rollCallStrategy: number;
+
+  @Column({ type: DataType.SMALLINT, field: "cc_strategy" })
+  declare ccStrategy: number;
 }

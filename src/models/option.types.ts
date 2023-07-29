@@ -1,5 +1,4 @@
 import { OptionType } from "@stoqey/ib";
-import { Optional } from "sequelize";
 
 export type OptionAttributes = {
   id: number;
@@ -19,4 +18,4 @@ export type OptionAttributes = {
   theta?: number;
 };
 
-export type OptionCreationAttributes = Optional<OptionAttributes, "id" | "updatedAt">;
+// export type OptionCreationAttributes = Optional<OptionAttributes, "id" | "updatedAt">;

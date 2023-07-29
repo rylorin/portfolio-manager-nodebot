@@ -32,15 +32,9 @@ export class Option extends Model<
   }
   set lastTradeDate(value: Date | string) {
     if (value instanceof Date) {
-      // // Format date to YYYY-MM-DD
-      // const day: number = value.getDate();
-      // const month: number = value.getMonth() + 1;
-      // const year: number = value.getFullYear();
-      // const lastTradeDate: string =
-      //   year + "-" + (month < 10 ? "0" + month : month) + "-" + (day < 10 ? "0" + day : day);
-      // this.setDataValue("lastTradeDate", (lastTradeDate));
       this.setDataValue("lastTradeDate", value);
     } else if (typeof value == "string") {
+      // Format date to YYYY-MM-DD
       this.setDataValue("lastTradeDate", new Date(value.substring(0, 10)));
     }
   }
@@ -77,11 +71,11 @@ export class Option extends Model<
   @Column({ type: DataType.FLOAT })
   declare theta: number | null;
 
-  get dte(): number {
-    const dte: number = Math.floor(
-      0.9 + (new Date(this.getDataValue("lastTradeDate")).getTime() - Date.now()) / 1000 / 86400,
+  get dte(): NonAttribute<number> {
+    const dte: number = Math.max(
+      (new Date(this.getDataValue("lastTradeDate")).getTime() - Date.now()) / 1000 / 86400,
+      1,
     );
-    // console.log("dte for", this.getDataValue("lastTradeDate"), dte);
     return dte;
   }
 }

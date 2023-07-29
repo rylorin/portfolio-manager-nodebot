@@ -19,7 +19,6 @@ const TradesTable: FunctionComponent<Props> = ({ title = "Trades Index", content
 
   return (
     <TableContainer>
-      xx
       <Table variant="simple" size="sm">
         <TableCaption>
           {title} ({theTrades.length})

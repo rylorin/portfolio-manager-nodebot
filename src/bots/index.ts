@@ -15,7 +15,6 @@ import colors from "colors";
 import EventEmitter from "events";
 import { Op, Transaction } from "sequelize";
 import { MyTradingBotApp } from "..";
-import logger from "../logger";
 import {
   Bag,
   Balance,
@@ -31,7 +30,6 @@ import {
   Stock,
 } from "../models";
 import { ContractType } from "../models/contract.types";
-import { OptionCreationAttributes } from "../models/option.types";
 
 type OptionsSynthesis = {
   value: number;
@@ -74,7 +72,7 @@ export class ITradingBot extends EventEmitter {
    */
   error(message: string): void {
     // console.error(colors.bold.red(`[${new Date().toLocaleTimeString()}] Error: ${message}`));
-    logger.error(undefined, message);
+    console.error(colors.bold.red(`[${new Date().toLocaleTimeString()}] Warning: ${message}`));
   }
 
   protected static expirationToDate(lastTradeDateOrContractMonth: string): Date {
@@ -312,12 +310,13 @@ export class ITradingBot extends EventEmitter {
     underlying?: number,
     right?: OptionType,
   ): Promise<OptionsSynthesis> {
-    const result = { value: 0, engaged: 0, risk: 0, quantity: 0, options: [] };
+    const result = { value: 0, engaged: 0, risk: 0, quantity: 0, options: [] as Option[] };
     const where: { id?: number; stock_id?: number; callOrPut?: OptionType } = {};
     if (underlying) where.stock_id = underlying;
     if (right) where.callOrPut = right;
     for (const position of positions) {
       where.id = position.contract.id;
+      // strange ... we might have more than one option matching criteria!
       const opt = await Option.findOne({
         where: where,
       });
@@ -329,7 +328,11 @@ export class ITradingBot extends EventEmitter {
         result.engaged +=
           (position.quantity * opt.multiplier * opt.strike) / this.base_rates[position.contract.currency];
         result.risk +=
-          (position.quantity * opt.multiplier * opt.strike * opt.delta) / this.base_rates[position.contract.currency];
+          (position.quantity *
+            opt.multiplier *
+            opt.strike *
+            (opt.delta ? opt.delta : opt.callOrPut == OptionType.Call ? +0.5 : -0.5)) /
+          this.base_rates[position.contract.currency];
         result.options.push(opt);
       }
     }
@@ -431,7 +434,7 @@ export class ITradingBot extends EventEmitter {
               (order.remainingQty *
                 opt.multiplier *
                 opt.strike *
-                opt.delta *
+                (opt.delta ? opt.delta : opt.callOrPut == OptionType.Call ? +0.5 : -0.5) *
                 (order.actionType == OrderAction.BUY ? 1 : -1)) /
               currency.rate;
             result.options.push(opt);
@@ -535,12 +538,12 @@ export class ITradingBot extends EventEmitter {
 
   protected static formatOptionName(ibContract: IbContract): string {
     const months: string[] = ["JAN", "FEB", "MAR", "APR", "MAY", "JUN", "JUL", "AUG", "SEP", "OCT", "NOV", "DEC"];
-    const month: string = months[parseInt(ibContract.lastTradeDateOrContractMonth.substring(4, 6)) - 1];
-    const day: string = ibContract.lastTradeDateOrContractMonth.substring(6, 8);
-    const year: string = ibContract.lastTradeDateOrContractMonth.substring(2, 4);
+    const month: string = months[parseInt(ibContract.lastTradeDateOrContractMonth!.substring(4, 6)) - 1];
+    const day: string = ibContract.lastTradeDateOrContractMonth!.substring(6, 8);
+    const year: string = ibContract.lastTradeDateOrContractMonth!.substring(2, 4);
     const datestr: string = day + month + year;
-    let strike: string = ibContract.strike.toFixed(1);
-    if (parseFloat(strike) != ibContract.strike) strike = ibContract.strike.toString(); // new AMZN can have two decimals
+    let strike: string = ibContract.strike!.toFixed(1);
+    if (parseFloat(strike) != ibContract.strike) strike = ibContract.strike!.toString(); // new AMZN can have two decimals
     // const name = `${ibContract.symbol} ${datestr} ${strike} ${ibContract.right}`;
     return (
       ibContract.symbol +
@@ -578,10 +581,10 @@ export class ITradingBot extends EventEmitter {
         return Stock.create(
           {
             id: contract.id,
-            industry: details.industry,
-            category: details.category,
-            subcategory: details.subcategory,
-            description: details.marketName,
+            industry: details.industry as string,
+            category: details.category as string,
+            subcategory: details.subcategory as string,
+            description: details.marketName as string,
           },
           { transaction: transaction },
         ).then(() => Promise.resolve(contract));
@@ -677,7 +680,7 @@ export class ITradingBot extends EventEmitter {
     }).then(([contract, created]) => {
       if (created) {
         return Bag.create({ id: contract.id }, { transaction: transaction }).then(() =>
-          ibContract.comboLegs.reduce(
+          ibContract.comboLegs!.reduce(
             (p, leg) =>
               p.then((contract) => this.findOrCreateContract({ conId: leg.conId }, transaction).then(() => contract)),
             Promise.resolve(contract),
@@ -696,20 +699,19 @@ export class ITradingBot extends EventEmitter {
   ): Promise<Contract> {
     const contract_values = {
       // Contract part of the future
-      conId: ibContract.conId,
+      conId: ibContract.conId!,
       secType: ibContract.secType as ContractType,
       symbol: ITradingBot.formatOptionName(ibContract),
-      currency: ibContract.currency,
-      exchange: ibContract.primaryExch || ibContract.exchange,
+      currency: ibContract.currency!,
+      exchange: ibContract.primaryExch || ibContract.exchange!,
       name: ITradingBot.formatOptionName(ibContract),
     };
     const future_values = {
       // future specific fields
-      id: undefined,
-      // stock_id: undefined,
-      underlying_id: undefined,
-      lastTradeDate: ITradingBot.expirationToDate(ibContract.lastTradeDateOrContractMonth),
-      multiplier: ibContract.multiplier,
+      id: undefined as unknown as number,
+      underlying_id: undefined as unknown as number,
+      lastTradeDate: ITradingBot.expirationToDate(ibContract.lastTradeDateOrContractMonth!),
+      multiplier: ibContract.multiplier!,
     };
     const underlying = {
       // future contract underlying
@@ -732,10 +734,9 @@ export class ITradingBot extends EventEmitter {
           // update
           future_values.id = option.id;
           return Contract.update(contract_values, { where: { id: option.id }, transaction: transaction })
-            .then(() =>
-              Future.update({ values: future_values }, { where: { id: option.id }, transaction: transaction }),
-            )
-            .then(() => Contract.findByPk(option.id, { transaction: transaction }));
+            .then(() => Future.update(future_values, { where: { id: option.id }, transaction: transaction }))
+            .then(() => Contract.findByPk(option.id, { transaction: transaction }))
+            .then((contract) => contract!);
         } else {
           return Contract.create(contract_values, {
             transaction: transaction /* logging: console.log, */,
@@ -766,10 +767,10 @@ export class ITradingBot extends EventEmitter {
       exchange: ibContract.primaryExch || ibContract.exchange!,
       name: ITradingBot.formatOptionName(ibContract),
     };
-    const opt_values: OptionCreationAttributes = {
+    const opt_values = {
       // option specific fields
-      id: undefined,
-      stock_id: undefined,
+      id: undefined as unknown as number,
+      stock_id: undefined as unknown as number,
       // eslint-disable-next-line @typescript-eslint/no-unnecessary-type-assertion
       lastTradeDate: ITradingBot.expirationToDate(ibContract.lastTradeDateOrContractMonth!),
       // eslint-disable-next-line @typescript-eslint/no-unnecessary-type-assertion
@@ -801,7 +802,8 @@ export class ITradingBot extends EventEmitter {
           opt_values.id = option.id;
           return Contract.update(contract_values, { where: { id: option.id }, transaction: transaction })
             .then(() => Option.update(opt_values, { where: { id: option.id }, transaction: transaction }))
-            .then(() => Contract.findByPk(option.id, { transaction: transaction }));
+            .then(() => Contract.findByPk(option.id, { transaction: transaction }))
+            .then((contract) => contract!);
         } else {
           return Contract.create(contract_values, {
             transaction: transaction /* logging: console.log, */,
@@ -881,7 +883,7 @@ export class ITradingBot extends EventEmitter {
           contract = await this.createCashContract(ibContract, details, transaction);
         } else if (details && ibContract.secType == IbSecType.FUT) {
           contract = await this.createFutureContract(ibContract, details, transaction);
-        } else if (ibContract.secType == IbSecType.BAG) {
+        } else if (details && ibContract.secType == IbSecType.BAG) {
           contract = await this.createBagContract(ibContract, details, transaction);
         } else {
           // IB contract doesn't exists, we need to implement it!!!

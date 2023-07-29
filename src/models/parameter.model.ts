@@ -1,16 +1,30 @@
+import { CreationOptional, ForeignKey, InferAttributes, InferCreationAttributes } from "sequelize";
 import { BelongsTo, Column, DataType, Model, Table } from "sequelize-typescript";
+import { Contract } from "./contract.model";
+import { Portfolio } from "./portfolio.model";
 
-import { Contract } from ".";
+@Table({ tableName: "trading_parameters", timestamps: true })
+export class Parameter extends Model<
+  InferAttributes<Parameter>,
+  InferCreationAttributes<Parameter, { omit: "underlying" | "portfolio" }>
+> {
+  // id can be undefined during creation when using `autoIncrement`
+  declare id: CreationOptional<number>;
+  // timestamps!
+  // createdAt can be undefined during creation
+  declare createdAt: CreationOptional<Date>;
+  // updatedAt can be undefined during creation
+  declare updatedAt: CreationOptional<Date>;
 
-@Table({ tableName: "trading_parameters" })
-export class Parameter extends Model {
-  declare id: number;
+  /** Portfolio */
+  declare portfolio_id: ForeignKey<Portfolio["id"]>;
+  @BelongsTo(() => Portfolio, "portfolio_id")
+  declare portfolio: Portfolio;
 
-  @Column({ type: DataType.INTEGER, field: "portfolio_id" })
-  declare portfolio: number;
-
+  /** Related Stock */
+  declare stock_id: ForeignKey<Contract["id"]>;
   @BelongsTo(() => Contract, "stock_id")
-  public underlying: Contract;
+  declare underlying: Contract;
 
   @Column({ type: DataType.SMALLINT, field: "csp_strategy" })
   declare cspStrategy: number;

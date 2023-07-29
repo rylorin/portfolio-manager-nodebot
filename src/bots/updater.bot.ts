@@ -139,14 +139,13 @@ export class ContractsUpdaterBot extends ITradingBot {
   }
 
   private updateContratPrice(contract: Contract, marketData: MutableMarketData): Promise<number | undefined | null> {
-    // console.log(`updateContratPrice got data for ${contract.secType} contract ${contract.symbol} id ${contract.id}`);
-    // this.app.printObject(marketData);
+    // Clear values, we can't keep old invalid values
     const dataset: {
-      bid?: number | null;
-      ask?: number | null;
-      price?: number | null;
-      previousClosePrice?: number | null;
-    } = {};
+      bid: number | null;
+      ask: number | null;
+      price: number | null;
+      previousClosePrice: number | null;
+    } = { bid: null, ask: null, price: null, previousClosePrice: null };
     const optdataset: {
       pvDividend?: number | null;
       delta?: number | null;
@@ -156,131 +155,133 @@ export class ContractsUpdaterBot extends ITradingBot {
       theta?: number | null;
     } = {};
     marketData.forEach((tick, type: TickType) => {
-      if (type == IBApiTickType.BID) {
-        dataset.bid = (tick.value as number) > 0 ? tick.value : null;
-      } else if (type == IBApiTickType.ASK) {
-        dataset.ask = (tick.value as number) > 0 ? tick.value : null;
-      } else if (type == IBApiTickType.LAST) {
-        dataset.price = (tick.value as number) > 0 ? tick.value : null;
-      } else if (type == IBApiTickType.CLOSE) {
-        dataset.previousClosePrice = (tick.value as number) > 0 ? tick.value : null;
-      } else if (
-        [
-          IBApiTickType.BID_SIZE,
-          IBApiTickType.ASK_SIZE,
-          IBApiTickType.LAST_SIZE,
-          IBApiTickType.OPEN,
-          IBApiTickType.HIGH,
-          IBApiTickType.LOW,
-          IBApiTickType.VOLUME,
-          IBApiTickType.HALTED,
-        ].includes(type as IBApiTickType)
-      ) {
-        // siliently ignore
-        // console.log('silently ignored', type, tick);
-      } else if (type == IBApiNextTickType.OPTION_PV_DIVIDEND) {
-        optdataset.pvDividend = tick.value;
-      } else if (type == IBApiNextTickType.LAST_OPTION_PRICE) {
-        if (!dataset.price) {
+      if (tick.value)
+        if (type == IBApiTickType.BID) {
+          dataset.bid = (tick.value as number) > 0 ? tick.value : null;
+        } else if (type == IBApiTickType.ASK) {
+          dataset.ask = (tick.value as number) > 0 ? tick.value : null;
+        } else if (type == IBApiTickType.LAST) {
           dataset.price = (tick.value as number) > 0 ? tick.value : null;
+        } else if (type == IBApiTickType.CLOSE) {
+          dataset.previousClosePrice = (tick.value as number) > 0 ? tick.value : null;
+        } else if (
+          [
+            IBApiTickType.BID_SIZE,
+            IBApiTickType.ASK_SIZE,
+            IBApiTickType.LAST_SIZE,
+            IBApiTickType.OPEN,
+            IBApiTickType.HIGH,
+            IBApiTickType.LOW,
+            IBApiTickType.VOLUME,
+            IBApiTickType.HALTED,
+          ].includes(type as IBApiTickType)
+        ) {
+          // siliently ignore
+          // console.log('silently ignored', type, tick);
+        } else if (type == IBApiNextTickType.OPTION_PV_DIVIDEND) {
+          optdataset.pvDividend = tick.value;
+        } else if (type == IBApiNextTickType.LAST_OPTION_PRICE) {
+          if (!dataset.price) {
+            dataset.price = (tick.value as number) > 0 ? tick.value : null;
+          }
+        } else if (type == IBApiNextTickType.LAST_OPTION_DELTA) {
+          if (tick.value) {
+            optdataset.delta = tick.value;
+          }
+          // console.log("delta (last):", optdataset.delta, tick.value);
+        } else if (type == IBApiNextTickType.LAST_OPTION_GAMMA) {
+          if (tick.value) {
+            optdataset.gamma = tick.value;
+          }
+        } else if (type == IBApiNextTickType.LAST_OPTION_VEGA) {
+          if (tick.value) {
+            optdataset.vega = tick.value;
+          }
+        } else if (type == IBApiNextTickType.LAST_OPTION_THETA) {
+          if (tick.value) {
+            optdataset.theta = tick.value;
+          }
+        } else if (type == IBApiNextTickType.LAST_OPTION_IV) {
+          if (tick.value) {
+            optdataset.impliedVolatility = tick.value;
+          }
+        } else if (type == IBApiNextTickType.MODEL_OPTION_PRICE) {
+          if (!dataset.price && (tick.value as number) > 0) {
+            dataset.price = tick.value;
+          }
+        } else if (type == IBApiNextTickType.MODEL_OPTION_IV) {
+          if (!optdataset.impliedVolatility && (tick.value as number) > 0) {
+            optdataset.impliedVolatility = tick.value;
+          }
+        } else if (type == IBApiNextTickType.MODEL_OPTION_DELTA) {
+          if (!optdataset.delta && tick.value) {
+            optdataset.delta = tick.value;
+          }
+          // console.log("delta (model):", optdataset.delta, tick.value);
+        } else if (type == IBApiNextTickType.MODEL_OPTION_GAMMA) {
+          if (!optdataset.gamma && tick.value) {
+            optdataset.gamma = tick.value;
+          }
+        } else if (type == IBApiNextTickType.MODEL_OPTION_VEGA) {
+          if (!optdataset.vega && tick.value) {
+            optdataset.vega = tick.value;
+          }
+        } else if (type == IBApiNextTickType.MODEL_OPTION_THETA) {
+          if (!optdataset.theta && tick.value) {
+            optdataset.theta = tick.value;
+          }
+        } else if (
+          [
+            // would it be interesting to use OPTION_UNDERLYING to update underlying?
+            IBApiNextTickType.OPTION_UNDERLYING,
+            IBApiNextTickType.BID_OPTION_IV,
+            IBApiNextTickType.BID_OPTION_PRICE,
+            IBApiNextTickType.BID_OPTION_DELTA,
+            IBApiNextTickType.BID_OPTION_GAMMA,
+            IBApiNextTickType.BID_OPTION_VEGA,
+            IBApiNextTickType.BID_OPTION_THETA,
+            IBApiNextTickType.ASK_OPTION_IV,
+            IBApiNextTickType.ASK_OPTION_PRICE,
+            IBApiNextTickType.ASK_OPTION_DELTA,
+            IBApiNextTickType.ASK_OPTION_GAMMA,
+            IBApiNextTickType.ASK_OPTION_VEGA,
+            IBApiNextTickType.ASK_OPTION_THETA,
+            // Would be interesting to use delayed data if no live data available
+            IBApiNextTickType.DELAYED_BID_OPTION_IV,
+            IBApiNextTickType.DELAYED_BID_OPTION_PRICE,
+            IBApiNextTickType.DELAYED_BID_OPTION_DELTA,
+            IBApiNextTickType.DELAYED_BID_OPTION_GAMMA,
+            IBApiNextTickType.DELAYED_BID_OPTION_VEGA,
+            IBApiNextTickType.DELAYED_BID_OPTION_THETA,
+            IBApiNextTickType.DELAYED_ASK_OPTION_IV,
+            IBApiNextTickType.DELAYED_ASK_OPTION_PRICE,
+            IBApiNextTickType.DELAYED_ASK_OPTION_DELTA,
+            IBApiNextTickType.DELAYED_ASK_OPTION_GAMMA,
+            IBApiNextTickType.DELAYED_ASK_OPTION_VEGA,
+            IBApiNextTickType.DELAYED_ASK_OPTION_THETA,
+            IBApiNextTickType.DELAYED_LAST_OPTION_IV,
+            IBApiNextTickType.DELAYED_LAST_OPTION_PRICE,
+            IBApiNextTickType.DELAYED_LAST_OPTION_DELTA,
+            IBApiNextTickType.DELAYED_LAST_OPTION_GAMMA,
+            IBApiNextTickType.DELAYED_LAST_OPTION_VEGA,
+            IBApiNextTickType.DELAYED_LAST_OPTION_THETA,
+          ].includes(type as IBApiNextTickType)
+        ) {
+          // siliently ignore
+          // console.log("silently ignored", type, tick);
+        } else {
+          console.log("ignored", type, tick);
         }
-      } else if (type == IBApiNextTickType.LAST_OPTION_DELTA) {
-        if (tick.value) {
-          optdataset.delta = tick.value;
-        }
-        // console.log("delta (last):", optdataset.delta, tick.value);
-      } else if (type == IBApiNextTickType.LAST_OPTION_GAMMA) {
-        if (tick.value) {
-          optdataset.gamma = tick.value;
-        }
-      } else if (type == IBApiNextTickType.LAST_OPTION_VEGA) {
-        if (tick.value) {
-          optdataset.vega = tick.value;
-        }
-      } else if (type == IBApiNextTickType.LAST_OPTION_THETA) {
-        if (tick.value) {
-          optdataset.theta = tick.value;
-        }
-      } else if (type == IBApiNextTickType.LAST_OPTION_IV) {
-        if (tick.value) {
-          optdataset.impliedVolatility = tick.value;
-        }
-      } else if (type == IBApiNextTickType.MODEL_OPTION_PRICE) {
-        if (!dataset.price && (tick.value as number) > 0) {
-          dataset.price = tick.value;
-        }
-      } else if (type == IBApiNextTickType.MODEL_OPTION_IV) {
-        if (!optdataset.impliedVolatility && (tick.value as number) > 0) {
-          optdataset.impliedVolatility = tick.value;
-        }
-      } else if (type == IBApiNextTickType.MODEL_OPTION_DELTA) {
-        if (!optdataset.delta && tick.value) {
-          optdataset.delta = tick.value;
-        }
-        // console.log("delta (model):", optdataset.delta, tick.value);
-      } else if (type == IBApiNextTickType.MODEL_OPTION_GAMMA) {
-        if (!optdataset.gamma && tick.value) {
-          optdataset.gamma = tick.value;
-        }
-      } else if (type == IBApiNextTickType.MODEL_OPTION_VEGA) {
-        if (!optdataset.vega && tick.value) {
-          optdataset.vega = tick.value;
-        }
-      } else if (type == IBApiNextTickType.MODEL_OPTION_THETA) {
-        if (!optdataset.theta && tick.value) {
-          optdataset.theta = tick.value;
-        }
-      } else if (
-        [
-          IBApiNextTickType.OPTION_UNDERLYING,
-          // would be interesting to use OPTION_UNDERLYING to update underlying
-          IBApiNextTickType.BID_OPTION_IV,
-          IBApiNextTickType.BID_OPTION_PRICE,
-          IBApiNextTickType.BID_OPTION_DELTA,
-          IBApiNextTickType.BID_OPTION_GAMMA,
-          IBApiNextTickType.BID_OPTION_VEGA,
-          IBApiNextTickType.BID_OPTION_THETA,
-          IBApiNextTickType.DELAYED_BID_OPTION_IV,
-          IBApiNextTickType.DELAYED_BID_OPTION_PRICE,
-          IBApiNextTickType.DELAYED_BID_OPTION_DELTA,
-          IBApiNextTickType.DELAYED_BID_OPTION_GAMMA,
-          IBApiNextTickType.DELAYED_BID_OPTION_VEGA,
-          IBApiNextTickType.DELAYED_BID_OPTION_THETA,
-          IBApiNextTickType.ASK_OPTION_IV,
-          IBApiNextTickType.ASK_OPTION_PRICE,
-          IBApiNextTickType.ASK_OPTION_DELTA,
-          IBApiNextTickType.ASK_OPTION_GAMMA,
-          IBApiNextTickType.ASK_OPTION_VEGA,
-          IBApiNextTickType.ASK_OPTION_THETA,
-          IBApiNextTickType.DELAYED_ASK_OPTION_IV,
-          IBApiNextTickType.DELAYED_ASK_OPTION_PRICE,
-          IBApiNextTickType.DELAYED_ASK_OPTION_DELTA,
-          IBApiNextTickType.DELAYED_ASK_OPTION_GAMMA,
-          IBApiNextTickType.DELAYED_ASK_OPTION_VEGA,
-          IBApiNextTickType.DELAYED_ASK_OPTION_THETA,
-          IBApiNextTickType.DELAYED_LAST_OPTION_IV,
-          IBApiNextTickType.DELAYED_LAST_OPTION_PRICE,
-          IBApiNextTickType.DELAYED_LAST_OPTION_DELTA,
-          IBApiNextTickType.DELAYED_LAST_OPTION_GAMMA,
-          IBApiNextTickType.DELAYED_LAST_OPTION_VEGA,
-          IBApiNextTickType.DELAYED_LAST_OPTION_THETA,
-        ].includes(type as IBApiNextTickType)
-      ) {
-        // siliently ignore
-        // console.log("silently ignored", type, tick);
-      } else {
-        console.log("ignored", type, tick);
-      }
     });
-    let price = dataset.previousClosePrice;
-    if (dataset.price) price = dataset.price;
+    let price: number | null;
     if (dataset.ask && dataset.bid) price = (dataset.ask + dataset.bid) / 2;
+    else if (dataset.price) price = dataset.price;
+    else if (dataset.previousClosePrice) price = dataset.previousClosePrice;
+    else price = null;
     if (contract.secType == SecType.CASH) {
       // we do not get a price for CASH contracts
       dataset.price = price;
     }
-    // if (contract.secType != "OPT")
-    // console.log(`${contract.id}: ${contract.symbol} ${dataset.price} ${dataset.bid} ${dataset.ask} ${dataset.previousClosePrice} ${price}`);
     return Contract.update(dataset, {
       where: {
         id: contract.id,

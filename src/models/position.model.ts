@@ -43,15 +43,11 @@ export class Position extends Model<
   declare updatedAt: CreationOptional<Date>;
 
   /** Portfolio */
-  // @ForeignKey(() => Portfolio)
-  // @Column
   declare portfolio_id: ForeignKey<Portfolio["id"]>;
   @BelongsTo(() => Portfolio, "portfolio_id")
   declare portfolio: Portfolio;
 
   /** Related Contract */
-  // @ForeignKey(() => Contract)
-  // @Column
   declare contract_id: ForeignKey<Contract["id"]>;
   @BelongsTo(() => Contract, "contract_id")
   declare contract: Contract;

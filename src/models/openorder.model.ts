@@ -1,14 +1,31 @@
 import { OrderAction } from "@stoqey/ib";
+import { CreationOptional, ForeignKey, InferAttributes, InferCreationAttributes } from "sequelize";
 import { BelongsTo, Column, DataType, Model, Table } from "sequelize-typescript";
-
 import { Contract } from ".";
+import { Portfolio } from "./portfolio.model";
 
 @Table({ tableName: "open_order", timestamps: true, createdAt: true, updatedAt: true, deletedAt: false })
-export class OpenOrder extends Model {
-  declare id: number;
+export class OpenOrder extends Model<
+  InferAttributes<OpenOrder>,
+  InferCreationAttributes<OpenOrder, { omit: "contract" | "portfolio" }>
+> {
+  // id can be undefined during creation when using `autoIncrement`
+  declare id: CreationOptional<number>;
+  // timestamps!
+  // createdAt can be undefined during creation
+  declare createdAt: CreationOptional<Date>;
+  // updatedAt can be undefined during creation
+  declare updatedAt: CreationOptional<Date>;
 
+  /** Portfolio */
+  declare portfolio_id: ForeignKey<Portfolio["id"]>;
+  @BelongsTo(() => Portfolio, "portfolio_id")
+  declare portfolio: Portfolio;
+
+  /** Related Contract */
+  declare contract_id: ForeignKey<Contract["id"]>;
   @BelongsTo(() => Contract, "contract_id")
-  public contract!: Contract;
+  declare contract: Contract;
 
   @Column({ type: DataType.INTEGER, field: "perm_id" })
   declare permId: number;

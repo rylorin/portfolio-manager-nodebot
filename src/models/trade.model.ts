@@ -45,8 +45,6 @@ export class Trade extends Model<
   declare portfolio: Portfolio;
 
   /** Related Stock */
-  // @ForeignKey(() => Contract)
-  // @Column
   declare symbol_id: ForeignKey<Contract["id"]>;
   @BelongsTo(() => Contract, "symbol_id")
   declare underlying: Contract;

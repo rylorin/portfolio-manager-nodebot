@@ -1,3 +1,4 @@
+import { CreationOptional, InferAttributes, InferCreationAttributes } from "sequelize";
 import { BelongsTo, Column, DataType, ForeignKey, HasMany, Model, Table } from "sequelize-typescript";
 import { Balance } from "./balance.model";
 import { Contract } from "./contract.model";
@@ -6,8 +7,14 @@ import { Position } from "./position.model";
 import { Setting } from "./setting.model";
 
 @Table({ tableName: "portfolio", timestamps: false, deletedAt: false, updatedAt: false })
-export class Portfolio extends Model {
-  declare id: number;
+export class Portfolio extends Model<InferAttributes<Portfolio>, InferCreationAttributes<Portfolio>> {
+  // id can be undefined during creation when using `autoIncrement`
+  declare id: CreationOptional<number>;
+  // timestamps!
+  // createdAt can be undefined during creation
+  declare createdAt: CreationOptional<Date>;
+  // updatedAt can be undefined during creation
+  declare updatedAt: CreationOptional<Date>;
 
   /** The account number. */
   @Column({ type: DataType.STRING })

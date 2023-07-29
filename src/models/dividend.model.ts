@@ -1,14 +1,24 @@
+import { CreationOptional, InferAttributes, InferCreationAttributes } from "sequelize";
 import { BelongsTo, Column, DataType, Model, Table } from "sequelize-typescript";
 import { Statement } from ".";
 
 @Table({ tableName: "dividend", timestamps: false, createdAt: false, updatedAt: false })
-export class DividendStatement extends Model {
-  declare id: number;
+export class DividendStatement extends Model<
+  InferAttributes<DividendStatement>,
+  InferCreationAttributes<DividendStatement>
+> {
+  // id can be undefined during creation when using `autoIncrement`
+  declare id: CreationOptional<number>;
+  // timestamps!
+  // createdAt can be undefined during creation
+  declare createdAt: CreationOptional<Date>;
+  // updatedAt can be undefined during creation
+  declare updatedAt: CreationOptional<Date>;
 
   @BelongsTo(() => Statement, "id")
   public statement: Statement;
 
-  /** quantity */
+  /** country */
   @Column({ type: DataType.STRING(2) })
   declare country: string;
 }

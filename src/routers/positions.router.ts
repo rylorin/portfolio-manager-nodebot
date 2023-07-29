@@ -1,7 +1,7 @@
 import { OptionType, SecType } from "@stoqey/ib";
 import { default as express } from "express";
 import logger, { LogLevel } from "../logger";
-import { Contract, Currency, Option, OptionStatement, Portfolio, Position, Statement } from "../models";
+import { Contract, Currency, Future, Option, OptionStatement, Portfolio, Position, Statement } from "../models";
 import { OptionPositionEntry, PositionEntry } from "./positions.types";
 
 const MODULE = "PositionsRouter";
@@ -12,7 +12,7 @@ export const router = express.Router({ mergeParams: true });
 type parentParams = { portfolioId: number };
 
 const getPrice = (item: Contract): number | null => {
-  return item.price ? item.price : item.ask && item.bid ? (item.ask + item.bid) / 2 : item.previousClosePrice;
+  return item.ask && item.bid ? (item.ask + item.bid) / 2 : item.price ? item.price : item.previousClosePrice;
 };
 
 export const preparePositions = (portfolio: Portfolio): Promise<(PositionEntry | OptionPositionEntry)[]> => {
@@ -51,6 +51,7 @@ export const preparePositions = (portfolio: Portfolio): Promise<(PositionEntry |
             positions.push(result);
             return positions;
           }
+
           case SecType.OPT:
             return Option.findByPk(item.contract.id, {
               include: [
@@ -114,6 +115,46 @@ export const preparePositions = (portfolio: Portfolio): Promise<(PositionEntry |
               positions.push(result);
               return positions;
             });
+
+          case SecType.FUT:
+            return Future.findByPk(item.contract.id, {
+              include: [
+                { model: Contract, as: "contract" },
+                { model: Contract, as: "underlying" },
+              ],
+            }).then((option) => {
+              if (!option) throw Error("Option contract not found");
+              // console.log("option:", JSON.stringify(option));
+              const price = getPrice(item.contract);
+              const value = price ? price * item.quantity * option.multiplier : undefined;
+              const baseRate =
+                1 / (portfolio.baseRates.find((currency) => currency.currency == item.contract.currency)?.rate || 1);
+              const result: PositionEntry = {
+                id: item.id,
+                openDate: item.createdAt.getTime(),
+                quantity: item.quantity,
+                contract: {
+                  id: item.contract.id,
+                  secType: item.contract.secType,
+                  symbol: item.contract.symbol,
+                  name: item.contract.name,
+                  multiplier: option.multiplier,
+                  currency: item.contract.currency,
+                  price: getPrice(item.contract) || undefined,
+                },
+                trade_id: item.trade_unit_id ? item.trade_unit_id : undefined,
+                price: price ? price : undefined,
+                value,
+                pru: item.cost / item.quantity / option.multiplier,
+                cost: item.cost,
+                pnl: value ? value - item.cost : undefined,
+                baseRate,
+              };
+              // console.log(item.contract.currency, result);
+              positions.push(result);
+              return positions;
+            });
+
           default:
             throw Error("unimplemented sectype: " + item.contract.secType);
         }
@@ -149,7 +190,7 @@ router.get("/index", (req, res): void => {
     .then((positions: PositionEntry[]) => res.status(200).json({ positions }))
     .catch((error) => {
       console.error(error);
-      logger.log(LogLevel.Error, MODULE + ".PositionsIndex", undefined, JSON.stringify(error));
+      logger.error(MODULE + ".PositionsIndex", error);
       res.status(500).json({ error });
     });
 });

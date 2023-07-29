@@ -29,7 +29,7 @@
     "release": "yarn lint && yarn qc && yarn doc && yarn build",
     "serve": "vite preview",
     "server:build": "tsc --project tsconfig.server.json",
-    "server:dev": "ts-node-dev --project tsconfig.server.json src/index -server -import -account",
+    "server:dev": "ts-node-dev --project tsconfig.server.json src/index -server -import",
     "start": "node dist/index.js -server",
     "storybook": "storybook dev -p 6006",
     "storybook:build": "storybook build -o dist/storybook"
