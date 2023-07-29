@@ -6,11 +6,11 @@ import { Contract, Currency, Portfolio, Position, Statement, StatementTypes, Tra
 import { TradeStatus, TradeStrategy } from "../models/trade.types";
 import { preparePositions } from "./positions.router";
 import { statementModelToStatementEntry } from "./statements.router";
-import { StatementEntry } from "./statements.types";
+import { StatementEntry, StatementOptionEntry } from "./statements.types";
 import { TradeEntry, TradeMonthlySynthesys, TradeSynthesys, VirtualPositionEntry } from "./trades.types";
 
 const MODULE = "TradesRouter";
-const _sequelize_logging = (...args: any[]): void => logger.trace(MODULE + ".squelize", ...args);
+const sequelize_logging = (...args: any[]): void => logger.trace(MODULE + ".squelize", ...args);
 
 const router = express.Router({ mergeParams: true });
 
@@ -23,7 +23,7 @@ type parentParams = { portfolioId: number };
  * @returns
  */
 export const updateTradeDetails = (thisTrade: Trade): Promise<Trade> => {
-  logger.log(LogLevel.Trace, MODULE + ".updateTradeDetails", thisTrade.underlying?.symbol, thisTrade);
+  logger.log(LogLevel.Trace, MODULE + ".updateTradeDetails", thisTrade.underlying?.symbol, "thisTrade", thisTrade);
   if (thisTrade && thisTrade.statements?.length) {
     // sort statements by date
     const items = thisTrade.statements.sort((a, b) => a.date.getTime() - b.date.getTime());
@@ -33,12 +33,25 @@ export const updateTradeDetails = (thisTrade: Trade): Promise<Trade> => {
     else if (thisTrade.status != TradeStatus.closed) thisTrade.closingDate = undefined;
     thisTrade.PnL = 0;
     thisTrade.pnlInBase = 0;
-    thisTrade.risk = 0;
     return items
       .reduce(
-        (p, item): Promise<Trade> =>
-          p.then((thisTrade) => {
+        (p, item) =>
+          p.then((statements) => {
             return statementModelToStatementEntry(item).then((statement_entry) => {
+              if (statement_entry.pnl) {
+                // eslint-disable-next-line @typescript-eslint/no-unnecessary-type-assertion
+                thisTrade.PnL! += statement_entry.pnl;
+                // eslint-disable-next-line @typescript-eslint/no-unnecessary-type-assertion
+                thisTrade.pnlInBase! += statement_entry.pnl * statement_entry.fxRateToBase;
+              }
+              if (
+                statement_entry.type == StatementTypes.EquityStatement ||
+                statement_entry.type == StatementTypes.OptionStatement
+              ) {
+                statements.push(statement_entry);
+              }
+              return statements;
+              /*
               let risk = 0;
               switch (statement_entry.type) {
                 case StatementTypes.EquityStatement:
@@ -52,9 +65,6 @@ export const updateTradeDetails = (thisTrade: Trade): Promise<Trade> => {
                     case TradeStrategy["the wheel"]:
                       break;
                   }
-                  //   risk += statement_entry.amount;
-                  // // eslint-disable-next-line @typescript-eslint/no-unnecessary-type-assertion
-                  // thisTrade.risk = Math.max(Math.abs(risk), thisTrade.risk!);
                   break;
                 case StatementTypes.OptionStatement:
                   logger.log(
@@ -137,11 +147,75 @@ export const updateTradeDetails = (thisTrade: Trade): Promise<Trade> => {
                 thisTrade.pnlInBase! += statement_entry.pnl * statement_entry.fxRateToBase;
               }
               return thisTrade;
+              */
             });
           }),
-        Promise.resolve(thisTrade),
+        Promise.resolve([] as StatementEntry[]),
       )
-      .then((thisTrade) => thisTrade.save());
+      .then((statements) => {
+        logger.log(
+          LogLevel.Trace,
+          MODULE + ".updateTradeDetails",
+          thisTrade.underlying?.symbol,
+          "statements",
+          statements,
+        );
+        // Update trade stategy
+        for (let i = 0; i < statements.length; i++) {
+          const statement_entry = statements[i];
+          switch (thisTrade.strategy) {
+            case TradeStrategy.undefined:
+              if (statement_entry.type == StatementTypes.EquityStatement) {
+                if (statement_entry.quantity! < 0) thisTrade.strategy = TradeStrategy["short stock"];
+                else thisTrade.strategy = TradeStrategy["long stock"];
+              } else if (statement_entry.type == StatementTypes.OptionStatement) {
+                // eslint-disable-next-line @typescript-eslint/no-unnecessary-type-assertion
+                if (statement_entry.option!.callOrPut == OptionType.Put) {
+                  // eslint-disable-next-line @typescript-eslint/no-unnecessary-type-assertion
+                  if (statement_entry.quantity! < 0) thisTrade.strategy = TradeStrategy["short put"];
+                  else thisTrade.strategy = TradeStrategy["long put"];
+                  // eslint-disable-next-line @typescript-eslint/no-unnecessary-type-assertion
+                } else if (statement_entry.option!.callOrPut == OptionType.Call) {
+                  // eslint-disable-next-line @typescript-eslint/no-unnecessary-type-assertion
+                  if (statement_entry.quantity! < 0) thisTrade.strategy = TradeStrategy["covered short call"];
+                  else thisTrade.strategy = TradeStrategy["long call"];
+                }
+              }
+              break;
+          }
+        }
+        // Given the strategy and the statements we can update trade risk
+        const virtuals: Record<number, { contract: StatementOptionEntry; quantity: number }> = {};
+        switch (thisTrade.strategy) {
+          case TradeStrategy["short put"]:
+            // risk = quantity * strike * multiplier
+            thisTrade.risk = 0;
+            for (let i = 0; i < statements.length; i++) {
+              const statement_entry = statements[i];
+              if (statement_entry.type == StatementTypes.OptionStatement)
+                virtuals[statement_entry.option!.id] = {
+                  contract: statement_entry.option!,
+                  quantity: statement_entry.quantity as number,
+                };
+              const risk = Object.values(virtuals).reduce(
+                (p, item) => (p += item.quantity * item.contract.strike * item.contract.multiplier),
+                0,
+              );
+              logger.log(
+                LogLevel.Trace,
+                MODULE + ".updateTradeDetails",
+                thisTrade.underlying?.symbol,
+                "virtuals",
+                virtuals,
+                risk,
+              );
+              thisTrade.risk = Math.min(thisTrade.risk, risk);
+            }
+        }
+        // Save result
+        return thisTrade.save({ logging: sequelize_logging });
+      });
+    // .then((thisTrade) => thisTrade.save());
   }
   return Promise.resolve(thisTrade);
 };

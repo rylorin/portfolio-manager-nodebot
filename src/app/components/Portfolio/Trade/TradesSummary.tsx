@@ -3,7 +3,6 @@ import React, { FunctionComponent } from "react";
 import { Link as RouterLink, useLoaderData } from "react-router-dom";
 import { TradeSynthesys } from "../../../../routers/trades.types";
 import TradesMonthlyTable from "./TradesMonthlyTable";
-import TradesTable from "./TradesTable";
 
 type TradeSummaryProps = Record<string, never>;
 
@@ -14,6 +13,10 @@ const TradeSummary: FunctionComponent<TradeSummaryProps> = ({ ..._rest }): JSX.E
     <>
       <Box>
         <Spacer />
+        <Link to={"../open"} as={RouterLink}>
+          Open
+        </Link>
+        {" | "}
         <Link to={"../ytd"} as={RouterLink}>
           YTD
         </Link>
@@ -27,8 +30,6 @@ const TradeSummary: FunctionComponent<TradeSummaryProps> = ({ ..._rest }): JSX.E
         </Link>
         <Spacer />
       </Box>
-      <Text>Open trades</Text>
-      <TradesTable content={theSynthesys.open} title="Open trades" />
       <Text>Closed trades by month</Text>
       <TradesMonthlyTable content={theSynthesys.byMonth} title="Closed trades" />
     </>

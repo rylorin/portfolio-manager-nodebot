@@ -4,6 +4,15 @@ import { StatementTypes } from "../models/statement.types";
 export type SynthesysEntry = { stocks: number; options: number; dividends: number; interests: number; total: number };
 export type StatementsSynthesysEntries = Record<"string", SynthesysEntry>;
 
+export type StatementOptionEntry = {
+  id: number;
+  symbol: string;
+  expiry: number;
+  strike: number;
+  callOrPut: OptionType;
+  multiplier: number;
+};
+
 export type StatementEntry = {
   id: number;
   date: number;
@@ -17,7 +26,5 @@ export type StatementEntry = {
   trade_id: number | null;
   underlying: { id: number; symbol: string } | undefined;
   quantity: number | undefined;
-  option:
-    | { id: number; symbol: string; expiry: number; strike: number; callOrPut: OptionType; multiplier: number }
-    | undefined;
+  option: StatementOptionEntry | undefined;
 };
