@@ -9,6 +9,6 @@ export const links = (portfolioId: string): Record<string, string> => {
   result[`/portfolio/${portfolioId}/balances`] = "Balances";
   result[TradeLink.toIndex(portfolioId)] = "Trades";
   result[`/portfolio/${portfolioId}/symbols`] = "Symbols";
-  result[`/portfolio/${portfolioId}/parameters`] = "Parameters";
+  result[`/portfolio/${portfolioId}/parameters`] = "Settings";
   return result;
 };

@@ -37,7 +37,7 @@ router.get("/:portfolioId(\\d+)", (req, res): void => {
       {
         model: Contract,
       },
-      { model: Setting, as: "settings", include: [{ model: Contract, as: "contract" }] },
+      { model: Setting, as: "settings", include: [{ model: Contract, as: "underlying", required: false }] },
     ],
   })
     .then((portfolio: Portfolio) => {
