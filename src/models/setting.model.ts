@@ -6,7 +6,7 @@ import { Portfolio } from "./portfolio.model";
 @Table({ tableName: "trading_parameters", timestamps: true })
 export class Setting extends Model<
   InferAttributes<Setting>,
-  InferCreationAttributes<Setting, { omit: "contract" | "portfolio" }>
+  InferCreationAttributes<Setting, { omit: "underlying" | "portfolio" }>
 > {
   // id can be undefined during creation when using `autoIncrement`
   declare id: CreationOptional<number>;
@@ -17,25 +17,24 @@ export class Setting extends Model<
   declare updatedAt: CreationOptional<Date>;
 
   /** Portfolio */
-  // @ForeignKey(() => Portfolio)
-  // @Column
   declare portfolio_id: ForeignKey<Portfolio["id"]>;
   @BelongsTo(() => Portfolio, "portfolio_id")
   declare portfolio: Portfolio;
 
-  /** Related Contract */
-  // @ForeignKey(() => Contract)
-  // @Column
+  /** Related Stock */
   declare stock_id: ForeignKey<Contract["id"]>;
   @BelongsTo(() => Contract, "stock_id")
-  declare contract: Contract;
+  declare underlying: Contract;
+
+  @Column({ type: DataType.SMALLINT, field: "csp_strategy" })
+  declare cspStrategy: number;
 
   /** NAV ratio */
-  @Column({ type: DataType.FLOAT, field: "nav_Ratio" })
+  @Column({ type: DataType.FLOAT, field: "nav_ratio" })
   declare navRatio: number;
 
   /** rollPutStrategy */
-  @Column({ type: DataType.SMALLINT, field: "roll_Put_Strategy" })
+  @Column({ type: DataType.SMALLINT, field: "roll_put_strategy" })
   declare rollPutStrategy: number;
 
   @Column({ type: DataType.SMALLINT, field: "roll_call_strategy" })

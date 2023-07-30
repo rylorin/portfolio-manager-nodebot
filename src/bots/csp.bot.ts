@@ -1,7 +1,7 @@
 import { OptionType, OrderAction } from "@stoqey/ib";
 import { Op } from "sequelize";
 import { ITradingBot } from ".";
-import { Contract, OpenOrder, Option, Parameter, Position, Stock } from "../models";
+import { Contract, OpenOrder, Option, Position, Setting, Stock } from "../models";
 
 const CSP_FREQ: number = parseInt(process.env.CSP_FREQ || "10"); // mins
 
@@ -50,7 +50,7 @@ export class SellCashSecuredPutBot extends ITradingBot {
     return result;
   }
 
-  private async processOneParamaeter(parameter: Parameter): Promise<Row> {
+  private async processOneParamaeter(parameter: Setting): Promise<Row> {
     console.log("processing parameter:", parameter.underlying.symbol);
 
     const stock_positions = await this.getContractPositionValueInBase(parameter.underlying);
@@ -132,7 +132,7 @@ export class SellCashSecuredPutBot extends ITradingBot {
     return { symbol: parameter.underlying.symbol, engaged_options, options };
   }
 
-  private async iterateParameters(parameters: Parameter[]): Promise<void> {
+  private async iterateParameters(parameters: Setting[]): Promise<void> {
     const result: Row[] = [];
     for (const parameter of parameters) {
       result.push(await this.processOneParamaeter(parameter));
@@ -188,8 +188,8 @@ export class SellCashSecuredPutBot extends ITradingBot {
     }
   }
 
-  private listParameters(): Promise<Parameter[]> {
-    return Parameter.findAll({
+  private listParameters(): Promise<Setting[]> {
+    return Setting.findAll({
       where: {
         cspStrategy: {
           [Op.and]: {

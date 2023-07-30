@@ -6,11 +6,11 @@ import { Contract, Currency, Portfolio, Position, Statement, StatementTypes, Tra
 import { TradeStatus, TradeStrategy } from "../models/trade.types";
 import { preparePositions } from "./positions.router";
 import { statementModelToStatementEntry } from "./statements.router";
-import { StatementEntry, StatementOptionEntry } from "./statements.types";
+import { StatementEntry, StatementOptionEntry, StatementUnderlyingEntry } from "./statements.types";
 import { TradeEntry, TradeMonthlySynthesys, TradeSynthesys, VirtualPositionEntry } from "./trades.types";
 
 const MODULE = "TradesRouter";
-const sequelize_logging = (...args: any[]): void => logger.trace(MODULE + ".squelize", ...args);
+const _sequelize_logging = (...args: any[]): void => logger.trace(MODULE + ".squelize", ...args);
 
 const router = express.Router({ mergeParams: true });
 
@@ -18,7 +18,6 @@ type parentParams = { portfolioId: number };
 
 /**
  * updateTradeDetails automatically update some trade's details
- * TODO: redesign using all components positions and their associated risks :/
  * @param thisTrade
  * @returns
  */
@@ -51,171 +50,13 @@ export const updateTradeDetails = (thisTrade: Trade): Promise<Trade> => {
                 statements.push(statement_entry);
               }
               return statements;
-              /*
-              let risk = 0;
-              switch (statement_entry.type) {
-                case StatementTypes.EquityStatement:
-                  if (!thisTrade.strategy) {
-                    // eslint-disable-next-line @typescript-eslint/no-unnecessary-type-assertion
-                    if (statement_entry.quantity! < 0) thisTrade.strategy = TradeStrategy["short stock"];
-                    else thisTrade.strategy = TradeStrategy["long stock"];
-                  }
-                  switch (thisTrade.strategy) {
-                    case TradeStrategy["short put"]:
-                    case TradeStrategy["the wheel"]:
-                      break;
-                  }
-                  break;
-                case StatementTypes.OptionStatement:
-                  logger.log(
-                    LogLevel.Trace,
-                    MODULE + ".updateTradeDetails",
-                    thisTrade.underlying?.symbol,
-                    "TradeOption statement_entry",
-                    statement_entry,
-                  );
-                  if (!thisTrade.strategy) {
-                    // eslint-disable-next-line @typescript-eslint/no-unnecessary-type-assertion
-                    if (statement_entry.option!.callOrPut == OptionType.Put) {
-                      // eslint-disable-next-line @typescript-eslint/no-unnecessary-type-assertion
-                      if (statement_entry.quantity! < 0) thisTrade.strategy = TradeStrategy["short put"];
-                      else thisTrade.strategy = TradeStrategy["long put"];
-                      // eslint-disable-next-line @typescript-eslint/no-unnecessary-type-assertion
-                    } else if (statement_entry.option!.callOrPut == OptionType.Call) {
-                      // eslint-disable-next-line @typescript-eslint/no-unnecessary-type-assertion
-                      if (statement_entry.quantity! < 0) thisTrade.strategy = TradeStrategy["covered short call"];
-                      else thisTrade.strategy = TradeStrategy["long call"];
-                    }
-                  }
-                  switch (thisTrade.strategy) {
-                    case TradeStrategy["short put"]:
-                    case TradeStrategy["the wheel"]:
-                      // eslint-disable-next-line @typescript-eslint/no-unnecessary-type-assertion
-                      if (statement_entry.quantity! < 0 && statement_entry.option!.callOrPut == OptionType.Put)
-                        risk = // eslint-disable-next-line @typescript-eslint/no-unnecessary-type-assertion
-                          statement_entry.option!.strike *
-                          // eslint-disable-next-line @typescript-eslint/no-unnecessary-type-assertion
-                          statement_entry.option!.multiplier *
-                          // eslint-disable-next-line @typescript-eslint/no-unnecessary-type-assertion
-                          statement_entry.quantity!;
-                      logger.log(
-                        LogLevel.Trace,
-                        MODULE + ".updateTradeDetails",
-                        thisTrade.underlying?.symbol,
-                        "strategy",
-                        thisTrade.strategy,
-                        "risk",
-                        thisTrade.risk,
-                        risk,
-                      );
-                      break;
-                    case TradeStrategy["buy write"]:
-                      // eslint-disable-next-line @typescript-eslint/no-unnecessary-type-assertion
-                      if (
-                        statement_entry.quantity! < 0 &&
-                        statement_entry.option!.callOrPut == OptionType.Call &&
-                        // Opening statement (within 10 first minutes)
-                        statement_entry.date - thisTrade.openingDate.getTime() < 10 * 60 * 1000
-                      ) {
-                        risk = // eslint-disable-next-line @typescript-eslint/no-unnecessary-type-assertion
-                          statement_entry.option!.strike *
-                          // eslint-disable-next-line @typescript-eslint/no-unnecessary-type-assertion
-                          statement_entry.option!.multiplier *
-                          // eslint-disable-next-line @typescript-eslint/no-unnecessary-type-assertion
-                          statement_entry.quantity!;
-                      }
-                      break;
-                    default:
-                      logger.log(
-                        LogLevel.Trace,
-                        MODULE + ".updateTradeDetails",
-                        thisTrade.underlying?.symbol,
-                        "strategy ignored",
-                        thisTrade.strategy,
-                        "risk",
-                        risk,
-                      );
-                  }
-                  break;
-              }
-              // eslint-disable-next-line @typescript-eslint/no-unnecessary-type-assertion
-              thisTrade.risk = Math.min(risk, thisTrade.risk!);
-              if (statement_entry.pnl) {
-                // eslint-disable-next-line @typescript-eslint/no-unnecessary-type-assertion
-                thisTrade.PnL! += statement_entry.pnl;
-                // eslint-disable-next-line @typescript-eslint/no-unnecessary-type-assertion
-                thisTrade.pnlInBase! += statement_entry.pnl * statement_entry.fxRateToBase;
-              }
-              return thisTrade;
-              */
             });
           }),
         Promise.resolve([] as StatementEntry[]),
       )
-      .then((statements) => {
-        logger.log(
-          LogLevel.Trace,
-          MODULE + ".updateTradeDetails",
-          thisTrade.underlying?.symbol,
-          "statements",
-          statements,
-        );
-        // Update trade stategy
-        for (let i = 0; i < statements.length; i++) {
-          const statement_entry = statements[i];
-          switch (thisTrade.strategy) {
-            case TradeStrategy.undefined:
-              if (statement_entry.type == StatementTypes.EquityStatement) {
-                if (statement_entry.quantity! < 0) thisTrade.strategy = TradeStrategy["short stock"];
-                else thisTrade.strategy = TradeStrategy["long stock"];
-              } else if (statement_entry.type == StatementTypes.OptionStatement) {
-                // eslint-disable-next-line @typescript-eslint/no-unnecessary-type-assertion
-                if (statement_entry.option!.callOrPut == OptionType.Put) {
-                  // eslint-disable-next-line @typescript-eslint/no-unnecessary-type-assertion
-                  if (statement_entry.quantity! < 0) thisTrade.strategy = TradeStrategy["short put"];
-                  else thisTrade.strategy = TradeStrategy["long put"];
-                  // eslint-disable-next-line @typescript-eslint/no-unnecessary-type-assertion
-                } else if (statement_entry.option!.callOrPut == OptionType.Call) {
-                  // eslint-disable-next-line @typescript-eslint/no-unnecessary-type-assertion
-                  if (statement_entry.quantity! < 0) thisTrade.strategy = TradeStrategy["covered short call"];
-                  else thisTrade.strategy = TradeStrategy["long call"];
-                }
-              }
-              break;
-          }
-        }
-        // Given the strategy and the statements we can update trade risk
-        const virtuals: Record<number, { contract: StatementOptionEntry; quantity: number }> = {};
-        switch (thisTrade.strategy) {
-          case TradeStrategy["short put"]:
-            // risk = quantity * strike * multiplier
-            thisTrade.risk = 0;
-            for (let i = 0; i < statements.length; i++) {
-              const statement_entry = statements[i];
-              if (statement_entry.type == StatementTypes.OptionStatement)
-                virtuals[statement_entry.option!.id] = {
-                  contract: statement_entry.option!,
-                  quantity: statement_entry.quantity as number,
-                };
-              const risk = Object.values(virtuals).reduce(
-                (p, item) => (p += item.quantity * item.contract.strike * item.contract.multiplier),
-                0,
-              );
-              logger.log(
-                LogLevel.Trace,
-                MODULE + ".updateTradeDetails",
-                thisTrade.underlying?.symbol,
-                "virtuals",
-                virtuals,
-                risk,
-              );
-              thisTrade.risk = Math.min(thisTrade.risk, risk);
-            }
-        }
-        // Save result
-        return thisTrade.save({ logging: sequelize_logging });
-      });
-    // .then((thisTrade) => thisTrade.save());
+      .then((statements) => updateTradeStrategy(thisTrade, statements))
+      .then((statements) => updateTradeRisk(thisTrade, statements))
+      .then((_statements) => thisTrade.save());
   }
   return Promise.resolve(thisTrade);
 };
@@ -331,6 +172,123 @@ const formatDate = (when: Date): string => {
   const datestr = when.toISOString().substring(0, 7);
   return datestr;
 };
+
+/**
+ * Given the strategy and the statements we can update trade risk
+ *
+ */
+function updateTradeRisk(thisTrade: Trade, statements: StatementEntry[]): StatementEntry[] {
+  const virtuals: Record<number, { contract: StatementUnderlyingEntry | StatementOptionEntry; risk: number }> = {};
+  switch (thisTrade.strategy) {
+    case TradeStrategy["short put"]:
+    case TradeStrategy["the wheel"]:
+      // risk = quantity * strike * multiplier of puts minus premium for the first one
+      thisTrade.risk = 0;
+      for (let i = 0; i < statements.length; i++) {
+        const statement_entry = statements[i];
+        if (
+          statement_entry.type == StatementTypes.OptionStatement &&
+          statement_entry.option!.callOrPut == OptionType.Put
+        ) {
+          const risk = statement_entry.quantity! * statement_entry.option!.strike * statement_entry.option!.multiplier;
+          if (virtuals[statement_entry.option!.id]) virtuals[statement_entry.option!.id].risk += risk;
+          else
+            virtuals[statement_entry.option!.id] = {
+              contract: statement_entry.option!,
+              risk,
+            };
+          // Adjust with premium for the first position
+          if (Object.keys(virtuals).length == 1) virtuals[statement_entry.option!.id].risk += statement_entry.amount;
+          const consolidated_risk = Object.values(virtuals).reduce((p, item) => (p += item.risk), 0);
+          logger.log(
+            LogLevel.Trace,
+            MODULE + ".updateTradeRisk",
+            thisTrade.underlying?.symbol,
+            "virtuals",
+            virtuals,
+            consolidated_risk,
+          );
+          thisTrade.risk = Math.min(thisTrade.risk, consolidated_risk);
+        }
+      }
+      break;
+    case TradeStrategy["long stock"]:
+      // risk = price paid
+      thisTrade.risk = 0;
+      for (let i = 0; i < statements.length; i++) {
+        const statement_entry = statements[i];
+        if (statement_entry.type == StatementTypes.EquityStatement) {
+          const risk = statement_entry.amount;
+          if (virtuals[statement_entry.underlying!.id]) virtuals[statement_entry.underlying!.id].risk += risk;
+          else
+            virtuals[statement_entry.underlying!.id] = {
+              contract: statement_entry.underlying!,
+              risk,
+            };
+          const consolidated_risk = Object.values(virtuals).reduce((p, item) => (p += item.risk), 0);
+          logger.log(
+            LogLevel.Trace,
+            MODULE + ".updateTradeRisk",
+            thisTrade.underlying?.symbol,
+            "virtuals",
+            virtuals,
+            consolidated_risk,
+          );
+          thisTrade.risk = Math.min(thisTrade.risk, consolidated_risk);
+        }
+      }
+      break;
+  }
+  return statements;
+}
+
+function updateTradeStrategy(thisTrade: Trade, statements: StatementEntry[]): StatementEntry[] {
+  logger.log(LogLevel.Trace, MODULE + ".updateTradeStrategy", thisTrade.underlying?.symbol, "statements", statements);
+  // Update trade stategy
+  for (let i = 0; i < statements.length; i++) {
+    const statement_entry = statements[i];
+    switch (thisTrade.strategy) {
+      case TradeStrategy.undefined:
+        if (statement_entry.type == StatementTypes.EquityStatement) {
+          if (statement_entry.quantity! < 0) thisTrade.strategy = TradeStrategy["short stock"];
+          else thisTrade.strategy = TradeStrategy["long stock"];
+        } else if (statement_entry.type == StatementTypes.OptionStatement) {
+          // eslint-disable-next-line @typescript-eslint/no-unnecessary-type-assertion
+          if (statement_entry.option!.callOrPut == OptionType.Put) {
+            // eslint-disable-next-line @typescript-eslint/no-unnecessary-type-assertion
+            if (statement_entry.quantity! < 0) thisTrade.strategy = TradeStrategy["short put"];
+            else thisTrade.strategy = TradeStrategy["long put"];
+            // eslint-disable-next-line @typescript-eslint/no-unnecessary-type-assertion
+          } else if (statement_entry.option!.callOrPut == OptionType.Call) {
+            // eslint-disable-next-line @typescript-eslint/no-unnecessary-type-assertion
+            if (statement_entry.quantity! < 0) thisTrade.strategy = TradeStrategy["covered short call"];
+            else thisTrade.strategy = TradeStrategy["long call"];
+          }
+        }
+        break;
+
+      case TradeStrategy["short put"]:
+        // if the short put is followed by a long stock and short call then it's a wheel
+        for (let j = i; j < statements.length; j++) {
+          const statement_entry = statements[j];
+          if (statement_entry.type == StatementTypes.EquityStatement && statement_entry.quantity! > 0) {
+            for (let k = j; k < statements.length; k++) {
+              const statement_entry = statements[k];
+              if (
+                statement_entry.type == StatementTypes.OptionStatement &&
+                statement_entry.option!.callOrPut == OptionType.Call &&
+                statement_entry.quantity! < 0
+              ) {
+                thisTrade.strategy = TradeStrategy["the wheel"];
+              }
+            }
+          }
+        }
+        break;
+    }
+  }
+  return statements;
+}
 
 function makeSynthesys(trades: Trade[]): Promise<TradeSynthesys> {
   return trades.reduce(

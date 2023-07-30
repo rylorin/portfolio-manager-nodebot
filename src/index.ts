@@ -33,14 +33,13 @@ import {
   OpenOrder,
   Option,
   OptionStatement,
-  Parameter,
   Portfolio,
   Position,
+  Setting,
   Stock,
   TaxStatement,
   Trade,
 } from "./models";
-import { Setting } from "./models/setting.model";
 import { Statement } from "./models/statement.model";
 import StartServer from "./server";
 
@@ -99,7 +98,6 @@ export class MyTradingBotApp extends IBApiNextApp {
         Index,
         OpenOrder,
         Option,
-        Parameter,
         Portfolio,
         Position,
         Stock,

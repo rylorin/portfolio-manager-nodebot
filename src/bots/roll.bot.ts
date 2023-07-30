@@ -1,7 +1,7 @@
 import { OptionType, OrderAction } from "@stoqey/ib";
 import { Op } from "sequelize";
 import { ITradingBot } from ".";
-import { Contract, Option, Parameter, Position } from "../models";
+import { Contract, Option, Position, Setting } from "../models";
 
 const ROLL_FREQ: number = parseInt(process.env.ROLL_FREQ) || 10; // mins
 const DEFENSIVE_ROLL_DAYS: number = parseInt(process.env.DEFENSIVE_ROLL_DAYS) || 6; // days
@@ -16,7 +16,7 @@ export class RollOptionPositionsBot extends ITradingBot {
       if (order == 0) {
         const option = await Option.findByPk(position.contract.id, { include: { model: Contract, as: "stock" } });
         const stock: Contract = await Contract.findByPk(option.stock.id);
-        const parameter = await Parameter.findOne({
+        const parameter = await Setting.findOne({
           where: {
             portfolio_id: this.portfolio.id,
             stock_id: option.stock.id,

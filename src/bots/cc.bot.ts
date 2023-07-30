@@ -1,7 +1,7 @@
 import { OptionType, OrderAction } from "@stoqey/ib";
 import { Op } from "sequelize";
 import { ITradingBot } from ".";
-import { Contract, Option, Parameter, Position } from "../models";
+import { Contract, Option, Position, Setting } from "../models";
 
 interface OptionEx extends Option {
   yield?: number;
@@ -25,7 +25,7 @@ export class SellCoveredCallsBot extends ITradingBot {
     const free_for_this_symbol = stock_positions + call_positions + stock_sell_orders + call_sell_orders;
     console.log("free_for_this_symbol:", free_for_this_symbol);
     if (free_for_this_symbol > 0) {
-      const parameter = await Parameter.findOne({
+      const parameter = await Setting.findOne({
         where: {
           portfolio_id: this.portfolio.id,
           stock_id: position.contract.id,

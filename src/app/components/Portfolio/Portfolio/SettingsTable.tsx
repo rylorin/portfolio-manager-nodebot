@@ -27,10 +27,10 @@ const SettingsTable: FunctionComponent<Props> = ({ content, ..._rest }): JSX.Ele
           </Thead>
           <Tbody>
             {theSettings
-              .sort((a, b) => a.contract.symbol.localeCompare(b.contract.symbol))
+              .sort((a, b) => a.underlying.symbol.localeCompare(b.underlying.symbol))
               .map((item) => (
                 <Tr key={item.id}>
-                  <Td>{item.contract.symbol}</Td>
+                  <Td>{item.underlying.symbol}</Td>
                   <Td isNumeric>
                     <Number value={item.navRatio} decimals={1} isPercent />
                   </Td>
