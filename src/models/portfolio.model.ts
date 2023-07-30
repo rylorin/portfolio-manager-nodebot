@@ -1,5 +1,5 @@
-import { CreationOptional, InferAttributes, InferCreationAttributes } from "sequelize";
-import { BelongsTo, Column, DataType, ForeignKey, HasMany, Model, Table } from "sequelize-typescript";
+import { CreationOptional, ForeignKey, InferAttributes, InferCreationAttributes } from "sequelize";
+import { BelongsTo, Column, DataType, HasMany, Model, Table } from "sequelize-typescript";
 import { Balance } from "./balance.model";
 import { Contract } from "./contract.model";
 import { Currency } from "./currency.model";
@@ -25,9 +25,7 @@ export class Portfolio extends Model<
   declare account: string;
 
   /** The benchmark symbol. */
-  @ForeignKey(() => Contract)
-  @Column
-  declare benchmark_id?: number;
+  declare benchmark_id: ForeignKey<Contract["id"]>;
   @BelongsTo(() => Contract, "benchmark_id")
   declare benchmark: Contract;
 

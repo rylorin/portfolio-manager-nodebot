@@ -1,6 +1,6 @@
 import { OptionType } from "@stoqey/ib";
-import { CreationOptional, InferAttributes, InferCreationAttributes, NonAttribute } from "sequelize";
-import { BelongsTo, Column, DataType, ForeignKey, Model, Table } from "sequelize-typescript";
+import { CreationOptional, ForeignKey, InferAttributes, InferCreationAttributes, NonAttribute } from "sequelize";
+import { BelongsTo, Column, DataType, Model, Table } from "sequelize-typescript";
 import { Contract } from "./contract.model";
 
 @Table({ tableName: "option", timestamps: true, deletedAt: false })
@@ -20,9 +20,7 @@ export class Option extends Model<
   declare contract: Contract;
 
   /** Underlying */
-  @ForeignKey(() => Contract)
-  @Column
-  declare stock_id: number;
+  declare stock_id: ForeignKey<Contract["id"]>;
   @BelongsTo(() => Contract, "stock_id")
   declare stock: Contract;
 

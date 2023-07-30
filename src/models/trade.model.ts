@@ -38,8 +38,6 @@ export class Trade extends Model<
   declare updatedAt: CreationOptional<Date>;
 
   /** Portfolio */
-  // @ForeignKey(() => Portfolio)
-  // @Column
   declare portfolio_id: ForeignKey<Portfolio["id"]>;
   @BelongsTo(() => Portfolio, "portfolio_id")
   declare portfolio: Portfolio;

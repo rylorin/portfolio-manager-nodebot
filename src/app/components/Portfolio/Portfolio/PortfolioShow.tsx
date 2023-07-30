@@ -47,6 +47,16 @@ const PortfolioShow: FunctionComponent<PortfolioShowProps> = ({ ..._rest }): JSX
           {thisPortfolio.baseCurrency}
         </Text>
       </Flex>
+      {thisPortfolio.benchmark && (
+        <Flex justifyContent="center" gap="2">
+          <Text w="90px" as="b" textAlign="right">
+            Benchmark:
+          </Text>
+          <Text w="120px" textAlign="left">
+            {thisPortfolio.benchmark.symbol}
+          </Text>
+        </Flex>
+      )}
       <Flex justifyContent="center" gap="2" mt="1">
         <RouterLink to="edit">
           <Center w="40px" h="40px">

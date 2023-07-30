@@ -46,8 +46,6 @@ export class Statement extends Model<
   declare updatedAt: CreationOptional<Date>;
 
   /** Portfolio */
-  // @ForeignKey(() => Portfolio)
-  // @Column
   declare portfolio_id: ForeignKey<Portfolio["id"]>;
   @BelongsTo(() => Portfolio, "portfolio_id")
   declare portfolio: Portfolio;

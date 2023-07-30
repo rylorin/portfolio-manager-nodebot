@@ -1,12 +1,12 @@
-import { CreationOptional, InferAttributes, InferCreationAttributes } from "sequelize";
-import { BelongsTo, Column, DataType, ForeignKey, Model, Table } from "sequelize-typescript";
+import { CreationOptional, ForeignKey, InferAttributes, InferCreationAttributes } from "sequelize";
+import { BelongsTo, Column, DataType, Model, Table } from "sequelize-typescript";
 import { Contract, Statement } from ".";
 import { Option } from "./option.model";
 
 @Table({ tableName: "trade_option", timestamps: false, createdAt: false, updatedAt: false })
 export class OptionStatement extends Model<
   InferAttributes<OptionStatement>,
-  InferCreationAttributes<OptionStatement, { omit: "statement" }>
+  InferCreationAttributes<OptionStatement, { omit: "statement" | "contract" | "option" }>
 > {
   // id can be undefined during creation when using `autoIncrement`
   declare id: CreationOptional<number>;
@@ -44,9 +44,7 @@ export class OptionStatement extends Model<
   declare status: number;
 
   /** related Contract */
-  @ForeignKey(() => Contract)
-  @Column
-  declare contract_id: number;
+  declare contract_id: ForeignKey<Contract["id"]>;
   @BelongsTo(() => Contract, "contract_id")
   declare contract: Contract;
   @BelongsTo(() => Option, "contract_id")

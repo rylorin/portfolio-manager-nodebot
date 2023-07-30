@@ -142,9 +142,6 @@ const TradeShow: FunctionComponent<Props> = ({ ..._rest }): JSX.Element => {
         <Flex justifyContent="center" gap="2" mt="1">
           <IconButton aria-label="Back" icon={<ArrowBackIcon />} variant="ghost" onClick={(): void => navigate(-1)} />
           <IconButton aria-label="Edit" icon={<EditIcon />} variant="ghost" as={RouterLink} to="edit" />
-          {/* <Form method="post" action="edit" className="inline">
-            <IconButton aria-label="Remove trade association" icon={<EditIcon />} variant="ghost" type="submit" />
-          </Form> */}
           <Form method="post" action="delete" className="inline">
             <IconButton aria-label="Delete" icon={<DeleteIcon />} variant="ghost" type="submit" />
           </Form>

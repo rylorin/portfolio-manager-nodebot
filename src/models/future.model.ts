@@ -19,9 +19,6 @@ export class Future extends Model<
   declare contract: Contract;
 
   /** Underlying */
-  // @ForeignKey(() => Contract)
-  // @Column
-  // declare underlying_id: number;
   declare underlying_id: ForeignKey<Contract["id"]> | null;
   @BelongsTo(() => Contract, "underlying_id")
   declare underlying: Contract;

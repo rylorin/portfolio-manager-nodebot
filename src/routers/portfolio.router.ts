@@ -1,7 +1,6 @@
 import express from "express";
 import logger, { LogLevel } from "../logger";
 import { Contract, Portfolio } from "../models";
-import { Setting } from "../models/setting.model";
 import balances from "./balances.router";
 import contracts from "./contracts.router";
 import positions from "./positions.router";
@@ -37,7 +36,7 @@ router.get("/:portfolioId(\\d+)", (req, res): void => {
       {
         model: Contract,
       },
-      { model: Setting, as: "settings", include: [{ model: Contract, as: "underlying", required: false }] },
+      { association: "settings", include: [{ model: Contract, as: "underlying" }], required: false },
     ],
   })
     .then((portfolio: Portfolio) => {
