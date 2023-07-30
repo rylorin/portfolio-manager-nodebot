@@ -30,10 +30,7 @@ export class SellCoveredCallsBot extends ITradingBot {
           portfolio_id: this.portfolio.id,
           stock_id: position.contract.id,
           ccStrategy: {
-            [Op.and]: {
-              [Op.not]: null,
-              [Op.gt]: 0,
-            },
+            [Op.gt]: 0,
           },
         },
         include: {

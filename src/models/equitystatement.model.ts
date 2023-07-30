@@ -13,7 +13,10 @@ export const StatementStatus = {
 export type StatementStatus = (typeof StatementStatus)[keyof typeof StatementStatus];
 
 @Table({ tableName: "trade", timestamps: false, createdAt: false, updatedAt: false })
-export class EquityStatement extends Model<InferAttributes<EquityStatement>, InferCreationAttributes<EquityStatement>> {
+export class EquityStatement extends Model<
+  InferAttributes<EquityStatement>,
+  InferCreationAttributes<EquityStatement, { omit: "statement" }>
+> {
   // id can be undefined during creation when using `autoIncrement`
   declare id: CreationOptional<number>;
   // timestamps!

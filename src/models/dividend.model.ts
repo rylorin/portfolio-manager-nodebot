@@ -5,7 +5,7 @@ import { Statement } from ".";
 @Table({ tableName: "dividend", timestamps: false, createdAt: false, updatedAt: false })
 export class DividendStatement extends Model<
   InferAttributes<DividendStatement>,
-  InferCreationAttributes<DividendStatement>
+  InferCreationAttributes<DividendStatement, { omit: "statement" }>
 > {
   // id can be undefined during creation when using `autoIncrement`
   declare id: CreationOptional<number>;

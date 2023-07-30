@@ -192,10 +192,7 @@ export class SellCashSecuredPutBot extends ITradingBot {
     return Setting.findAll({
       where: {
         cspStrategy: {
-          [Op.and]: {
-            [Op.not]: null,
-            [Op.gt]: 0,
-          },
+          [Op.gt]: 0,
         },
       },
       include: {

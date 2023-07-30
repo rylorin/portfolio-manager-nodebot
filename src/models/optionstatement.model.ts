@@ -4,7 +4,10 @@ import { Contract, Statement } from ".";
 import { Option } from "./option.model";
 
 @Table({ tableName: "trade_option", timestamps: false, createdAt: false, updatedAt: false })
-export class OptionStatement extends Model<InferAttributes<OptionStatement>, InferCreationAttributes<OptionStatement>> {
+export class OptionStatement extends Model<
+  InferAttributes<OptionStatement>,
+  InferCreationAttributes<OptionStatement, { omit: "statement" }>
+> {
   // id can be undefined during creation when using `autoIncrement`
   declare id: CreationOptional<number>;
   // timestamps!

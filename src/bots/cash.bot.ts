@@ -2,6 +2,7 @@ import { Contract as IbContract, OptionType, OrderAction } from "@stoqey/ib";
 import { Op } from "sequelize";
 import { ITradingBot } from ".";
 import { OpenOrder } from "../models";
+import { CashStrategy } from "../models/portfolio.types";
 
 export class CashManagementBot extends ITradingBot {
   private async process(): Promise<void> {
@@ -16,17 +17,17 @@ export class CashManagementBot extends ITradingBot {
     const benchmark_units: number = await this.getContractPosition(benchmark);
 
     let extra_cash: number;
-    if (this.portfolio.cashStrategy == 0) {
+    if (!this.portfolio.cashStrategy) {
       extra_cash = 0;
-    } else if (this.portfolio.cashStrategy == 1) {
+    } else if (this.portfolio.cashStrategy == CashStrategy.Balance) {
       // manage cash balance
       extra_cash = benchmark_balance_in_base;
-    } else if (this.portfolio.cashStrategy == 2) {
+    } else if (this.portfolio.cashStrategy == CashStrategy["Options value"]) {
       // options value: cash needed to close all options positions
       let opt_value = await this.getOptionPositionsValueInBase(undefined, undefined);
       opt_value = Math.max(opt_value, 0);
       extra_cash = balance_in_base - opt_value;
-    } else if (this.portfolio.cashStrategy == 3) {
+    } else if (this.portfolio.cashStrategy == CashStrategy["Options risk"]) {
       // option risk: cash to cover options risk
       let opt_value = await this.getOptionsPositionsRiskInBase(undefined, OptionType.Put);
       opt_value = Math.max(opt_value, 0);
@@ -55,7 +56,7 @@ export class CashManagementBot extends ITradingBot {
       (await this.getContractOrdersQuantity(benchmark, OrderAction.BUY)) +
       (await this.getOptionsOrdersQuantity(benchmark, OptionType.Put, OrderAction.SELL));
     const benchmark_on_sell = await this.getContractOrdersQuantity(benchmark, OrderAction.SELL);
-    if (this.portfolio.cashStrategy > 0 && benchmark_on_buy - benchmark_on_sell != units_to_buy - units_to_sell) {
+    if (this.portfolio.cashStrategy && benchmark_on_buy - benchmark_on_sell != units_to_buy - units_to_sell) {
       // cancel any pending order
       await OpenOrder.findAll({
         where: {
