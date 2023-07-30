@@ -1,5 +1,5 @@
 import { TradeStatus, TradeStrategy } from "../models";
-import { PositionEntry } from "./positions.types";
+import { OptionPositionEntry, PositionEntry } from "./positions.types";
 import { StatementEntry } from "./statements.types";
 
 export type VirtualPositionEntry = {
@@ -44,6 +44,5 @@ export type TradeMonthlySynthesysEntry = {
 };
 export type TradeMonthlySynthesys = Record<"string", TradeMonthlySynthesysEntry>;
 
-// export type TradeTypeSynthesysEntry = {};
-// export type TradeTypeSynthesys = TradeTypeSynthesysEntry[];
 export type TradeSynthesys = { open: TradeEntry[]; byMonth: TradeMonthlySynthesys };
+export type OpenTradesWithPositions = { trades: TradeEntry[]; positions: (PositionEntry | OptionPositionEntry)[] };

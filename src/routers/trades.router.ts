@@ -5,9 +5,16 @@ import logger, { LogLevel } from "../logger";
 import { Contract, Currency, Portfolio, Position, Statement, StatementTypes, Trade } from "../models";
 import { TradeStatus, TradeStrategy } from "../models/trade.types";
 import { preparePositions } from "./positions.router";
+import { PositionEntry } from "./positions.types";
 import { statementModelToStatementEntry } from "./statements.router";
 import { StatementEntry, StatementOptionEntry, StatementUnderlyingEntry } from "./statements.types";
-import { TradeEntry, TradeMonthlySynthesys, TradeSynthesys, VirtualPositionEntry } from "./trades.types";
+import {
+  OpenTradesWithPositions,
+  TradeEntry,
+  TradeMonthlySynthesys,
+  TradeSynthesys,
+  VirtualPositionEntry,
+} from "./trades.types";
 
 const MODULE = "TradesRouter";
 const _sequelize_logging = (...args: any[]): void => logger.trace(MODULE + ".squelize", ...args);
@@ -435,7 +442,7 @@ router.get("/month/:year(\\d+)/:month(\\d+)", (req, res): void => {
       },
       status: TradeStatus.closed,
     },
-    include: [{ model: Contract, as: "underlying" }],
+    include: [{ model: Contract, as: "underlying" }, { association: "statements" }],
     // limit: 500,
   })
     .then((trades: Trade[]) =>
@@ -452,6 +459,58 @@ router.get("/month/:year(\\d+)/:month(\\d+)", (req, res): void => {
     )
     .then((trades) => res.status(200).json({ trades }))
     .catch((error) => res.status(500).json({ error }));
+});
+
+/**
+ * Get open trades synthesys
+ */
+router.get("/summary/open", (req, res): void => {
+  const { portfolioId } = req.params as typeof req.params & parentParams;
+
+  Trade.findAll({
+    where: {
+      portfolio_id: portfolioId,
+      openingDate: {
+        [Op.gte]: new Date(2021, 0, 1),
+      },
+      closingDate: {
+        [Op.is]: undefined,
+      },
+    },
+    include: [{ model: Contract, as: "underlying" }, { association: "statements" }],
+    // limit: 500,
+  })
+    .then((trades: Trade[]) => makeSynthesys(trades))
+    .then((tradessynthesys) => {
+      return Portfolio.findByPk(portfolioId, {
+        include: [
+          {
+            model: Position,
+            as: "positions",
+            include: [{ model: Contract, as: "contract" }],
+          },
+          { model: Currency, as: "baseRates" },
+        ],
+        logging: console.log,
+      })
+        .then((portfolio) => {
+          if (portfolio) {
+            return preparePositions(portfolio);
+          } else throw Error("Portfolio not found");
+        })
+        .then((positions: PositionEntry[]) => {
+          return {
+            trades: tradessynthesys.open,
+            positions,
+          } as OpenTradesWithPositions;
+        });
+    })
+    .then((tradessynthesys) => res.status(200).json({ tradessynthesys }))
+    .catch((error) => {
+      console.error(error);
+      logger.log(LogLevel.Error, MODULE + ".SummaryYtd", undefined, error);
+      res.status(500).json({ error });
+    });
 });
 
 /**

@@ -1,4 +1,4 @@
-import { CreationOptional, ForeignKey, InferAttributes, InferCreationAttributes } from "sequelize";
+import { Association, CreationOptional, ForeignKey, InferAttributes, InferCreationAttributes } from "sequelize";
 import { BelongsTo, Column, DataType, HasMany, Model, Table } from "sequelize-typescript";
 import { Balance } from "./balance.model";
 import { Contract } from "./contract.model";
@@ -79,4 +79,13 @@ export class Portfolio extends Model<
 
   @HasMany(() => Setting, "portfolio_id")
   declare settings: Setting[];
+
+  declare static associations: {
+    benchmark: Association<Portfolio, Contract>;
+
+    positions: Association<Portfolio, Position>;
+    balances: Association<Portfolio, Balance>;
+    baseRates: Association<Portfolio, Currency>;
+    settings: Association<Portfolio, Setting>;
+  };
 }

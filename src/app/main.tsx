@@ -58,6 +58,7 @@ import {
   tradeSummaryLoaderAll,
   tradeSummaryLoaderYTD,
   tradesMonthLoader,
+  tradesOpenLoader,
   tradesShowLoader,
 } from "./components/Portfolio/Trade/loaders";
 import { portfolioIndexLoader } from "./components/Portfolio/loaders";
@@ -190,7 +191,7 @@ const router = createBrowserRouter([
                     path: "summary",
                     action: PortfolioAction,
                     children: [
-                      { path: "open", Component: TradesOpen, loader: tradeSummaryLoaderYTD },
+                      { path: "open", Component: TradesOpen, loader: tradesOpenLoader },
                       { path: "ytd", Component: TradesSummary, loader: tradeSummaryLoaderYTD },
                       { path: "12m", Component: TradesSummary, loader: tradeSummaryLoader12M },
                       { path: "all", Component: TradesSummary, loader: tradeSummaryLoaderAll },

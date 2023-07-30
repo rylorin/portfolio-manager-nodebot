@@ -8,14 +8,17 @@ import Number from "../../Number/Number";
 import { ContractLink } from "../Contract/links";
 import { PositionLink } from "./links";
 
-type Props = { content?: PositionEntry[] };
+type Props = {
+  title?: string;
+  content?: PositionEntry[];
+};
 
 /**
  * Statements list component
  * @param param
  * @returns
  */
-const PositionsTable: FunctionComponent<Props> = ({ content, ..._rest }): JSX.Element => {
+const PositionsTable: FunctionComponent<Props> = ({ title = "Positions index", content, ..._rest }): JSX.Element => {
   const { portfolioId } = useParams();
   const thePositions = content || (useLoaderData() as PositionEntry[]);
   let previousId: number;
@@ -29,7 +32,9 @@ const PositionsTable: FunctionComponent<Props> = ({ content, ..._rest }): JSX.El
     <>
       <TableContainer>
         <Table variant="simple" size="sm" className="table-tiny">
-          <TableCaption>Positions index ({thePositions.length})</TableCaption>
+          <TableCaption>
+            {title} ({thePositions.length})
+          </TableCaption>
           <Thead>
             <Tr>
               <Td>Units</Td>

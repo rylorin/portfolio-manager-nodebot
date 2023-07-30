@@ -111,7 +111,6 @@ export class MyTradingBotApp extends IBApiNextApp {
         FeeStatement,
         Setting,
       ],
-      // models: [__dirname + '/models/*.model.js'], // Not working with ts-node-dev
       modelMatch: (filename, member) => {
         return filename.substring(0, filename.indexOf(".model")) === member.toLowerCase();
       },

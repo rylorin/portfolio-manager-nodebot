@@ -13,7 +13,7 @@ type Props = {
   content?: TradeEntry[];
 };
 
-const TradesTable: FunctionComponent<Props> = ({ title = "Trades Index", content, ..._rest }): JSX.Element => {
+const TradesTable: FunctionComponent<Props> = ({ title = "Trades index", content, ..._rest }): JSX.Element => {
   const { portfolioId } = useParams();
   const theTrades = content || (useLoaderData() as TradeEntry[]);
 
@@ -41,7 +41,7 @@ const TradesTable: FunctionComponent<Props> = ({ title = "Trades Index", content
           {theTrades
             .sort((a, b) => (a.closingDate ? b.closingDate - a.closingDate : b.openingDate - a.openingDate))
             .map((item) => (
-              <Tr key={item.id}>
+              <Tr key={item.id} bg={!item.statements?.length ? "pink.100" : undefined}>
                 <Td>
                   <Link to={TradeLink.toItem(portfolioId, item.id)} as={RouterLink}>
                     {item.id}

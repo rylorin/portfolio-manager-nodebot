@@ -6,24 +6,6 @@ import { Position } from "./position.model";
 import { Statement } from "./statement.model";
 import { TradeStatus, TradeStrategy } from "./trade.types";
 
-// export type TradeAttributes = {
-//   id: number;
-
-//   portfolio_id: number;
-//   symbol_id?: number;
-
-//   strategy: TradeStrategy;
-//   openingDate: Date;
-//   closingDate?: Date;
-//   status: TradeStatus;
-//   PnL?: number;
-//   currency: string;
-//   risk?: number;
-//   comment?: string;
-// };
-
-// export type TradeCreationAttributes = Optional<TradeAttributes, "id">;
-
 @Table({ tableName: "trade_unit", timestamps: true })
 export class Trade extends Model<
   InferAttributes<Trade>,
