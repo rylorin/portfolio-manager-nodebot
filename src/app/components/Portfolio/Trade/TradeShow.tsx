@@ -27,10 +27,10 @@ type Props = Record<string, never>;
 
 const TradeShow: FunctionComponent<Props> = ({ ..._rest }): JSX.Element => {
   const { portfolioId } = useParams();
-  const thisTrade = useLoaderData() as TradeEntry;
+  const item = useLoaderData() as TradeEntry;
   const navigate = useNavigate();
 
-  // console.log(thisTrade);
+  // console.log(item);
   return (
     <>
       <VStack>
@@ -39,7 +39,7 @@ const TradeShow: FunctionComponent<Props> = ({ ..._rest }): JSX.Element => {
             Trade Id:
           </Text>
           <Text w="200px" textAlign="right">
-            {thisTrade.id}
+            {item.id}
           </Text>
         </Flex>
         <Flex justifyContent="center" gap="2">
@@ -47,7 +47,7 @@ const TradeShow: FunctionComponent<Props> = ({ ..._rest }): JSX.Element => {
             Open date:
           </Text>
           <Text w="200px" textAlign="right">
-            {new Date(thisTrade.openingDate).toLocaleString()}
+            {new Date(item.openingDate).toLocaleString()}
           </Text>
         </Flex>
         <Flex justifyContent="center" gap="2">
@@ -55,7 +55,7 @@ const TradeShow: FunctionComponent<Props> = ({ ..._rest }): JSX.Element => {
             Close date:
           </Text>
           <Text w="200px" textAlign="right">
-            {thisTrade.closingDate && new Date(thisTrade.closingDate).toLocaleString()}
+            {item.closingDate && new Date(item.closingDate).toLocaleString()}
           </Text>
         </Flex>
         <Flex justifyContent="center" gap="2">
@@ -63,7 +63,7 @@ const TradeShow: FunctionComponent<Props> = ({ ..._rest }): JSX.Element => {
             Duration:
           </Text>
           <Text w="200px" textAlign="right">
-            {formatNumber(thisTrade.duration)}
+            {formatNumber(item.duration)}
           </Text>
         </Flex>
         <Flex justifyContent="center" gap="2">
@@ -71,7 +71,7 @@ const TradeShow: FunctionComponent<Props> = ({ ..._rest }): JSX.Element => {
             Status:
           </Text>
           <Text w="200px" textAlign="right">
-            {tradeStatus2String(thisTrade.status)}
+            {tradeStatus2String(item.status)}
           </Text>
         </Flex>
         <Flex justifyContent="center" gap="2">
@@ -79,7 +79,7 @@ const TradeShow: FunctionComponent<Props> = ({ ..._rest }): JSX.Element => {
             Strategy:
           </Text>
           <Text w="200px" textAlign="right">
-            {tradeStrategy2String(thisTrade.strategy)} ({thisTrade.strategy})
+            {tradeStrategy2String(item.strategy)} ({item.strategy})
           </Text>
         </Flex>
         <Flex justifyContent="center" gap="2">
@@ -87,8 +87,8 @@ const TradeShow: FunctionComponent<Props> = ({ ..._rest }): JSX.Element => {
             Symbol:
           </Text>
           <Text w="200px" textAlign="right">
-            <Link to={ContractLink.toItem(portfolioId, thisTrade.underlying.symbol_id)} as={RouterLink}>
-              {thisTrade.underlying.symbol}
+            <Link to={ContractLink.toItem(portfolioId, item.underlying.symbol_id)} as={RouterLink}>
+              {item.underlying.symbol}
             </Link>
           </Text>
         </Flex>
@@ -97,7 +97,7 @@ const TradeShow: FunctionComponent<Props> = ({ ..._rest }): JSX.Element => {
             Currency:
           </Text>
           <Text w="200px" textAlign="right">
-            {thisTrade.currency}
+            {item.currency}
           </Text>
         </Flex>
         <Flex justifyContent="center" gap="2">
@@ -105,7 +105,7 @@ const TradeShow: FunctionComponent<Props> = ({ ..._rest }): JSX.Element => {
             Risk:
           </Text>
           <Text w="200px" textAlign="right">
-            <Number value={thisTrade.risk} />
+            <Number value={item.risk} />
           </Text>
         </Flex>
         <Flex justifyContent="center" gap="2">
@@ -113,7 +113,7 @@ const TradeShow: FunctionComponent<Props> = ({ ..._rest }): JSX.Element => {
             P&L:
           </Text>
           <Text w="200px" textAlign="right">
-            <Number value={thisTrade.pnl} />
+            <Number value={item.pnl} />
           </Text>
         </Flex>
         <Flex justifyContent="center" gap="2">
@@ -121,7 +121,7 @@ const TradeShow: FunctionComponent<Props> = ({ ..._rest }): JSX.Element => {
             P&L (Base):
           </Text>
           <Text w="200px" textAlign="right">
-            <Number value={thisTrade.pnlInBase} />
+            <Number value={item.pnlInBase} />
           </Text>
         </Flex>
         <Flex justifyContent="center" gap="2">
@@ -129,14 +129,14 @@ const TradeShow: FunctionComponent<Props> = ({ ..._rest }): JSX.Element => {
             APY:
           </Text>
           <Text w="200px" textAlign="right">
-            <Number value={thisTrade.apy} isPercent />
+            <Number value={item.apy} isPercent />
           </Text>
         </Flex>
         <Flex justifyContent="center" gap="2">
           <Text w="90px" as="b" textAlign="right">
             Notes:
           </Text>
-          <Text w="200px">{thisTrade.comment}</Text>
+          <Text w="200px">{item.comment}</Text>
         </Flex>
 
         <Flex justifyContent="center" gap="2" mt="1">
@@ -146,13 +146,13 @@ const TradeShow: FunctionComponent<Props> = ({ ..._rest }): JSX.Element => {
             <IconButton aria-label="Delete" icon={<DeleteIcon />} variant="ghost" type="submit" />
           </Form>
         </Flex>
-        {thisTrade.positions && thisTrade.positions.length && <PositionsTable content={thisTrade.positions} />}
-        {thisTrade.statements && <StatementsTable content={thisTrade.statements} />}
-        {thisTrade.virtuals && (
+        {item.positions && item.positions.length && <PositionsTable content={item.positions} />}
+        {item.statements && <StatementsTable content={item.statements} />}
+        {item.virtuals && (
           <>
             <TableContainer>
               <Table variant="simple" size="sm" className="table-tiny">
-                <TableCaption>Virtual positions ({thisTrade.virtuals.length})</TableCaption>
+                <TableCaption>Virtual positions ({item.virtuals.length})</TableCaption>
                 <Thead>
                   <Tr>
                     <Td>Id</Td>
@@ -161,7 +161,7 @@ const TradeShow: FunctionComponent<Props> = ({ ..._rest }): JSX.Element => {
                   </Tr>
                 </Thead>
                 <Tbody>
-                  {thisTrade.virtuals.map((item) => (
+                  {item.virtuals.map((item) => (
                     <Tr key={item.contract_id}>
                       <Td>{item.symbol}</Td>
                       <Td>{item.quantity}</Td>

@@ -1,5 +1,5 @@
 import { LoaderFunctionArgs } from "react-router-dom";
-import { OpenTradesWithPositions, TradeEntry, TradeSynthesys } from "../../../../routers/trades.types";
+import { TradeEntry, TradeSynthesys } from "../../../../routers/trades.types";
 
 /**
  * Load year to date trades summary
@@ -42,11 +42,11 @@ export const tradeSummaryLoaderAll = ({ params }: LoaderFunctionArgs): Promise<T
  * @param param
  * @returns
  */
-export const tradesOpenLoader = ({ params }: LoaderFunctionArgs): Promise<OpenTradesWithPositions> => {
+export const tradesOpenLoader = ({ params }: LoaderFunctionArgs): Promise<TradeEntry[]> => {
   const { portfolioId } = params;
   return fetch(`/api/portfolio/${portfolioId}/trades/summary/open`)
     .then((response) => response.json())
-    .then((data) => data.tradessynthesys as OpenTradesWithPositions);
+    .then((data) => data.trades as TradeEntry[]);
 };
 
 /**

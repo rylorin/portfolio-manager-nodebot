@@ -4,7 +4,7 @@ import { extendBaseTheme } from "@chakra-ui/react";
 import { ThemeOverride } from "@chakra-ui/react";
 import chakraTheme from "@chakra-ui/theme";
 
-const { Button, Link, Code, Table, Tooltip, Select, Textarea } = chakraTheme.components;
+const { Button, Link, Code, Table, Tooltip, Select, Textarea, Badge } = chakraTheme.components;
 
 // 2. Add your theme extensions
 const extensions: ThemeOverride = {
@@ -17,6 +17,7 @@ const extensions: ThemeOverride = {
     Tooltip,
     Select,
     Textarea,
+    Badge,
   },
   styles: {
     global: {

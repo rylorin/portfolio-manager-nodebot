@@ -2,10 +2,10 @@ import { OptionType } from "@stoqey/ib";
 import express from "express";
 import { Op } from "sequelize";
 import logger, { LogLevel } from "../logger";
-import { Contract, Currency, Portfolio, Position, Statement, StatementTypes, Trade } from "../models";
+import { Contract, ContractType, Currency, Portfolio, Position, Statement, StatementTypes, Trade } from "../models";
 import { TradeStatus, TradeStrategy } from "../models/trade.types";
 import { preparePositions } from "./positions.router";
-import { PositionEntry } from "./positions.types";
+import { OptionPositionEntry, PositionEntry } from "./positions.types";
 import { statementModelToStatementEntry } from "./statements.router";
 import { StatementEntry, StatementOptionEntry, StatementUnderlyingEntry } from "./statements.types";
 import {
@@ -461,6 +461,77 @@ router.get("/month/:year(\\d+)/:month(\\d+)", (req, res): void => {
     .catch((error) => res.status(500).json({ error }));
 });
 
+const addFakeTrades = (theSynthesys: OpenTradesWithPositions): TradeEntry[] => {
+  theSynthesys.positions = theSynthesys.positions.filter((pos) => !pos.trade_id);
+  while (theSynthesys.positions.length) {
+    const underlying =
+      "stock" in theSynthesys.positions[0]
+        ? theSynthesys.positions[0].stock.symbol
+        : theSynthesys.positions[0].contract.symbol;
+    const currency = theSynthesys.positions[0].contract.currency;
+    const positions = theSynthesys.positions.filter(
+      (pos) => ("stock" in pos ? pos.stock.symbol : pos.contract.symbol) == underlying,
+    );
+    // console.log("addFakeTrades", underlying, positions);
+    theSynthesys.positions = theSynthesys.positions.filter(
+      (pos) => ("stock" in pos ? pos.stock.symbol : pos.contract.symbol) !== underlying,
+    );
+    const id = positions.reduce((p, pos) => Math.min(p, -pos.id), 0);
+    const openingDate = positions.reduce((p, item) => Math.min(p, item.openDate), Date.now());
+    const duration = 0;
+    theSynthesys.trades.push({
+      id,
+      underlying: { symbol_id: 0, symbol: underlying },
+      currency,
+      openingDate,
+      status: TradeStatus.open,
+      closingDate: undefined,
+      duration,
+      strategy: TradeStrategy.undefined,
+      risk: undefined,
+      pnl: undefined,
+      pnlInBase: undefined,
+      apy: undefined,
+      comment: undefined,
+      statements: undefined,
+      virtuals: undefined,
+      positions,
+    });
+  }
+  return theSynthesys.trades;
+};
+
+const comparePositions = (a: PositionEntry | OptionPositionEntry, b: PositionEntry | OptionPositionEntry): number => {
+  let result: number;
+  if (a.contract.secType == ContractType.Stock && b.contract.secType == ContractType.Stock)
+    return a.contract.symbol.localeCompare(b.contract.symbol);
+  else if (a.contract.secType == ContractType.Stock) return +1;
+  else if (b.contract.secType == ContractType.Stock) return -1;
+  else if (a.contract.secType == ContractType.Option && b.contract.secType == ContractType.Option) {
+    result = (a as OptionPositionEntry).option.expiration.localeCompare((b as OptionPositionEntry).option.expiration);
+    if (!result) {
+      result = (a as OptionPositionEntry).option.symbol.localeCompare((b as OptionPositionEntry).option.symbol);
+      if (!result) result = (a as OptionPositionEntry).option.strike - (b as OptionPositionEntry).option.strike;
+    }
+    return result;
+  } else throw Error("not implemented");
+};
+
+// Assume positions inside trades have been sorted
+const compareTrades = (a: TradeEntry, b: TradeEntry): number => {
+  if (!a.positions!.length && b.positions!.length) return +1;
+  else if (a.positions!.length && !b.positions!.length) return -1;
+  else if (!a.positions!.length && !b.positions!.length) return 0;
+  else return comparePositions(a.positions![0], b.positions![0]);
+};
+
+const sortTrades = (trades: TradeEntry[]): TradeEntry[] => {
+  trades.forEach((trade) => {
+    trade.positions = trade.positions?.sort(comparePositions);
+  });
+  return trades.sort(compareTrades);
+};
+
 /**
  * Get open trades synthesys
  */
@@ -505,7 +576,9 @@ router.get("/summary/open", (req, res): void => {
           } as OpenTradesWithPositions;
         });
     })
-    .then((tradessynthesys) => res.status(200).json({ tradessynthesys }))
+    .then((tradessynthesys) => addFakeTrades(tradessynthesys))
+    .then((trades) => sortTrades(trades))
+    .then((trades) => res.status(200).json({ trades }))
     .catch((error) => {
       console.error(error);
       logger.log(LogLevel.Error, MODULE + ".SummaryYtd", undefined, error);
