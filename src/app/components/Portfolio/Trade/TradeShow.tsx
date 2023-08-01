@@ -155,7 +155,6 @@ const TradeShow: FunctionComponent<Props> = ({ ..._rest }): JSX.Element => {
                 <TableCaption>Virtual positions ({item.virtuals.length})</TableCaption>
                 <Thead>
                   <Tr>
-                    <Td>Id</Td>
                     <Td>Symbol</Td>
                     <Td>Quantity</Td>
                   </Tr>

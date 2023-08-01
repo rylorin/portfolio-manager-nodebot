@@ -51,7 +51,7 @@ import TradeEdit from "./components/Portfolio/Trade/TradeEdit";
 import TradeShow from "./components/Portfolio/Trade/TradeShow";
 import TradesOpen from "./components/Portfolio/Trade/TradesOpen";
 import TradesSummary from "./components/Portfolio/Trade/TradesSummary";
-import TradesTable from "./components/Portfolio/Trade/TradesTable";
+import TradesTable from "./components/Portfolio/Trade/TradesTable2";
 import { tradeDelete, tradeSave } from "./components/Portfolio/Trade/actions";
 import {
   tradeSummaryLoader12M,

@@ -30,94 +30,93 @@ const TradesTable: FunctionComponent<Props> = ({ title = "Trades index", content
   };
 
   return (
-    <VStack>
-      <Text>
-        {title} ({theTrades.length})
-      </Text>
-      {theTrades.map((item) => (
-        //   <TradeRow portfolioId={parseInt(portfolioId)} item={item} key={`trade${item.id}`} />
-        <Box key={`trade${item.id}`} maxW="sm" borderWidth="1px" borderRadius="lg" overflow="hidden" p={1}>
-          {item.id < 0 && <Text>Orphan positions</Text>}
-          {item.id > 0 && (
+    <>
+      <VStack>
+        <Text>
+          {title} ({theTrades.length})
+        </Text>
+        {theTrades.map((item) => (
+          <Box key={`trade${item.id}`} maxW="sm" borderWidth="1px" borderRadius="lg" overflow="hidden" p={1}>
+            {item.id < 0 && <Text>Orphan positions</Text>}
+            {item.id > 0 && (
+              <Text>
+                <Link to={TradeLink.toItem(portfolioId, item.id)} as={RouterLink}>
+                  Trade #{item.id}
+                </Link>
+              </Text>
+            )}
+
+            <Box display="flex" alignItems="baseline" mt={1}>
+              <Badge borderRadius="full" px="2" colorScheme={statusBadgetColor(item.status)} variant="outline">
+                {tradeStatus2String(item.status)}
+              </Badge>
+              <Text fontWeight="semibold" letterSpacing="wide" fontSize="xs" textTransform="uppercase" ml="2">
+                {formatNumber(item.duration)} days
+              </Text>
+              <Box
+                color="gray.500"
+                fontWeight="semibold"
+                letterSpacing="wide"
+                fontSize="xs"
+                textTransform="uppercase"
+                ml={1}
+              >
+                &bull;{" "}
+                <Tooltip label={new Date(item.openingDate).toLocaleString()} hasArrow={true}>
+                  {new Date(item.openingDate).toLocaleDateString()}
+                </Tooltip>
+                {item.closingDate && (
+                  <>
+                    {" "}
+                    &bull;{" "}
+                    <Tooltip label={new Date(item.closingDate).toLocaleString()} hasArrow={true}>
+                      {new Date(item.closingDate).toLocaleDateString()}
+                    </Tooltip>
+                  </>
+                )}
+              </Box>
+            </Box>
+
+            <Box display="flex" alignItems="baseline" mt={1}>
+              <Badge borderRadius="full" px="2" colorScheme="teal">
+                {item.underlying.symbol}
+              </Badge>
+              <Box
+                color="gray.500"
+                fontWeight="semibold"
+                letterSpacing="wide"
+                fontSize="xs"
+                textTransform="uppercase"
+                ml="2"
+              >
+                {item.currency} &bull; {tradeStrategy2String(item.strategy)} ({item.strategy})
+                {item.risk && (
+                  <>
+                    {" "}
+                    &bull; Risk <Number value={item.risk} />
+                  </>
+                )}
+              </Box>
+            </Box>
+
             <Text>
-              <Link to={TradeLink.toItem(portfolioId, item.id)} as={RouterLink}>
-                Trade #{item.id}
-              </Link>
+              P&L: <Number value={item.pnl} /> (<Number value={item.pnlInBase} />)
             </Text>
-          )}
-
-          <Box display="flex" alignItems="baseline">
-            <Badge borderRadius="full" px="2" colorScheme={statusBadgetColor(item.status)} variant="outline">
-              {tradeStatus2String(item.status)}
-            </Badge>
-            <Text fontWeight="semibold" letterSpacing="wide" fontSize="xs" textTransform="uppercase" ml="2">
-              {formatNumber(item.duration)} days
+            <Text>
+              APY: <Number value={item.apy} isPercent />
             </Text>
-            <Box
-              color="gray.500"
-              fontWeight="semibold"
-              letterSpacing="wide"
-              fontSize="xs"
-              textTransform="uppercase"
-              ml="2"
-            >
-              &bull;{" "}
-              <Tooltip label={new Date(item.openingDate).toLocaleString()} hasArrow={true}>
-                {new Date(item.openingDate).toLocaleDateString()}
-              </Tooltip>
-              {item.closingDate && (
-                <>
-                  {" "}
-                  &bull;{" "}
-                  <Tooltip label={new Date(item.closingDate).toLocaleString()} hasArrow={true}>
-                    {new Date(item.closingDate).toLocaleDateString()}
-                  </Tooltip>
-                </>
-              )}
-            </Box>
+
+            {item.comment?.length > 0 && (
+              <Text color="gray.500" fontWeight="semibold" fontSize="sm" mt={1}>
+                {item.comment}
+              </Text>
+            )}
+
+            {item.positions?.length > 0 && <PositionsTable content={item.positions} />}
           </Box>
-
-          <Box display="flex" alignItems="baseline">
-            <Badge borderRadius="full" px="2" colorScheme="teal">
-              {item.underlying.symbol}
-            </Badge>
-            <Box
-              color="gray.500"
-              fontWeight="semibold"
-              letterSpacing="wide"
-              fontSize="xs"
-              textTransform="uppercase"
-              ml="2"
-            >
-              {item.currency}
-              {item.strategy && (
-                <>
-                  {" "}
-                  &bull; {tradeStrategy2String(item.strategy)} ({item.strategy})
-                </>
-              )}
-              {item.risk && (
-                <>
-                  {" "}
-                  &bull; Risk <Number value={item.risk} />
-                </>
-              )}
-            </Box>
-          </Box>
-
-          <Text>
-            P&L: <Number value={item.pnl} /> (<Number value={item.pnlInBase} />)
-          </Text>
-          <Text>
-            APY: <Number value={item.apy} isPercent />
-          </Text>
-
-          <Text>Notes: {item.comment}</Text>
-
-          {item.positions && item.positions.length && <PositionsTable content={item.positions} />}
-        </Box>
-      ))}
-    </VStack>
+        ))}
+      </VStack>
+    </>
   );
 };
 
