@@ -3,6 +3,7 @@ import express from "express";
 import { Op } from "sequelize";
 import logger, { LogLevel } from "../logger";
 import { Contract, ContractType, Currency, Portfolio, Position, Statement, StatementTypes, Trade } from "../models";
+import { expirationToDate, expirationToDateString } from "../models/date_utils";
 import { TradeStatus, TradeStrategy } from "../models/trade.types";
 import { preparePositions } from "./positions.router";
 import { OptionPositionEntry, PositionEntry } from "./positions.types";
@@ -39,6 +40,7 @@ export const updateTradeDetails = (thisTrade: Trade): Promise<Trade> => {
     else if (thisTrade.status != TradeStatus.closed) thisTrade.closingDate = undefined;
     thisTrade.PnL = 0;
     thisTrade.pnlInBase = 0;
+    thisTrade.expectedExpiry = undefined;
     return items
       .reduce(
         (p, item) =>
@@ -49,6 +51,15 @@ export const updateTradeDetails = (thisTrade: Trade): Promise<Trade> => {
                 thisTrade.PnL! += statement_entry.pnl;
                 // eslint-disable-next-line @typescript-eslint/no-unnecessary-type-assertion
                 thisTrade.pnlInBase! += statement_entry.pnl * statement_entry.fxRateToBase;
+              }
+              if (statement_entry.type == StatementTypes.OptionStatement) {
+                const expiry = expirationToDateString(statement_entry.option!.expiry);
+                if (!thisTrade.expectedExpiry) thisTrade.expectedExpiry = expiry;
+                else if (expiry > thisTrade.expectedExpiry) {
+                  thisTrade.expectedExpiry = expiry;
+                }
+              } else if (statement_entry.type == StatementTypes.EquityStatement) {
+                thisTrade.expectedExpiry = undefined;
               }
               if (
                 statement_entry.type == StatementTypes.EquityStatement ||
@@ -68,6 +79,12 @@ export const updateTradeDetails = (thisTrade: Trade): Promise<Trade> => {
   return Promise.resolve(thisTrade);
 };
 
+/**
+ * Convert a trade model to something that is JSONable and easier to manipulate from frontend
+ * @param thisTrade
+ * @param _options
+ * @returns
+ */
 export const tradeModelToTradeEntry = (
   thisTrade: Trade,
   _options: { with_statements: boolean; with_positions: boolean; with_virtuals: boolean } = {
@@ -88,6 +105,8 @@ export const tradeModelToTradeEntry = (
     closingDate: thisTrade.closingDate ? thisTrade.closingDate.getTime() : undefined,
     status: thisTrade.status,
     duration: thisTrade.duration,
+    expectedExpiry: thisTrade.expectedExpiry,
+    expectedDuration: thisTrade.expectedDuration,
     strategy: thisTrade.strategy,
     risk: thisTrade.risk,
     pnl: thisTrade.PnL,
@@ -297,6 +316,96 @@ function updateTradeStrategy(thisTrade: Trade, statements: StatementEntry[]): St
   return statements;
 }
 
+/**
+ * Create fake trade entries for orphan positions
+ * @param theSynthesys
+ * @returns
+ */
+const addFakeTrades = (theSynthesys: OpenTradesWithPositions): TradeEntry[] => {
+  theSynthesys.positions = theSynthesys.positions.filter((pos) => !pos.trade_id);
+  while (theSynthesys.positions.length) {
+    const underlying =
+      "stock" in theSynthesys.positions[0]
+        ? theSynthesys.positions[0].stock.symbol
+        : theSynthesys.positions[0].contract.symbol;
+    const currency = theSynthesys.positions[0].contract.currency;
+    const positions = theSynthesys.positions.filter(
+      (pos) => ("stock" in pos ? pos.stock.symbol : pos.contract.symbol) == underlying,
+    );
+    // console.log("addFakeTrades", underlying, positions);
+    theSynthesys.positions = theSynthesys.positions.filter(
+      (pos) => ("stock" in pos ? pos.stock.symbol : pos.contract.symbol) !== underlying,
+    );
+    let id = 0;
+    let openingDate = Date.now();
+    let expectedExpiry: string | undefined = undefined;
+    let expectedDuration: number | undefined = undefined;
+    positions.forEach((pos) => {
+      id = Math.min(id, -pos.id);
+      openingDate = Math.min(openingDate, pos.openDate);
+      if (pos.contract.secType == ContractType.Option) {
+        if (!expectedExpiry) expectedExpiry = (pos as OptionPositionEntry).option.expiration;
+        else if (expectedExpiry < (pos as OptionPositionEntry).option.expiration)
+          expectedExpiry = (pos as OptionPositionEntry).option.expiration;
+        expectedDuration = Math.max((expirationToDate(expectedExpiry).getTime() - openingDate) / 1000 / 3600 / 24, 0);
+      }
+    });
+    const duration = (Date.now() - openingDate) / 1000 / 3600 / 24;
+    theSynthesys.trades.push({
+      id,
+      underlying: { symbol_id: 0, symbol: underlying },
+      currency,
+      openingDate,
+      status: TradeStatus.open,
+      closingDate: undefined,
+      duration,
+      expectedExpiry,
+      expectedDuration,
+      strategy: TradeStrategy.undefined,
+      risk: undefined,
+      pnl: undefined,
+      pnlInBase: undefined,
+      apy: undefined,
+      comment: undefined,
+      statements: undefined,
+      virtuals: undefined,
+      positions,
+    });
+  }
+  return theSynthesys.trades;
+};
+
+const comparePositions = (a: PositionEntry | OptionPositionEntry, b: PositionEntry | OptionPositionEntry): number => {
+  let result: number;
+  if (a.contract.secType == ContractType.Stock && b.contract.secType == ContractType.Stock)
+    return a.contract.symbol.localeCompare(b.contract.symbol);
+  else if (a.contract.secType == ContractType.Stock) return +1;
+  else if (b.contract.secType == ContractType.Stock) return -1;
+  else if (a.contract.secType == ContractType.Option && b.contract.secType == ContractType.Option) {
+    result = (a as OptionPositionEntry).option.expiration.localeCompare((b as OptionPositionEntry).option.expiration);
+    if (!result) {
+      result = (a as OptionPositionEntry).option.symbol.localeCompare((b as OptionPositionEntry).option.symbol);
+      if (!result) result = (a as OptionPositionEntry).option.strike - (b as OptionPositionEntry).option.strike;
+    }
+    return result;
+  } else throw Error("not implemented");
+};
+
+// Assume positions inside trades have been sorted
+const compareTrades = (a: TradeEntry, b: TradeEntry): number => {
+  if (!a.positions!.length && b.positions!.length) return +1;
+  else if (a.positions!.length && !b.positions!.length) return -1;
+  else if (!a.positions!.length && !b.positions!.length) return 0;
+  else return comparePositions(a.positions![0], b.positions![0]);
+};
+
+const sortTrades = (trades: TradeEntry[]): TradeEntry[] => {
+  trades.forEach((trade) => {
+    trade.positions = trade.positions?.sort(comparePositions);
+  });
+  return trades.sort(compareTrades);
+};
+
 function makeSynthesys(trades: Trade[]): Promise<TradeSynthesys> {
   return trades.reduce(
     (p, item) =>
@@ -460,77 +569,6 @@ router.get("/month/:year(\\d+)/:month(\\d+)", (req, res): void => {
     .then((trades) => res.status(200).json({ trades }))
     .catch((error) => res.status(500).json({ error }));
 });
-
-const addFakeTrades = (theSynthesys: OpenTradesWithPositions): TradeEntry[] => {
-  theSynthesys.positions = theSynthesys.positions.filter((pos) => !pos.trade_id);
-  while (theSynthesys.positions.length) {
-    const underlying =
-      "stock" in theSynthesys.positions[0]
-        ? theSynthesys.positions[0].stock.symbol
-        : theSynthesys.positions[0].contract.symbol;
-    const currency = theSynthesys.positions[0].contract.currency;
-    const positions = theSynthesys.positions.filter(
-      (pos) => ("stock" in pos ? pos.stock.symbol : pos.contract.symbol) == underlying,
-    );
-    // console.log("addFakeTrades", underlying, positions);
-    theSynthesys.positions = theSynthesys.positions.filter(
-      (pos) => ("stock" in pos ? pos.stock.symbol : pos.contract.symbol) !== underlying,
-    );
-    const id = positions.reduce((p, pos) => Math.min(p, -pos.id), 0);
-    const openingDate = positions.reduce((p, item) => Math.min(p, item.openDate), Date.now());
-    const duration = 0;
-    theSynthesys.trades.push({
-      id,
-      underlying: { symbol_id: 0, symbol: underlying },
-      currency,
-      openingDate,
-      status: TradeStatus.open,
-      closingDate: undefined,
-      duration,
-      strategy: TradeStrategy.undefined,
-      risk: undefined,
-      pnl: undefined,
-      pnlInBase: undefined,
-      apy: undefined,
-      comment: undefined,
-      statements: undefined,
-      virtuals: undefined,
-      positions,
-    });
-  }
-  return theSynthesys.trades;
-};
-
-const comparePositions = (a: PositionEntry | OptionPositionEntry, b: PositionEntry | OptionPositionEntry): number => {
-  let result: number;
-  if (a.contract.secType == ContractType.Stock && b.contract.secType == ContractType.Stock)
-    return a.contract.symbol.localeCompare(b.contract.symbol);
-  else if (a.contract.secType == ContractType.Stock) return +1;
-  else if (b.contract.secType == ContractType.Stock) return -1;
-  else if (a.contract.secType == ContractType.Option && b.contract.secType == ContractType.Option) {
-    result = (a as OptionPositionEntry).option.expiration.localeCompare((b as OptionPositionEntry).option.expiration);
-    if (!result) {
-      result = (a as OptionPositionEntry).option.symbol.localeCompare((b as OptionPositionEntry).option.symbol);
-      if (!result) result = (a as OptionPositionEntry).option.strike - (b as OptionPositionEntry).option.strike;
-    }
-    return result;
-  } else throw Error("not implemented");
-};
-
-// Assume positions inside trades have been sorted
-const compareTrades = (a: TradeEntry, b: TradeEntry): number => {
-  if (!a.positions!.length && b.positions!.length) return +1;
-  else if (a.positions!.length && !b.positions!.length) return -1;
-  else if (!a.positions!.length && !b.positions!.length) return 0;
-  else return comparePositions(a.positions![0], b.positions![0]);
-};
-
-const sortTrades = (trades: TradeEntry[]): TradeEntry[] => {
-  trades.forEach((trade) => {
-    trade.positions = trade.positions?.sort(comparePositions);
-  });
-  return trades.sort(compareTrades);
-};
 
 /**
  * Get open trades synthesys

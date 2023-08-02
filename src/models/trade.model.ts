@@ -1,6 +1,7 @@
 import { CreationOptional, ForeignKey, InferAttributes, InferCreationAttributes, NonAttribute } from "sequelize";
 import { BelongsTo, Column, DataType, HasMany, Model, Table } from "sequelize-typescript";
 import { Contract } from "./contract.model";
+import { expirationToDate } from "./date_utils";
 import { Portfolio } from "./portfolio.model";
 import { Position } from "./position.model";
 import { Statement } from "./statement.model";
@@ -38,6 +39,10 @@ export class Trade extends Model<
   @Column({ type: DataType.DATE, field: "closing_date" })
   declare closingDate?: Date;
 
+  /** expected expiration date */
+  @Column({ type: DataType.DATEONLY, field: "expiryDate" })
+  declare expectedExpiry?: string; // YYYY-MM-DD
+
   @Column({ type: DataType.SMALLINT, defaultValue: 0 })
   declare strategy: TradeStrategy;
 
@@ -60,10 +65,20 @@ export class Trade extends Model<
   @HasMany(() => Statement, { foreignKey: "trade_unit_id" })
   declare statements?: Statement[];
 
+  /** Total duration if trade is closed or current duration is trade is open */
   get duration(): NonAttribute<number> {
     return (
       ((this.closingDate ? this.closingDate.getTime() : Date.now()) - this.openingDate.getTime()) / 1000 / 3600 / 24
     );
+  }
+
+  get expectedDuration(): NonAttribute<number | undefined> {
+    return this.closingDate
+      ? (this.closingDate.getTime() - this.openingDate.getTime()) / 1000 / 3600 / 24
+      : Math.max(
+          (expirationToDate(this.expectedExpiry).getTime() - this.openingDate.getTime()) / 1000 / 3600 / 24 + 0.6,
+          0,
+        );
   }
 
   /** Related positions */

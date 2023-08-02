@@ -26,7 +26,7 @@ export type OptionPositionEntry = PositionEntry & {
   option: {
     id: number;
     symbol: string;
-    expiration: string;
+    expiration: string; // format?
     strike: number;
     type: string;
     delta: number | undefined;

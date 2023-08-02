@@ -4,6 +4,7 @@ import { Op, QueryTypes } from "sequelize";
 import { ITradingBot } from ".";
 import { greeks, option_implied_volatility } from "../black_scholes";
 import { Contract, Option, Stock } from "../models";
+import { expirationToDate } from "../models/date_utils";
 
 const OPTIONS_LIST_BUILD_FREQ: number = process.env.OPTIONS_LIST_BUILD_FREQ
   ? parseInt(process.env.OPTIONS_LIST_BUILD_FREQ)
@@ -23,7 +24,7 @@ export class OptionsCreateBot extends ITradingBot {
   ): Promise<void> {
     // console.log(`iterateSecDefOptParamsForExpStrikes for ${stock.symbol}, ${expirations.length} exp, ${strikes.length} strikes`)
     for (const expstr of expirations) {
-      const expdate = ITradingBot.expirationToDate(expstr);
+      const expdate = expirationToDate(expstr);
       const days = (expdate.getTime() - Date.now()) / 60000 / 1440;
       if (days > 0 && days < OPTIONS_PRICE_TIMEFRAME) {
         console.log(stock.symbol, expstr, days, "days", strikes.length, "strikes");

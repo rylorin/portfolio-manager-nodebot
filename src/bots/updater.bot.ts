@@ -16,6 +16,7 @@ import { ITradingBot, YahooUpdateBot } from ".";
 import { MyTradingBotApp } from "..";
 import logger from "../logger";
 import { AnyContract, Contract, Currency, Option, Position, Stock } from "../models";
+import { expirationToDate } from "../models/date_utils";
 
 const MODULE = "UpdaterBot";
 
@@ -291,7 +292,7 @@ export class ContractsUpdaterBot extends ITradingBot {
         return Option.update(optdataset, { where: { id: contract.id } }).then(() => price);
       } else if (contract.secType == "CASH") {
         return Currency.update(
-          { rate: price },
+          { rate: price! },
           {
             where: {
               base: contract.symbol.substring(0, 3),
@@ -398,7 +399,7 @@ export class ContractsUpdaterBot extends ITradingBot {
   ): Promise<void> {
     // console.log(`iterateSecDefOptParamsForExpStrikes for ${stock.symbol}, ${expirations.length} exp, ${strikes.length} strikes`)
     for (const expstr of expirations) {
-      const expdate = ITradingBot.expirationToDate(expstr);
+      const expdate = expirationToDate(expstr);
       const days = (expdate.getTime() - Date.now()) / 60000 / 1440;
       if (days > 0 && days < OPTIONS_PRICE_TIMEFRAME) {
         console.log(stock.symbol, expstr, days, "days", strikes.length, "strikes");

@@ -19,10 +19,12 @@ export type TradeEntry = {
     symbol: string;
   };
   currency: string;
-  openingDate: number;
-  closingDate: number | undefined;
   status: TradeStatus;
+  openingDate: number; // Date in msecs
+  closingDate: number | undefined; // Date in msecs
   duration: number;
+  expectedExpiry: string | undefined; // YYYY-MM-DD
+  expectedDuration: number | undefined;
   strategy: TradeStrategy;
   risk: number | undefined;
   pnl: number | undefined;

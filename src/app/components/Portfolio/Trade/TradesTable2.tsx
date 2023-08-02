@@ -51,7 +51,8 @@ const TradesTable: FunctionComponent<Props> = ({ title = "Trades index", content
                 {tradeStatus2String(item.status)}
               </Badge>
               <Text fontWeight="semibold" letterSpacing="wide" fontSize="xs" textTransform="uppercase" ml="2">
-                {formatNumber(item.duration)} days
+                {formatNumber(item.duration)}
+                {item.status == TradeStatus.open && <>/{formatNumber(item.expectedDuration)}</>} days
               </Text>
               <Box
                 color="gray.500"
@@ -64,16 +65,14 @@ const TradesTable: FunctionComponent<Props> = ({ title = "Trades index", content
                 &bull;{" "}
                 <Tooltip label={new Date(item.openingDate).toLocaleString()} hasArrow={true}>
                   {new Date(item.openingDate).toLocaleDateString()}
-                </Tooltip>
+                </Tooltip>{" "}
+                &bull;{" "}
                 {item.closingDate && (
-                  <>
-                    {" "}
-                    &bull;{" "}
-                    <Tooltip label={new Date(item.closingDate).toLocaleString()} hasArrow={true}>
-                      {new Date(item.closingDate).toLocaleDateString()}
-                    </Tooltip>
-                  </>
+                  <Tooltip label={new Date(item.closingDate).toLocaleString()} hasArrow={true}>
+                    {new Date(item.closingDate).toLocaleDateString()}
+                  </Tooltip>
                 )}
+                {item.status == TradeStatus.open && <>{new Date(item.expectedExpiry).toLocaleDateString()}</>}
               </Box>
             </Box>
 

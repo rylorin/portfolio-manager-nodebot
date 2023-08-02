@@ -30,6 +30,7 @@ import {
   Stock,
 } from "../models";
 import { ContractType } from "../models/contract.types";
+import { expirationToDate } from "../models/date_utils";
 
 type OptionsSynthesis = {
   value: number;
@@ -75,35 +76,35 @@ export class ITradingBot extends EventEmitter {
     console.error(colors.bold.red(`[${new Date().toLocaleTimeString()}] Warning: ${message}`));
   }
 
-  protected static expirationToDate(lastTradeDateOrContractMonth: string): Date {
-    // convert YYYYMMDD to Date
-    const lastTradeDate = new Date(
-      parseInt(lastTradeDateOrContractMonth.substring(0, 4)),
-      parseInt(lastTradeDateOrContractMonth.substring(4, 6)) - 1,
-      parseInt(lastTradeDateOrContractMonth.substring(6, 8)),
-    );
-    return lastTradeDate;
-  }
+  // protected static expirationToDate(lastTradeDateOrContractMonth: string): Date {
+  //   // convert YYYYMMDD to Date
+  //   const lastTradeDate = new Date(
+  //     parseInt(lastTradeDateOrContractMonth.substring(0, 4)),
+  //     parseInt(lastTradeDateOrContractMonth.substring(4, 6)) - 1,
+  //     parseInt(lastTradeDateOrContractMonth.substring(6, 8)),
+  //   );
+  //   return lastTradeDate;
+  // }
 
-  protected static expirationToDateString(lastTradeDateOrContractMonth: string): string {
-    // convert YYYYMMDD to YYYY-MM-DD
-    const lastTradeDate =
-      lastTradeDateOrContractMonth.substring(0, 4) +
-      "-" +
-      lastTradeDateOrContractMonth.substring(4, 6) +
-      "-" +
-      lastTradeDateOrContractMonth.substring(6, 8);
-    return lastTradeDate;
-  }
+  // protected static expirationToDateString(lastTradeDateOrContractMonth: string): string {
+  //   // convert YYYYMMDD to YYYY-MM-DD
+  //   const lastTradeDate =
+  //     lastTradeDateOrContractMonth.substring(0, 4) +
+  //     "-" +
+  //     lastTradeDateOrContractMonth.substring(4, 6) +
+  //     "-" +
+  //     lastTradeDateOrContractMonth.substring(6, 8);
+  //   return lastTradeDate;
+  // }
 
-  protected static dateToExpiration(value: Date): string {
-    // convert Date to YYYYMMDD
-    const day: number = value.getDate();
-    const month: number = value.getMonth() + 1;
-    const year: number = value.getFullYear();
-    const lastTradeDate: string = year.toString() + (month < 10 ? "0" + month : month) + (day < 10 ? "0" + day : day);
-    return lastTradeDate;
-  }
+  // protected static dateToExpiration(value: Date): string {
+  //   // convert Date to YYYYMMDD
+  //   const day: number = value.getDate();
+  //   const month: number = value.getMonth() + 1;
+  //   const year: number = value.getFullYear();
+  //   const lastTradeDate: string = year.toString() + (month < 10 ? "0" + month : month) + (day < 10 ? "0" + day : day);
+  //   return lastTradeDate;
+  // }
 
   protected static OptionComboContract(underlying: Contract, buyleg: number, sellleg: number): IbContract {
     const contract: IbContract = {
@@ -710,7 +711,7 @@ export class ITradingBot extends EventEmitter {
       // future specific fields
       id: undefined as unknown as number,
       underlying_id: undefined as unknown as number,
-      lastTradeDate: ITradingBot.expirationToDate(ibContract.lastTradeDateOrContractMonth!),
+      lastTradeDate: expirationToDate(ibContract.lastTradeDateOrContractMonth!),
       multiplier: ibContract.multiplier!,
     };
     const underlying = {
@@ -772,7 +773,7 @@ export class ITradingBot extends EventEmitter {
       id: undefined as unknown as number,
       stock_id: undefined as unknown as number,
       // eslint-disable-next-line @typescript-eslint/no-unnecessary-type-assertion
-      lastTradeDate: ITradingBot.expirationToDate(ibContract.lastTradeDateOrContractMonth!),
+      lastTradeDate: expirationToDate(ibContract.lastTradeDateOrContractMonth!),
       // eslint-disable-next-line @typescript-eslint/no-unnecessary-type-assertion
       strike: ibContract.currency == "GBP" ? ibContract.strike! / 100 : ibContract.strike!,
       callOrPut: ibContract.right!, // eslint-disable-line @typescript-eslint/no-unnecessary-type-assertion
