@@ -30,7 +30,7 @@ import {
   Stock,
 } from "../models";
 import { ContractType } from "../models/contract.types";
-import { expirationToDate } from "../models/date_utils";
+import { expirationToDate, expirationToDateString } from "../models/date_utils";
 
 type OptionsSynthesis = {
   value: number;
@@ -138,7 +138,7 @@ export class ITradingBot extends EventEmitter {
       conId: option.contract.conId,
       strike: option.strike,
       right: option.callOrPut,
-      lastTradeDateOrContractMonth: option.lastTradeDate.toISOString().substring(0, 10).replaceAll("-", ""),
+      lastTradeDateOrContractMonth: `${option.expiry}`,
       multiplier: option.multiplier,
     };
     return contract;
@@ -773,7 +773,7 @@ export class ITradingBot extends EventEmitter {
       id: undefined as unknown as number,
       stock_id: undefined as unknown as number,
       // eslint-disable-next-line @typescript-eslint/no-unnecessary-type-assertion
-      lastTradeDate: expirationToDate(ibContract.lastTradeDateOrContractMonth!),
+      lastTradeDate: expirationToDateString(ibContract.lastTradeDateOrContractMonth!),
       // eslint-disable-next-line @typescript-eslint/no-unnecessary-type-assertion
       strike: ibContract.currency == "GBP" ? ibContract.strike! / 100 : ibContract.strike!,
       callOrPut: ibContract.right!, // eslint-disable-line @typescript-eslint/no-unnecessary-type-assertion

@@ -3,7 +3,7 @@ import express from "express";
 import { Op } from "sequelize";
 import logger, { LogLevel } from "../logger";
 import { Contract, ContractType, Currency, Portfolio, Position, Statement, StatementTypes, Trade } from "../models";
-import { expirationToDate, expirationToDateString } from "../models/date_utils";
+import { expirationToDate } from "../models/date_utils";
 import { TradeStatus, TradeStrategy } from "../models/trade.types";
 import { preparePositions } from "./positions.router";
 import { OptionPositionEntry, PositionEntry } from "./positions.types";
@@ -25,185 +25,46 @@ const router = express.Router({ mergeParams: true });
 type parentParams = { portfolioId: number };
 
 /**
- * updateTradeDetails automatically update some trade's details
- * @param thisTrade
+ * Build virtual positions from statements
+ * @param statements
  * @returns
  */
-export const updateTradeDetails = (thisTrade: Trade): Promise<Trade> => {
-  logger.log(LogLevel.Trace, MODULE + ".updateTradeDetails", thisTrade.underlying?.symbol, "thisTrade", thisTrade);
-  if (thisTrade && thisTrade.statements?.length) {
-    // sort statements by date
-    const items = thisTrade.statements.sort((a, b) => a.date.getTime() - b.date.getTime());
-    thisTrade.openingDate = items[0].date;
-    if (thisTrade.status == TradeStatus.closed && !thisTrade.closingDate)
-      thisTrade.closingDate = items[items.length - 1].date;
-    else if (thisTrade.status != TradeStatus.closed) thisTrade.closingDate = undefined;
-    thisTrade.PnL = 0;
-    thisTrade.pnlInBase = 0;
-    thisTrade.expectedExpiry = undefined;
-    return items
-      .reduce(
-        (p, item) =>
-          p.then((statements) => {
-            return statementModelToStatementEntry(item).then((statement_entry) => {
-              if (statement_entry.pnl) {
-                // eslint-disable-next-line @typescript-eslint/no-unnecessary-type-assertion
-                thisTrade.PnL! += statement_entry.pnl;
-                // eslint-disable-next-line @typescript-eslint/no-unnecessary-type-assertion
-                thisTrade.pnlInBase! += statement_entry.pnl * statement_entry.fxRateToBase;
-              }
-              if (statement_entry.type == StatementTypes.OptionStatement) {
-                const expiry = expirationToDateString(statement_entry.option!.expiry);
-                if (!thisTrade.expectedExpiry) thisTrade.expectedExpiry = expiry;
-                else if (expiry > thisTrade.expectedExpiry) {
-                  thisTrade.expectedExpiry = expiry;
-                }
-              } else if (statement_entry.type == StatementTypes.EquityStatement) {
-                thisTrade.expectedExpiry = undefined;
-              }
-              if (
-                statement_entry.type == StatementTypes.EquityStatement ||
-                statement_entry.type == StatementTypes.OptionStatement
-              ) {
-                statements.push(statement_entry);
-              }
-              return statements;
-            });
-          }),
-        Promise.resolve([] as StatementEntry[]),
-      )
-      .then((statements) => updateTradeStrategy(thisTrade, statements))
-      .then((statements) => updateTradeRisk(thisTrade, statements))
-      .then((_statements) => thisTrade.save());
-  }
-  return Promise.resolve(thisTrade);
-};
-
-/**
- * Convert a trade model to something that is JSONable and easier to manipulate from frontend
- * @param thisTrade
- * @param _options
- * @returns
- */
-export const tradeModelToTradeEntry = (
-  thisTrade: Trade,
-  _options: { with_statements: boolean; with_positions: boolean; with_virtuals: boolean } = {
-    with_statements: false,
-    with_positions: false,
-    with_virtuals: false,
-  },
-): Promise<TradeEntry> => {
-  // Init TradeEntry
-  return Promise.resolve({
-    id: thisTrade.id,
-    underlying: {
-      symbol_id: thisTrade.underlying.id,
-      symbol: thisTrade.underlying.symbol,
-    },
-    currency: thisTrade.currency,
-    openingDate: thisTrade.openingDate.getTime(),
-    closingDate: thisTrade.closingDate ? thisTrade.closingDate.getTime() : undefined,
-    status: thisTrade.status,
-    duration: thisTrade.duration,
-    expectedExpiry: thisTrade.expectedExpiry,
-    expectedDuration: thisTrade.expectedDuration,
-    strategy: thisTrade.strategy,
-    risk: thisTrade.risk,
-    pnl: thisTrade.PnL,
-    pnlInBase: thisTrade.pnlInBase,
-    apy: thisTrade.risk && thisTrade.PnL ? (thisTrade.PnL / -thisTrade.risk) * (365 / thisTrade.duration) : undefined,
-    comment: thisTrade.comment,
-    statements: undefined,
-    positions: undefined,
-    virtuals: undefined,
-  } as TradeEntry)
-    .then((trade_entry) => {
-      // Add statements
-      if (thisTrade.statements) {
-        return thisTrade.statements
-          .reduce(
-            (p, item): Promise<StatementEntry[]> => {
-              return p.then((statements) => {
-                return statementModelToStatementEntry(item).then((statement) => {
-                  statements.push(statement);
-                  return statements;
-                });
-              });
-            },
-            Promise.resolve([] as StatementEntry[]),
-          )
-          .then((statements) => {
-            trade_entry.statements = statements;
-            return trade_entry;
-          });
-      } else return trade_entry;
-    })
-    .then((trade_entry) => {
-      // Add positions
-      return Portfolio.findByPk(thisTrade.portfolio_id, {
-        include: [
-          {
-            model: Position,
-            as: "positions",
-            where: { trade_unit_id: thisTrade.id },
-            include: [{ model: Contract, as: "contract" }],
-            required: false,
-          },
-          { model: Currency, as: "baseRates" },
-        ],
-      }).then((portfolio) => {
-        if (!portfolio) throw Error("portfolio not found: " + thisTrade.portfolio_id);
-        return preparePositions(portfolio).then((positions) => {
-          trade_entry.positions = positions;
-          return trade_entry;
-        });
-      });
-    })
-    .then((trade_entry) => {
-      // Add virtual positions
-      const virtuals: Record<number, VirtualPositionEntry> = {};
-      trade_entry.statements?.forEach((item) => {
-        switch (item.type) {
-          case StatementTypes.EquityStatement:
-            if (item.underlying && item.quantity) {
-              if (virtuals[item.underlying.id]) virtuals[item.underlying.id].quantity += item.quantity;
-              else
-                virtuals[item.underlying.id] = {
-                  contract_id: item.underlying.id,
-                  symbol: item.underlying.symbol,
-                  quantity: item.quantity,
-                };
-            }
-            break;
-          case StatementTypes.OptionStatement:
-            if (item.option && item.quantity) {
-              if (virtuals[item.option.id]) virtuals[item.option.id].quantity += item.quantity;
-              else
-                virtuals[item.option.id] = {
-                  contract_id: item.option.id,
-                  symbol: item.option.symbol,
-                  quantity: item.quantity,
-                };
-            }
-            break;
+const makeVirtualPositions = (statements: StatementEntry[] | undefined): Record<number, VirtualPositionEntry> => {
+  const virtuals: Record<number, VirtualPositionEntry> = {};
+  statements?.forEach((item) => {
+    switch (item.type) {
+      case StatementTypes.EquityStatement:
+        if (item.underlying && item.quantity) {
+          if (virtuals[item.underlying.id]) virtuals[item.underlying.id].quantity += item.quantity;
+          else
+            virtuals[item.underlying.id] = {
+              contract: item.underlying,
+              symbol: item.underlying.symbol,
+              quantity: item.quantity,
+            };
         }
-      });
-      // console.log(Object.values(virtuals));
-      trade_entry.virtuals = Object.values(virtuals);
-      return trade_entry;
-    });
-};
-
-const formatDate = (when: Date): string => {
-  const datestr = when.toISOString().substring(0, 7);
-  return datestr;
+        break;
+      case StatementTypes.OptionStatement:
+        if (item.option && item.quantity) {
+          if (virtuals[item.option.id]) virtuals[item.option.id].quantity += item.quantity;
+          else
+            virtuals[item.option.id] = {
+              contract: item.option,
+              symbol: item.option.symbol,
+              quantity: item.quantity,
+            };
+        }
+        break;
+    }
+  });
+  return virtuals;
 };
 
 /**
  * Given the strategy and the statements we can update trade risk
  *
  */
-function updateTradeRisk(thisTrade: Trade, statements: StatementEntry[]): StatementEntry[] {
+const updateTradeRisk = (thisTrade: Trade, statements: StatementEntry[]): StatementEntry[] => {
   const virtuals: Record<number, { contract: StatementUnderlyingEntry | StatementOptionEntry; risk: number }> = {};
   switch (thisTrade.strategy) {
     case TradeStrategy["short put"]:
@@ -266,9 +127,9 @@ function updateTradeRisk(thisTrade: Trade, statements: StatementEntry[]): Statem
       break;
   }
   return statements;
-}
+};
 
-function updateTradeStrategy(thisTrade: Trade, statements: StatementEntry[]): StatementEntry[] {
+const updateTradeStrategy = (thisTrade: Trade, statements: StatementEntry[]): StatementEntry[] => {
   logger.log(LogLevel.Trace, MODULE + ".updateTradeStrategy", thisTrade.underlying?.symbol, "statements", statements);
   // Update trade stategy
   for (let i = 0; i < statements.length; i++) {
@@ -314,7 +175,166 @@ function updateTradeStrategy(thisTrade: Trade, statements: StatementEntry[]): St
     }
   }
   return statements;
-}
+};
+
+const updateTradeExpiry = (thisTrade: Trade, statements: StatementEntry[]): StatementEntry[] => {
+  // Compute expected expiry
+  const virtuals = makeVirtualPositions(statements);
+  thisTrade.expectedExpiry = null;
+  // thisTrade.changed("expectedExpiry", true); // force update
+
+  Object.values(virtuals).forEach((pos) => {
+    // console.log("xxx", thisTrade.expectedExpiry);
+    if (pos.contract.secType == ContractType.Option && pos.quantity) {
+      if (!thisTrade.expectedExpiry) thisTrade.expectedExpiry = (pos.contract as StatementOptionEntry).lastTradeDate;
+      else if (thisTrade.expectedExpiry < (pos.contract as StatementOptionEntry).lastTradeDate)
+        thisTrade.expectedExpiry = (pos.contract as StatementOptionEntry).lastTradeDate;
+      // console.log("yyy", thisTrade.expectedExpiry, (pos.contract as StatementOptionEntry).lastTradeDate);
+    }
+  });
+  return statements;
+};
+
+const prepareStatements = (statements: Statement[]): Promise<StatementEntry[]> => {
+  return statements.reduce(
+    (p, item) =>
+      p.then((statements) => {
+        return statementModelToStatementEntry(item).then((statement_entry) => {
+          statements.push(statement_entry);
+          return statements;
+        });
+      }),
+    Promise.resolve([] as StatementEntry[]),
+  );
+};
+
+const updateRealizedPnl = (thisTrade: Trade, statements: StatementEntry[]): StatementEntry[] => {
+  statements.forEach((statement_entry) => {
+    if (statement_entry.pnl) {
+      // eslint-disable-next-line @typescript-eslint/no-unnecessary-type-assertion
+      thisTrade.PnL! += statement_entry.pnl;
+      // eslint-disable-next-line @typescript-eslint/no-unnecessary-type-assertion
+      thisTrade.pnlInBase! += statement_entry.pnl * statement_entry.fxRateToBase;
+    }
+  });
+  return statements;
+};
+
+/**
+ * updateTradeDetails automatically update some trade's details
+ * @param thisTrade
+ * @returns
+ */
+export const updateTradeDetails = (thisTrade: Trade): Promise<Trade> => {
+  logger.log(LogLevel.Trace, MODULE + ".updateTradeDetails", thisTrade.underlying?.symbol, "thisTrade", thisTrade);
+  if (thisTrade && thisTrade.statements?.length) {
+    // sort statements by date
+    const items = thisTrade.statements.sort((a, b) => a.date.getTime() - b.date.getTime());
+    thisTrade.openingDate = items[0].date;
+    if (thisTrade.status == TradeStatus.closed && !thisTrade.closingDate)
+      thisTrade.closingDate = items[items.length - 1].date;
+    else if (thisTrade.status != TradeStatus.closed) thisTrade.closingDate = undefined;
+    thisTrade.PnL = 0;
+    thisTrade.pnlInBase = 0;
+    return prepareStatements(items) // Convert Statement[] to StatementEntry[]
+      .then((statements) => updateRealizedPnl(thisTrade, statements))
+      .then((statements) => updateTradeStrategy(thisTrade, statements))
+      .then((statements) => updateTradeRisk(thisTrade, statements))
+      .then((statements) => updateTradeExpiry(thisTrade, statements))
+      .then((_statements) => thisTrade.save());
+  }
+  return Promise.resolve(thisTrade);
+};
+
+/**
+ * Convert a trade model to something that is JSONable and easier to manipulate from frontend
+ * @param thisTrade
+ * @param _options
+ * @returns
+ */
+export const tradeModelToTradeEntry = (
+  thisTrade: Trade,
+  _options: { with_statements: boolean; with_positions: boolean; with_virtuals: boolean } = {
+    with_statements: false,
+    with_positions: false,
+    with_virtuals: false,
+  },
+): Promise<TradeEntry> => {
+  // Init TradeEntry
+  return Promise.resolve({
+    id: thisTrade.id,
+    underlying: thisTrade.underlying,
+    currency: thisTrade.currency,
+    openingDate: thisTrade.openingDate.getTime(),
+    closingDate: thisTrade.closingDate ? thisTrade.closingDate.getTime() : undefined,
+    status: thisTrade.status,
+    duration: thisTrade.duration,
+    expectedExpiry: thisTrade.expectedExpiry,
+    expectedDuration: thisTrade.expectedDuration,
+    strategy: thisTrade.strategy,
+    risk: thisTrade.risk,
+    pnl: thisTrade.PnL,
+    pnlInBase: thisTrade.pnlInBase,
+    apy: thisTrade.risk && thisTrade.PnL ? (thisTrade.PnL / -thisTrade.risk) * (365 / thisTrade.duration) : undefined,
+    comment: thisTrade.comment,
+    statements: undefined,
+    positions: undefined,
+    virtuals: undefined,
+  } as TradeEntry)
+    .then((trade_entry) => {
+      // Add statements
+      if (thisTrade.statements) {
+        return thisTrade.statements
+          .reduce(
+            (p, item): Promise<StatementEntry[]> => {
+              return p.then((statements) => {
+                return statementModelToStatementEntry(item).then((statement) => {
+                  statements.push(statement);
+                  return statements;
+                });
+              });
+            },
+            Promise.resolve([] as StatementEntry[]),
+          )
+          .then((statements) => {
+            trade_entry.statements = statements;
+            return trade_entry;
+          });
+      } else return trade_entry;
+    })
+    .then((trade_entry) => {
+      // Add positions
+      return Portfolio.findByPk(thisTrade.portfolio_id, {
+        include: [
+          {
+            model: Position,
+            as: "positions",
+            where: { trade_unit_id: thisTrade.id },
+            include: [{ model: Contract, as: "contract" }],
+            required: false,
+          },
+          { model: Currency, as: "baseRates" },
+        ],
+      }).then((portfolio) => {
+        if (!portfolio) throw Error("portfolio not found: " + thisTrade.portfolio_id);
+        return preparePositions(portfolio).then((positions) => {
+          trade_entry.positions = positions;
+          return trade_entry;
+        });
+      });
+    })
+    .then((trade_entry) => {
+      // Add virtual positions from statements entries
+      const virtuals = makeVirtualPositions(trade_entry.statements);
+      trade_entry.virtuals = Object.values(virtuals);
+      return trade_entry;
+    });
+};
+
+const formatDate = (when: Date): string => {
+  const datestr = when.toISOString().substring(0, 7);
+  return datestr;
+};
 
 /**
  * Create fake trade entries for orphan positions
@@ -353,7 +373,7 @@ const addFakeTrades = (theSynthesys: OpenTradesWithPositions): TradeEntry[] => {
     const duration = (Date.now() - openingDate) / 1000 / 3600 / 24;
     theSynthesys.trades.push({
       id,
-      underlying: { symbol_id: 0, symbol: underlying },
+      underlying: { id: -1, symbol: underlying, secType: ContractType.Stock },
       currency,
       openingDate,
       status: TradeStatus.open,

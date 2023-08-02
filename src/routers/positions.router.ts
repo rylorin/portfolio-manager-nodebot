@@ -67,10 +67,7 @@ export const preparePositions = (portfolio: Portfolio): Promise<(PositionEntry |
                 option.strike *
                 option.multiplier *
                 (option.callOrPut == OptionType.Put ? item.quantity : -item.quantity);
-              const duration = Math.max(
-                (option.lastTradeDate.getTime() - item.createdAt.getTime()) / 1000 / 3600 / 24,
-                1,
-              );
+              const duration = Math.max((option.expiryDate.getTime() - item.createdAt.getTime()) / 1000 / 3600 / 24, 1);
               const apy = engaged && duration ? (item.cost / engaged / duration) * 360 : undefined;
               const baseRate =
                 1 / (portfolio.baseRates.find((currency) => currency.currency == item.contract.currency)?.rate || 1);
@@ -97,7 +94,7 @@ export const preparePositions = (portfolio: Portfolio): Promise<(PositionEntry |
                 option: {
                   id: item.contract.id,
                   symbol: option.stock.symbol,
-                  expiration: option.lastTradeDate.toISOString().substring(0, 10),
+                  expiration: option.lastTradeDate,
                   strike: option.strike,
                   type: option.callOrPut,
                   delta: option.delta || undefined,

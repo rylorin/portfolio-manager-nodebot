@@ -3,6 +3,7 @@ import { Op } from "sequelize";
 import logger, { LogLevel } from "../logger";
 import {
   Contract,
+  ContractType,
   DividendStatement,
   EquityStatement,
   FeeStatement,
@@ -62,7 +63,7 @@ export const statementModelToStatementEntry = (item: Statement): Promise<Stateme
     fxRateToBase: item.fxRateToBase,
     description: item.description,
     trade_id: item.trade_unit_id,
-    underlying: item.stock ? { id: item.stock.id, symbol: item.stock.symbol } : undefined,
+    underlying: item.stock,
     quantity: undefined,
     option: undefined,
   };
@@ -89,9 +90,10 @@ export const statementModelToStatementEntry = (item: Statement): Promise<Stateme
           statement.fees = thisStatement.fees;
           statement.option = {
             id: thisStatement.contract_id,
+            secType: ContractType.Option,
             symbol: thisStatement.contract.symbol,
             strike: thisStatement.option.strike,
-            expiry: thisStatement.option.expiry,
+            lastTradeDate: thisStatement.option.lastTradeDate,
             callOrPut: thisStatement.option.callOrPut,
             multiplier: thisStatement.option.multiplier,
           };

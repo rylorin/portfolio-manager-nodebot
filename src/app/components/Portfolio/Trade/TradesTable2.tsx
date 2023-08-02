@@ -5,6 +5,7 @@ import { TradeStatus } from "../../../../models/trade.types";
 import { TradeEntry } from "../../../../routers/trades.types";
 import { formatNumber } from "../../../utils";
 import Number from "../../Number/Number";
+import { ContractLink } from "../Contract/links";
 import PositionsTable from "../Position/PositionsTable";
 import { TradeLink } from "./links";
 import { tradeStatus2String, tradeStrategy2String } from "./utils";
@@ -52,7 +53,10 @@ const TradesTable: FunctionComponent<Props> = ({ title = "Trades index", content
               </Badge>
               <Text fontWeight="semibold" letterSpacing="wide" fontSize="xs" textTransform="uppercase" ml="2">
                 {formatNumber(item.duration)}
-                {item.status == TradeStatus.open && <>/{formatNumber(item.expectedDuration)}</>} days
+                {item.status == TradeStatus.open && item.expectedDuration && (
+                  <>/{formatNumber(item.expectedDuration)}</>
+                )}{" "}
+                days
               </Text>
               <Box
                 color="gray.500"
@@ -65,20 +69,25 @@ const TradesTable: FunctionComponent<Props> = ({ title = "Trades index", content
                 &bull;{" "}
                 <Tooltip label={new Date(item.openingDate).toLocaleString()} hasArrow={true}>
                   {new Date(item.openingDate).toLocaleDateString()}
-                </Tooltip>{" "}
-                &bull;{" "}
+                </Tooltip>
                 {item.closingDate && (
-                  <Tooltip label={new Date(item.closingDate).toLocaleString()} hasArrow={true}>
-                    {new Date(item.closingDate).toLocaleDateString()}
-                  </Tooltip>
+                  <>
+                    {" "}
+                    &bull;{" "}
+                    <Tooltip label={new Date(item.closingDate).toLocaleString()} hasArrow={true}>
+                      {new Date(item.closingDate).toLocaleDateString()}
+                    </Tooltip>
+                  </>
                 )}
-                {item.status == TradeStatus.open && <>{new Date(item.expectedExpiry).toLocaleDateString()}</>}
+                {item.expectedExpiry && <> &bull; {new Date(item.expectedExpiry).toLocaleDateString()}</>}
               </Box>
             </Box>
 
             <Box display="flex" alignItems="baseline" mt={1}>
               <Badge borderRadius="full" px="2" colorScheme="teal">
-                {item.underlying.symbol}
+                <Link to={ContractLink.toItem(portfolioId, item.underlying.id)} as={RouterLink}>
+                  {item.underlying.symbol}
+                </Link>
               </Badge>
               <Box
                 color="gray.500"

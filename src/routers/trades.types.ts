@@ -1,9 +1,9 @@
 import { TradeStatus, TradeStrategy } from "../models";
 import { OptionPositionEntry, PositionEntry } from "./positions.types";
-import { StatementEntry } from "./statements.types";
+import { StatementEntry, StatementOptionEntry, StatementUnderlyingEntry } from "./statements.types";
 
 export type VirtualPositionEntry = {
-  contract_id: number;
+  contract: StatementUnderlyingEntry | StatementOptionEntry;
   symbol: string;
   quantity: number;
 };
@@ -14,10 +14,7 @@ export type VirtualPositionEntry = {
 export type TradeEntry = {
   /** unique trade id */
   id: number;
-  underlying: {
-    symbol_id: number;
-    symbol: string;
-  };
+  underlying: StatementUnderlyingEntry;
   currency: string;
   status: TradeStatus;
   openingDate: number; // Date in msecs

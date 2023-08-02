@@ -119,7 +119,7 @@ export class YahooUpdateBot extends ITradingBot {
   }
 
   protected static formatOptionName(option: Option): string {
-    const lastTradeDateOrContractMonth: string = option.lastTradeDate.toISOString();
+    const lastTradeDateOrContractMonth: string = option.lastTradeDate;
     const year = lastTradeDateOrContractMonth.substring(2, 4);
     const month = lastTradeDateOrContractMonth.substring(5, 7);
     const day = lastTradeDateOrContractMonth.substring(8, 10);

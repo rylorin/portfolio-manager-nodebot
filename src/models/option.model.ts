@@ -25,18 +25,23 @@ export class Option extends Model<
   declare stock: Contract;
 
   @Column({ type: DataType.DATEONLY, field: "last_trade_date" })
-  get lastTradeDate(): Date {
+  declare lastTradeDate: string;
+  // get lastTradeDate(): Date {
+  //   return new Date(this.getDataValue("lastTradeDate"));
+  // }
+  // set lastTradeDate(value: Date | string) {
+  //   if (value instanceof Date) {
+  //     this.setDataValue("lastTradeDate", value);
+  //   } else if (typeof value == "string") {
+  //     // Format date to YYYY-MM-DD
+  //     this.setDataValue("lastTradeDate", new Date(value.substring(0, 10)));
+  //   }
+  // }
+
+  get expiryDate(): NonAttribute<Date> {
+    // Format date to YYYYMMDD
     return new Date(this.getDataValue("lastTradeDate"));
   }
-  set lastTradeDate(value: Date | string) {
-    if (value instanceof Date) {
-      this.setDataValue("lastTradeDate", value);
-    } else if (typeof value == "string") {
-      // Format date to YYYY-MM-DD
-      this.setDataValue("lastTradeDate", new Date(value.substring(0, 10)));
-    }
-  }
-
   get expiry(): NonAttribute<number> {
     // Format date to YYYYMMDD
     return parseInt((this.getDataValue("lastTradeDate") as unknown as string).substring(0, 10).replaceAll("-", ""));

@@ -163,7 +163,7 @@ export class SellCashSecuredPutBot extends ITradingBot {
         if (option.impliedVolatility > stock!.historicalVolatility) {
           // RULE 1: implied volatility > historical volatility
           // const expiry: Date = new Date(option.lastTradeDate);
-          const diffDays = Math.ceil((option.lastTradeDate.getTime() - Date.now()) / (1000 * 3600 * 24));
+          const diffDays = Math.ceil((option.expiryDate.getTime() - Date.now()) / (1000 * 3600 * 24));
           option["yield"] = (option.contract.bid / option.strike / diffDays) * 360;
           // option.stock.contract = await Contract.findByPk(option.stock.id);
           filtered_options.push(option);

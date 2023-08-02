@@ -87,7 +87,7 @@ const TradeShow: FunctionComponent<Props> = ({ ..._rest }): JSX.Element => {
             Symbol:
           </Text>
           <Text w="200px" textAlign="right">
-            <Link to={ContractLink.toItem(portfolioId, item.underlying.symbol_id)} as={RouterLink}>
+            <Link to={ContractLink.toItem(portfolioId, item.underlying.id)} as={RouterLink}>
               {item.underlying.symbol}
             </Link>
           </Text>
@@ -161,7 +161,7 @@ const TradeShow: FunctionComponent<Props> = ({ ..._rest }): JSX.Element => {
                 </Thead>
                 <Tbody>
                   {item.virtuals.map((item) => (
-                    <Tr key={item.contract_id}>
+                    <Tr key={item.contract.id}>
                       <Td>{item.symbol}</Td>
                       <Td>{item.quantity}</Td>
                     </Tr>

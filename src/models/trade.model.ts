@@ -41,7 +41,7 @@ export class Trade extends Model<
 
   /** expected expiration date */
   @Column({ type: DataType.DATEONLY, field: "expiryDate" })
-  declare expectedExpiry?: string; // YYYY-MM-DD
+  declare expectedExpiry?: string | null; // YYYY-MM-DD
 
   @Column({ type: DataType.SMALLINT, defaultValue: 0 })
   declare strategy: TradeStrategy;
