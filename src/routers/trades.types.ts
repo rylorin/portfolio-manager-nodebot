@@ -3,9 +3,11 @@ import { OptionPositionEntry, PositionEntry } from "./positions.types";
 import { StatementEntry, StatementOptionEntry, StatementUnderlyingEntry } from "./statements.types";
 
 export type VirtualPositionEntry = {
-  contract: StatementUnderlyingEntry | StatementOptionEntry;
-  symbol: string;
+  id: number;
+  openDate: number;
   quantity: number;
+  contract: StatementUnderlyingEntry | StatementOptionEntry;
+  trade_id: number | undefined;
 };
 
 /**
@@ -25,6 +27,7 @@ export type TradeEntry = {
   strategy: TradeStrategy;
   risk: number | undefined;
   pnl: number | undefined;
+  unrlzdPnl: number | undefined;
   pnlInBase: number | undefined;
   apy: number | undefined;
   comment: string | undefined;

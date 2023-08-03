@@ -1,20 +1,8 @@
 import { ArrowBackIcon, DeleteIcon, EditIcon } from "@chakra-ui/icons";
-import {
-  Flex,
-  IconButton,
-  Link,
-  Table,
-  TableCaption,
-  TableContainer,
-  Tbody,
-  Td,
-  Text,
-  Thead,
-  Tr,
-  VStack,
-} from "@chakra-ui/react";
+import { Flex, IconButton, Link, Text, VStack } from "@chakra-ui/react";
 import React, { FunctionComponent } from "react";
 import { Form, Link as RouterLink, useLoaderData, useNavigate, useParams } from "react-router-dom";
+import { PositionEntry } from "../../../../routers/positions.types";
 import { TradeEntry } from "../../../../routers/trades.types";
 import { formatNumber } from "../../../utils";
 import Number from "../../Number/Number";
@@ -148,29 +136,34 @@ const TradeShow: FunctionComponent<Props> = ({ ..._rest }): JSX.Element => {
         </Flex>
         {item.positions && item.positions.length && <PositionsTable content={item.positions} />}
         {item.statements && <StatementsTable content={item.statements} />}
-        {item.virtuals && (
+        {item.virtuals && item.virtuals.length && (
+          <PositionsTable content={item.virtuals as PositionEntry[]} title="Virtual positions" />
+        )}
+        {/* {item.virtuals && (
           <>
             <TableContainer>
               <Table variant="simple" size="sm" className="table-tiny">
                 <TableCaption>Virtual positions ({item.virtuals.length})</TableCaption>
                 <Thead>
                   <Tr>
+                    <Td>Units</Td>
                     <Td>Symbol</Td>
-                    <Td>Quantity</Td>
+                    <Td>Currency</Td>
                   </Tr>
                 </Thead>
                 <Tbody>
                   {item.virtuals.map((item) => (
                     <Tr key={item.contract.id}>
-                      <Td>{item.symbol}</Td>
                       <Td>{item.quantity}</Td>
+                      <Td>{item.contract.symbol}</Td>
+                      <Td>{item.contract.currency}</Td>
                     </Tr>
                   ))}
                 </Tbody>
               </Table>
             </TableContainer>
           </>
-        )}
+        )} */}
       </VStack>
     </>
   );

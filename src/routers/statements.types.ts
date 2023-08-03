@@ -9,6 +9,7 @@ export type StatementUnderlyingEntry = {
   id: number;
   secType: ContractType;
   symbol: string;
+  currency: string;
 };
 
 export type StatementOptionEntry = StatementUnderlyingEntry & {

@@ -2,6 +2,7 @@ import { Badge, Box, Link, Text, Tooltip, VStack } from "@chakra-ui/react";
 import React, { FunctionComponent } from "react";
 import { Link as RouterLink, useLoaderData, useParams } from "react-router-dom";
 import { TradeStatus } from "../../../../models/trade.types";
+import { PositionEntry } from "../../../../routers/positions.types";
 import { TradeEntry } from "../../../../routers/trades.types";
 import { formatNumber } from "../../../utils";
 import Number from "../../Number/Number";
@@ -37,7 +38,7 @@ const TradesTable: FunctionComponent<Props> = ({ title = "Trades index", content
           {title} ({theTrades.length})
         </Text>
         {theTrades.map((item) => (
-          <Box key={`trade${item.id}`} maxW="sm" borderWidth="1px" borderRadius="lg" overflow="hidden" p={1}>
+          <Box key={`trade${item.id}`} w="100%" borderWidth="1px" borderRadius="lg" overflow="hidden" p={1}>
             {item.id < 0 && <Text>Orphan positions</Text>}
             {item.id > 0 && (
               <Text>
@@ -107,12 +108,15 @@ const TradesTable: FunctionComponent<Props> = ({ title = "Trades index", content
               </Box>
             </Box>
 
-            <Text>
-              P&L: <Number value={item.pnl} /> (<Number value={item.pnlInBase} />)
-            </Text>
-            <Text>
-              APY: <Number value={item.apy} isPercent />
-            </Text>
+            <Box display="flex" alignItems="baseline" mt={1} fontSize="xs">
+              <Text fontWeight="semibold" textTransform="uppercase">
+                P&L: <Number value={item.pnl} />
+              </Text>
+              &nbsp;
+              <Text color="gray.500">
+                (<Number value={item.apy} isPercent />) Rlzd
+              </Text>
+            </Box>
 
             {item.comment?.length > 0 && (
               <Text color="gray.500" fontWeight="semibold" fontSize="sm" mt={1}>
@@ -121,6 +125,7 @@ const TradesTable: FunctionComponent<Props> = ({ title = "Trades index", content
             )}
 
             {item.positions?.length > 0 && <PositionsTable content={item.positions} />}
+            {item.virtuals?.length > 0 && <PositionsTable content={item.virtuals as PositionEntry[]} />}
           </Box>
         ))}
       </VStack>

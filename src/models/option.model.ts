@@ -3,6 +3,9 @@ import { CreationOptional, ForeignKey, InferAttributes, InferCreationAttributes,
 import { BelongsTo, Column, DataType, Model, Table } from "sequelize-typescript";
 import { Contract } from "./contract.model";
 
+// @DefaultScope(() => ({
+//   include: [{association:'contract'}]
+// }))
 @Table({ tableName: "option", timestamps: true, deletedAt: false })
 export class Option extends Model<
   InferAttributes<Option>,
@@ -25,18 +28,7 @@ export class Option extends Model<
   declare stock: Contract;
 
   @Column({ type: DataType.DATEONLY, field: "last_trade_date" })
-  declare lastTradeDate: string;
-  // get lastTradeDate(): Date {
-  //   return new Date(this.getDataValue("lastTradeDate"));
-  // }
-  // set lastTradeDate(value: Date | string) {
-  //   if (value instanceof Date) {
-  //     this.setDataValue("lastTradeDate", value);
-  //   } else if (typeof value == "string") {
-  //     // Format date to YYYY-MM-DD
-  //     this.setDataValue("lastTradeDate", new Date(value.substring(0, 10)));
-  //   }
-  // }
+  declare lastTradeDate: string; // YYYY-MM-DD
 
   get expiryDate(): NonAttribute<Date> {
     // Format date to YYYYMMDD
@@ -45,6 +37,13 @@ export class Option extends Model<
   get expiry(): NonAttribute<number> {
     // Format date to YYYYMMDD
     return parseInt((this.getDataValue("lastTradeDate") as unknown as string).substring(0, 10).replaceAll("-", ""));
+  }
+  get dte(): NonAttribute<number> {
+    const dte: number = Math.max(
+      (new Date(this.getDataValue("lastTradeDate")).getTime() - Date.now()) / 1000 / 86400,
+      1,
+    );
+    return dte;
   }
 
   @Column({ type: DataType.FLOAT })
@@ -73,12 +72,4 @@ export class Option extends Model<
 
   @Column({ type: DataType.FLOAT })
   declare theta: number | null;
-
-  get dte(): NonAttribute<number> {
-    const dte: number = Math.max(
-      (new Date(this.getDataValue("lastTradeDate")).getTime() - Date.now()) / 1000 / 86400,
-      1,
-    );
-    return dte;
-  }
 }

@@ -96,6 +96,7 @@ export const statementModelToStatementEntry = (item: Statement): Promise<Stateme
             lastTradeDate: thisStatement.option.lastTradeDate,
             callOrPut: thisStatement.option.callOrPut,
             multiplier: thisStatement.option.multiplier,
+            currency: item.currency,
           };
         }
         return statement;
@@ -118,6 +119,20 @@ export const statementModelToStatementEntry = (item: Statement): Promise<Stateme
     default:
       throw Error("Undefined statement type: " + Object.keys(TradeStrategy)[item.statementType]);
   }
+};
+
+export const prepareStatements = (statements: Statement[]): Promise<StatementEntry[]> => {
+  return statements.reduce(
+    (p, item): Promise<StatementEntry[]> => {
+      return p.then((statements) => {
+        return statementModelToStatementEntry(item).then((statement) => {
+          statements.push(statement);
+          return statements;
+        });
+      });
+    },
+    Promise.resolve([] as StatementEntry[]),
+  );
 };
 
 const formatDate = (when: Date): string => {

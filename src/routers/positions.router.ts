@@ -16,7 +16,7 @@ const getPrice = (item: Contract): number | null => {
 };
 
 export const preparePositions = (portfolio: Portfolio): Promise<(PositionEntry | OptionPositionEntry)[]> => {
-  logger.trace(MODULE + ".preparePositions", portfolio);
+  // logger.trace(MODULE + ".preparePositions", portfolio);
   return portfolio.positions.reduce(
     (p, item: Position) => {
       return p.then((positions) => {

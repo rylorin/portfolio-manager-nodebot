@@ -38,10 +38,12 @@ const makeVirtualPositions = (statements: StatementEntry[] | undefined): Record<
           if (virtuals[item.underlying.id]) virtuals[item.underlying.id].quantity += item.quantity;
           else
             virtuals[item.underlying.id] = {
-              contract: item.underlying,
-              symbol: item.underlying.symbol,
+              id: -item.underlying.id,
+              openDate: item.date,
               quantity: item.quantity,
-            };
+              contract: item.underlying,
+              trade_id: item.trade_id!,
+            } as VirtualPositionEntry;
         }
         break;
       case StatementTypes.OptionStatement:
@@ -49,10 +51,12 @@ const makeVirtualPositions = (statements: StatementEntry[] | undefined): Record<
           if (virtuals[item.option.id]) virtuals[item.option.id].quantity += item.quantity;
           else
             virtuals[item.option.id] = {
-              contract: item.option,
-              symbol: item.option.symbol,
+              id: -item.option.id,
+              openDate: item.date,
               quantity: item.quantity,
-            };
+              contract: item.option,
+              trade_id: item.trade_id!,
+            } as VirtualPositionEntry;
         }
         break;
     }
@@ -274,6 +278,7 @@ export const tradeModelToTradeEntry = (
     strategy: thisTrade.strategy,
     risk: thisTrade.risk,
     pnl: thisTrade.PnL,
+    unrlzdPnl: undefined, // TODO
     pnlInBase: thisTrade.pnlInBase,
     apy: thisTrade.risk && thisTrade.PnL ? (thisTrade.PnL / -thisTrade.risk) * (365 / thisTrade.duration) : undefined,
     comment: thisTrade.comment,
@@ -284,22 +289,10 @@ export const tradeModelToTradeEntry = (
     .then((trade_entry) => {
       // Add statements
       if (thisTrade.statements) {
-        return thisTrade.statements
-          .reduce(
-            (p, item): Promise<StatementEntry[]> => {
-              return p.then((statements) => {
-                return statementModelToStatementEntry(item).then((statement) => {
-                  statements.push(statement);
-                  return statements;
-                });
-              });
-            },
-            Promise.resolve([] as StatementEntry[]),
-          )
-          .then((statements) => {
-            trade_entry.statements = statements;
-            return trade_entry;
-          });
+        return prepareStatements(thisTrade.statements).then((statements) => {
+          trade_entry.statements = statements;
+          return trade_entry;
+        });
       } else return trade_entry;
     })
     .then((trade_entry) => {
@@ -324,6 +317,12 @@ export const tradeModelToTradeEntry = (
       });
     })
     .then((trade_entry) => {
+      logger.log(
+        LogLevel.Trace,
+        MODULE + ".tradeModelToTradeEntry",
+        trade_entry.underlying.symbol,
+        trade_entry.statements,
+      );
       // Add virtual positions from statements entries
       const virtuals = makeVirtualPositions(trade_entry.statements);
       trade_entry.virtuals = Object.values(virtuals);
@@ -373,7 +372,7 @@ const addFakeTrades = (theSynthesys: OpenTradesWithPositions): TradeEntry[] => {
     const duration = (Date.now() - openingDate) / 1000 / 3600 / 24;
     theSynthesys.trades.push({
       id,
-      underlying: { id: -1, symbol: underlying, secType: ContractType.Stock },
+      underlying: { id: -1, symbol: underlying, secType: ContractType.Stock, currency },
       currency,
       openingDate,
       status: TradeStatus.open,
@@ -384,13 +383,14 @@ const addFakeTrades = (theSynthesys: OpenTradesWithPositions): TradeEntry[] => {
       strategy: TradeStrategy.undefined,
       risk: undefined,
       pnl: undefined,
+      unrlzdPnl: undefined,
       pnlInBase: undefined,
       apy: undefined,
       comment: undefined,
       statements: undefined,
       virtuals: undefined,
       positions,
-    });
+    } as TradeEntry);
   }
   return theSynthesys.trades;
 };
@@ -469,6 +469,19 @@ function makeSynthesys(trades: Trade[]): Promise<TradeSynthesys> {
     Promise.resolve({ open: [], byMonth: {} as TradeMonthlySynthesys } as TradeSynthesys),
   );
 }
+
+const prepareTrades = (trades: Trade[]): Promise<TradeEntry[]> => {
+  return trades.reduce(
+    (p, item) =>
+      p.then((trades) =>
+        tradeModelToTradeEntry(item).then((trade) => {
+          trades.push(trade);
+          return trades;
+        }),
+      ),
+    Promise.resolve([] as TradeEntry[]),
+  );
+};
 
 /**
  * Get full trades history synthesys
@@ -572,20 +585,8 @@ router.get("/month/:year(\\d+)/:month(\\d+)", (req, res): void => {
       status: TradeStatus.closed,
     },
     include: [{ model: Contract, as: "underlying" }, { association: "statements" }],
-    // limit: 500,
   })
-    .then((trades: Trade[]) =>
-      trades.reduce(
-        (p, item) =>
-          p.then((trades) =>
-            tradeModelToTradeEntry(item).then((trade) => {
-              trades.push(trade);
-              return trades;
-            }),
-          ),
-        Promise.resolve([] as TradeEntry[]),
-      ),
-    )
+    .then((trades: Trade[]) => prepareTrades(trades))
     .then((trades) => res.status(200).json({ trades }))
     .catch((error) => res.status(500).json({ error }));
 });
@@ -606,11 +607,13 @@ router.get("/summary/open", (req, res): void => {
         [Op.is]: undefined,
       },
     },
-    include: [{ model: Contract, as: "underlying" }, { association: "statements" }],
-    // limit: 500,
+    include: [
+      { model: Contract, as: "underlying" },
+      { association: "statements", include: [{ association: "stock" }] },
+    ],
   })
-    .then((trades: Trade[]) => makeSynthesys(trades))
-    .then((tradessynthesys) => {
+    .then((trades: Trade[]) => prepareTrades(trades))
+    .then((trades) => {
       return Portfolio.findByPk(portfolioId, {
         include: [
           {
@@ -620,7 +623,7 @@ router.get("/summary/open", (req, res): void => {
           },
           { model: Currency, as: "baseRates" },
         ],
-        logging: console.log,
+        // logging: console.log,
       })
         .then((portfolio) => {
           if (portfolio) {
@@ -629,7 +632,7 @@ router.get("/summary/open", (req, res): void => {
         })
         .then((positions: PositionEntry[]) => {
           return {
-            trades: tradessynthesys.open,
+            trades: trades,
             positions,
           } as OpenTradesWithPositions;
         });
