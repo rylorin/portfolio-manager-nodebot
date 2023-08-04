@@ -24,6 +24,33 @@ const router = express.Router({ mergeParams: true });
 
 type parentParams = { portfolioId: number };
 
+const initVirtualFromStatement = (item: StatementEntry): VirtualPositionEntry => {
+  let id: number;
+  let contract: StatementUnderlyingEntry | StatementOptionEntry;
+  switch (item.type) {
+    case StatementTypes.EquityStatement:
+      id = -item.underlying!.id;
+      contract = item.underlying!;
+      break;
+    case StatementTypes.OptionStatement:
+      id = -item.option!.id;
+      contract = item.option!;
+      break;
+  }
+  return {
+    id: id!,
+    openDate: item.date,
+    quantity: 0,
+    contract: contract!,
+    trade_id: item.trade_id!,
+    price: undefined,
+    value: undefined,
+    pru: 0,
+    cost: 0,
+    pnl: 0,
+  };
+};
+
 /**
  * Build virtual positions from statements
  * @param statements
@@ -32,33 +59,27 @@ type parentParams = { portfolioId: number };
 const makeVirtualPositions = (statements: StatementEntry[] | undefined): Record<number, VirtualPositionEntry> => {
   const virtuals: Record<number, VirtualPositionEntry> = {};
   statements?.forEach((item) => {
+    let id;
+    let virtual;
     switch (item.type) {
       case StatementTypes.EquityStatement:
-        if (item.underlying && item.quantity) {
-          if (virtuals[item.underlying.id]) virtuals[item.underlying.id].quantity += item.quantity;
-          else
-            virtuals[item.underlying.id] = {
-              id: -item.underlying.id,
-              openDate: item.date,
-              quantity: item.quantity,
-              contract: item.underlying,
-              trade_id: item.trade_id!,
-            } as VirtualPositionEntry;
-        }
+        id = item.underlying!.id;
+        if (!virtuals[id]) virtuals[id] = initVirtualFromStatement(item);
+        virtual = virtuals[id];
         break;
       case StatementTypes.OptionStatement:
-        if (item.option && item.quantity) {
-          if (virtuals[item.option.id]) virtuals[item.option.id].quantity += item.quantity;
-          else
-            virtuals[item.option.id] = {
-              id: -item.option.id,
-              openDate: item.date,
-              quantity: item.quantity,
-              contract: item.option,
-              trade_id: item.trade_id!,
-            } as VirtualPositionEntry;
-        }
+        id = item.option!.id;
+        if (!virtuals[id]) virtuals[id] = initVirtualFromStatement(item);
+        virtual = virtuals[id];
         break;
+    }
+    if (virtual) {
+      virtual.quantity += item.quantity!;
+      virtual.cost -= item.amount;
+      virtual.pru = virtual.cost / virtual.quantity;
+      virtual.pnl = virtual.pnl ? virtual.pnl + item.pnl! : item.pnl!;
+
+      if (!virtual.quantity) virtual.cost = 0;
     }
   });
   return virtuals;
@@ -185,15 +206,12 @@ const updateTradeExpiry = (thisTrade: Trade, statements: StatementEntry[]): Stat
   // Compute expected expiry
   const virtuals = makeVirtualPositions(statements);
   thisTrade.expectedExpiry = null;
-  // thisTrade.changed("expectedExpiry", true); // force update
 
   Object.values(virtuals).forEach((pos) => {
-    // console.log("xxx", thisTrade.expectedExpiry);
     if (pos.contract.secType == ContractType.Option && pos.quantity) {
       if (!thisTrade.expectedExpiry) thisTrade.expectedExpiry = (pos.contract as StatementOptionEntry).lastTradeDate;
       else if (thisTrade.expectedExpiry < (pos.contract as StatementOptionEntry).lastTradeDate)
         thisTrade.expectedExpiry = (pos.contract as StatementOptionEntry).lastTradeDate;
-      // console.log("yyy", thisTrade.expectedExpiry, (pos.contract as StatementOptionEntry).lastTradeDate);
     }
   });
   return statements;
@@ -326,6 +344,12 @@ export const tradeModelToTradeEntry = (
       // Add virtual positions from statements entries
       const virtuals = makeVirtualPositions(trade_entry.statements);
       trade_entry.virtuals = Object.values(virtuals);
+      logger.log(
+        LogLevel.Trace,
+        MODULE + ".tradeModelToTradeEntry",
+        trade_entry.underlying.symbol,
+        trade_entry.virtuals,
+      );
       return trade_entry;
     });
 };
@@ -606,6 +630,7 @@ router.get("/summary/open", (req, res): void => {
       closingDate: {
         [Op.is]: undefined,
       },
+      // id: 1699,
     },
     include: [
       { model: Contract, as: "underlying" },

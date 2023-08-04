@@ -8,6 +8,11 @@ export type VirtualPositionEntry = {
   quantity: number;
   contract: StatementUnderlyingEntry | StatementOptionEntry;
   trade_id: number | undefined;
+  price: number | undefined; // current unit price
+  value: number | undefined;
+  pru: number;
+  cost: number;
+  pnl: number | undefined;
 };
 
 /**

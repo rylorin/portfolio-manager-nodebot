@@ -97,6 +97,7 @@ export const statementModelToStatementEntry = (item: Statement): Promise<Stateme
             callOrPut: thisStatement.option.callOrPut,
             multiplier: thisStatement.option.multiplier,
             currency: item.currency,
+            name: thisStatement.contract.name,
           };
         }
         return statement;

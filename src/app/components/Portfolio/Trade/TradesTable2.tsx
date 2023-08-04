@@ -125,7 +125,9 @@ const TradesTable: FunctionComponent<Props> = ({ title = "Trades index", content
             )}
 
             {item.positions?.length > 0 && <PositionsTable content={item.positions} />}
-            {item.virtuals?.length > 0 && <PositionsTable content={item.virtuals as PositionEntry[]} />}
+            {item.virtuals?.length > 0 && (
+              <PositionsTable content={item.virtuals as PositionEntry[]} title="Virtual positions" />
+            )}
           </Box>
         ))}
       </VStack>
