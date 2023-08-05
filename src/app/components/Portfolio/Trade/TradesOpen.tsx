@@ -28,12 +28,16 @@ const TradesOpen: FunctionComponent<Props> = ({ ..._rest }): JSX.Element => {
     } else throw Error("not implemented");
   };
 
-  // Assume positions inside trades have been sorted
   const compareTrades = (a: TradeEntry, b: TradeEntry): number => {
-    if (!a.positions.length && b.positions.length) return +1;
-    else if (a.positions.length && !b.positions.length) return -1;
-    else if (!a.positions.length && !b.positions.length) return 0;
-    else return comparePositions(a.positions[0], b.positions[0]);
+    let result: number;
+    const dateA = a.closingDate ? a.closingDate : new Date(a.expectedExpiry).getTime();
+    const dateB = b.closingDate ? b.closingDate : new Date(b.expectedExpiry).getTime();
+    if (dateA && dateB) result = dateA - dateB;
+    else if (dateA && !dateB) result = -1;
+    else if (!dateA && dateB) result = 1;
+    else result = 0;
+    if (!result) result = a.underlying.symbol.localeCompare(b.underlying.symbol);
+    return result;
   };
 
   const sortTrades = (trades: TradeEntry[]): TradeEntry[] => {

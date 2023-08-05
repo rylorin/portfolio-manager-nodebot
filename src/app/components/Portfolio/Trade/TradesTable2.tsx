@@ -54,7 +54,7 @@ const TradesTable: FunctionComponent<Props> = ({ title = "Trades index", content
               </Badge>
               <Text fontWeight="semibold" letterSpacing="wide" fontSize="xs" textTransform="uppercase" ml="2">
                 {formatNumber(item.duration)}
-                {item.status == TradeStatus.open && item.expectedDuration && (
+                {item.status == TradeStatus.open && item.expectedDuration != undefined && (
                   <>/{formatNumber(item.expectedDuration)}</>
                 )}{" "}
                 days

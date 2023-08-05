@@ -41,7 +41,7 @@
     "@chakra-ui/system": "^2.6.0",
     "@emotion/react": "^11.11.1",
     "@emotion/styled": "^11.11.0",
-    "@stoqey/ib": "^1.2.44",
+    "@stoqey/ib": "^1.3.0",
     "chakra-react-select": "^4.7.0",
     "chart.js": "^4.3.3",
     "cors": "^2.8.5",

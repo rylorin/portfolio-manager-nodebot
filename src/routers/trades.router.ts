@@ -435,19 +435,11 @@ const comparePositions = (a: PositionEntry | OptionPositionEntry, b: PositionEnt
   } else throw Error("not implemented");
 };
 
-// Assume positions inside trades have been sorted
-const compareTrades = (a: TradeEntry, b: TradeEntry): number => {
-  if (!a.positions!.length && b.positions!.length) return +1;
-  else if (a.positions!.length && !b.positions!.length) return -1;
-  else if (!a.positions!.length && !b.positions!.length) return 0;
-  else return comparePositions(a.positions![0], b.positions![0]);
-};
-
 const sortTrades = (trades: TradeEntry[]): TradeEntry[] => {
   trades.forEach((trade) => {
     trade.positions = trade.positions?.sort(comparePositions);
   });
-  return trades.sort(compareTrades);
+  return trades;
 };
 
 function makeSynthesys(trades: Trade[]): Promise<TradeSynthesys> {
