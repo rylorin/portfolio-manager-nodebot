@@ -31,6 +31,78 @@ const TradesTable: FunctionComponent<Props> = ({ title = "Trades index", content
     }
   };
 
+  const StatusBox = ({ item }: { item: TradeEntry }): JSX.Element => {
+    return (
+      <Box display="flex" alignItems="baseline" mt={1}>
+        <Badge borderRadius="full" px="2" colorScheme={statusBadgetColor(item.status)} variant="outline">
+          {tradeStatus2String(item.status)}
+        </Badge>
+        <Text fontWeight="semibold" letterSpacing="wide" fontSize="xs" textTransform="uppercase" ml="1">
+          {formatNumber(item.duration)}
+          {item.status == TradeStatus.open && item.expectedDuration != undefined && (
+            <>/{formatNumber(item.expectedDuration)}</>
+          )}
+          &nbsp;days
+        </Text>
+        <Box color="gray.500" fontWeight="semibold" letterSpacing="wide" fontSize="xs" textTransform="uppercase" ml={1}>
+          &bull;{" "}
+          <Tooltip label={new Date(item.openingDate).toLocaleString()} hasArrow={true}>
+            {new Date(item.openingDate).toLocaleDateString()}
+          </Tooltip>
+          {item.closingDate && (
+            <>
+              {" "}
+              &bull;{" "}
+              <Tooltip label={new Date(item.closingDate).toLocaleString()} hasArrow={true}>
+                {new Date(item.closingDate).toLocaleDateString()}
+              </Tooltip>
+            </>
+          )}
+          {item.expectedExpiry && <> &bull; {new Date(item.expectedExpiry).toLocaleDateString()}</>}
+        </Box>
+      </Box>
+    );
+  };
+
+  const PerformanceBox = ({ item }: { item: TradeEntry }): JSX.Element => {
+    return (
+      <Box display="flex" alignItems="baseline" mt={1} fontSize="xs" ml={2}>
+        <Text fontWeight="semibold" textTransform="uppercase">
+          P&L: <Number value={item.pnl} />
+        </Text>
+        <Text color="gray.500">&nbsp;Realized +&nbsp;</Text>
+        <Box>
+          <Number value={item.unrlzdPnl} />
+        </Box>
+        <Text color="gray.500">&nbsp;Unrealized =&nbsp;</Text>
+        <Box>
+          <Number value={item.pnl + item.unrlzdPnl} /> (<Number value={item.apy} isPercent />)
+        </Box>
+      </Box>
+    );
+  };
+  const SymbolBox = ({ item }: { item: TradeEntry }): JSX.Element => {
+    return (
+      <Box display="flex" alignItems="baseline" mt={1}>
+        <Badge borderRadius="full" px="2" colorScheme="teal">
+          <Link to={ContractLink.toItem(portfolioId, item.underlying.id)} as={RouterLink}>
+            {item.underlying.symbol}
+          </Link>
+        </Badge>
+        <Box fontWeight="semibold" letterSpacing="wide" fontSize="xs" textTransform="uppercase" ml="2" color="gray.500">
+          {item.currency} &bull; {tradeStrategy2String(item.strategy)} ({item.strategy})
+        </Box>
+        <Box fontWeight="semibold" letterSpacing="wide" fontSize="xs" textTransform="uppercase">
+          {item.risk && (
+            <>
+              &nbsp; &bull; Risk <Number value={item.risk} />
+            </>
+          )}
+        </Box>
+      </Box>
+    );
+  };
+
   return (
     <>
       <VStack>
@@ -48,75 +120,9 @@ const TradesTable: FunctionComponent<Props> = ({ title = "Trades index", content
               </Text>
             )}
 
-            <Box display="flex" alignItems="baseline" mt={1}>
-              <Badge borderRadius="full" px="2" colorScheme={statusBadgetColor(item.status)} variant="outline">
-                {tradeStatus2String(item.status)}
-              </Badge>
-              <Text fontWeight="semibold" letterSpacing="wide" fontSize="xs" textTransform="uppercase" ml="2">
-                {formatNumber(item.duration)}
-                {item.status == TradeStatus.open && item.expectedDuration != undefined && (
-                  <>/{formatNumber(item.expectedDuration)}</>
-                )}{" "}
-                days
-              </Text>
-              <Box
-                color="gray.500"
-                fontWeight="semibold"
-                letterSpacing="wide"
-                fontSize="xs"
-                textTransform="uppercase"
-                ml={1}
-              >
-                &bull;{" "}
-                <Tooltip label={new Date(item.openingDate).toLocaleString()} hasArrow={true}>
-                  {new Date(item.openingDate).toLocaleDateString()}
-                </Tooltip>
-                {item.closingDate && (
-                  <>
-                    {" "}
-                    &bull;{" "}
-                    <Tooltip label={new Date(item.closingDate).toLocaleString()} hasArrow={true}>
-                      {new Date(item.closingDate).toLocaleDateString()}
-                    </Tooltip>
-                  </>
-                )}
-                {item.expectedExpiry && <> &bull; {new Date(item.expectedExpiry).toLocaleDateString()}</>}
-              </Box>
-            </Box>
-
-            <Box display="flex" alignItems="baseline" mt={1}>
-              <Badge borderRadius="full" px="2" colorScheme="teal">
-                <Link to={ContractLink.toItem(portfolioId, item.underlying.id)} as={RouterLink}>
-                  {item.underlying.symbol}
-                </Link>
-              </Badge>
-              <Box
-                color="gray.500"
-                fontWeight="semibold"
-                letterSpacing="wide"
-                fontSize="xs"
-                textTransform="uppercase"
-                ml="2"
-              >
-                {item.currency} &bull; {tradeStrategy2String(item.strategy)} ({item.strategy})
-                {item.risk && (
-                  <>
-                    {" "}
-                    &bull; Risk <Number value={item.risk} />
-                  </>
-                )}
-              </Box>
-            </Box>
-
-            <Box display="flex" alignItems="baseline" mt={1} fontSize="xs">
-              <Text fontWeight="semibold" textTransform="uppercase">
-                P&L: <Number value={item.pnl} />
-              </Text>
-              &nbsp;
-              <Text color="gray.500">
-                (<Number value={item.apy} isPercent />) Rlzd
-              </Text>
-            </Box>
+            <StatusBox item={item} />
+            <SymbolBox item={item} />
+            <PerformanceBox item={item} />
 
             {item.comment?.length > 0 && (
               <Text color="gray.500" fontWeight="semibold" fontSize="sm" mt={1}>

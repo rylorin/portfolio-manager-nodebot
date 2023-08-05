@@ -27,7 +27,7 @@
     "@typescript-eslint/no-inferrable-types": "error",
     "@typescript-eslint/no-misused-promises": "error",
     "@typescript-eslint/no-unnecessary-type-assertion": "off", // behavior mismatch between TSlint and TScompiler. giving too many useless errors
-    "@typescript-eslint/no-unsafe-argument": "off", // off for the moment because we have too many warnings
+    "@typescript-eslint/no-unsafe-argument": "warn", // off for the moment because we have too many warnings
     "@typescript-eslint/no-unsafe-assignment": "off", // off for the moment because we have too many warnings
     "@typescript-eslint/no-unsafe-call": "error",
     "@typescript-eslint/no-unsafe-member-access": "off", // off for the moment because we have too many warnings

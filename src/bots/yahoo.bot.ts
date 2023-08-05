@@ -167,7 +167,7 @@ export class YahooUpdateBot extends ITradingBot {
             })
               .then((option) =>
                 Contract.findByPk(option.stock.id, {}).then(async (stock) => {
-                  let iv_ = undefined;
+                  let iv_: number | undefined = undefined;
                   if (r.quote?.regularMarketPrice > 0) {
                     try {
                       iv_ = option_implied_volatility(

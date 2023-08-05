@@ -5,6 +5,8 @@ import { Contract, Currency, Future, Option, OptionStatement, Portfolio, Positio
 import { OptionPositionEntry, PositionEntry } from "./positions.types";
 
 const MODULE = "PositionsRouter";
+
+// eslint-disable-next-line @typescript-eslint/no-unsafe-argument
 const _sequelize_logging = (...args: any[]): void => logger.trace(MODULE + ".squelize", ...args);
 
 export const router = express.Router({ mergeParams: true });

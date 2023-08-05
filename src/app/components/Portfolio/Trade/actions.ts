@@ -20,7 +20,7 @@ export const tradeSave = ({ request, params }: ActionFunctionArgs): Promise<Resp
           "Content-Type": "application/json",
         },
         // Select values are returned as string (not all???!!!), therefore we have to convert them to numbers, if needed
-        body: JSON.stringify({ ...data, strategy: parseInt(data.strategy) }),
+        body: JSON.stringify({ ...data, strategy: parseInt(data.strategy as string) }),
       });
     })
     .then((response: Response) => response.json())

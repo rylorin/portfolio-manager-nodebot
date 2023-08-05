@@ -10,7 +10,7 @@ import { Setting } from "./setting.model";
 @Table({ tableName: "portfolio", timestamps: false, deletedAt: false, updatedAt: false })
 export class Portfolio extends Model<
   InferAttributes<Portfolio>,
-  InferCreationAttributes<Portfolio, { omit: "benchmark" }>
+  InferCreationAttributes<Portfolio, { omit: "benchmark" | "positions" | "balances" | "baseRates" | "settings" }>
 > {
   // id can be undefined during creation when using `autoIncrement`
   declare id: CreationOptional<number>;
@@ -54,16 +54,16 @@ export class Portfolio extends Model<
   declare cashStrategy?: CashStrategy;
 
   @Column({ type: DataType.INTEGER, field: "sell_Naked_Put_Sleep" })
-  declare sellNakedPutSleep: number;
+  declare sellNakedPutSleep?: number;
 
   @Column({ type: DataType.INTEGER, field: "find_Symbols_Sleep" })
-  declare findSymbolsSleep: number;
+  declare findSymbolsSleep?: number;
 
   @Column({ type: DataType.INTEGER, field: "adjust_Cash_Sleep" })
-  declare adjustCashSleep: number;
+  declare adjustCashSleep?: number;
 
   @Column({ type: DataType.INTEGER, field: "roll_Options_Sleep" })
-  declare rollOptionsSleep: number;
+  declare rollOptionsSleep?: number;
 
   @Column({ type: DataType.INTEGER, field: "crawler_Days", defaultValue: 90 })
   declare crawlerDays?: number;

@@ -270,7 +270,7 @@ export class ImporterBot extends ITradingBot {
         },
       }).then(([statement, created]) => {
         if (created) {
-          logger.log(LogLevel.Debug, MODULE + ".processStockTrade", element.symbol, element);
+          logger.log(LogLevel.Debug, MODULE + ".processStockTrade", element.symbol as string, element);
           return EquityStatement.create({
             id: statement.id,
             quantity: element.quantity,
@@ -306,7 +306,7 @@ export class ImporterBot extends ITradingBot {
         },
       }).then(([statement, created]) => {
         if (created) {
-          logger.log(LogLevel.Debug, MODULE + ".processOptionTrade", element.underlyingSymbol, element);
+          logger.log(LogLevel.Debug, MODULE + ".processOptionTrade", element.underlyingSymbol as string, element);
           return this.processSecurityInfo(element).then((contract) =>
             OptionStatement.create({
               id: statement.id,
@@ -337,8 +337,7 @@ export class ImporterBot extends ITradingBot {
       case SecType.OPT:
         return this.processOptionTrade(element).then((): void => undefined);
       default:
-        logger.error(MODULE + ".processOneTrade", "Unsupported assetCategory: " + element.assetCategory);
-        logger.debug(element);
+        logger.error(MODULE + ".processOneTrade", "Unsupported assetCategory: " + element.assetCategory, element);
         throw Error("unsupported assetCategory: " + element.assetCategory);
     }
   }

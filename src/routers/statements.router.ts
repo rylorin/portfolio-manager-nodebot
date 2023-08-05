@@ -21,6 +21,8 @@ import { StatementEntry, StatementsSynthesysEntries } from "./statements.types";
 import { updateTradeDetails } from "./trades.router";
 
 const MODULE = "StatementsRouter";
+
+// eslint-disable-next-line @typescript-eslint/no-unsafe-argument
 const sequelize_logging = (...args: any[]): void => logger.trace(MODULE + ".squelize", ...args);
 
 const router = express.Router({ mergeParams: true });
@@ -122,18 +124,24 @@ export const statementModelToStatementEntry = (item: Statement): Promise<Stateme
   }
 };
 
+/**
+ * Transform Statement[] to sorted StatementEntry[]
+ * @param statements
+ * @returns
+ */
 export const prepareStatements = (statements: Statement[]): Promise<StatementEntry[]> => {
-  return statements.reduce(
-    (p, item): Promise<StatementEntry[]> => {
-      return p.then((statements) => {
-        return statementModelToStatementEntry(item).then((statement) => {
-          statements.push(statement);
-          return statements;
-        });
-      });
-    },
-    Promise.resolve([] as StatementEntry[]),
-  );
+  return statements
+    .sort((a, b) => a.date.getTime() - b.date.getTime())
+    .reduce(
+      (p, item) =>
+        p.then((statements) => {
+          return statementModelToStatementEntry(item).then((statement_entry) => {
+            statements.push(statement_entry);
+            return statements;
+          });
+        }),
+      Promise.resolve([] as StatementEntry[]),
+    );
 };
 
 const formatDate = (when: Date): string => {

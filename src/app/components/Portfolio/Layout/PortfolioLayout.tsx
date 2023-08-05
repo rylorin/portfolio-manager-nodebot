@@ -17,7 +17,7 @@ const PortfolioLayout: FunctionComponent<PortfolioLayoutProps> = ({ children, ..
   useEffect(() => {
     fetch(`/api/portfolio/${portfolioId}`)
       .then((response) => response.json())
-      .then((data) => setPortfolio(data.portfolio))
+      .then((data) => setPortfolio(data.portfolio as PortfolioModel))
       .catch((error) => console.error("error fetching portfolio:", error));
   }, []);
 
