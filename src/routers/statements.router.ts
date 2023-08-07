@@ -100,6 +100,7 @@ export const statementModelToStatementEntry = (item: Statement): Promise<Stateme
             multiplier: thisStatement.option.multiplier,
             currency: item.currency,
             name: thisStatement.contract.name,
+            price: thisStatement.contract.price,
           };
         }
         return statement;

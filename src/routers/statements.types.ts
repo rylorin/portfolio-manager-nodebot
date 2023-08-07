@@ -11,6 +11,7 @@ export type StatementUnderlyingEntry = {
   symbol: string;
   currency: string;
   name: string;
+  price: number | null;
 };
 
 export type StatementOptionEntry = StatementUnderlyingEntry & {
