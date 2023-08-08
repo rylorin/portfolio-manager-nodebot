@@ -646,6 +646,7 @@ export class ContractsUpdaterBot extends ITradingBot {
               currency: currency.currency,
               exchange: "IDEALPRO",
             };
+            if (currency.base == currency.currency) return Promise.resolve();
             return this.findOrCreateContract(ibContract)
               .catch((error: Error) => {
                 throw Error(`createCashContracts failed for ${ibContract.localSymbol}: '${error.message}'`);

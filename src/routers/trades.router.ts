@@ -90,33 +90,6 @@ const makeVirtualPositions = (statements: StatementEntry[] | undefined): Record<
   return virtuals;
 };
 
-/**
- * Given the strategy and the statements we can update trade risk
- *
- */
-const updateTradeRisk = (thisTrade: Trade, statements: StatementEntry[]): StatementEntry[] => {
-  switch (thisTrade.strategy) {
-    // case TradeStrategy["short put"]:
-    // case TradeStrategy["the wheel"]:
-    //   computeRisk_ShortPut(thisTrade, statements);
-    //   break;
-
-    // case TradeStrategy["long stock"]:
-    //   computeRisk_LongStock(thisTrade, statements);
-    //   break;
-
-    // case TradeStrategy["covered short call"]:
-    //   computeRisk_CoveredCall(thisTrade, statements);
-    //   break;
-
-    // case TradeStrategy["buy write"]:
-    default:
-      computeRisk_Generic(thisTrade, statements);
-      break;
-  }
-  return statements;
-};
-
 const _updateTradeStrategy = (thisTrade: Trade, statements: StatementEntry[]): StatementEntry[] => {
   // logger.log(LogLevel.Trace, MODULE + ".updateTradeStrategy", thisTrade.underlying?.symbol, "statements", statements);
   // Update trade stategy
@@ -208,14 +181,10 @@ export const updateTradeDetails = (thisTrade: Trade): Promise<Trade> => {
     else if (thisTrade.status != TradeStatus.closed) thisTrade.closingDate = undefined;
     thisTrade.PnL = 0;
     thisTrade.pnlInBase = 0;
-    return (
-      prepareStatements(items) // Convert Statement[] to StatementEntry[]
-        // .then((statements) => updateRealizedPnl(thisTrade, statements))
-        // .then((statements) => updateTradeStrategy(thisTrade, statements))
-        .then((statements) => updateTradeRisk(thisTrade, statements))
-        .then((statements) => updateTradeExpiry(thisTrade, statements))
-        .then((_statements) => thisTrade.save())
-    );
+    return prepareStatements(items) // Convert Statement[] to StatementEntry[]
+      .then((statements) => computeRisk_Generic(thisTrade, statements))
+      .then((statements) => updateTradeExpiry(thisTrade, statements))
+      .then((_statements) => thisTrade.save());
   }
   return Promise.resolve(thisTrade);
 };
@@ -252,7 +221,8 @@ export const tradeModelToTradeEntry = (
     pnlInBase: thisTrade.pnlInBase,
     apy:
       thisTrade.risk && thisTrade.expectedDuration
-        ? -((thisTrade.PnL! + thisTrade.expiryPnl!) / thisTrade.risk) * (365 / thisTrade.expectedDuration)
+        ? -((thisTrade.PnL! + thisTrade.expiryPnl!) / (thisTrade.risk - thisTrade.expiryPnl!)) *
+          (360 / thisTrade.expectedDuration)
         : undefined,
     comment: thisTrade.comment,
     statements: undefined,
@@ -397,129 +367,11 @@ const sortTrades = (trades: TradeEntry[]): TradeEntry[] => {
   return trades;
 };
 
-const _computeRisk_LongStock = (thisTrade: Trade, statements: StatementEntry[]): void => {
-  const virtuals: Record<number, { contract: StatementUnderlyingEntry | StatementOptionEntry; risk: number }> = {};
-  // risk = price paid
-  thisTrade.risk = 0;
-  for (let i = 0; i < statements.length; i++) {
-    const statement_entry = statements[i];
-    if (statement_entry.type == StatementTypes.EquityStatement) {
-      const risk = statement_entry.amount;
-      if (virtuals[statement_entry.underlying!.id]) virtuals[statement_entry.underlying!.id].risk += risk;
-      else
-        virtuals[statement_entry.underlying!.id] = {
-          contract: statement_entry.underlying!,
-          risk,
-        };
-      const consolidated_risk = Object.values(virtuals).reduce((p, item) => (p += item.risk), 0);
-      logger.log(
-        LogLevel.Trace,
-        MODULE + ".updateTradeRisk",
-        thisTrade.underlying?.symbol,
-        "virtuals",
-        virtuals,
-        consolidated_risk,
-      );
-      thisTrade.risk = Math.min(thisTrade.risk, consolidated_risk);
-    }
-  }
-};
-
-const _computeRisk_ShortPut = (thisTrade: Trade, statements: StatementEntry[]): void => {
-  // risk = quantity * strike * multiplier of puts minus premium for the first one
-  const virtuals: Record<
-    number,
-    { contract: StatementUnderlyingEntry | StatementOptionEntry; risk: number; cost: number; quantity: number }
-  > = {};
-  thisTrade.risk = 0;
-  for (let i = 0; i < statements.length; i++) {
-    const statement_entry = statements[i];
-    if (statement_entry.type == StatementTypes.OptionStatement && statement_entry.option!.callOrPut == OptionType.Put) {
-      if (!virtuals[statement_entry.option!.id]) {
-        virtuals[statement_entry.option!.id] = {
-          contract: statement_entry.option!,
-          risk: 0,
-          cost: 0,
-          quantity: 0,
-        };
-      }
-
-      const risk = statement_entry.quantity! * statement_entry.option!.strike * statement_entry.option!.multiplier;
-      virtuals[statement_entry.option!.id].risk += risk;
-      // Adjust with premium for the first position
-      if (Object.keys(virtuals).length == 1) virtuals[statement_entry.option!.id].risk += statement_entry.amount;
-      const consolidated_risk = Object.values(virtuals).reduce((p, item) => (p += item.risk), 0);
-      logger.log(
-        LogLevel.Trace,
-        MODULE + ".updateTradeRisk",
-        thisTrade.underlying?.symbol,
-        "virtuals",
-        virtuals,
-        consolidated_risk,
-      );
-      thisTrade.risk = Math.min(thisTrade.risk, consolidated_risk);
-
-      virtuals[statement_entry.option!.id].quantity += statement_entry.quantity!;
-      if (virtuals[statement_entry.option!.id].quantity)
-        virtuals[statement_entry.option!.id].cost += statement_entry.amount;
-      else virtuals[statement_entry.option!.id].cost = 0;
-    }
-  }
-  // expiry P&L = premiums collected from open short put
-  thisTrade.expiryPnl = Object.values(virtuals).reduce((p, item) => (p += item.quantity < 0 ? item.cost : 0), 0);
-};
-
-const _computeRisk_CoveredCall = (thisTrade: Trade, statements: StatementEntry[]): void => {
-  const virtuals: Record<
-    number,
-    { contract: StatementUnderlyingEntry | StatementOptionEntry; risk: number; cost: number; quantity: number }
-  > = {};
-  // risk = price paid
-  thisTrade.risk = 0;
-  for (let i = 0; i < statements.length; i++) {
-    const statement_entry = statements[i];
-    if (statement_entry.type == StatementTypes.EquityStatement) {
-      if (!virtuals[statement_entry.underlying!.id]) {
-        virtuals[statement_entry.underlying!.id] = {
-          contract: statement_entry.underlying!,
-          risk: 0,
-          cost: 0,
-          quantity: 0,
-        };
-      }
-      const risk = statement_entry.amount;
-      virtuals[statement_entry.underlying!.id].risk += risk;
-      const consolidated_risk = Object.values(virtuals).reduce((p, item) => (p += item.risk), 0);
-      logger.log(
-        LogLevel.Trace,
-        MODULE + ".updateTradeRisk",
-        thisTrade.underlying?.symbol,
-        "virtuals",
-        virtuals,
-        consolidated_risk,
-      );
-      thisTrade.risk = Math.min(thisTrade.risk, consolidated_risk);
-    } else if (statement_entry.type == StatementTypes.OptionStatement) {
-      if (!virtuals[statement_entry.option!.id]) {
-        virtuals[statement_entry.option!.id] = {
-          contract: statement_entry.option!,
-          risk: 0,
-          cost: 0,
-          quantity: 0,
-        };
-      }
-      virtuals[statement_entry.option!.id].quantity += statement_entry.quantity!;
-      if (virtuals[statement_entry.option!.id].quantity)
-        virtuals[statement_entry.option!.id].cost += statement_entry.amount;
-      else virtuals[statement_entry.option!.id].cost = 0;
-    }
-  }
-  // expiry P&L = premiums collected from open short calls
-  thisTrade.expiryPnl = Object.values(virtuals).reduce((p, item) => (p += item.quantity < 0 ? item.cost : 0), 0);
-};
-
 type StockSummary = { contract: Contract; risk: number; cost: number; quantity: number };
-type OptionSummary = Record<number, { contract: StatementOptionEntry; risk: number; cost: number; quantity: number }>;
+type OptionSummary = Record<
+  number,
+  { contract: StatementOptionEntry; risk: number; cost: number; quantity: number; multiplier: number }
+>;
 
 const computeComboRisk = (
   thisTrade: Trade,
@@ -529,54 +381,65 @@ const computeComboRisk = (
 ): number => {
   console.log(thisTrade.id, "stocks", stocks.quantity, stocks.cost, stocks.risk, "puts", puts, "calls", calls);
   // Risk is cash in/out
-  let risk =
-    stocks.cost +
+  const cash_risk =
+    // stocks.cost +
     Object.values(puts).reduce((p, item) => p + item.cost, 0) +
     Object.values(calls).reduce((p, item) => p + item.cost, 0);
-  console.log(thisTrade.id, "risk", risk);
+  console.log(thisTrade.id, "cash_risk", cash_risk);
 
-  // Add risk on stocks quantities. First for Call options
-  let calls_risk = 0;
-  let _stocks_units = stocks.quantity;
-  Object.values(calls).forEach((item) => {
-    if (item.quantity > 0) {
-      // we can but, but we don't have to, buy stocks for a given price. Therefore the risk is null, but stock quantity can change
-      const assigned_units = +item.quantity * item.contract.multiplier;
-      // new stocks count
-      _stocks_units += assigned_units;
-    } else if (item.quantity < 0) {
-      // we may be assigned
-      const assigned_units = +item.quantity * item.contract.multiplier;
-      // In which case we have to pay some money
-      calls_risk += -assigned_units * item.contract.strike;
-      // new stocks count
-      _stocks_units += assigned_units;
-    }
-  });
-
-  // Then for Put options
-  let puts_risk = 0;
-  _stocks_units = stocks.quantity;
+  // compute limit points: each strike + 0 + max strike * 2 (could be more but cross fingers)
+  const limits = [0];
+  if (stocks.quantity) limits.push(-stocks.cost / stocks.quantity);
   Object.values(puts).forEach((item) => {
-    if (item.quantity > 0) {
-      // we can but, but we don't have to, sell stocks for a given price. Therefore the risk is null, but stock quantity can change
-      const assigned_units = -item.quantity * item.contract.multiplier;
-      // new stocks count
-      _stocks_units += assigned_units;
-    } else if (item.quantity < 0) {
-      // we may be assigned
-      const assigned_units = -item.quantity * item.contract.multiplier;
-      // In which case we have to pay some money
-      puts_risk += -assigned_units * item.contract.strike;
-      // new stocks count
-      _stocks_units += assigned_units;
-    }
+    if (item.quantity && !(item.contract.strike in limits)) limits.push(item.contract.strike);
   });
+  Object.values(calls).forEach((item) => {
+    if (item.quantity && !(item.contract.strike in limits)) limits.push(item.contract.strike);
+  });
+  limits.sort((a, b) => a - b);
+  limits.push(limits[limits.length - 1] * 2);
+  // console.log(thisTrade.id, "limits", limits);
 
-  // End, return result
-  risk += Math.min(puts_risk, calls_risk);
-  console.log(thisTrade.id, "risk", calls_risk, puts_risk, risk);
-  return risk;
+  let options_risk = 0;
+  for (let i = 0; i < limits.length; i++) {
+    const price = limits[i];
+    const stocks_risk = stocks.cost + stocks.quantity * price;
+    let put_risks = 0;
+    let calls_risk = 0;
+    for (let j = 0; j < limits.length; j++) {
+      const strike = limits[j];
+      if (puts[strike]) {
+        if (price <= strike) {
+          // ITM Put
+          if (puts[strike].quantity < 0)
+            // short puts will be assigned
+            put_risks += strike * puts[strike].quantity * puts[strike].multiplier;
+          else if (puts[strike].quantity > 0)
+            // long puts will be execized
+            put_risks += strike * puts[strike].quantity * puts[strike].multiplier;
+        } else {
+          // OTM puts voids
+        }
+      }
+      if (calls[limits[j]]) {
+        if (price >= strike) {
+          // ITM Call
+          if (calls[strike].quantity < 0)
+            // short calls will be assigned
+            calls_risk -= strike * calls[strike].quantity * calls[strike].multiplier;
+          else if (calls[strike].quantity > 0)
+            // long calls will be execized
+            calls_risk -= strike * calls[strike].quantity * calls[strike].multiplier;
+        } else {
+          // OTM calls voids
+        }
+      }
+    }
+    console.log(thisTrade.id, "price", price, stocks_risk, put_risks, calls_risk);
+    options_risk = Math.min(options_risk, stocks_risk + put_risks + calls_risk);
+  }
+
+  return cash_risk + options_risk;
 };
 
 const computeTradeStrategy = (
@@ -649,6 +512,7 @@ const computeRisk_Generic = (thisTrade: Trade, statements: StatementEntry[]): St
             risk: 0,
             cost: 0,
             quantity: 0,
+            multiplier: statement_entry.option!.multiplier,
           };
         calls[statement_entry.option!.strike].cost += statement_entry.amount;
         calls[statement_entry.option!.strike].quantity += statement_entry.quantity!;
@@ -662,6 +526,7 @@ const computeRisk_Generic = (thisTrade: Trade, statements: StatementEntry[]): St
             risk: 0,
             cost: 0,
             quantity: 0,
+            multiplier: statement_entry.option!.multiplier,
           };
         puts[statement_entry.option!.strike].cost += statement_entry.amount;
         puts[statement_entry.option!.strike].quantity += statement_entry.quantity!;
@@ -681,8 +546,8 @@ const computeRisk_Generic = (thisTrade: Trade, statements: StatementEntry[]): St
     }
   }
   thisTrade.expiryPnl =
-    Object.values(calls).reduce((p, item) => (p += item.quantity < 0 ? item.cost : -item.cost), 0) +
-    Object.values(puts).reduce((p, item) => (p += item.quantity < 0 ? item.cost : -item.cost), 0);
+    Object.values(calls).reduce((p, item) => p + item.cost, 0) +
+    Object.values(puts).reduce((p, item) => p + item.cost, 0);
 
   // All done
   return statements;

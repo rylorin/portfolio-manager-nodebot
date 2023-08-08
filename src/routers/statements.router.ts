@@ -322,8 +322,7 @@ router.get("/:statementId(\\d+)/CreateTrade", (req, res): void => {
     .then((statement) => updateStatementTrade(statement))
     .then((statement) => res.status(200).json({ statement }))
     .catch((error) => {
-      console.error(error);
-      logger.error(MODULE + ".CreateTrade", undefined, JSON.stringify(error));
+      logger.error(MODULE + ".CreateTrade", error);
       res.status(500).json({ error });
     });
 });
