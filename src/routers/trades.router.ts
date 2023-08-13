@@ -65,9 +65,11 @@ const makeVirtualPositions = (statements: StatementEntry[] | undefined): Record<
     let virtual;
     switch (item.type) {
       case StatementTypes.EquityStatement:
-        id = item.underlying!.id;
-        if (!virtuals[id]) virtuals[id] = initVirtualFromStatement(item);
-        virtual = virtuals[id];
+        if (item.underlying) {
+          id = item.underlying.id;
+          if (!virtuals[id]) virtuals[id] = initVirtualFromStatement(item);
+          virtual = virtuals[id];
+        }
         break;
       case StatementTypes.OptionStatement:
         id = item.option!.id;
@@ -82,7 +84,7 @@ const makeVirtualPositions = (statements: StatementEntry[] | undefined): Record<
         ? virtual.cost / virtual.quantity / item.option!.multiplier
         : virtual.cost / virtual.quantity;
       virtual.pnl = virtual.pnl ? virtual.pnl + item.pnl! : item.pnl!;
-      virtual.price = item.option?.price ? item.option.price : item.underlying!.price;
+      virtual.price = item.option?.price ? item.option.price : item.underlying?.price;
 
       if (!virtual.quantity) virtual.cost = 0;
     }
@@ -221,8 +223,7 @@ export const tradeModelToTradeEntry = (
     pnlInBase: thisTrade.pnlInBase,
     apy:
       thisTrade.risk && thisTrade.expectedDuration
-        ? -((thisTrade.PnL! + thisTrade.expiryPnl!) / (thisTrade.risk - thisTrade.expiryPnl!)) *
-          (360 / thisTrade.expectedDuration)
+        ? -((thisTrade.PnL! + thisTrade.expiryPnl!) / thisTrade.risk) * (360 / thisTrade.expectedDuration)
         : undefined,
     comment: thisTrade.comment,
     statements: undefined,
@@ -545,9 +546,10 @@ const computeRisk_Generic = (thisTrade: Trade, statements: StatementEntry[]): St
       first_time = false;
     }
   }
+  // Sum costs of open positions
   thisTrade.expiryPnl =
-    Object.values(calls).reduce((p, item) => p + item.cost, 0) +
-    Object.values(puts).reduce((p, item) => p + item.cost, 0);
+    Object.values(calls).reduce((p, item) => (item.quantity ? p + item.cost : p), 0) +
+    Object.values(puts).reduce((p, item) => (item.quantity ? p + item.cost : p), 0);
 
   // All done
   return statements;
@@ -715,7 +717,11 @@ router.get("/month/:year(\\d+)/:month(\\d+)", (req, res): void => {
   })
     .then((trades: Trade[]) => prepareTrades(trades))
     .then((trades) => res.status(200).json({ trades }))
-    .catch((error) => res.status(500).json({ error }));
+    .catch((error) => {
+      console.error(error);
+      logger.error(MODULE + ".MonthIndex", error);
+      res.status(500).json({ error });
+    });
 });
 
 /**

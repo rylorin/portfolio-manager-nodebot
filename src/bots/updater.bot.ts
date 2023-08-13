@@ -277,12 +277,12 @@ export class ContractsUpdaterBot extends ITradingBot {
     let price: number | null;
     if (dataset.ask && dataset.bid) price = (dataset.ask + dataset.bid) / 2;
     else if (dataset.price) price = dataset.price;
-    else if (dataset.previousClosePrice) price = dataset.previousClosePrice;
-    else price = null;
+    else price = dataset.previousClosePrice;
     if (contract.secType == SecType.CASH) {
       // we do not get a price for CASH contracts
       dataset.price = price;
     }
+    // console.log(contract.symbol, dataset, price);
     return Contract.update(dataset, {
       where: {
         id: contract.id,
@@ -624,10 +624,7 @@ export class ContractsUpdaterBot extends ITradingBot {
       where: {
         secType: SecType.CASH,
         updatedAt: {
-          [Op.or]: {
-            [Op.lt]: new Date(now),
-            [Op.is]: undefined,
-          },
+          [Op.lt]: new Date(now),
         },
       },
       limit: limit,

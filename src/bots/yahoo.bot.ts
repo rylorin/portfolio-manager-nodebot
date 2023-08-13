@@ -21,12 +21,12 @@ type MappedQuote = {
 };
 
 type Row = {
-  price: number;
-  ask: number;
-  bid: number;
-  previousClosePrice?: number;
-  fiftyTwoWeekLow: number;
-  fiftyTwoWeekHigh: number;
+  price: number | null;
+  ask: number | null;
+  bid: number | null;
+  previousClosePrice?: number | null;
+  fiftyTwoWeekLow: number | null;
+  fiftyTwoWeekHigh: number | null;
   updatedAt: Date;
 };
 
@@ -45,12 +45,13 @@ export class YahooUpdateBot extends ITradingBot {
         },
       );
       // VALUE is no more tradable, CME not supported by Yahoo?, LSE no more supported by Yahoo?
-      if (contract.exchange == "VALUE" || contract.exchange == "CME" || contract.currency != "USD") return;
+      // if (contract.exchange == "VALUE" || contract.exchange == "CME" || contract.currency != "USD") return;
       if (contract.secType == SecType.STK) {
+        if (contract.exchange == "VALUE") return;
         quote = { contract, symbol: YahooUpdateBot.getYahooTicker(contract) };
       } else if (contract.secType == SecType.OPT) {
         const option: Option | null = await Option.findByPk(contract.id);
-        quote = { contract, symbol: YahooUpdateBot.formatOptionName(option) };
+        quote = { contract, symbol: YahooUpdateBot.formatOptionName(option!) };
       } else if (contract.secType == SecType.CASH) {
         quote = {
           contract,
@@ -72,9 +73,11 @@ export class YahooUpdateBot extends ITradingBot {
     } else {
       this.error("enqueueContract unhandled contract type (2)");
     }
-    const index = this.requestsQ.findIndex((p) => p.symbol == quote.symbol);
-    if (index < 0) {
-      this.requestsQ.push(quote);
+    if (quote) {
+      const index = this.requestsQ.findIndex((p) => p.symbol == quote!.symbol);
+      if (index < 0) {
+        this.requestsQ.push(quote);
+      }
     }
   }
 
@@ -135,12 +138,14 @@ export class YahooUpdateBot extends ITradingBot {
     for (const r of q) {
       if (r.quote !== undefined) {
         if (r.quote?.currency == "GBp") {
-          r.quote.regularMarketPrice = r.quote?.regularMarketPrice / 100;
-          r.quote.ask = r.quote?.ask / 100;
-          r.quote.bid = r.quote?.bid / 100;
-          r.quote.fiftyTwoWeekLow = r.quote?.fiftyTwoWeekLow / 100;
-          r.quote.fiftyTwoWeekHigh = r.quote?.fiftyTwoWeekHigh / 100;
-          r.quote.regularMarketPreviousClose = r.quote?.regularMarketPreviousClose / 100;
+          r.quote.regularMarketPrice = r.quote?.regularMarketPrice ? r.quote?.regularMarketPrice / 100 : undefined;
+          r.quote.ask = r.quote?.ask ? r.quote?.ask / 100 : undefined;
+          r.quote.bid = r.quote?.bid ? r.quote?.bid / 100 : undefined;
+          r.quote.fiftyTwoWeekLow = r.quote?.fiftyTwoWeekLow ? r.quote?.fiftyTwoWeekLow / 100 : undefined;
+          r.quote.fiftyTwoWeekHigh = r.quote?.fiftyTwoWeekHigh ? r.quote?.fiftyTwoWeekHigh / 100 : undefined;
+          r.quote.regularMarketPreviousClose = r.quote?.regularMarketPreviousClose
+            ? r.quote?.regularMarketPreviousClose / 100
+            : undefined;
         }
         const prices: Row = {
           price: r.quote?.regularMarketPrice || null,
@@ -247,7 +252,7 @@ export class YahooUpdateBot extends ITradingBot {
     console.log(`fetchQuotes ${q.length} items`);
     if (q.length) {
       this.lastFetch = Date.now();
-      let quotes: Quote[] = undefined;
+      let quotes: Quote[];
       try {
         quotes = await yahooFinance.quote(
           q.map((a) => a.symbol),
@@ -273,10 +278,7 @@ export class YahooUpdateBot extends ITradingBot {
       where: {
         secType: SecType.CASH,
         updatedAt: {
-          [Op.or]: {
-            [Op.lt]: new Date(now - YAHOO_PRICE_AGE * 60 * 1000),
-            [Op.is]: null,
-          },
+          [Op.lt]: new Date(now - YAHOO_PRICE_AGE * 60 * 1000),
         },
       },
       order: [["updatedAt", "ASC"]],

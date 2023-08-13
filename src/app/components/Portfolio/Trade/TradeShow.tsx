@@ -56,6 +56,14 @@ const TradeShow: FunctionComponent<Props> = ({ ..._rest }): JSX.Element => {
         </Flex>
         <Flex justifyContent="center" gap="2">
           <Text w="90px" as="b" textAlign="right">
+            Exp. Duration:
+          </Text>
+          <Text w="200px" textAlign="right">
+            {formatNumber(item.expectedDuration)}
+          </Text>
+        </Flex>
+        <Flex justifyContent="center" gap="2">
+          <Text w="90px" as="b" textAlign="right">
             Status:
           </Text>
           <Text w="200px" textAlign="right">
@@ -114,6 +122,14 @@ const TradeShow: FunctionComponent<Props> = ({ ..._rest }): JSX.Element => {
         </Flex>
         <Flex justifyContent="center" gap="2">
           <Text w="90px" as="b" textAlign="right">
+            Exp. P&L:
+          </Text>
+          <Text w="200px" textAlign="right">
+            <Number value={item.unrlzdPnl} />
+          </Text>
+        </Flex>
+        <Flex justifyContent="center" gap="2">
+          <Text w="90px" as="b" textAlign="right">
             APY:
           </Text>
           <Text w="200px" textAlign="right">
@@ -139,31 +155,6 @@ const TradeShow: FunctionComponent<Props> = ({ ..._rest }): JSX.Element => {
         {item.virtuals && item.virtuals.length && (
           <PositionsTable content={item.virtuals as PositionEntry[]} title="Virtual positions" />
         )}
-        {/* {item.virtuals && (
-          <>
-            <TableContainer>
-              <Table variant="simple" size="sm" className="table-tiny">
-                <TableCaption>Virtual positions ({item.virtuals.length})</TableCaption>
-                <Thead>
-                  <Tr>
-                    <Td>Units</Td>
-                    <Td>Symbol</Td>
-                    <Td>Currency</Td>
-                  </Tr>
-                </Thead>
-                <Tbody>
-                  {item.virtuals.map((item) => (
-                    <Tr key={item.contract.id}>
-                      <Td>{item.quantity}</Td>
-                      <Td>{item.contract.symbol}</Td>
-                      <Td>{item.contract.currency}</Td>
-                    </Tr>
-                  ))}
-                </Tbody>
-              </Table>
-            </TableContainer>
-          </>
-        )} */}
       </VStack>
     </>
   );

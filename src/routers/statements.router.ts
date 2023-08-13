@@ -312,9 +312,10 @@ router.get("/:statementId(\\d+)/CreateTrade", (req, res): void => {
           strategy: TradeStrategy.undefined,
           comment: "",
         };
-        return Trade.create(trade, { logging: false }).then((trade) =>
-          statement.update({ trade_unit_id: trade.id }, { logging: false }),
-        );
+        return Trade.create(trade, { logging: false }).then((trade) => {
+          statement.trade_unit_id = trade.id;
+          return statement.save();
+        });
       } else {
         throw Error("statement doesn't exist");
       }
@@ -351,7 +352,10 @@ router.get("/:statementId(\\d+)/GuessTrade", (req, res): void => {
                 trade_unit_id: { [Op.not]: null },
               },
               order: [["date", "DESC"]],
-            }).then((ref) => statement.update({ trade_unit_id: ref?.trade_unit_id }));
+            }).then((ref) => {
+              if (ref) statement.trade_unit_id = ref.trade_unit_id;
+              return statement.save();
+            });
             break;
           case StatementTypes.OptionStatement:
             return OptionStatement.findByPk(statementId).then((optstatement) => {
@@ -373,19 +377,17 @@ router.get("/:statementId(\\d+)/GuessTrade", (req, res): void => {
                         trade_unit_id: { [Op.not]: null },
                       },
                     },
-                    // {
-                    //   required: true,
-                    //   model: Contract,
-                    //   as: "contract",
-                    // },
                   ],
                   order: [["statement", "date", "DESC"]],
                   // logging: console.log,
                 }).then((refopt) => {
                   if (refopt)
-                    return Statement.findByPk(refopt.id).then((ref) =>
-                      statement.update({ trade_unit_id: ref?.trade_unit_id }),
-                    );
+                    return Statement.findByPk(refopt.id).then((ref) => {
+                      if (ref) {
+                        statement.trade_unit_id = ref?.trade_unit_id;
+                      }
+                      return statement.save();
+                    });
                   else return Promise.resolve(statement);
                 });
               } else {
@@ -416,7 +418,8 @@ router.get("/:statementId(\\d+)/AddToTrade/:tradeId(\\d+)", (req, res): void => 
   })
     .then((statement) => {
       if (statement) {
-        return statement.update({ trade_unit_id: parseInt(tradeId) });
+        statement.trade_unit_id = parseInt(tradeId);
+        return statement.save();
       } else {
         throw Error("statement doesn't exist");
       }
