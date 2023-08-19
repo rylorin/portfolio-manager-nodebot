@@ -86,3 +86,27 @@ export const statementDelete = ({ request, params }: ActionFunctionArgs): Promis
     .then((response: Response) => response.text())
     .then((_data) => redirect("../"));
 };
+
+/**
+ * Save a statement
+ * @param params
+ * @returns
+ */
+export const statementSave = ({ request, params }: ActionFunctionArgs): Promise<Response> => {
+  const { portfolioId, statementId } = params;
+  // console.log("statementSave", portfolioId, statementId);
+  return request
+    .formData()
+    .then((formData: Iterable<readonly [PropertyKey, any]>) => {
+      const data = Object.fromEntries(formData);
+      return fetch(`/api/portfolio/${portfolioId}/statements/id/${statementId}/SaveStatement`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(data),
+      });
+    })
+    .then((response: Response) => response.json())
+    .then((_data) => redirect("../"));
+};

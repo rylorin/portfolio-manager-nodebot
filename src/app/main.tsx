@@ -30,6 +30,7 @@ import {
   positionsIndexLoader,
   positionsOptionsLoader,
 } from "./components/Portfolio/Position/loaders";
+import StatementEdit from "./components/Portfolio/Statement/StatementEdit";
 import { default as StatementShow } from "./components/Portfolio/Statement/StatementShow";
 import { default as StatementSummary } from "./components/Portfolio/Statement/StatementSummary";
 import { default as StatementIndex } from "./components/Portfolio/Statement/StatementsTable";
@@ -38,6 +39,7 @@ import {
   statementCreateTrade,
   statementDelete,
   statementGuessTrade,
+  statementSave,
   statementUnlinkTrade,
 } from "./components/Portfolio/Statement/actions";
 import {
@@ -51,7 +53,7 @@ import TradeEdit from "./components/Portfolio/Trade/TradeEdit";
 import TradeShow from "./components/Portfolio/Trade/TradeShow";
 import TradesOpen from "./components/Portfolio/Trade/TradesOpen";
 import TradesSummary from "./components/Portfolio/Trade/TradesSummary";
-import TradesTable from "./components/Portfolio/Trade/TradesTable2";
+import TradesTable from "./components/Portfolio/Trade/TradesTable";
 import { tradeDelete, tradeSave } from "./components/Portfolio/Trade/actions";
 import {
   tradeSummaryLoader12M,
@@ -131,7 +133,7 @@ const router = createBrowserRouter([
                     action: PortfolioAction,
                     children: [
                       { index: true, Component: StatementShow, loader: statementShowLoader },
-                      { path: "edit", Component: StatementShow, loader: statementShowLoader },
+                      { path: "edit", Component: StatementEdit, loader: statementShowLoader, action: statementSave },
                       { path: "CreateTrade", action: statementCreateTrade },
                       { path: "GuessTrade", action: statementGuessTrade },
                       { path: "AddToTrade/:tradeId", action: statementAddToTrade },
@@ -211,6 +213,7 @@ const router = createBrowserRouter([
                       { path: "StatementUnlinkTrade/:statementId", action: statementUnlinkTrade },
                       { path: "DeleteStatement/:statementId", action: statementDelete },
 
+                      { path: "DeletePosition/:positionId", action: positionDelete },
                       { path: ":positionId/PositionUnlinkTrade", action: positionUnlinkTrade },
                     ],
                   },

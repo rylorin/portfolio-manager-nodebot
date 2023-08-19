@@ -659,7 +659,7 @@ export class ITradingBot extends EventEmitter {
 
   protected createBagContract(
     ibContract: IbContract,
-    _details: ContractDetails,
+    _details: undefined,
     transaction?: Transaction,
   ): Promise<Contract> {
     const defaults = {
@@ -827,7 +827,7 @@ export class ITradingBot extends EventEmitter {
         transaction = await this.app.sequelize.transaction({
           type: Transaction.TYPES.DEFERRED,
         });
-      // find contract by IB conId
+      // find DB contract by IB conId
       if (ibContract.conId) {
         contract = await Contract.findOne({
           where: { conId: ibContract.conId },
@@ -841,7 +841,7 @@ export class ITradingBot extends EventEmitter {
         //   ibContract.secType,
         //   ibContract.symbol
         // );
-        // ibContract conId not found, find by data and update it or create it
+        // ibContract conId not found in DB, find by data and update it or create it
         // canonize ibContract
         let details: ContractDetails | undefined = undefined;
         if (ibContract.secType != IbSecType.BAG) {
@@ -884,8 +884,8 @@ export class ITradingBot extends EventEmitter {
           contract = await this.createCashContract(ibContract, details, transaction);
         } else if (details && ibContract.secType == IbSecType.FUT) {
           contract = await this.createFutureContract(ibContract, details, transaction);
-        } else if (details && ibContract.secType == IbSecType.BAG) {
-          contract = await this.createBagContract(ibContract, details, transaction);
+        } else if (ibContract.secType == IbSecType.BAG) {
+          contract = await this.createBagContract(ibContract, undefined, transaction);
         } else {
           // IB contract doesn't exists, we need to implement it!!!
           const message = `findOrCreateContract failed: IbSecType ${ibContract.secType} not implemented`;

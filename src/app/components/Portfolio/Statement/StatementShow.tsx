@@ -2,8 +2,9 @@ import { ArrowBackIcon, DeleteIcon, EditIcon } from "@chakra-ui/icons";
 import { Flex, IconButton, Link, Text, VStack } from "@chakra-ui/react";
 import { FunctionComponent, default as React } from "react";
 import { Form, Link as RouterLink, useLoaderData, useNavigate, useParams } from "react-router-dom";
-import { Statement } from "../../../../models/statement.model";
+import { StatementEntry } from "../../../../routers/statements.types";
 import { ContractLink } from "../Contract/links";
+import { TradeLink } from "../Trade/links";
 
 type Props = Record<string, never>;
 
@@ -14,7 +15,7 @@ type Props = Record<string, never>;
  */
 const StatementShow: FunctionComponent<Props> = ({ ..._rest }): JSX.Element => {
   const { portfolioId } = useParams();
-  const theStatement = useLoaderData() as Statement;
+  const theStatement = useLoaderData() as StatementEntry;
   const navigate = useNavigate();
 
   return (
@@ -22,7 +23,7 @@ const StatementShow: FunctionComponent<Props> = ({ ..._rest }): JSX.Element => {
       <VStack>
         <Flex justifyContent="center" gap="2">
           <Text w="90px" as="b" textAlign="right">
-            Trade Id:
+            Statement Id:
           </Text>
           <Text w="200px" textAlign="right">
             {theStatement.id}
@@ -41,7 +42,7 @@ const StatementShow: FunctionComponent<Props> = ({ ..._rest }): JSX.Element => {
             Date:
           </Text>
           <Text w="200px" textAlign="right">
-            {theStatement.date.toLocaleString()}
+            {new Date(theStatement.date).toLocaleString()}
           </Text>
         </Flex>
         <Flex justifyContent="center" gap="2">
@@ -54,22 +55,34 @@ const StatementShow: FunctionComponent<Props> = ({ ..._rest }): JSX.Element => {
         </Flex>
         <Flex justifyContent="center" gap="2">
           <Text w="90px" as="b" textAlign="right">
+            Trade:
+          </Text>
+          <Text w="200px" textAlign="right">
+            <Link to={TradeLink.toItem(portfolioId, theStatement.trade_id)} as={RouterLink}>
+              {theStatement.trade_id}
+            </Link>
+          </Text>
+        </Flex>
+        <Flex justifyContent="center" gap="2">
+          <Text w="90px" as="b" textAlign="right">
             Fx Rate:
           </Text>
           <Text w="200px" textAlign="right">
             {theStatement.fxRateToBase}
           </Text>
         </Flex>
-        <Flex justifyContent="center" gap="2">
-          <Text w="90px" as="b" textAlign="right">
-            Underlying:
-          </Text>
-          <Text w="200px" textAlign="right">
-            <Link to={ContractLink.toItem(portfolioId, theStatement.stock.id)} as={RouterLink}>
-              {theStatement.stock.symbol}
-            </Link>
-          </Text>
-        </Flex>
+        {theStatement.underlying && (
+          <Flex justifyContent="center" gap="2">
+            <Text w="90px" as="b" textAlign="right">
+              Underlying:
+            </Text>
+            <Text w="200px" textAlign="right">
+              <Link to={ContractLink.toItem(portfolioId, theStatement.underlying.id)} as={RouterLink}>
+                {theStatement.underlying.symbol}
+              </Link>
+            </Text>
+          </Flex>
+        )}
         <Flex justifyContent="center" gap="2">
           <Text w="90px" as="b" textAlign="right">
             Type:

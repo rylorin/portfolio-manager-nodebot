@@ -29,7 +29,7 @@ type parentParams = { portfolioId: number };
 const initVirtualFromStatement = (item: StatementEntry): VirtualPositionEntry => {
   let id: number;
   let contract: StatementUnderlyingEntry | StatementOptionEntry;
-  switch (item.type) {
+  switch (item.statementType) {
     case StatementTypes.EquityStatement:
       id = -item.underlying!.id;
       contract = item.underlying!;
@@ -63,7 +63,7 @@ const makeVirtualPositions = (statements: StatementEntry[] | undefined): Record<
   statements?.forEach((item) => {
     let id;
     let virtual;
-    switch (item.type) {
+    switch (item.statementType) {
       case StatementTypes.EquityStatement:
         if (item.underlying) {
           id = item.underlying.id;
@@ -99,10 +99,10 @@ const _updateTradeStrategy = (thisTrade: Trade, statements: StatementEntry[]): S
     const statement_entry = statements[i];
     switch (thisTrade.strategy) {
       case TradeStrategy.undefined:
-        if (statement_entry.type == StatementTypes.EquityStatement) {
+        if (statement_entry.statementType == StatementTypes.EquityStatement) {
           if (statement_entry.quantity! < 0) thisTrade.strategy = TradeStrategy["short stock"];
           else thisTrade.strategy = TradeStrategy["long stock"];
-        } else if (statement_entry.type == StatementTypes.OptionStatement) {
+        } else if (statement_entry.statementType == StatementTypes.OptionStatement) {
           // eslint-disable-next-line @typescript-eslint/no-unnecessary-type-assertion
           if (statement_entry.option!.callOrPut == OptionType.Put) {
             // eslint-disable-next-line @typescript-eslint/no-unnecessary-type-assertion
@@ -121,11 +121,11 @@ const _updateTradeStrategy = (thisTrade: Trade, statements: StatementEntry[]): S
         // if the short put is followed by a long stock and short call then it's a wheel
         for (let j = i; j < statements.length; j++) {
           const statement_entry = statements[j];
-          if (statement_entry.type == StatementTypes.EquityStatement && statement_entry.quantity! > 0) {
+          if (statement_entry.statementType == StatementTypes.EquityStatement && statement_entry.quantity! > 0) {
             for (let k = j; k < statements.length; k++) {
               const statement_entry = statements[k];
               if (
-                statement_entry.type == StatementTypes.OptionStatement &&
+                statement_entry.statementType == StatementTypes.OptionStatement &&
                 statement_entry.option!.callOrPut == OptionType.Call &&
                 statement_entry.quantity! < 0
               ) {
@@ -380,13 +380,13 @@ const computeComboRisk = (
   calls: OptionSummary,
   puts: OptionSummary,
 ): number => {
-  console.log(thisTrade.id, "stocks", stocks.quantity, stocks.cost, stocks.risk, "puts", puts, "calls", calls);
+  // console.log(thisTrade.id, "stocks", stocks.quantity, stocks.cost, stocks.risk, "puts", puts, "calls", calls);
   // Risk is cash in/out
   const cash_risk =
     // stocks.cost +
     Object.values(puts).reduce((p, item) => p + item.cost, 0) +
     Object.values(calls).reduce((p, item) => p + item.cost, 0);
-  console.log(thisTrade.id, "cash_risk", cash_risk);
+  // console.log(thisTrade.id, "cash_risk", cash_risk);
 
   // compute limit points: each strike + 0 + max strike * 2 (could be more but cross fingers)
   const limits = [0];
@@ -436,7 +436,7 @@ const computeComboRisk = (
         }
       }
     }
-    console.log(thisTrade.id, "price", price, stocks_risk, put_risks, calls_risk);
+    // console.log(thisTrade.id, "price", price, stocks_risk, put_risks, calls_risk);
     options_risk = Math.min(options_risk, stocks_risk + put_risks + calls_risk);
   }
 
@@ -468,10 +468,12 @@ const computeTradeStrategy = (
     strategy = TradeStrategy["short stock"];
   } else {
     // Strategies without any stock leg
-    if (short_put > 0 && long_put == 0 && short_call == 0 && !long_call) strategy = TradeStrategy["short put"];
+    if (short_put > 0 && long_put > 0 && short_put > long_put && short_call == 0 && !long_call)
+      strategy = TradeStrategy["front ratio spread"];
+    else if (short_put > 0 && long_put == 0 && short_call == 0 && !long_call) strategy = TradeStrategy["short put"];
     else if (short_call > 0 && !long_call && !short_put && !long_put) strategy = TradeStrategy["naked short call"];
   }
-  console.log(thisTrade.id, "strategy", thisTrade.strategy, strategy);
+  // console.log(thisTrade.id, "strategy", thisTrade.strategy, strategy);
   if (!thisTrade.strategy) thisTrade.strategy = strategy;
 };
 
@@ -497,7 +499,7 @@ const computeRisk_Generic = (thisTrade: Trade, statements: StatementEntry[]): St
       thisTrade.PnL += statement_entry.pnl;
       thisTrade.pnlInBase += statement_entry.pnl * statement_entry.fxRateToBase;
     }
-    if (statement_entry.type == StatementTypes.EquityStatement) {
+    if (statement_entry.statementType == StatementTypes.EquityStatement) {
       stocks.cost += statement_entry.amount;
       stocks.quantity += statement_entry.quantity!;
       stocks.risk += statement_entry.amount;
@@ -505,7 +507,7 @@ const computeRisk_Generic = (thisTrade: Trade, statements: StatementEntry[]): St
         stocks.risk = 0;
         // stocks.cost = 0;
       }
-    } else if (statement_entry.type == StatementTypes.OptionStatement) {
+    } else if (statement_entry.statementType == StatementTypes.OptionStatement) {
       if (statement_entry.option!.callOrPut == OptionType.Call) {
         if (!calls[statement_entry.option!.strike])
           calls[statement_entry.option!.strike] = {

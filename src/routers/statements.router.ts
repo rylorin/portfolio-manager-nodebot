@@ -56,8 +56,9 @@ const updateStatementTrade = (statement: Statement): Promise<Statement> => {
 export const statementModelToStatementEntry = (item: Statement): Promise<StatementEntry> => {
   const statement: StatementEntry = {
     id: item.id,
+    transactionId: item.transactionId,
     date: item.date.getTime(),
-    type: item.statementType,
+    statementType: item.statementType,
     currency: item.currency,
     amount: item.amount,
     pnl: undefined,
@@ -192,6 +193,8 @@ const makeSynthesys = (statements: Statement[]): Promise<StatementsSynthesysEntr
     Promise.resolve({} as StatementsSynthesysEntries),
   );
 };
+
+/* +++++ Routes +++++ */
 
 /**
  * Get statements monthly summary
@@ -464,6 +467,7 @@ router.get("/id/:statementId(\\d+)", (req, res): void => {
         throw Error("statement doesn't exist");
       }
     })
+    .then((statement) => statementModelToStatementEntry(statement))
     .then((statement) => res.status(200).json({ statement }))
     .catch((error) => res.status(500).json({ error }));
 });
@@ -522,6 +526,30 @@ router.get("/:statementId(\\d+)/DeleteStatement", (req, res): void => {
       res.status(200).end();
     })
     .catch((error) => res.status(500).json({ error }));
+});
+
+/**
+ * Save a statement
+ */
+router.post("/id/:statementId(\\d+)/SaveStatement", (req, res): void => {
+  const { _portfolioId, statementId } = req.params as typeof req.params & parentParams;
+  const data = req.body as StatementEntry;
+
+  Statement.findByPk(statementId)
+    .then((statement) => {
+      // console.log(JSON.stringify(position));
+      if (statement)
+        return statement.update({
+          trade_unit_id: data.trade_id,
+        });
+      else throw Error("statement not found");
+    })
+    .then((statement) => res.status(200).json({ statement }))
+    .catch((error) => {
+      console.error(error);
+      logger.log(LogLevel.Error, MODULE + ".SaveStatement", undefined, JSON.stringify(error));
+      res.status(500).json({ error });
+    });
 });
 
 export default router;

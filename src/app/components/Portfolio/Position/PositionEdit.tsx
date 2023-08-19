@@ -2,7 +2,7 @@ import { ArrowBackIcon, CheckIcon } from "@chakra-ui/icons";
 import { Flex, IconButton, Text, VStack } from "@chakra-ui/react";
 import { Field, Formik, FormikProps } from "formik";
 import { FunctionComponent, default as React } from "react";
-import { Form, useLoaderData, useNavigate, useParams, useSubmit } from "react-router-dom";
+import { Form as RouterForm, useLoaderData, useNavigate, useParams, useSubmit } from "react-router-dom";
 import { PositionEntry } from "../../../../routers/positions.types";
 import { formatNumber } from "../../../utils";
 import Number from "../../Number/Number";
@@ -25,7 +25,7 @@ const PositionEdit: FunctionComponent<PositionEditProps> = ({ ..._rest }): JSX.E
     >
       {(formik: FormikProps<PositionEntry>): JSX.Element => {
         return (
-          <Form method="post" onSubmit={formik.handleSubmit}>
+          <RouterForm method="post" onSubmit={formik.handleSubmit}>
             <VStack>
               <Flex justifyContent="center" gap="2">
                 <Text w="90px" as="b" textAlign="right">
@@ -140,7 +140,7 @@ const PositionEdit: FunctionComponent<PositionEditProps> = ({ ..._rest }): JSX.E
                 <IconButton aria-label="Save" icon={<CheckIcon />} variant="ghost" type="submit" />
               </Flex>
             </VStack>
-          </Form>
+          </RouterForm>
         );
       }}
     </Formik>

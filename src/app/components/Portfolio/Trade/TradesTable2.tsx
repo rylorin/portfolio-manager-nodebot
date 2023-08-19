@@ -85,7 +85,7 @@ const TradesTable: FunctionComponent<Props> = ({ title = "Trades index", content
           </Link>
         </Badge>
         <Box fontWeight="semibold" letterSpacing="wide" fontSize="xs" textTransform="uppercase" ml={1} color="gray.500">
-          {item.currency} &bull; {tradeStrategy2String(item.strategy)} ({item.strategy})
+          {item.currency} &bull; {tradeStrategy2String(item.strategy)}
         </Box>
         {item.risk && (
           <Box fontWeight="semibold" letterSpacing="wide" fontSize="sm" textTransform="uppercase">

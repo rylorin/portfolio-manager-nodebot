@@ -206,10 +206,10 @@ export class ContractsUpdaterBot extends ITradingBot {
           if (tick.value) {
             optdataset.impliedVolatility = tick.value;
           }
-        } else if (type == IBApiNextTickType.MODEL_OPTION_PRICE) {
-          if (!dataset.price && (tick.value as number) > 0) {
-            dataset.price = tick.value;
-          }
+          // } else if (type == IBApiNextTickType.MODEL_OPTION_PRICE) {
+          //   if (!dataset.price && (tick.value as number) > 0) {
+          //     dataset.price = tick.value;
+          //   }
         } else if (type == IBApiNextTickType.MODEL_OPTION_IV) {
           if (!optdataset.impliedVolatility && (tick.value as number) > 0) {
             optdataset.impliedVolatility = tick.value;
@@ -266,6 +266,7 @@ export class ContractsUpdaterBot extends ITradingBot {
             IBApiNextTickType.DELAYED_LAST_OPTION_GAMMA,
             IBApiNextTickType.DELAYED_LAST_OPTION_VEGA,
             IBApiNextTickType.DELAYED_LAST_OPTION_THETA,
+            IBApiNextTickType.MODEL_OPTION_PRICE, // ?
           ].includes(type as IBApiNextTickType)
         ) {
           // siliently ignore

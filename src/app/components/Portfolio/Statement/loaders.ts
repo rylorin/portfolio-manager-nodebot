@@ -1,5 +1,4 @@
 import { LoaderFunctionArgs } from "react-router-dom";
-import { Statement } from "../../../../models";
 import { StatementEntry, StatementsSynthesysEntries } from "../../../../routers/statements.types";
 
 /**
@@ -43,12 +42,12 @@ export const statementSummaryLoaderAll = ({ params }: LoaderFunctionArgs): Promi
  * @param params
  * @returns
  */
-export const statementShowLoader = ({ params }: LoaderFunctionArgs): Promise<Statement> => {
+export const statementShowLoader = ({ params }: LoaderFunctionArgs): Promise<StatementEntry> => {
   const { portfolioId, statementId } = params;
   // console.log("statement show", portfolioId, statementId);
   return fetch(`/api/portfolio/${portfolioId}/statements/id/${statementId}`)
     .then((response) => response.json())
-    .then((data) => data.statement as Statement);
+    .then((data) => data.statement as StatementEntry);
 };
 
 /**

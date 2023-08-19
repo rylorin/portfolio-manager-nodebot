@@ -6,6 +6,7 @@ import { PositionEntry } from "../../../../routers/positions.types";
 import { formatNumber } from "../../../utils";
 import Number from "../../Number/Number";
 import { ContractLink } from "../Contract/links";
+import { TradeLink } from "../Trade/links";
 import { PositionLink } from "./links";
 
 type PositionShowProps = Record<string, never>;
@@ -118,11 +119,11 @@ const PositionShow: FunctionComponent<PositionShowProps> = ({ ..._rest }): JSX.E
           <Text w="90px" as="b" textAlign="right">
             Trade:
           </Text>
-          <Link to={`/portfolio/${portfolioId}/trades/id/${thisPosition.trade_id}`} as={RouterLink}>
-            <Text w="200px" textAlign="right">
+          <Text w="200px" textAlign="right">
+            <Link to={TradeLink.toItem(portfolioId, thisPosition.trade_id)} as={RouterLink}>
               {thisPosition.trade_id}
-            </Text>
-          </Link>
+            </Link>
+          </Text>
         </Flex>
 
         <Flex justifyContent="center" gap="2" mt="1">

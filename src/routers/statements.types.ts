@@ -23,8 +23,9 @@ export type StatementOptionEntry = StatementUnderlyingEntry & {
 
 export type StatementEntry = {
   id: number;
+  transactionId: number;
   date: number;
-  type: StatementTypes;
+  statementType: StatementTypes;
   currency: string;
   amount: number;
   pnl: number | undefined;

@@ -26,6 +26,7 @@ import { StatementEntry } from "../../../../routers/statements.types";
 import Number from "../../Number/Number";
 import { ContractLink } from "../Contract/links";
 import { TradeLink } from "../Trade/links";
+import { StatementLink } from "./links";
 
 type Props = { content?: StatementEntry[] };
 
@@ -69,7 +70,7 @@ const StatementsTable: FunctionComponent<Props> = ({ content, ..._rest }): JSX.E
                 <Tr key={item.id}>
                   <Td>
                     <Tooltip label={new Date(item.date).toLocaleTimeString()} placement="auto" hasArrow={true}>
-                      <Link to={`/portfolio/${portfolioId}/statements/id/${item.id}`} as={RouterLink}>
+                      <Link to={StatementLink.toItem(portfolioId, item.id)} as={RouterLink}>
                         {new Date(item.date).toLocaleDateString()}
                       </Link>
                     </Tooltip>
@@ -152,7 +153,9 @@ const StatementsTable: FunctionComponent<Props> = ({ content, ..._rest }): JSX.E
                   </Td>
                   <Td>{item.description}</Td>
                   <Td>
-                    <IconButton aria-label="Show detail" icon={<SearchIcon />} size="xs" variant="ghost" />
+                    <Link to={StatementLink.toItem(portfolioId, item.id)} as={RouterLink}>
+                      <IconButton aria-label="Show detail" icon={<SearchIcon />} size="xs" variant="ghost" />
+                    </Link>
                     <IconButton aria-label="Edit details" icon={<EditIcon />} size="xs" variant="ghost" />
                     <Form method="post" action={`DeleteStatement/${item.id}`} className="inline">
                       <IconButton
