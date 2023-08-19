@@ -92,54 +92,6 @@ const makeVirtualPositions = (statements: StatementEntry[] | undefined): Record<
   return virtuals;
 };
 
-const _updateTradeStrategy = (thisTrade: Trade, statements: StatementEntry[]): StatementEntry[] => {
-  // logger.log(LogLevel.Trace, MODULE + ".updateTradeStrategy", thisTrade.underlying?.symbol, "statements", statements);
-  // Update trade stategy
-  for (let i = 0; i < statements.length; i++) {
-    const statement_entry = statements[i];
-    switch (thisTrade.strategy) {
-      case TradeStrategy.undefined:
-        if (statement_entry.statementType == StatementTypes.EquityStatement) {
-          if (statement_entry.quantity! < 0) thisTrade.strategy = TradeStrategy["short stock"];
-          else thisTrade.strategy = TradeStrategy["long stock"];
-        } else if (statement_entry.statementType == StatementTypes.OptionStatement) {
-          // eslint-disable-next-line @typescript-eslint/no-unnecessary-type-assertion
-          if (statement_entry.option!.callOrPut == OptionType.Put) {
-            // eslint-disable-next-line @typescript-eslint/no-unnecessary-type-assertion
-            if (statement_entry.quantity! < 0) thisTrade.strategy = TradeStrategy["short put"];
-            else thisTrade.strategy = TradeStrategy["long put"];
-            // eslint-disable-next-line @typescript-eslint/no-unnecessary-type-assertion
-          } else if (statement_entry.option!.callOrPut == OptionType.Call) {
-            // eslint-disable-next-line @typescript-eslint/no-unnecessary-type-assertion
-            if (statement_entry.quantity! < 0) thisTrade.strategy = TradeStrategy["covered short call"];
-            else thisTrade.strategy = TradeStrategy["long call"];
-          }
-        }
-        break;
-
-      case TradeStrategy["short put"]:
-        // if the short put is followed by a long stock and short call then it's a wheel
-        for (let j = i; j < statements.length; j++) {
-          const statement_entry = statements[j];
-          if (statement_entry.statementType == StatementTypes.EquityStatement && statement_entry.quantity! > 0) {
-            for (let k = j; k < statements.length; k++) {
-              const statement_entry = statements[k];
-              if (
-                statement_entry.statementType == StatementTypes.OptionStatement &&
-                statement_entry.option!.callOrPut == OptionType.Call &&
-                statement_entry.quantity! < 0
-              ) {
-                thisTrade.strategy = TradeStrategy["the wheel"];
-              }
-            }
-          }
-        }
-        break;
-    }
-  }
-  return statements;
-};
-
 const updateTradeExpiry = (thisTrade: Trade, statements: StatementEntry[]): StatementEntry[] => {
   // Compute expected expiry
   const virtuals = makeVirtualPositions(statements);
@@ -471,6 +423,7 @@ const computeTradeStrategy = (
     if (short_put > 0 && long_put > 0 && short_put > long_put && short_call == 0 && !long_call)
       strategy = TradeStrategy["front ratio spread"];
     else if (short_put > 0 && long_put == 0 && short_call == 0 && !long_call) strategy = TradeStrategy["short put"];
+    else if (short_put == 0 && long_put > 0 && short_call == 0 && !long_call) strategy = TradeStrategy["long put"];
     else if (short_call > 0 && !long_call && !short_put && !long_put) strategy = TradeStrategy["naked short call"];
   }
   // console.log(thisTrade.id, "strategy", thisTrade.strategy, strategy);

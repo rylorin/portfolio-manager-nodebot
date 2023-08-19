@@ -74,9 +74,9 @@ const TradeEdit: FunctionComponent<Props> = ({ ..._rest }): JSX.Element => {
                 </Text>
                 {/* <Select w="200px" name="status" variant="outline" value={formik.values.status}> */}
                 <Field as={Select} name="status" w="200px" type="number" variant="outline">
-                  {Object.keys(TradeStatus).map((k, v) => (
-                    <option value={v} key={`v${v}`}>
-                      {k}
+                  {Object.entries(TradeStatus).map((v, k) => (
+                    <option value={v[1]} key={`k${k}`}>
+                      {v[0]} ({v[1]})
                     </option>
                   ))}
                 </Field>
@@ -88,9 +88,9 @@ const TradeEdit: FunctionComponent<Props> = ({ ..._rest }): JSX.Element => {
                 </Text>
                 <Field as={Select} name="strategy" w="200px" type="number" variant="outline">
                   {/* <Select name="strategy" w="200px" variant="outline" value={formik.values.strategy}> */}
-                  {Object.keys(TradeStrategy).map((k, v) => (
-                    <option value={v} key={`v${v}`}>
-                      {k}
+                  {Object.entries(TradeStrategy).map((v, k) => (
+                    <option value={v[1]} key={`k${k}`}>
+                      {v[0]} ({v[1]})
                     </option>
                   ))}
                   {/* </Select> */}

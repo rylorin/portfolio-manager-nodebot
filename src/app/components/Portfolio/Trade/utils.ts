@@ -11,7 +11,16 @@ export const tradeStatus2String = (status: TradeStatus): string => {
   }
 };
 
-export const tradeStrategy2String = (value: TradeStrategy): string => {
-  // console.log(Object.keys(TradeStrategy), Object.values(TradeStrategy), Object.entries(TradeStrategy));
-  return Object.keys(TradeStrategy)[value];
+export const tradeStrategy2String = (strategy: TradeStrategy): string => {
+  // const result = Object.entries(TradeStrategy).find((item) => item[1] == strategy)[0];
+  // console.log(
+  //   "tradeStrategy2String",
+  //   strategy,
+  //   Object.keys(TradeStrategy),
+  //   Object.values(TradeStrategy),
+  //   Object.entries(TradeStrategy),
+  //   result,
+  // );
+  // return result;
+  return Object.entries(TradeStrategy).find((item) => item[1] == strategy)[0];
 };

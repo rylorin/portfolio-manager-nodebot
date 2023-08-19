@@ -59,7 +59,7 @@ const TradesTable: FunctionComponent<Props> = ({ title = "Trades index", content
                 <Td isNumeric>{formatNumber(item.duration)}</Td>
                 <Td isNumeric>{formatNumber(item.risk)}</Td>
                 <Td isNumeric>
-                  <Number value={item.pnl} />
+                  <Number value={item.pnlInBase} />
                 </Td>
                 <Td isNumeric>
                   <Number value={item.apy} decimals={1} isPercent />
@@ -76,6 +76,10 @@ const TradesTable: FunctionComponent<Props> = ({ title = "Trades index", content
             <Td></Td>
             <Td></Td>
             <Td></Td>
+            <Td></Td>
+            <Td isNumeric>
+              <Number value={theTrades.reduce((p: number, item) => (p += item.pnlInBase || 0), 0)} />
+            </Td>
             <Td></Td>
           </Tr>
         </Tfoot>
