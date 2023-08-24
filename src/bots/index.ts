@@ -30,7 +30,7 @@ import {
   Stock,
 } from "../models";
 import { ContractType } from "../models/contract.types";
-import { expirationToDate, expirationToDateString } from "../models/date_utils";
+import { expirationToDateString } from "../models/date_utils";
 
 type OptionsSynthesis = {
   value: number;
@@ -711,7 +711,7 @@ export class ITradingBot extends EventEmitter {
       // future specific fields
       id: undefined as unknown as number,
       underlying_id: undefined as unknown as number,
-      lastTradeDate: expirationToDate(ibContract.lastTradeDateOrContractMonth!),
+      lastTradeDate: expirationToDateString(ibContract.lastTradeDateOrContractMonth!),
       multiplier: ibContract.multiplier!,
     };
     const underlying = {

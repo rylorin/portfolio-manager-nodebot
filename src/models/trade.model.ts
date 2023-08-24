@@ -37,11 +37,11 @@ export class Trade extends Model<
   declare openingDate: Date;
 
   @Column({ type: DataType.DATE, field: "closing_date" })
-  declare closingDate?: Date;
+  declare closingDate?: Date | null;
 
   /** expected expiration date */
   @Column({ type: DataType.DATEONLY, field: "expiryDate" })
-  declare expectedExpiry?: string | null; // YYYY-MM-DD
+  declare expectedExpiry: string | null; // YYYY-MM-DD
 
   /** expected Pnl on expiration date */
   @Column({ type: DataType.FLOAT, defaultValue: 0 })

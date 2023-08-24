@@ -33,8 +33,7 @@ export class CashManagementBot extends ITradingBot {
       opt_value = Math.max(opt_value, 0);
       extra_cash = balance_in_base - opt_value;
     } else {
-      this.error(`unimplemented cash strategy ${this.portfolio.cashStrategy}`);
-      extra_cash = 0;
+      throw Error(`unimplemented cash strategy ${this.portfolio.cashStrategy}`); // eslint-disable-line @typescript-eslint/restrict-template-expressions
     }
 
     let units_to_buy = 0;

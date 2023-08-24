@@ -12,20 +12,35 @@ const TradesOpen: FunctionComponent<Props> = ({ ..._rest }): JSX.Element => {
   const { _portfolioId } = useParams();
   const theTrades = useLoaderData() as TradeEntry[];
 
+  const getExpiration = (item: PositionEntry | OptionPositionEntry): string | undefined => {
+    switch (item.contract.secType) {
+      case ContractType.Stock:
+        return undefined;
+      case ContractType.Option:
+      case ContractType.FutureOption:
+        return (item as OptionPositionEntry).option.expiration;
+      case ContractType.Future:
+        return item.contract.expiration;
+      default:
+        throw Error("getExpiration: contract type not implemented!");
+    }
+  };
+
   const comparePositions = (a: PositionEntry | OptionPositionEntry, b: PositionEntry | OptionPositionEntry): number => {
     let result: number;
-    if (a.contract.secType == ContractType.Stock && b.contract.secType == ContractType.Stock)
-      return a.contract.symbol.localeCompare(b.contract.symbol);
-    else if (a.contract.secType == ContractType.Stock) return +1;
-    else if (b.contract.secType == ContractType.Stock) return -1;
-    else if (a.contract.secType == ContractType.Option && b.contract.secType == ContractType.Option) {
-      result = (a as OptionPositionEntry).option.expiration.localeCompare((b as OptionPositionEntry).option.expiration);
+    const aExpiration = getExpiration(a);
+    const bExpiration = getExpiration(b);
+    if (!aExpiration && !bExpiration) return a.contract.symbol.localeCompare(b.contract.symbol);
+    else if (!aExpiration) return +1;
+    else if (!bExpiration) return -1;
+    else {
+      result = aExpiration.localeCompare(bExpiration);
       if (!result) {
         result = (a as OptionPositionEntry).option.symbol.localeCompare((b as OptionPositionEntry).option.symbol);
         if (!result) result = (a as OptionPositionEntry).option.strike - (b as OptionPositionEntry).option.strike;
       }
       return result;
-    } else throw Error("not implemented");
+    }
   };
 
   const compareTrades = (a: TradeEntry, b: TradeEntry): number => {

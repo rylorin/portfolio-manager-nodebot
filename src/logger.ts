@@ -169,7 +169,7 @@ class Logger {
    * @param args content of the notification
    */
   public error(module: string, ...args: any[]): void {
-    this.log(LogLevel.Error, module, undefined, ...args);
+    this.log(LogLevel.Error, module, undefined, ...args); // eslint-disable-line @typescript-eslint/no-unsafe-argument
   }
 
   /**
@@ -178,7 +178,7 @@ class Logger {
    * @param args content of the notification
    */
   public warn(module: string, ...args: any[]): void {
-    this.log(LogLevel.Warning, module, undefined, ...args);
+    this.log(LogLevel.Warning, module, undefined, ...args); // eslint-disable-line @typescript-eslint/no-unsafe-argument
   }
 
   /**
@@ -187,7 +187,7 @@ class Logger {
    * @param args content of the notification
    */
   public info(module: string, ...args: any[]): void {
-    this.log(LogLevel.Info, module, undefined, ...args);
+    this.log(LogLevel.Info, module, undefined, ...args); // eslint-disable-line @typescript-eslint/no-unsafe-argument
   }
 
   /**
@@ -196,7 +196,7 @@ class Logger {
    * @param args content of the notification
    */
   public debug(module: string, ...args: any[]): void {
-    this.log(LogLevel.Debug, module, undefined, ...args);
+    this.log(LogLevel.Debug, module, undefined, ...args); // eslint-disable-line @typescript-eslint/no-unsafe-argument
   }
 
   /**
@@ -205,7 +205,7 @@ class Logger {
    * @param args content of the notification
    */
   public trace(module: string, ...args: any[]): void {
-    this.log(LogLevel.Trace, module, undefined, ...args);
+    this.log(LogLevel.Trace, module, undefined, ...args); // eslint-disable-line @typescript-eslint/no-unsafe-argument
   }
 }
 

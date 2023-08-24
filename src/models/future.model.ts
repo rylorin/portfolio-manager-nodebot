@@ -23,27 +23,31 @@ export class Future extends Model<
   @BelongsTo(() => Contract, "underlying_id")
   declare underlying: Contract;
 
+  /**
+   * last tradable date as YYYY-MM-DD formated string
+   */
   @Column({ type: DataType.DATEONLY, field: "last_trade_date" })
-  get lastTradeDate(): Date {
+  declare lastTradeDate: string; // YYYY-MM-DD
+
+  /**
+   * Get last tradable date as Date type
+   */
+  get expiryDate(): NonAttribute<Date> {
     return new Date(this.getDataValue("lastTradeDate"));
   }
-  set lastTradeDate(value: Date | string) {
-    if (value instanceof Date) {
-      this.setDataValue("lastTradeDate", value);
-    } else if (typeof value == "string") {
-      // Format date to YYYY-MM-DD
-      this.setDataValue("lastTradeDate", new Date(value.substring(0, 10)));
-    }
-  }
 
+  /**
+   * Get last tradable date as number type
+   */
   get expiry(): NonAttribute<number> {
     // Format date to YYYYMMDD
     return parseInt((this.getDataValue("lastTradeDate") as unknown as string).substring(0, 10).replaceAll("-", ""));
   }
 
-  @Column({ type: DataType.INTEGER, defaultValue: 100 })
-  declare multiplier: number;
-
+  /**
+   * Get number of day till expiration, with a minimum of 1 day (for 0DTE).
+   * Not compatible with past expirations (because of min of 1 day)
+   */
   get dte(): NonAttribute<number> {
     const dte: number = Math.max(
       (new Date(this.getDataValue("lastTradeDate")).getTime() - Date.now()) / 1000 / 86400,
@@ -51,4 +55,7 @@ export class Future extends Model<
     );
     return dte;
   }
+
+  @Column({ type: DataType.INTEGER, defaultValue: 100 })
+  declare multiplier: number;
 }

@@ -27,7 +27,7 @@
     "@typescript-eslint/no-inferrable-types": "error",
     "@typescript-eslint/no-misused-promises": "error",
     "@typescript-eslint/no-unnecessary-type-assertion": "off", // behavior mismatch between TSlint and TScompiler. giving too many useless errors
-    "@typescript-eslint/no-unsafe-argument": "warn", // off for the moment because we have too many warnings
+    "@typescript-eslint/no-unsafe-argument": "error",
     "@typescript-eslint/no-unsafe-assignment": "off", // off for the moment because we have too many warnings
     "@typescript-eslint/no-unsafe-call": "error",
     "@typescript-eslint/no-unsafe-member-access": "off", // off for the moment because we have too many warnings
@@ -42,10 +42,10 @@
     ],
     "@typescript-eslint/require-await": "error",
     "@typescript-eslint/restrict-plus-operands": "error",
-    "@typescript-eslint/restrict-template-expressions": "off", // off for the moment because we have too many warnings
+    "@typescript-eslint/restrict-template-expressions": "error",
     "@typescript-eslint/unbound-method": "error",
     "no-unsafe-optional-chaining": "error",
-    "no-unused-vars": "off", // off required as we use the TS rule
+    "no-unused-vars": "off", // off required as we use the @typescript-eslint/no-unused-vars rule
     "rxjs/no-async-subscribe": "warn",
     "rxjs/no-ignored-observable": "warn",
     "rxjs/no-ignored-subscription": "warn",

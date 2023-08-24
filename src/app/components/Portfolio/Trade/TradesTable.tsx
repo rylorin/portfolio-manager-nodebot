@@ -41,7 +41,7 @@ const TradesTable: FunctionComponent<Props> = ({ title = "Trades index", content
           {theTrades
             .sort((a, b) => (a.closingDate ? b.closingDate - a.closingDate : b.openingDate - a.openingDate))
             .map((item) => (
-              <Tr key={item.id} bg={!item.statements?.length ? "pink.100" : undefined}>
+              <Tr key={item.id}>
                 <Td>
                   <Link to={TradeLink.toItem(portfolioId, item.id)} as={RouterLink}>
                     {item.id}

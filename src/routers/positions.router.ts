@@ -40,6 +40,7 @@ export const preparePositions = (portfolio: Portfolio): Promise<(PositionEntry |
                 multiplier: 1,
                 currency: item.contract.currency,
                 price: getPrice(item.contract) || undefined,
+                expiration: undefined,
               },
               trade_id: item.trade_unit_id ? item.trade_unit_id : undefined,
               price: price ? price : undefined,
@@ -85,6 +86,7 @@ export const preparePositions = (portfolio: Portfolio): Promise<(PositionEntry |
                   multiplier: option.multiplier,
                   currency: item.contract.currency,
                   price: getPrice(item.contract) || undefined,
+                  expiration: undefined,
                 },
                 trade_id: item.trade_unit_id ? item.trade_unit_id : undefined,
                 price: price ? price : undefined,
@@ -121,11 +123,11 @@ export const preparePositions = (portfolio: Portfolio): Promise<(PositionEntry |
                 { model: Contract, as: "contract" },
                 { model: Contract, as: "underlying" },
               ],
-            }).then((option) => {
-              if (!option) throw Error("Option contract not found");
+            }).then((future) => {
+              if (!future) throw Error("Option contract not found");
               // console.log("option:", JSON.stringify(option));
               const price = getPrice(item.contract);
-              const value = price ? price * item.quantity * option.multiplier : undefined;
+              const value = price ? price * item.quantity * future.multiplier : undefined;
               const baseRate =
                 1 / (portfolio.baseRates.find((currency) => currency.currency == item.contract.currency)?.rate || 1);
               const result: PositionEntry = {
@@ -137,14 +139,15 @@ export const preparePositions = (portfolio: Portfolio): Promise<(PositionEntry |
                   secType: item.contract.secType,
                   symbol: item.contract.symbol,
                   name: item.contract.name,
-                  multiplier: option.multiplier,
+                  multiplier: future.multiplier,
                   currency: item.contract.currency,
                   price: getPrice(item.contract) || undefined,
+                  expiration: future.lastTradeDate,
                 },
                 trade_id: item.trade_unit_id ? item.trade_unit_id : undefined,
                 price: price ? price : undefined,
                 value,
-                pru: item.cost / item.quantity / option.multiplier,
+                pru: item.cost / item.quantity / future.multiplier,
                 cost: item.cost,
                 pnl: value ? value - item.cost : undefined,
                 baseRate,

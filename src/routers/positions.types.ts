@@ -12,6 +12,7 @@ export type PositionEntry = {
     multiplier: number;
     currency: string;
     price: number | undefined;
+    expiration: string | undefined; // format?
   };
   trade_id: number | undefined;
   price: number | undefined; // current unit price

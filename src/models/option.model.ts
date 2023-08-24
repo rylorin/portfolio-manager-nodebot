@@ -27,17 +27,31 @@ export class Option extends Model<
   @BelongsTo(() => Contract, "stock_id")
   declare stock: Contract;
 
+  /**
+   * last tradable date as YYYY-MM-DD formated string
+   */
   @Column({ type: DataType.DATEONLY, field: "last_trade_date" })
   declare lastTradeDate: string; // YYYY-MM-DD
 
+  /**
+   * Get last tradable date as Date type
+   */
   get expiryDate(): NonAttribute<Date> {
-    // Format date to YYYYMMDD
     return new Date(this.getDataValue("lastTradeDate"));
   }
+
+  /**
+   * Get last tradable date as number type
+   */
   get expiry(): NonAttribute<number> {
     // Format date to YYYYMMDD
     return parseInt((this.getDataValue("lastTradeDate") as unknown as string).substring(0, 10).replaceAll("-", ""));
   }
+
+  /**
+   * Get number of day till expiration, with a minimum of 1 day (for 0DTE).
+   * Not compatible with past expirations (because of min of 1 day)
+   */
   get dte(): NonAttribute<number> {
     const dte: number = Math.max(
       (new Date(this.getDataValue("lastTradeDate")).getTime() - Date.now()) / 1000 / 86400,
