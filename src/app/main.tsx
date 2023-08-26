@@ -215,6 +215,7 @@ const router = createBrowserRouter([
 
                       { path: "DeletePosition/:positionId", action: positionDelete },
                       { path: ":positionId/PositionUnlinkTrade", action: positionUnlinkTrade },
+                      { path: "PositionGuessTrade/:positionId", action: positionGuessTrade },
                     ],
                   },
                   {
@@ -239,6 +240,7 @@ const router = createBrowserRouter([
                       { path: "PositionGuessTrade/:positionId", action: positionGuessTrade },
                       { path: "PositionAddToTrade/:positionId/:tradeId", action: positionAddToTrade },
                       { path: ":positionId/PositionUnlinkTrade", action: positionUnlinkTrade },
+
                       { path: "StatementCreateTrade/:statementId", action: statementCreateTrade },
                       { path: "StatementGuessTrade/:statementId", action: statementGuessTrade },
                       { path: "StatementAddToTrade/:statementId/:tradeId", action: statementAddToTrade },

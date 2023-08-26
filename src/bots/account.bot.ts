@@ -127,11 +127,12 @@ export class AccountUpdateBot extends ITradingBot {
   }
 
   protected updateOpenOrder(order: IbOpenOrder): Promise<void> {
-    console.log("updateOpenOrder", order.order.permId, order.contract.symbol);
+    // console.log("updateOpenOrder", order.order.permId, order.contract.symbol);
+    // if (order.order.permId == 2126142192) console.log(order);
     return this.app.sequelize.transaction((transaction) => {
-      console.log("transaction acquired");
+      // console.log("transaction acquired");
       return this.findOrCreateContract(order.contract, transaction).then((contract: Contract) => {
-        console.log("contract found", contract.id);
+        // console.log("contract found", contract.id);
         return OpenOrder.findOrCreate({
           where: {
             permId: order.order.permId,
@@ -155,7 +156,7 @@ export class AccountUpdateBot extends ITradingBot {
           // logging: console.log,
         })
           .then(([open_order, created]) => {
-            console.log("OpenOrder.findOrCreate done");
+            // console.log("OpenOrder.findOrCreate done");
             if (created) return Promise.resolve(open_order);
             else
               return open_order.update(

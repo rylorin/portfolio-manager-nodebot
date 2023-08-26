@@ -59,7 +59,7 @@ class Logger {
           maxFiles: 5,
         }),
         new transports.Console({
-          level: to_console ? "silly" : "info",
+          level: to_console ? "debug" : "info",
           format: format.combine(
             format.colorize(),
             format.timestamp(),

@@ -668,6 +668,7 @@ export class ITradingBot extends EventEmitter {
       symbol: `${ibContract.tradingClass}-${ibContract.localSymbol}`,
       currency: ibContract.currency!, // eslint-disable-line @typescript-eslint/no-unnecessary-type-assertion
       exchange: ibContract.exchange!, // eslint-disable-line @typescript-eslint/no-unnecessary-type-assertion
+      name: `${ibContract.tradingClass}-${ibContract.localSymbol}`,
     };
     return Contract.findOrCreate({
       where: {

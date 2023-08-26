@@ -33,6 +33,7 @@ const getAllPositionsRelatedToContract = (
         positions.filter((item) => {
           switch (item.contract.secType) {
             case SecType.STK:
+            case SecType.FUT:
               return item.contract.id == contractId;
             case SecType.OPT:
               return item.contract.id == contractId || (item as OptionPositionEntry).stock.id == contractId;
