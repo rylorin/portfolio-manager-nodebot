@@ -2,7 +2,7 @@
  * My IB trading bot implementation.
  */
 
-import { LogLevel } from "@stoqey/ib";
+import { LogLevel, MarketDataType } from "@stoqey/ib";
 import { IBApiNextApp } from "@stoqey/ib/dist/tools/common/ib-api-next-app";
 import path from "path";
 import { Sequelize, SequelizeOptions } from "sequelize-typescript";
@@ -48,7 +48,7 @@ import StartServer from "./server";
 /////////////////////////////////////////////////////////////////////////////////
 
 const DESCRIPTION_TEXT = "Print real time market data of a given contract id.";
-const USAGE_TEXT = "Usage: market-data.js <options>";
+const USAGE_TEXT = "Usage: index.js <options>";
 const OPTION_ARGUMENTS: [string, string][] = [
   ["clientId=<number>", "Client id of current IB connection. Default is random"],
   ["accountId=<string>", "IB account number"],
@@ -119,8 +119,7 @@ export class MyTradingBotApp extends IBApiNextApp {
       // transactionType: Transaction.TYPES.EXCLUSIVE,
     };
     if (this.api.logLevel < LogLevel.DETAIL) sequelize_settings.logging = false;
-    // this.api.setMarketDataType(MarketDataType.DELAYED_FROZEN);  // Error 354 on JPY and CHF
-    // this.api.setMarketDataType(MarketDataType.REALTIME);        // Error 354 on JPY and CHF
+    this.api.setMarketDataType(MarketDataType.DELAYED);
     this.sequelize = new Sequelize(sequelize_settings);
     this.sequelize
       .authenticate()

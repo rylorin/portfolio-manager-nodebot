@@ -1,7 +1,4 @@
 {
-  "[typescriptreact]": {
-    "editor.defaultFormatter": "esbenp.prettier-vscode"
-  },
   "editor.codeActionsOnSave": {
     "source.fixAll.eslint": true,
     "source.fixAll.format": true,
@@ -19,8 +16,7 @@
     "dist/**": true,
     "node_modules": true
   },
-  "god.tsconfig": "./tsconfig.json",
   "typescript.enablePromptUseWorkspaceTsdk": true,
   "typescript.tsdk": "./node_modules/typescript/lib",
-  "js/ts.implicitProjectConfig.target": "ESNext"
+  "X_js/ts.implicitProjectConfig.target": "ESNext"
 }

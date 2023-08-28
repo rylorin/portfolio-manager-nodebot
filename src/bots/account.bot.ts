@@ -209,29 +209,11 @@ export class AccountUpdateBot extends ITradingBot {
         })
         .then((position) => {
           // update contract price, then return position
-          switch (contract.secType) {
-            case SecType.STK:
-              if (pos.avgCost) {
-                if (pos.marketValue) {
-                  contract.price = pos.marketValue / pos.pos;
-                  contract.changed("price", true); // force update
-                }
-                return contract.save().then(() => position);
-              }
-              break;
-            case SecType.OPT:
-              if (pos.avgCost && pos.contract.multiplier) {
-                if (pos.marketValue) {
-                  contract.price = pos.marketValue / pos.pos / pos.contract.multiplier;
-                  contract.changed("price", true); // force update
-                }
-                return contract.save({ logging: sequelize_logging }).then(() => position);
-              }
-              break;
-            default:
-              logger.warn(MODULE + ".updatePosition", "to be implemented " + JSON.stringify(pos));
+          if (pos.marketValue) {
+            contract.price = pos.marketValue / pos.pos / (pos.contract.multiplier || 1);
+            contract.changed("price", true); // force update
           }
-          return position;
+          return contract.save({ logging: sequelize_logging }).then(() => position);
         }),
     );
   }
