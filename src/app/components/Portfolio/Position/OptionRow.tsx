@@ -11,11 +11,11 @@ type Props = { portfolioId: number; item: OptionPositionEntry };
 
 const OptionRow: FunctionComponent<Props> = ({ portfolioId, item, ..._rest }): JSX.Element => {
   const getITM = (item: OptionPositionEntry): number => {
-    if (!item.stock.price) return undefined;
+    if (!item.underlying.price) return undefined;
     else if (item.option.type == "P") {
-      return item.option.strike - item.stock.price;
+      return item.option.strike - item.underlying.price;
     } else {
-      return item.stock.price - item.option.strike;
+      return item.underlying.price - item.option.strike;
     }
   };
 
