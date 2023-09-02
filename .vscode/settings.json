@@ -18,5 +18,5 @@
   },
   "typescript.enablePromptUseWorkspaceTsdk": true,
   "typescript.tsdk": "./node_modules/typescript/lib",
-  "X_js/ts.implicitProjectConfig.target": "ESNext"
+  "js/ts.implicitProjectConfig.target": "ESNext"
 }

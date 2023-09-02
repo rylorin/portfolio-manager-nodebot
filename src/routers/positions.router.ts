@@ -103,8 +103,9 @@ export const preparePositions = (portfolio: Portfolio): Promise<(PositionEntry |
                   type: option.callOrPut,
                   delta: option.delta || undefined,
                 },
-                stock: {
+                underlying: {
                   id: option.stock.id,
+                  secType: option.stock.secType,
                   symbol: option.stock.symbol,
                   price: getPrice(option.stock) || undefined,
                 },

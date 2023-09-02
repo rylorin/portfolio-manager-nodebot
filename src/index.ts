@@ -119,7 +119,7 @@ export class MyTradingBotApp extends IBApiNextApp {
       // transactionType: Transaction.TYPES.EXCLUSIVE,
     };
     if (this.api.logLevel < LogLevel.DETAIL) sequelize_settings.logging = false;
-    this.api.setMarketDataType(MarketDataType.DELAYED);
+    this.api.setMarketDataType(MarketDataType.DELAYED_FROZEN);
     this.sequelize = new Sequelize(sequelize_settings);
     this.sequelize
       .authenticate()

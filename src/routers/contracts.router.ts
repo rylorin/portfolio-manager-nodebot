@@ -36,7 +36,7 @@ const getAllPositionsRelatedToContract = (
             case SecType.FUT:
               return item.contract.id == contractId;
             case SecType.OPT:
-              return item.contract.id == contractId || (item as OptionPositionEntry).stock.id == contractId;
+              return item.contract.id == contractId || (item as OptionPositionEntry).underlying.id == contractId;
             default:
               throw Error("getAllPositionsRelatedToContract not implemented for type: " + item.contract.secType);
           }

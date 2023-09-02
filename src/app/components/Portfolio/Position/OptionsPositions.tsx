@@ -27,6 +27,9 @@ const OptionsPositions: FunctionComponent<PositionsIndexProps> = ({ ..._rest }):
 
   const compareItems = (a: OptionPositionEntry, b: OptionPositionEntry): number => {
     let result: number;
+    if (!a && !b) return 0;
+    else if (!a) return -1;
+    else if (!b) return 1;
     result = a.option.expiration.localeCompare(b.option.expiration);
     if (!result) {
       result = a.option.symbol.localeCompare(b.option.symbol);

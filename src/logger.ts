@@ -2,6 +2,8 @@
  * Logging facility
  * @author Guerrilla Team
  */
+/* eslint-disable no-console */
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import stringify from "json-stringify-safe";
 import { exit } from "process";
 import winston, { Logger as WinstonLogger, createLogger, format, transports } from "winston";

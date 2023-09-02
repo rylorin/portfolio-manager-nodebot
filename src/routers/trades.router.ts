@@ -223,16 +223,16 @@ const addFakeTrades = (theSynthesys: OpenTradesWithPositions): TradeEntry[] => {
   theSynthesys.positions = theSynthesys.positions.filter((pos) => !pos.trade_id);
   while (theSynthesys.positions.length) {
     const underlying =
-      "stock" in theSynthesys.positions[0]
-        ? theSynthesys.positions[0].stock.symbol
+      "underlying" in theSynthesys.positions[0]
+        ? theSynthesys.positions[0].underlying.symbol
         : theSynthesys.positions[0].contract.symbol;
     const currency = theSynthesys.positions[0].contract.currency;
     const positions = theSynthesys.positions.filter(
-      (pos) => pos.quantity && ("stock" in pos ? pos.stock.symbol : pos.contract.symbol) == underlying,
+      (pos) => pos.quantity && ("underlying" in pos ? pos.underlying.symbol : pos.contract.symbol) == underlying,
     );
     // console.log("addFakeTrades", underlying, positions);
     theSynthesys.positions = theSynthesys.positions.filter(
-      (pos) => pos.quantity && ("stock" in pos ? pos.stock.symbol : pos.contract.symbol) !== underlying,
+      (pos) => pos.quantity && ("underlying" in pos ? pos.underlying.symbol : pos.contract.symbol) !== underlying,
     );
     let id = 0;
     let openingDate = Date.now();

@@ -40,7 +40,7 @@ const TradesTable: FunctionComponent<Props> = ({ title = "Trades index", content
           </Link>
         </Box>
       );
-    else return <Text>Orphan positions</Text>;
+    else return <Text>Orphan positions #{item.id}</Text>;
   };
 
   const StatusBox = ({ item }: { item: TradeEntry }): JSX.Element => {
@@ -134,21 +134,19 @@ const TradesTable: FunctionComponent<Props> = ({ title = "Trades index", content
           {title} ({theTrades.length})
         </Text>
         {theTrades.map((item) => (
-          <>
-            <VStack w="100%" key={`trade${item.id}`}>
-              <Flex w="100%" borderWidth="1px" borderRadius="lg" p={1} wrap="wrap" alignItems="botton">
-                <TitleBox item={item} />
-                <StatusBox item={item} />
-                <SymbolBox item={item} />
-                <PerformanceBox item={item} />
-                {item.comment?.length > 0 && <CommentBox item={item} />}
-              </Flex>
-              {item.positions?.length > 0 && <PositionsTable content={item.positions} />}
-              {item.virtuals?.length > 0 && (
-                <PositionsTable content={item.virtuals as PositionEntry[]} title="Virtual positions" />
-              )}
-            </VStack>
-          </>
+          <VStack w="100%" key={`trade${item.id}`}>
+            <Flex w="100%" borderWidth="1px" borderRadius="lg" p={1} wrap="wrap" alignItems="botton">
+              <TitleBox item={item} />
+              <StatusBox item={item} />
+              <SymbolBox item={item} />
+              <PerformanceBox item={item} />
+              {item.comment?.length > 0 && <CommentBox item={item} />}
+            </Flex>
+            {item.positions?.length > 0 && <PositionsTable content={item.positions} />}
+            {item.virtuals?.length > 0 && (
+              <PositionsTable content={item.virtuals as PositionEntry[]} title="Virtual positions" />
+            )}
+          </VStack>
         ))}
       </VStack>
     </>

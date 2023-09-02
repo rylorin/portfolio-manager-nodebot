@@ -32,8 +32,9 @@ export type OptionPositionEntry = PositionEntry & {
     type: string;
     delta: number | undefined;
   };
-  stock: {
+  underlying: {
     id: number;
+    secType: ContractType;
     symbol: string;
     price: number | undefined;
   };

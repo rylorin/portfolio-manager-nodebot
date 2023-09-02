@@ -9,7 +9,7 @@
     "forceConsistentCasingInFileNames": true,
     "isolatedModules": true,
     "jsx": "react",
-    "lib": ["ESNext", "DOM", "DOM.Iterable"],
+    "lib": ["ESNext", "DOM", "DOM.Iterable", "ES2021.String"],
     "module": "ESNext",
     "moduleResolution": "Node",
     "noImplicitAny": false, // TODO set to true once all data hava a type

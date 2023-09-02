@@ -63,7 +63,7 @@ const PositionsTable: FunctionComponent<Props> = ({ title = "Positions index", c
                     </Link>
                   </Td>
                   <Td>{item.contract.name}</Td>
-                  <Td>
+                  <Td isNumeric>
                     {item.trade_id && (
                       <>
                         <Link to={`/portfolio/${portfolioId}/trades/id/${item.trade_id}`} as={RouterLink}>
