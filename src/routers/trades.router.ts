@@ -118,9 +118,20 @@ export const updateTradeDetails = (thisTrade: Trade): Promise<Trade> => {
     // sort statements by date
     const items = thisTrade.statements.sort((a, b) => a.date.getTime() - b.date.getTime());
     thisTrade.openingDate = items[0].date;
-    if (thisTrade.status == TradeStatus.closed && !thisTrade.closingDate)
-      thisTrade.closingDate = items[items.length - 1].date;
-    else if (thisTrade.status != TradeStatus.closed) thisTrade.closingDate = null;
+    if (thisTrade.status == TradeStatus.closed && !thisTrade.closingDate) {
+      // closing date is last trade (or trade option) statement date
+      thisTrade.closingDate = thisTrade.openingDate;
+      for (let i = items.length - 1; i > 0; --i) {
+        if (
+          items[i].statementType == StatementTypes.EquityStatement ||
+          items[i].statementType == StatementTypes.OptionStatement
+        ) {
+          // console.log(items[i]);
+          thisTrade.closingDate = items[i].date;
+          break;
+        }
+      }
+    } else if (thisTrade.status != TradeStatus.closed) thisTrade.closingDate = null;
     thisTrade.PnL = 0;
     thisTrade.pnlInBase = 0;
     return (

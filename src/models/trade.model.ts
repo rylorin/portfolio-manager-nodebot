@@ -71,16 +71,16 @@ export class Trade extends Model<
 
   /** Total duration if trade is closed or current duration is trade is open */
   get duration(): NonAttribute<number> {
-    return (
-      ((this.closingDate ? this.closingDate.getTime() : Date.now()) - this.openingDate.getTime()) / 1000 / 3600 / 24
+    return Math.ceil(
+      ((this.closingDate ? this.closingDate.getTime() : Date.now()) - this.openingDate.getTime()) / 1000 / 3600 / 24,
     );
   }
 
   get expectedDuration(): NonAttribute<number | undefined> {
     return this.closingDate
-      ? (this.closingDate.getTime() - this.openingDate.getTime()) / 1000 / 3600 / 24
+      ? Math.ceil((this.closingDate.getTime() - this.openingDate.getTime()) / 1000 / 3600 / 24)
       : Math.max(
-          (expirationToDate(this.expectedExpiry).getTime() - this.openingDate.getTime()) / 1000 / 3600 / 24 + 0.6,
+          Math.ceil((expirationToDate(this.expectedExpiry).getTime() - this.openingDate.getTime()) / 1000 / 3600 / 24),
           0,
         );
   }

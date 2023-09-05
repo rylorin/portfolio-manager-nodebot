@@ -18,6 +18,7 @@ jobs:
         uses: actions/setup-node@v3
         with:
           node-version: 18.17.1
+          cache: "yarn" # caches the yarn cache folder not node_modules
       - name: Prepare
         run: yarn install --frozen-lockfile
       - name: Quality Check
