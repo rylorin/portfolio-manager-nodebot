@@ -157,13 +157,13 @@ export class ContractsUpdaterBot extends ITradingBot {
     } = {};
     marketData.forEach((tick, type: TickType) => {
       if (tick.value)
-        if (type == IBApiTickType.BID) {
-          dataset.bid = (tick.value as number) > 0 ? tick.value : null;
-        } else if (type == IBApiTickType.ASK) {
-          dataset.ask = (tick.value as number) > 0 ? tick.value : null;
-        } else if (type == IBApiTickType.LAST) {
+        if (type == IBApiTickType.LAST || type == IBApiTickType.DELAYED_LAST) {
           dataset.price = (tick.value as number) > 0 ? tick.value : null;
-        } else if (type == IBApiTickType.CLOSE) {
+        } else if (type == IBApiTickType.BID || type == IBApiTickType.DELAYED_BID) {
+          dataset.bid = (tick.value as number) > 0 ? tick.value : null;
+        } else if (type == IBApiTickType.ASK || type == IBApiTickType.DELAYED_ASK) {
+          dataset.ask = (tick.value as number) > 0 ? tick.value : null;
+        } else if (type == IBApiTickType.CLOSE || type == IBApiTickType.DELAYED_CLOSE) {
           dataset.previousClosePrice = (tick.value as number) > 0 ? tick.value : null;
         } else if (
           [
@@ -175,13 +175,20 @@ export class ContractsUpdaterBot extends ITradingBot {
             IBApiTickType.LOW,
             IBApiTickType.VOLUME,
             IBApiTickType.HALTED,
+            IBApiTickType.DELAYED_BID_SIZE,
+            IBApiTickType.DELAYED_ASK_SIZE,
+            IBApiTickType.DELAYED_LAST_SIZE,
+            IBApiTickType.DELAYED_OPEN,
+            IBApiTickType.DELAYED_HIGH,
+            IBApiTickType.DELAYED_LOW,
+            IBApiTickType.DELAYED_VOLUME,
           ].includes(type as IBApiTickType)
         ) {
           // siliently ignore
           // console.log('silently ignored', type, tick);
         } else if (type == IBApiNextTickType.OPTION_PV_DIVIDEND) {
           optdataset.pvDividend = tick.value;
-        } else if (type == IBApiNextTickType.LAST_OPTION_PRICE) {
+        } else if (type == IBApiNextTickType.LAST_OPTION_PRICE || type == IBApiNextTickType.DELAYED_LAST_OPTION_PRICE) {
           if (!dataset.price) {
             dataset.price = (tick.value as number) > 0 ? tick.value : null;
           }
@@ -247,6 +254,7 @@ export class ContractsUpdaterBot extends ITradingBot {
             IBApiNextTickType.ASK_OPTION_GAMMA,
             IBApiNextTickType.ASK_OPTION_VEGA,
             IBApiNextTickType.ASK_OPTION_THETA,
+            IBApiNextTickType.MODEL_OPTION_PRICE, // ?
             // Would be interesting to use delayed data if no live data available
             IBApiNextTickType.DELAYED_BID_OPTION_IV,
             IBApiNextTickType.DELAYED_BID_OPTION_PRICE,
@@ -261,12 +269,16 @@ export class ContractsUpdaterBot extends ITradingBot {
             IBApiNextTickType.DELAYED_ASK_OPTION_VEGA,
             IBApiNextTickType.DELAYED_ASK_OPTION_THETA,
             IBApiNextTickType.DELAYED_LAST_OPTION_IV,
-            IBApiNextTickType.DELAYED_LAST_OPTION_PRICE,
             IBApiNextTickType.DELAYED_LAST_OPTION_DELTA,
             IBApiNextTickType.DELAYED_LAST_OPTION_GAMMA,
             IBApiNextTickType.DELAYED_LAST_OPTION_VEGA,
             IBApiNextTickType.DELAYED_LAST_OPTION_THETA,
-            IBApiNextTickType.MODEL_OPTION_PRICE, // ?
+            IBApiNextTickType.DELAYED_MODEL_OPTION_IV,
+            IBApiNextTickType.DELAYED_MODEL_OPTION_PRICE,
+            IBApiNextTickType.DELAYED_MODEL_OPTION_DELTA,
+            IBApiNextTickType.DELAYED_MODEL_OPTION_GAMMA,
+            IBApiNextTickType.DELAYED_MODEL_OPTION_VEGA,
+            IBApiNextTickType.DELAYED_MODEL_OPTION_THETA,
           ].includes(type as IBApiNextTickType)
         ) {
           // siliently ignore

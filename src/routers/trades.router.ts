@@ -566,8 +566,7 @@ const makeSynthesys = (trades: Trade[]): Promise<TradeSynthesys> => {
             theSynthesys.byMonth[idx] = { count: 0, success: 0, duration: 0, min: undefined, max: undefined, total: 0 };
           }
           theSynthesys.byMonth[idx].count += 1;
-          theSynthesys.byMonth[idx].duration +=
-            (item.closingDate.getTime() - item.openingDate.getTime()) / 1000 / 3600 / 24;
+          theSynthesys.byMonth[idx].duration += item.duration;
           if (item.pnlInBase) {
             if (item.pnlInBase > 0) theSynthesys.byMonth[idx].success += 1;
             theSynthesys.byMonth[idx].total += item.pnlInBase;
