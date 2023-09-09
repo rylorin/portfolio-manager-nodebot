@@ -185,7 +185,7 @@ router.get("/index", (req, res): void => {
       },
       { model: Currency, as: "baseRates" },
     ],
-    logging: console.log,
+    // logging: console.log,
   })
     .then((portfolio) => {
       if (portfolio) {
