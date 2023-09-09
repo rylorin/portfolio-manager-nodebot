@@ -29,16 +29,18 @@ const PositionsTable: FunctionComponent<Props> = ({ title = "Positions index", c
     return undefined;
   };
 
-  const underlyingSymbol = (a: PositionEntry | OptionPositionEntry): string => {
-    switch (a.contract.secType) {
+  const underlyingSymbol = (pos: PositionEntry | OptionPositionEntry): string => {
+    switch (pos.contract.secType) {
       case ContractType.Stock:
-        return a.contract.symbol;
+        return pos.contract.symbol;
       case ContractType.Future:
-        return a.contract.symbol;
+        return pos.contract.symbol;
       case ContractType.Option:
-        return (a as OptionPositionEntry).underlying.symbol;
+        return (pos as OptionPositionEntry).underlying
+          ? (pos as OptionPositionEntry).underlying.symbol
+          : pos.contract.symbol;
       default:
-        return a.contract.symbol;
+        return pos.contract.symbol;
     }
   };
 

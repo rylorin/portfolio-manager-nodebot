@@ -43,6 +43,7 @@ const OptionsPositions: FunctionComponent<PositionsIndexProps> = ({ ..._rest }):
     let subTotal: TotalEntry;
 
     positions
+      .filter((item) => item.quantity)
       .sort((a, b) => compareItems(a, b))
       .forEach((item) => {
         if (!subTotal) {
