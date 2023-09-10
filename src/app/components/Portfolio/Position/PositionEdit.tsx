@@ -9,7 +9,7 @@ import Number from "../../Number/Number";
 
 type PositionEditProps = Record<string, never>;
 
-const PositionEdit: FunctionComponent<PositionEditProps> = ({ ..._rest }): JSX.Element => {
+const PositionEdit: FunctionComponent<PositionEditProps> = ({ ..._rest }): React.JSX.Element => {
   const { _portfolioId } = useParams();
   const thisPosition = useLoaderData() as PositionEntry;
   const navigate = useNavigate();
@@ -23,7 +23,7 @@ const PositionEdit: FunctionComponent<PositionEditProps> = ({ ..._rest }): JSX.E
         submit(values, { method: "post" });
       }}
     >
-      {(formik: FormikProps<PositionEntry>): JSX.Element => {
+      {(formik: FormikProps<PositionEntry>): React.JSX.Element => {
         return (
           <RouterForm method="post" onSubmit={formik.handleSubmit}>
             <VStack>

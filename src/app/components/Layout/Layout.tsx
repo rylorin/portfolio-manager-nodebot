@@ -1,5 +1,5 @@
 import { Box, Flex, Link } from "@chakra-ui/react";
-import { FunctionComponent, default as React } from "react";
+import React from "react";
 import NavBar from "../../components/NavBar/NavBar";
 import links from "../../links";
 
@@ -7,7 +7,7 @@ type LayoutProps = {
   children: React.ReactNode;
 };
 
-const Layout: FunctionComponent<LayoutProps> = ({ children, ..._rest }): JSX.Element => {
+const Layout: React.FunctionComponent<LayoutProps> = ({ children, ..._rest }): React.JSX.Element => {
   return (
     <>
       <NavBar links={links} as="header" />

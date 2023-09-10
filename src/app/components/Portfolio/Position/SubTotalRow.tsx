@@ -16,7 +16,7 @@ export type TotalEntry = {
 
 type Props = { subTotal: TotalEntry };
 
-const SubTotalRow: FunctionComponent<Props> = ({ subTotal, ..._rest }): JSX.Element => {
+const SubTotalRow: FunctionComponent<Props> = ({ subTotal, ..._rest }): React.JSX.Element => {
   const bg = useColorModeValue("gray.200", "gray.700");
 
   return (

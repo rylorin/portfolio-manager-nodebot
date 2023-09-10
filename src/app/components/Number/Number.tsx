@@ -12,7 +12,13 @@ type NumberProps = {
   isPercent?: boolean;
 } & TextProps;
 
-const Number: FunctionComponent<NumberProps> = ({ value, decimals = 0, color, isPercent, ...rest }): JSX.Element => {
+const Number: FunctionComponent<NumberProps> = ({
+  value,
+  decimals = 0,
+  color,
+  isPercent,
+  ...rest
+}): React.JSX.Element => {
   const rounded = value
     ? (isPercent ? value * 100 : value).toLocaleString(undefined, {
         minimumFractionDigits: decimals,

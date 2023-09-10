@@ -10,7 +10,11 @@ type TradesMonthlyTableProps = {
   content: TradeMonthlySynthesys;
 };
 
-const TradesMonthlyTable: FunctionComponent<TradesMonthlyTableProps> = ({ title, content, ..._rest }): JSX.Element => {
+const TradesMonthlyTable: FunctionComponent<TradesMonthlyTableProps> = ({
+  title,
+  content,
+  ..._rest
+}): React.JSX.Element => {
   return (
     <TableContainer>
       <Table variant="simple" size="sm">

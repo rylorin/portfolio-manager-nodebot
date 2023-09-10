@@ -10,7 +10,7 @@ type Props = Record<string, never>;
  * @param param0
  * @returns
  */
-const PositionsIndex: FunctionComponent<Props> = ({ ..._rest }): JSX.Element => {
+const PositionsIndex: FunctionComponent<Props> = ({ ..._rest }): React.JSX.Element => {
   return (
     <>
       <Box>

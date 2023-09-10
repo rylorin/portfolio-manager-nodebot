@@ -11,7 +11,7 @@ type NavBarProps = {
   as: string;
 };
 
-const NavBar: FunctionComponent<NavBarProps> = ({ links, ...rest }): JSX.Element => {
+const NavBar: FunctionComponent<NavBarProps> = ({ links, ...rest }): React.JSX.Element => {
   const [isOpen, setIsOpen] = React.useState(false);
   const toggle = (): void => setIsOpen(!isOpen);
   const to = Object.keys(links).shift() || "/";
@@ -32,7 +32,7 @@ const NavBar: FunctionComponent<NavBarProps> = ({ links, ...rest }): JSX.Element
 
 type MenuToggleProps = { isOpen: boolean; toggle: () => void };
 
-const MenuToggle: FunctionComponent<MenuToggleProps> = ({ toggle, isOpen }): JSX.Element => {
+const MenuToggle: FunctionComponent<MenuToggleProps> = ({ toggle, isOpen }): React.JSX.Element => {
   return (
     <Box display={{ base: "block", md: "none" }} onClick={toggle}>
       {isOpen ? (
@@ -46,7 +46,7 @@ const MenuToggle: FunctionComponent<MenuToggleProps> = ({ toggle, isOpen }): JSX
 
 type MenuItemProps = { to: string; children: ReactNode };
 
-const MenuItem: FunctionComponent<MenuItemProps> = ({ children, to = "/", ...rest }): JSX.Element => {
+const MenuItem: FunctionComponent<MenuItemProps> = ({ children, to = "/", ...rest }): React.JSX.Element => {
   return (
     <Link to={to} as={RouterLink}>
       <Text display="block" {...rest}>
@@ -61,7 +61,7 @@ type MenuLinksProps = {
   isOpen: boolean;
 };
 
-const MenuLinks: FunctionComponent<MenuLinksProps> = ({ links, isOpen }): JSX.Element => {
+const MenuLinks: FunctionComponent<MenuLinksProps> = ({ links, isOpen }): React.JSX.Element => {
   return (
     <Box display={{ base: isOpen ? "block" : "none", md: "block" }} flexBasis={{ base: "100%", md: "auto" }}>
       <Stack
@@ -85,7 +85,7 @@ type NavBarContainerProps = {
   children: ReactNode;
 };
 
-const NavBarContainer: FunctionComponent<NavBarContainerProps> = ({ children, ...rest }): JSX.Element => {
+const NavBarContainer: FunctionComponent<NavBarContainerProps> = ({ children, ...rest }): React.JSX.Element => {
   return (
     <Flex as="nav" align="center" justify="space-between" wrap="wrap" w="100%" pr="4" pl="4" pt="1" pb="1" {...rest}>
       {children}

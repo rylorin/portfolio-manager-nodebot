@@ -9,7 +9,7 @@ import { PositionLink } from "./links";
 
 type Props = { portfolioId: number; item: OptionPositionEntry };
 
-const OptionRow: FunctionComponent<Props> = ({ portfolioId, item, ..._rest }): JSX.Element => {
+const OptionRow: FunctionComponent<Props> = ({ portfolioId, item, ..._rest }): React.JSX.Element => {
   const getITM = (item: OptionPositionEntry): number => {
     if (!item.underlying.price) return undefined;
     else if (item.option.type == "P") {

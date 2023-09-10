@@ -19,7 +19,7 @@ const BarChart: FunctionComponent<BarChartProps> = ({
   dividends,
   stocks_pnl,
   ...rest
-}): JSX.Element => {
+}): React.JSX.Element => {
   const chartData = {
     labels: labels,
     datasets: [

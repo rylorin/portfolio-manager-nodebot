@@ -1,5 +1,5 @@
-import { ChakraBaseProvider } from "@chakra-ui/react";
-import { default as React } from "react";
+import { ChakraProvider, ColorModeScript } from "@chakra-ui/react";
+import React from "react";
 import { createRoot } from "react-dom/client";
 import { Outlet, RouterProvider, createBrowserRouter } from "react-router-dom";
 import Layout from "./components/Layout/Layout";
@@ -13,7 +13,7 @@ import { action as PortfolioAction } from "./components/Portfolio/Layout/actions
 import PortfolioEdit from "./components/Portfolio/Portfolio/PortfolioEdit";
 import PortfolioShow from "./components/Portfolio/Portfolio/PortfolioShow";
 import { portfolioLoader } from "./components/Portfolio/Portfolio/loaders";
-import { default as PortfolioIndex } from "./components/Portfolio/PortfolioIndex";
+import PortfolioIndex from "./components/Portfolio/PortfolioIndex";
 import OptionsPositions from "./components/Portfolio/Position/OptionsPositions";
 import PositionEdit from "./components/Portfolio/Position/PositionEdit";
 import PositionShow from "./components/Portfolio/Position/PositionShow";
@@ -31,9 +31,9 @@ import {
   positionsOptionsLoader,
 } from "./components/Portfolio/Position/loaders";
 import StatementEdit from "./components/Portfolio/Statement/StatementEdit";
-import { default as StatementShow } from "./components/Portfolio/Statement/StatementShow";
-import { default as StatementSummary } from "./components/Portfolio/Statement/StatementSummary";
-import { default as StatementIndex } from "./components/Portfolio/Statement/StatementsTable";
+import StatementShow from "./components/Portfolio/Statement/StatementShow";
+import StatementSummary from "./components/Portfolio/Statement/StatementSummary";
+import StatementIndex from "./components/Portfolio/Statement/StatementsTable";
 import {
   statementAddToTrade,
   statementCreateTrade,
@@ -66,7 +66,7 @@ import {
 import { portfolioIndexLoader } from "./components/Portfolio/loaders";
 import ErrorPage from "./error-page";
 import "./globals.css";
-import theme from "./theme";
+// import theme from "./theme";
 
 const router = createBrowserRouter([
   {
@@ -260,7 +260,10 @@ const router = createBrowserRouter([
 
 const root = createRoot(document.getElementById("root"));
 root.render(
-  <ChakraBaseProvider theme={theme}>
-    <RouterProvider router={router} />
-  </ChakraBaseProvider>,
+  <>
+    <ColorModeScript />
+    <ChakraProvider>
+      <RouterProvider router={router} />
+    </ChakraProvider>
+  </>,
 );

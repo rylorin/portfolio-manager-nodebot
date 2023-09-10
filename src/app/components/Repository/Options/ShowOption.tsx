@@ -6,7 +6,7 @@ import { PositionEntry } from "../../../../routers/positions.types";
 
 type Props = Record<string, never>;
 
-const ShowOption: FunctionComponent<Props> = ({ ..._rest }): JSX.Element => {
+const ShowOption: FunctionComponent<Props> = ({ ..._rest }): React.JSX.Element => {
   const thisItem = useLoaderData() as PositionEntry;
   const navigate = useNavigate();
 

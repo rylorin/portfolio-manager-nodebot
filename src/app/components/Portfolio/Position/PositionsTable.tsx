@@ -19,7 +19,11 @@ type Props = {
  * @param param
  * @returns
  */
-const PositionsTable: FunctionComponent<Props> = ({ title = "Positions index", content, ..._rest }): JSX.Element => {
+const PositionsTable: FunctionComponent<Props> = ({
+  title = "Positions index",
+  content,
+  ..._rest
+}): React.JSX.Element => {
   const { portfolioId } = useParams();
   const thePositions = content || (useLoaderData() as PositionEntry[]);
   let previousId: number;

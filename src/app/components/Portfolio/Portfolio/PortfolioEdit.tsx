@@ -7,7 +7,7 @@ import { obfuscate } from "../../../utils";
 
 type PortfolioShowProps = Record<string, never>;
 
-const PortfolioEdit: FunctionComponent<PortfolioShowProps> = ({ ..._rest }): JSX.Element => {
+const PortfolioEdit: FunctionComponent<PortfolioShowProps> = ({ ..._rest }): React.JSX.Element => {
   const thisPortfolio = useLoaderData() as PortfolioModel;
   const navigate = useNavigate();
 

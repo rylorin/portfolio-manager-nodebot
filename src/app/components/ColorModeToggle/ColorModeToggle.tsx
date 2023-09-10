@@ -38,7 +38,7 @@ type ColorModeToggleProps = {
   hideFrom?: string;
 };
 
-const ColorModeToggle: FunctionComponent<ColorModeToggleProps> = (props): JSX.Element => {
+const ColorModeToggle: FunctionComponent<ColorModeToggleProps> = (props): React.JSX.Element => {
   const { toggleColorMode } = useColorMode();
   const displayLightModeToggle = useColorModeValue("none", "display");
   const displayDarkModeToggle = useColorModeValue("display", "none");
