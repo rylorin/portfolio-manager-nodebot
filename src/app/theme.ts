@@ -1,7 +1,6 @@
 // 1. import `extendTheme` or `extendBaseTheme` function
-import { extendBaseTheme } from "@chakra-ui/react";
+import { ThemeOverride, extendBaseTheme } from "@chakra-ui/react";
 // `@chakra-ui/theme` is a part of the base install with `@chakra-ui/react`
-import { ThemeOverride } from "@chakra-ui/react";
 import { theme as chakraTheme } from "@chakra-ui/theme";
 
 const { Button, Link, Code, Table, Tooltip, Select, Textarea, Badge } = chakraTheme.components;

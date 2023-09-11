@@ -1,4 +1,4 @@
-import { ChakraProvider, ColorModeScript } from "@chakra-ui/react";
+import { ChakraBaseProvider } from "@chakra-ui/react";
 import React from "react";
 import { createRoot } from "react-dom/client";
 import { Outlet, RouterProvider, createBrowserRouter } from "react-router-dom";
@@ -66,7 +66,7 @@ import {
 import { portfolioIndexLoader } from "./components/Portfolio/loaders";
 import ErrorPage from "./error-page";
 import "./globals.css";
-// import theme from "./theme";
+import theme from "./theme";
 
 const router = createBrowserRouter([
   {
@@ -261,9 +261,8 @@ const router = createBrowserRouter([
 const root = createRoot(document.getElementById("root"));
 root.render(
   <>
-    <ColorModeScript />
-    <ChakraProvider>
+    <ChakraBaseProvider theme={theme}>
       <RouterProvider router={router} />
-    </ChakraProvider>
+    </ChakraBaseProvider>
   </>,
 );
