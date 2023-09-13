@@ -425,6 +425,8 @@ const computeTradeStrategy = (
     // Strategies without any stock leg
     if (short_put > 0 && long_put > 0 && short_put > long_put && short_call == 0 && !long_call)
       strategy = TradeStrategy["front ratio spread"];
+    else if (long_call > 0 && short_call > long_call && !short_put && !long_put)
+      strategy = TradeStrategy["front ratio spread"];
     else if (short_put > 0 && long_put == 0 && short_call == 0 && !long_call) strategy = TradeStrategy["short put"];
     else if (short_put == 0 && long_put > 0 && short_call == 0 && !long_call) strategy = TradeStrategy["long put"];
     else if (short_call > 0 && !long_call && !short_put && !long_put) strategy = TradeStrategy["naked short call"];
