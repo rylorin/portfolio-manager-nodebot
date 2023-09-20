@@ -3,7 +3,7 @@ import { ThemeOverride, extendBaseTheme } from "@chakra-ui/react";
 // `@chakra-ui/theme` is a part of the base install with `@chakra-ui/react`
 import { theme as chakraTheme } from "@chakra-ui/theme";
 
-const { Button, Link, Code, Table, Tooltip, Select, Textarea, Badge } = chakraTheme.components;
+const { Button, Link, Code, Table, Tooltip, Select, Textarea, Badge, Spinner } = chakraTheme.components;
 
 // 2. Add your theme extensions
 const extensions: ThemeOverride = {
@@ -17,6 +17,7 @@ const extensions: ThemeOverride = {
     Select,
     Textarea,
     Badge,
+    Spinner,
   },
   styles: {
     global: {

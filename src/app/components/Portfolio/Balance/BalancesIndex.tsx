@@ -1,9 +1,10 @@
 import { DeleteIcon, EditIcon, SearchIcon } from "@chakra-ui/icons";
 import { IconButton, Table, TableCaption, TableContainer, Tbody, Td, Tfoot, Thead, Tr } from "@chakra-ui/react";
 import { FunctionComponent, default as React } from "react";
-import { Form, useLoaderData } from "react-router-dom";
+import { Form, Link as RouterLink, useLoaderData, useParams } from "react-router-dom";
 import { BalanceEntry } from "../../../../routers/balances.types";
 import Number from "../../Number/Number";
+import { BalanceLink } from "./links";
 
 type BalancesIndexProps = Record<string, never>;
 
@@ -13,6 +14,7 @@ type BalancesIndexProps = Record<string, never>;
  * @returns
  */
 const BalancesIndex: FunctionComponent<BalancesIndexProps> = ({ ..._rest }): React.JSX.Element => {
+  const { portfolioId } = useParams();
   const theBalances = useLoaderData() as BalanceEntry[];
 
   return (
@@ -37,8 +39,10 @@ const BalancesIndex: FunctionComponent<BalancesIndexProps> = ({ ..._rest }): Rea
                     <Number value={item.quantity} decimals={2} />
                   </Td>
                   <Td>
-                    <IconButton aria-label="New trade" icon={<SearchIcon />} size="xs" variant="ghost" />
-                    <IconButton aria-label="Guess trade" icon={<EditIcon />} size="xs" variant="ghost" />
+                    <RouterLink to={`${BalanceLink.toItem(portfolioId, item.id)}`}>
+                      <IconButton aria-label="Show Balance" icon={<SearchIcon />} size="xs" variant="ghost" />
+                    </RouterLink>
+                    <IconButton aria-label="Edit Balance" icon={<EditIcon />} size="xs" variant="ghost" />
                     <Form method="post" action={`DeleteBalance/${item.id}`} className="inline">
                       <IconButton
                         aria-label="Delete balance"

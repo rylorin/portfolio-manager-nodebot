@@ -1,6 +1,32 @@
 import { ActionFunctionArgs, redirect } from "react-router-dom";
 
 /**
+ * Save a balance
+ * @param request
+ * @param params
+ * @returns
+ */
+export const balanceSave = ({ request, params }: ActionFunctionArgs): Promise<Response> => {
+  const { portfolioId, balanceId } = params;
+  return request
+    .formData()
+    .then((formData: Iterable<readonly [PropertyKey, any]>) => {
+      const data = Object.fromEntries(formData);
+      // console.log("balance save ", data);
+      return fetch(`/api/portfolio/${portfolioId}/balances/id/${balanceId}/SaveBalance`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        // Select values are returned as string (not all???!!!), therefore we have to convert them to numbers, if needed
+        body: JSON.stringify({ ...data, strategy: parseInt(data.strategy as string) }),
+      });
+    })
+    .then((response: Response) => response.json())
+    .then((_data) => redirect("../"));
+};
+
+/**
  * Delete a position
  * @param params
  * @returns

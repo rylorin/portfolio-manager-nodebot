@@ -188,34 +188,39 @@ export class AccountUpdateBot extends ITradingBot {
     }
   }
 
-  protected updatePosition(pos: IbPosition): Promise<Position> {
+  protected updatePosition(pos: IbPosition): Promise<Position | undefined> {
     logger.log(LogLevel.Trace, MODULE + ".updatePosition", pos.contract.symbol, pos);
     const defaults = {
       portfolio_id: this.portfolio.id,
       quantity: pos.pos,
       cost: pos.avgCost! * pos.pos, // eslint-disable-line @typescript-eslint/no-unnecessary-type-assertion
     };
-    return this.findOrCreateContract(pos.contract).then((contract) =>
-      Position.findOrCreate({
-        where: { contract_id: contract.id },
-        defaults: { ...defaults, contract_id: contract.id },
-      })
-        .then(([position, created]) => {
-          if (created) return position;
-          else {
-            position.changed("quantity", true); // force update
-            return position.update(defaults, { logging: sequelize_logging });
-          }
+    return this.findOrCreateContract(pos.contract).then((contract): Promise<Position | undefined> => {
+      if (defaults.quantity) {
+        return Position.findOrCreate({
+          where: { contract_id: contract.id },
+          defaults: { ...defaults, contract_id: contract.id },
         })
-        .then((position) => {
-          // update contract price, then return position
-          if (pos.marketValue) {
-            contract.price = pos.marketValue / pos.pos / (pos.contract.multiplier || 1);
-            contract.changed("price", true); // force update
-          }
-          return contract.save({ logging: sequelize_logging }).then(() => position);
-        }),
-    );
+          .then(([position, created]) => {
+            if (created) return position;
+            else {
+              return position.update(defaults, { logging: console.log });
+            }
+          })
+          .then((position): Promise<Position | undefined> => {
+            // update contract price, then return position
+            if (pos.marketValue) {
+              contract.price = pos.marketValue / pos.pos / (pos.contract.multiplier || 1);
+              contract.changed("price", true); // force update
+            }
+            return contract.save({ logging: sequelize_logging }).then(() => position);
+          });
+      } else {
+        return Position.destroy({ where: { portfolio_id: defaults.portfolio_id, contract_id: contract.id } }).then(
+          (_count): undefined => undefined,
+        );
+      }
+    });
   }
 
   protected updateCashPosition(pos: { currency: string; balance: number }): Promise<Balance> {
@@ -228,21 +233,6 @@ export class AccountUpdateBot extends ITradingBot {
       where: where,
       defaults: { ...where, quantity: pos.balance },
     }).then(([balance, _created]) => balance.update({ quantity: pos.balance }));
-  }
-
-  private cleanPositions(now: number): void {
-    Position.update(
-      {
-        quantity: 0,
-      },
-      {
-        where: {
-          portfolio_id: this.portfolio.id,
-          [Op.or]: [{ updatedAt: { [Op.lt]: new Date(now) } }, { updatedAt: { [Op.is]: undefined } }],
-        },
-        // logging: console.log,
-      },
-    ).catch((error) => console.error("account bot clean positions:", error));
   }
 
   private cleanBalances(now: number): Promise<void> {
@@ -298,6 +288,11 @@ export class AccountUpdateBot extends ITradingBot {
       },
     });
 
+    const init_positions: Position[] = await Position.findAll({
+      where: { portfolio_id: this.portfolio.id },
+      include: [{ association: "contract" }],
+    });
+    let positions_inited = false;
     this.positionsSubscription$ = this.api.getPositions().subscribe({
       next: (data) => {
         data.added?.forEach((v, k) => {
@@ -306,6 +301,23 @@ export class AccountUpdateBot extends ITradingBot {
         data.changed?.forEach((v, k) => {
           if (k == this.accountNumber) v.forEach((p) => this.enqueuePosition(p));
         });
+        if (!positions_inited) {
+          positions_inited = true;
+          // For each position still present in portfolio
+          data.all.forEach((v, k) => {
+            if (k == this.accountNumber)
+              v.forEach((p) => {
+                // Remove it from init_positions
+                const idx = init_positions.findIndex((item) => item.contract.conId == p.contract.conId);
+                if (idx >= 0) init_positions.splice(idx, 1);
+              });
+          });
+          // remaining init_positions can be deleted
+          init_positions.forEach((pos) => {
+            logger.debug(MODULE + ".start", "delete pos", pos.contract.symbol);
+            pos.destroy().catch((err) => logger.error(MODULE + ".start", err));
+          });
+        }
       },
       error: (err: IBApiNextError) => {
         this.app.error(`getPositions failed with '${err.error.message}'`);
@@ -354,8 +366,6 @@ export class AccountUpdateBot extends ITradingBot {
         });
       })
       .catch((error) => console.error("account bot start:", error));
-
-    setTimeout(() => this.cleanPositions(now), 15 * 1000); // clean old positions after 15 secs
   }
 
   public stop(): void {

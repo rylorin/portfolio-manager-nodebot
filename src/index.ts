@@ -17,7 +17,6 @@ import {
   YahooUpdateBot,
 } from "./bots";
 import { ImporterBot } from "./bots/importer.bot";
-import logger from "./logger";
 import {
   Bag,
   Balance,
@@ -50,7 +49,6 @@ import StartServer from "./server";
 const DESCRIPTION_TEXT = "Print real time market data of a given contract id.";
 const USAGE_TEXT = "Usage: index.js <options>";
 const OPTION_ARGUMENTS: [string, string][] = [
-  ["clientId=<number>", "Client id of current IB connection. Default is random"],
   ["accountId=<string>", "IB account number"],
   ["update", "start option contracts updater bot"],
   ["yahoo", "start Yahoo Finance updater"],
@@ -80,11 +78,8 @@ export class MyTradingBotApp extends IBApiNextApp {
    * Start the app.
    */
   public start(): void {
-    const scriptName = path.basename(__filename);
-    logger.debug(`Starting ${scriptName} script`);
-    const clientId: number =
-      this.cmdLineArgs.clientId != undefined ? +this.cmdLineArgs.clientId : Math.round(Math.random() * 16383);
-    this.connect(this.cmdLineArgs.watch ? 10000 : 0, clientId);
+    super.start();
+    this.connect();
     const sequelize_settings: SequelizeOptions = {
       dialect: "sqlite",
       storage: __dirname + "/../../db/var/db/data.db",

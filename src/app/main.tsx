@@ -3,9 +3,11 @@ import React from "react";
 import { createRoot } from "react-dom/client";
 import { Outlet, RouterProvider, createBrowserRouter } from "react-router-dom";
 import Layout from "./components/Layout/Layout";
+import BalanceEdit from "./components/Portfolio/Balance/BalanceEdit";
+import BalanceShow from "./components/Portfolio/Balance/BalanceShow";
 import BalancesIndex from "./components/Portfolio/Balance/BalancesIndex";
-import { balanceDelete } from "./components/Portfolio/Balance/actions";
-import { balancesIndexLoader } from "./components/Portfolio/Balance/loaders";
+import { balanceDelete, balanceSave } from "./components/Portfolio/Balance/actions";
+import { balancesIndexLoader, balancesShowLoader } from "./components/Portfolio/Balance/loaders";
 import ContractShow from "./components/Portfolio/Contract/ContractShow";
 import { contractShowLoader } from "./components/Portfolio/Contract/loaders";
 import PortfolioLayout from "./components/Portfolio/Layout/PortfolioLayout";
@@ -181,6 +183,13 @@ const router = createBrowserRouter([
                 children: [
                   { index: true, Component: BalancesIndex, loader: balancesIndexLoader },
                   { path: "DeleteBalance/:balanceId", action: balanceDelete },
+                  {
+                    path: "id/:balanceId",
+                    children: [
+                      { index: true, Component: BalanceShow, loader: balancesShowLoader },
+                      { path: "edit", Component: BalanceEdit, loader: balancesShowLoader, action: balanceSave },
+                    ],
+                  },
                 ],
               },
 
@@ -193,7 +202,15 @@ const router = createBrowserRouter([
                     path: "summary",
                     action: PortfolioAction,
                     children: [
-                      { path: "open", Component: TradesOpen, loader: tradesOpenLoader },
+                      {
+                        path: "open",
+                        Component: TradesOpen,
+                        loader: tradesOpenLoader,
+                        children: [
+                          { index: true, Component: TradesOpen, loader: tradesOpenLoader },
+                          { path: ":positionId/PositionUnlinkTrade", action: positionUnlinkTrade },
+                        ],
+                      },
                       { path: "ytd", Component: TradesSummary, loader: tradeSummaryLoaderYTD },
                       { path: "12m", Component: TradesSummary, loader: tradeSummaryLoader12M },
                       { path: "all", Component: TradesSummary, loader: tradeSummaryLoaderAll },

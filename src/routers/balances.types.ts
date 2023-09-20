@@ -2,5 +2,6 @@ export type BalanceEntry = {
   id: number;
   quantity: number;
   currency: string;
-  baseRate: number;
+  baseRate: number | undefined;
+  availCurrencies?: string[];
 };

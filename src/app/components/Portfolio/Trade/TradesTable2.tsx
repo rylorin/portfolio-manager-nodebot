@@ -1,4 +1,17 @@
-import { Badge, Box, Flex, Link, Text, Tooltip, VStack } from "@chakra-ui/react";
+import {
+  Accordion,
+  AccordionButton,
+  AccordionIcon,
+  AccordionItem,
+  AccordionPanel,
+  Badge,
+  Box,
+  Flex,
+  Link,
+  Text,
+  Tooltip,
+  VStack,
+} from "@chakra-ui/react";
 import React, { FunctionComponent } from "react";
 import { Link as RouterLink, useLoaderData, useParams } from "react-router-dom";
 import { TradeStatus } from "../../../../models/trade.types";
@@ -34,7 +47,7 @@ const TradesTable: FunctionComponent<Props> = ({ title = "Trades index", content
   const TitleBox = ({ item }: { item: TradeEntry }): React.JSX.Element => {
     if (item.id > 0)
       return (
-        <Box display="flex" alignItems="baseline" mt={1} fontSize="sm">
+        <Box display="flex" alignItems="baseline" mt={1}>
           <Link to={TradeLink.toItem(portfolioId, item.id)} as={RouterLink} alignItems="baseline">
             <Text alignItems="baseline">Trade #{item.id}</Text>
           </Link>
@@ -49,7 +62,7 @@ const TradesTable: FunctionComponent<Props> = ({ title = "Trades index", content
         <Badge borderRadius="full" px="2" colorScheme={statusBadgetColor(item.status)} variant="outline">
           {tradeStatus2String(item.status)}
         </Badge>
-        <Text fontWeight="semibold" fontSize="sm" textTransform="uppercase" ml="1">
+        <Text fontWeight="semibold" textTransform="uppercase" ml="1">
           {formatNumber(item.duration)}
           {item.status == TradeStatus.open && item.expectedDuration != undefined && (
             <>/{formatNumber(item.expectedDuration)}</>
@@ -88,7 +101,7 @@ const TradesTable: FunctionComponent<Props> = ({ title = "Trades index", content
           {item.currency} &bull; {tradeStrategy2String(item.strategy)}
         </Box>
         {item.risk && (
-          <Box fontWeight="semibold" letterSpacing="wide" fontSize="sm" textTransform="uppercase">
+          <Box fontWeight="semibold" letterSpacing="wide" textTransform="uppercase">
             {" • Risk "}
             <Number value={item.risk} />
           </Box>
@@ -99,7 +112,7 @@ const TradesTable: FunctionComponent<Props> = ({ title = "Trades index", content
 
   const PerformanceBox = ({ item }: { item: TradeEntry }): React.JSX.Element => {
     return (
-      <Box display="flex" alignItems="baseline" mt={1} fontSize="sm" ml={2}>
+      <Box display="flex" alignItems="baseline" mt={1} ml={2}>
         <Text fontWeight="semibold" textTransform="uppercase">
           P&L: <Number value={item.pnl} />
         </Text>
@@ -121,7 +134,7 @@ const TradesTable: FunctionComponent<Props> = ({ title = "Trades index", content
 
   const CommentBox = ({ item }: { item: TradeEntry }): React.JSX.Element => {
     return (
-      <Text color="gray.500" fontWeight="semibold" fontSize="sm" mt={1} ml={2}>
+      <Text color="gray.500" fontWeight="semibold" mt={1} ml={2}>
         {item.comment}
       </Text>
     );
@@ -133,21 +146,38 @@ const TradesTable: FunctionComponent<Props> = ({ title = "Trades index", content
         <Text>
           {title} ({theTrades.length})
         </Text>
-        {theTrades.map((item) => (
-          <VStack w="100%" key={`trade${item.id}`}>
-            <Flex w="100%" borderWidth="1px" borderRadius="lg" p={1} wrap="wrap" alignItems="botton">
-              <TitleBox item={item} />
-              <StatusBox item={item} />
-              <SymbolBox item={item} />
-              <PerformanceBox item={item} />
-              {item.comment?.length > 0 && <CommentBox item={item} />}
-            </Flex>
-            {item.positions?.length > 0 && <PositionsTable content={item.positions} />}
-            {item.virtuals?.length > 0 && (
-              <PositionsTable content={item.virtuals as PositionEntry[]} title="Virtual positions" />
-            )}
-          </VStack>
-        ))}
+        <Accordion allowMultiple>
+          {theTrades.map((item) => (
+            <AccordionItem>
+              <VStack w="100%" key={`trade${item.id}`} as="h2">
+                <AccordionButton>
+                  <Flex
+                    w="100%"
+                    borderWidth="1px"
+                    borderRadius="lg"
+                    p={1}
+                    wrap="wrap"
+                    alignItems="botton"
+                    fontSize="sm"
+                  >
+                    <TitleBox item={item} />
+                    <StatusBox item={item} />
+                    <SymbolBox item={item} />
+                    <PerformanceBox item={item} />
+                    {item.comment?.length > 0 && <CommentBox item={item} />}
+                  </Flex>
+                  <AccordionIcon />
+                </AccordionButton>
+                <AccordionPanel>
+                  {item.positions?.length > 0 && <PositionsTable content={item.positions} />}
+                  {item.virtuals?.length > 0 && (
+                    <PositionsTable content={item.virtuals as PositionEntry[]} title="Virtual positions" />
+                  )}
+                </AccordionPanel>
+              </VStack>
+            </AccordionItem>
+          ))}
+        </Accordion>
       </VStack>
     </>
   );

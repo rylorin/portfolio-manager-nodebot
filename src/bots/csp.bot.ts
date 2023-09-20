@@ -1,7 +1,13 @@
 import { OptionType, OrderAction } from "@stoqey/ib";
 import { Op } from "sequelize";
 import { ITradingBot } from ".";
+import logger from "../logger";
 import { Contract, OpenOrder, Option, Position, Setting, Stock } from "../models";
+
+const MODULE = "CspBot";
+
+// eslint-disable-next-line @typescript-eslint/no-unsafe-argument
+const _sequelize_logging = (...args: any[]): void => logger.trace(MODULE + ".squelize", ...args);
 
 const CSP_FREQ: number = parseInt(process.env.CSP_FREQ || "10"); // mins
 
@@ -177,14 +183,15 @@ export class SellCashSecuredPutBot extends ITradingBot {
       console.log("filtered_options:", filtered_options.length);
       console.log(filtered_options[0]["yield"]);
       this.printObject(filtered_options[0]);
-      await this.api
-        .placeNewOrder(
-          ITradingBot.OptionToIbContract(filtered_options[0]),
-          ITradingBot.CspOrder(OrderAction.SELL, 1, filtered_options[0].contract.ask),
-        )
-        .then((orderId: number) => {
-          console.log("orderid:", orderId.toString());
-        });
+      if (filtered_options[0].contract.ask)
+        await this.api
+          .placeNewOrder(
+            ITradingBot.OptionToIbContract(filtered_options[0]),
+            ITradingBot.CspOrder(OrderAction.SELL, 1, filtered_options[0].contract.ask),
+          )
+          .then((orderId: number) => {
+            console.log("orderid:", orderId.toString());
+          });
     }
   }
 

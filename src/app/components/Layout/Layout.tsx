@@ -1,5 +1,6 @@
-import { Box, Flex, Link } from "@chakra-ui/react";
+import { Box, Flex, Link, Spinner } from "@chakra-ui/react";
 import React from "react";
+import { useNavigation } from "react-router-dom";
 import NavBar from "../../components/NavBar/NavBar";
 import links from "../../links";
 
@@ -8,10 +9,24 @@ type LayoutProps = {
 };
 
 const Layout: React.FunctionComponent<LayoutProps> = ({ children, ..._rest }): React.JSX.Element => {
+  const navigation = useNavigation();
   return (
     <>
       <NavBar links={links} as="header" />
-      <Box as="main">{children}</Box>
+      <Flex
+        display={navigation.state === "idle" ? "none" : "block"}
+        direction="column"
+        justifyContent="center"
+        alignItems="center"
+        textAlign="center"
+        height="100vh"
+        position="absolute"
+      >
+        <Spinner size="xl" />
+      </Flex>
+      <Box as="main" id="top">
+        {children}
+      </Box>
       <Flex as="footer" justify="center" fontSize="xs" mt="21">
         ©️2023
         <Link href="https://github.com/rylorin" ml="1">

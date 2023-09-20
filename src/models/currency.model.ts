@@ -3,7 +3,10 @@ import { BelongsTo, Column, DataType, Model, Table } from "sequelize-typescript"
 import { Portfolio } from "./portfolio.model";
 
 @Table({ tableName: "currency", timestamps: true })
-export class Currency extends Model<InferAttributes<Currency>, InferCreationAttributes<Currency>> {
+export class Currency extends Model<
+  InferAttributes<Currency>,
+  InferCreationAttributes<Currency, { omit: "portfolios" }>
+> {
   // id can be undefined during creation when using `autoIncrement`
   declare id: CreationOptional<number>;
   // timestamps!

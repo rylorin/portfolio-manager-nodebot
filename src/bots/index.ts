@@ -11,10 +11,10 @@ import {
   OrderType,
   SecType,
 } from "@stoqey/ib";
-import colors from "colors";
 import EventEmitter from "events";
 import { Op, Transaction } from "sequelize";
 import { MyTradingBotApp } from "..";
+import logger from "../logger";
 import {
   Bag,
   Balance,
@@ -31,6 +31,11 @@ import {
 } from "../models";
 import { ContractType } from "../models/contract.types";
 import { expirationToDateString } from "../models/date_utils";
+
+const MODULE = "BotIndex";
+
+// eslint-disable-next-line @typescript-eslint/no-unsafe-argument
+const sequelize_logging = (...args: any[]): void => logger.trace(MODULE + ".squelize", ...args);
 
 type OptionsSynthesis = {
   value: number;
@@ -65,7 +70,8 @@ export class ITradingBot extends EventEmitter {
    * Print a warning message to console
    */
   warn(message: string): void {
-    console.error(colors.bold.yellow(`[${new Date().toLocaleTimeString()}] Warning: ${message}`));
+    // console.error(colors.bold.yellow(`[${new Date().toLocaleTimeString()}] Warning: ${message}`));
+    logger.warn(message);
   }
 
   /**
@@ -73,38 +79,8 @@ export class ITradingBot extends EventEmitter {
    */
   error(message: string): void {
     // console.error(colors.bold.red(`[${new Date().toLocaleTimeString()}] Error: ${message}`));
-    console.error(colors.bold.red(`[${new Date().toLocaleTimeString()}] Warning: ${message}`));
+    logger.error(message);
   }
-
-  // protected static expirationToDate(lastTradeDateOrContractMonth: string): Date {
-  //   // convert YYYYMMDD to Date
-  //   const lastTradeDate = new Date(
-  //     parseInt(lastTradeDateOrContractMonth.substring(0, 4)),
-  //     parseInt(lastTradeDateOrContractMonth.substring(4, 6)) - 1,
-  //     parseInt(lastTradeDateOrContractMonth.substring(6, 8)),
-  //   );
-  //   return lastTradeDate;
-  // }
-
-  // protected static expirationToDateString(lastTradeDateOrContractMonth: string): string {
-  //   // convert YYYYMMDD to YYYY-MM-DD
-  //   const lastTradeDate =
-  //     lastTradeDateOrContractMonth.substring(0, 4) +
-  //     "-" +
-  //     lastTradeDateOrContractMonth.substring(4, 6) +
-  //     "-" +
-  //     lastTradeDateOrContractMonth.substring(6, 8);
-  //   return lastTradeDate;
-  // }
-
-  // protected static dateToExpiration(value: Date): string {
-  //   // convert Date to YYYYMMDD
-  //   const day: number = value.getDate();
-  //   const month: number = value.getMonth() + 1;
-  //   const year: number = value.getFullYear();
-  //   const lastTradeDate: string = year.toString() + (month < 10 ? "0" + month : month) + (day < 10 ? "0" + day : day);
-  //   return lastTradeDate;
-  // }
 
   protected static OptionComboContract(underlying: Contract, buyleg: number, sellleg: number): IbContract {
     const contract: IbContract = {
@@ -193,9 +169,12 @@ export class ITradingBot extends EventEmitter {
       where: {
         account: this.accountNumber,
       },
-      include: {
-        model: Contract,
-      },
+      include: [
+        {
+          model: Contract,
+        },
+        { model: Currency, as: "baseRates" },
+      ],
       // logging: console.log,
     })
       .then((portfolio) => {
@@ -212,30 +191,51 @@ export class ITradingBot extends EventEmitter {
       });
   }
 
-  protected getContractPosition(benchmark: Contract): Promise<number> {
-    if (this.portfolio !== null && benchmark !== null) {
+  protected getContractPosition(contract: Contract): Promise<number> {
+    if (this.portfolio !== null && contract !== null) {
+      console.log("getContractPosition", contract.id);
       return Position.findOne({
         where: {
           portfolio_id: this.portfolio.id,
-          contract_id: benchmark.id,
+          contract_id: contract.id,
         },
-      }).then((position) => (position ? position.quantity : 0));
+        logging: sequelize_logging,
+      }).then((position) => {
+        console.log("getContractPosition", position);
+        return position ? position.quantity : 0;
+      });
     } else {
       return Promise.resolve(0);
     }
   }
 
-  protected getContractPositionValueInBase(benchmark: Contract): Promise<number> {
-    return this.getContractPosition(benchmark).then((position) =>
-      Currency.findOne({
-        where: {
+  protected getContractPositionValueInBase(contract: Contract): Promise<number> {
+    // console.log("getContractPositionValueInBase", contract);
+    return this.getContractPosition(contract).then((position) => {
+      return this.findOrCreateCurrency(contract.currency).then((currency) => {
+        console.log("getContractPositionValueInBase", position, contract.livePrice, currency.rate);
+        return (position * contract.livePrice) / currency.rate;
+      });
+    });
+  }
+
+  private async findOrCreateCurrency(symbol: string): Promise<Currency> {
+    const currency = this.portfolio.baseRates.find((currency) => currency.currency == symbol);
+    console.log("findOrCreateCurrency", symbol, currency);
+    if (!currency) {
+      return this.findOrCreateContract({
+        secId: SecType.CASH,
+        currency: symbol,
+        symbol: symbol + "." + this.portfolio.baseCurrency,
+      }).then((contract) => {
+        return Currency.create({
           base: this.portfolio.baseCurrency,
-          currency: benchmark.currency,
-        },
-      }).then((currency) =>
-        position === null || currency === null ? 0 : (position * benchmark.livePrice) / currency.rate,
-      ),
-    );
+          currency: symbol,
+          rate: contract.price!,
+        });
+      });
+    }
+    return Promise.resolve(currency);
   }
 
   protected getContractOrdersQuantity(benchmark: Contract, actionType?: OrderAction): Promise<number> {
@@ -859,7 +859,7 @@ export class ITradingBot extends EventEmitter {
             .catch((err: IBApiNextError) => {
               // console.log("getContractDetails error");
               const message = `findOrCreateContract.getContractDetails failed for ${ibContract.secType} ${ibContract.symbol} ${ibContract.lastTradeDateOrContractMonth} ${ibContract.strike} ${ibContract.right} with error #${err.code}: '${err.error.message}'`;
-              this.error(message);
+              this.warn(message);
               throw {
                 name: "IBApiNextError",
                 message,
