@@ -535,23 +535,23 @@ export class ImporterBot extends ITradingBot {
       .then((response) => response.text())
       .then((XMLdata) => {
         const jObj = parser.parse(XMLdata);
-        if (jObj.FlexQueryResponse) {
-          if (jObj.FlexQueryResponse.FlexStatements.FlexStatement instanceof Array) {
+        if (jObj["FlexQueryResponse"]) {
+          if (jObj["FlexQueryResponse"].FlexStatements.FlexStatement instanceof Array) {
             // disable the following eslint test because I was unable to fix it
             // eslint-disable-next-line @typescript-eslint/no-unsafe-return,@typescript-eslint/no-unsafe-call
-            return jObj.FlexQueryResponse.FlexStatements.FlexStatement.reduce(
+            return jObj["FlexQueryResponse"].FlexStatements.FlexStatement.reduce(
               (p: Promise<void>, element: any): Promise<void> =>
                 p.then((): Promise<void> => this.processReport(element)),
               Promise.resolve(),
             );
           } else {
-            return this.processReport(jObj.FlexQueryResponse.FlexStatements.FlexStatement);
+            return this.processReport(jObj["FlexQueryResponse"].FlexStatements.FlexStatement);
           }
-        } else if (jObj.FlexStatementResponse?.Status == "Warn" && jObj.FlexStatementResponse.ErrorCode == 1019) {
+        } else if (jObj["FlexStatementResponse"]?.Status == "Warn" && jObj["FlexStatementResponse"].ErrorCode == 1019) {
           // Retry
           return awaitTimeout(1).then(() => this.fetchReport(url));
-        } else if (jObj.FlexStatementResponse?.ErrorMessage) {
-          throw Error("Can t fetch data" + jObj.FlexStatementResponse.ErrorMessage);
+        } else if (jObj["FlexStatementResponse"]?.ErrorMessage) {
+          throw Error("Can t fetch data" + jObj["FlexStatementResponse"].ErrorMessage);
         } else {
           console.error(jObj);
           throw Error("Can t fetch data");
@@ -568,11 +568,11 @@ export class ImporterBot extends ITradingBot {
       .then((response) => response.text())
       .then((XMLdata) => {
         const jObj = parser.parse(XMLdata);
-        if (jObj.FlexStatementResponse.Status == "Success") {
+        if (jObj["FlexStatementResponse"].Status == "Success") {
           return this.fetchReport(
-            `${jObj.FlexStatementResponse.Url}?q=${jObj.FlexStatementResponse.ReferenceCode}&t=${this.token}&v=3`,
+            `${jObj["FlexStatementResponse"].Url}?q=${jObj["FlexStatementResponse"].ReferenceCode}&t=${this.token}&v=3`,
           );
-        } else throw Error("Can t fetch data" + jObj.FlexStatementResponse.ErrorMessage);
+        } else throw Error("Can t fetch data" + jObj["FlexStatementResponse"].ErrorMessage);
       })
       .catch((error) => console.error("importer bot fetch:", error));
   }

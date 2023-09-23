@@ -29,7 +29,7 @@ type Props = {
   content?: TradeEntry[];
 };
 
-const TradesTable: FunctionComponent<Props> = ({ title = "Trades index", content, ..._rest }): React.JSX.Element => {
+const TradesTable: FunctionComponent<Props> = ({ title = "Trades index", content, ..._rest }): React.ReactNode => {
   const { portfolioId } = useParams();
   const theTrades = content || (useLoaderData() as TradeEntry[]);
 
@@ -44,7 +44,7 @@ const TradesTable: FunctionComponent<Props> = ({ title = "Trades index", content
     }
   };
 
-  const TitleBox = ({ item }: { item: TradeEntry }): React.JSX.Element => {
+  const TitleBox = ({ item }: { item: TradeEntry }): React.ReactNode => {
     if (item.id > 0)
       return (
         <Box display="flex" alignItems="baseline" mt={1}>
@@ -56,7 +56,7 @@ const TradesTable: FunctionComponent<Props> = ({ title = "Trades index", content
     else return <Text>Orphan positions #{item.id}</Text>;
   };
 
-  const StatusBox = ({ item }: { item: TradeEntry }): React.JSX.Element => {
+  const StatusBox = ({ item }: { item: TradeEntry }): React.ReactNode => {
     return (
       <Box display="flex" alignItems="baseline" mt={1} ml={2}>
         <Badge borderRadius="full" px="2" colorScheme={statusBadgetColor(item.status)} variant="outline">
@@ -89,7 +89,7 @@ const TradesTable: FunctionComponent<Props> = ({ title = "Trades index", content
     );
   };
 
-  const SymbolBox = ({ item }: { item: TradeEntry }): React.JSX.Element => {
+  const SymbolBox = ({ item }: { item: TradeEntry }): React.ReactNode => {
     return (
       <Box display="flex" alignItems="baseline" mt={1} ml={2}>
         <Badge borderRadius="full" px="2" colorScheme="teal">
@@ -110,7 +110,7 @@ const TradesTable: FunctionComponent<Props> = ({ title = "Trades index", content
     );
   };
 
-  const PerformanceBox = ({ item }: { item: TradeEntry }): React.JSX.Element => {
+  const PerformanceBox = ({ item }: { item: TradeEntry }): React.ReactNode => {
     return (
       <Box display="flex" alignItems="baseline" mt={1} ml={2}>
         <Text fontWeight="semibold" textTransform="uppercase">
@@ -132,7 +132,7 @@ const TradesTable: FunctionComponent<Props> = ({ title = "Trades index", content
     );
   };
 
-  const CommentBox = ({ item }: { item: TradeEntry }): React.JSX.Element => {
+  const CommentBox = ({ item }: { item: TradeEntry }): React.ReactNode => {
     return (
       <Text color="gray.500" fontWeight="semibold" mt={1} ml={2}>
         {item.comment}

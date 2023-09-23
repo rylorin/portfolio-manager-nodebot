@@ -10,7 +10,7 @@ import Number from "../../Number/Number";
 
 type Props = Record<string, never>;
 
-const TradeEdit: FunctionComponent<Props> = ({ ..._rest }): React.JSX.Element => {
+const TradeEdit: FunctionComponent<Props> = ({ ..._rest }): React.ReactNode => {
   const thisTrade = useLoaderData() as TradeEntry;
   const navigate = useNavigate();
   const submit = useSubmit();
@@ -32,7 +32,7 @@ const TradeEdit: FunctionComponent<Props> = ({ ..._rest }): React.JSX.Element =>
         );
       }}
     >
-      {(formik: FormikProps<TradeEntry>): React.JSX.Element => {
+      {(formik: FormikProps<TradeEntry>): React.ReactNode => {
         return (
           <Form method="post" onSubmit={formik.handleSubmit}>
             <VStack>

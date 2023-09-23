@@ -7,7 +7,7 @@ import Number from "../../Number/Number";
 
 type Props = Record<string, never>;
 
-const BalanceShow: FunctionComponent<Props> = ({ ..._rest }): React.JSX.Element => {
+const BalanceShow: FunctionComponent<Props> = ({ ..._rest }): React.ReactNode => {
   const { _portfolioId } = useParams();
   const item = useLoaderData() as BalanceEntry;
   const navigate = useNavigate();

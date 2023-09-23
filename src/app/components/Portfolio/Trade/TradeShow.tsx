@@ -13,7 +13,7 @@ import { tradeStatus2String, tradeStrategy2String } from "./utils";
 
 type Props = Record<string, never>;
 
-const TradeShow: FunctionComponent<Props> = ({ ..._rest }): React.JSX.Element => {
+const TradeShow: FunctionComponent<Props> = ({ ..._rest }): React.ReactNode => {
   const { portfolioId } = useParams();
   const item = useLoaderData() as TradeEntry;
   const navigate = useNavigate();

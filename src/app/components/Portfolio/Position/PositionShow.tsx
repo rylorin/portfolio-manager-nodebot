@@ -11,7 +11,7 @@ import { PositionLink } from "./links";
 
 type PositionShowProps = Record<string, never>;
 
-const PositionShow: FunctionComponent<PositionShowProps> = ({ ..._rest }): React.JSX.Element => {
+const PositionShow: FunctionComponent<PositionShowProps> = ({ ..._rest }): React.ReactNode => {
   const { portfolioId } = useParams();
   const thisPosition = useLoaderData() as PositionEntry;
   const navigate = useNavigate();

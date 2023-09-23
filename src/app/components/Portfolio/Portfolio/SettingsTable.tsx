@@ -11,7 +11,7 @@ type Props = { content?: Setting[] };
  * @param param
  * @returns
  */
-const SettingsTable: FunctionComponent<Props> = ({ content, ..._rest }): React.JSX.Element => {
+const SettingsTable: FunctionComponent<Props> = ({ content, ..._rest }): React.ReactNode => {
   const theSettings = content || (useLoaderData() as Setting[]);
 
   return (

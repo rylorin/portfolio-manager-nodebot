@@ -5,7 +5,7 @@ import { Portfolio as PortfolioModel } from "../../../models/portfolio.model";
 import { obfuscate } from "../../utils";
 import { StatementLink } from "./Statement/links";
 
-const PortfolioIndex = (): React.JSX.Element => {
+const PortfolioIndex = (): React.ReactNode => {
   const portfolios = useLoaderData() as PortfolioModel[];
 
   return (

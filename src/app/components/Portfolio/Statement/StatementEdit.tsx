@@ -20,7 +20,7 @@ type Props = Record<string, never>;
  * @param param Component properties
  * @returns
  */
-const StatementEdit: FunctionComponent<Props> = ({ ..._rest }): React.JSX.Element => {
+const StatementEdit: FunctionComponent<Props> = ({ ..._rest }): React.ReactNode => {
   const { portfolioId } = useParams();
   const theStatement = useLoaderData() as StatementEntry;
   const navigate = useNavigate();
@@ -43,7 +43,7 @@ const StatementEdit: FunctionComponent<Props> = ({ ..._rest }): React.JSX.Elemen
         );
       }}
     >
-      {(formik: FormikProps<StatementEntry>): React.JSX.Element => {
+      {(formik: FormikProps<StatementEntry>): React.ReactNode => {
         return (
           <RouterForm method="post" onSubmit={formik.handleSubmit}>
             <VStack>

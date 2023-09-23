@@ -13,7 +13,7 @@ type Props = Record<string, never>;
  * @param param Component properties
  * @returns
  */
-const StatementShow: FunctionComponent<Props> = ({ ..._rest }): React.JSX.Element => {
+const StatementShow: FunctionComponent<Props> = ({ ..._rest }): React.ReactNode => {
   const { portfolioId } = useParams();
   const theStatement = useLoaderData() as StatementEntry;
   const navigate = useNavigate();

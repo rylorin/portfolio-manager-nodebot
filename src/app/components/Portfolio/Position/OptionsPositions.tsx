@@ -21,7 +21,7 @@ type DataRowProps = {
  * @param param0
  * @returns
  */
-const OptionsPositions: FunctionComponent<PositionsIndexProps> = ({ ..._rest }): React.JSX.Element => {
+const OptionsPositions: FunctionComponent<PositionsIndexProps> = ({ ..._rest }): React.ReactNode => {
   const { portfolioId } = useParams();
   const thePositions = useLoaderData() as OptionPositionEntry[];
 
@@ -86,7 +86,7 @@ const OptionsPositions: FunctionComponent<PositionsIndexProps> = ({ ..._rest }):
     return result;
   };
 
-  const DataRow: FunctionComponent<DataRowProps> = ({ portfolioId, item, ..._rest }): React.JSX.Element => {
+  const DataRow: FunctionComponent<DataRowProps> = ({ portfolioId, item, ..._rest }): React.ReactNode => {
     if ("option" in item) return <OptionRow item={item} portfolioId={portfolioId} />;
     else return <SubTotalRow subTotal={item} />;
   };

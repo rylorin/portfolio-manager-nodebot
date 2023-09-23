@@ -12,7 +12,7 @@ type Props = Record<string, never>;
  * @param param
  * @returns
  */
-const ContractShow: FunctionComponent<Props> = ({ ..._rest }): React.JSX.Element => {
+const ContractShow: FunctionComponent<Props> = ({ ..._rest }): React.ReactNode => {
   const { _portfolioId } = useParams();
   const thisContract = useLoaderData() as ContractEntry;
 

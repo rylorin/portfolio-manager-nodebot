@@ -7,7 +7,7 @@ type SideBarProps = {
   border?: string;
 };
 
-const SideBar: FunctionComponent<SideBarProps> = ({ links, ...rest }): React.JSX.Element => {
+const SideBar: FunctionComponent<SideBarProps> = ({ links, ...rest }): React.ReactNode => {
   // console.log(links);
   return (
     <SideBarContainer {...rest}>
@@ -18,7 +18,7 @@ const SideBar: FunctionComponent<SideBarProps> = ({ links, ...rest }): React.JSX
 
 type MenuItemProps = { to: string; children: ReactNode };
 
-const MenuItem: FunctionComponent<MenuItemProps> = ({ children, to = "/", ...rest }): React.JSX.Element => {
+const MenuItem: FunctionComponent<MenuItemProps> = ({ children, to = "/", ...rest }): React.ReactNode => {
   return (
     <Link to={to} as={RouterLink} w={{ xl: "100%" }}>
       <Text display="block" {...rest}>
@@ -32,7 +32,7 @@ type MenuLinksProps = {
   links: Record<string, string>;
 };
 
-const MenuLinks: FunctionComponent<MenuLinksProps> = ({ links }): React.JSX.Element => {
+const MenuLinks: FunctionComponent<MenuLinksProps> = ({ links }): React.ReactNode => {
   return (
     <Stack
       spacing="4"
@@ -55,7 +55,7 @@ type SideBarContainerProps = {
   children: ReactNode;
 };
 
-const SideBarContainer: FunctionComponent<SideBarContainerProps> = ({ children, ...rest }): React.JSX.Element => {
+const SideBarContainer: FunctionComponent<SideBarContainerProps> = ({ children, ...rest }): React.ReactNode => {
   return (
     <Flex
       as="nav"

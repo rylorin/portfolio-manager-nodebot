@@ -23,7 +23,7 @@ const PositionsTable: FunctionComponent<Props> = ({
   title = "Positions index",
   content,
   ..._rest
-}): React.JSX.Element => {
+}): React.ReactNode => {
   const { portfolioId } = useParams();
   const thePositions = content || (useLoaderData() as PositionEntry[]);
   let previousId: number;

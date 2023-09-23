@@ -35,7 +35,7 @@ type Props = { content?: StatementEntry[] };
  * @param param
  * @returns
  */
-const StatementsTable: FunctionComponent<Props> = ({ content, ..._rest }): React.JSX.Element => {
+const StatementsTable: FunctionComponent<Props> = ({ content, ..._rest }): React.ReactNode => {
   const { portfolioId } = useParams();
   const theStatements = content || (useLoaderData() as StatementEntry[]);
   let previousId: number;

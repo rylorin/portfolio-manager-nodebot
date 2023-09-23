@@ -10,7 +10,7 @@ type PortfolioLayoutProps = {
   children: React.ReactNode;
 };
 
-const PortfolioLayout: FunctionComponent<PortfolioLayoutProps> = ({ children, ..._rest }): React.JSX.Element => {
+const PortfolioLayout: FunctionComponent<PortfolioLayoutProps> = ({ children, ..._rest }): React.ReactNode => {
   const { portfolioId } = useParams();
   const [thisPortfolio, setPortfolio] = useState({} as PortfolioModel);
 

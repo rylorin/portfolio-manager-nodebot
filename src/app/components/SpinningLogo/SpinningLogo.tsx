@@ -21,7 +21,7 @@ interface SpinningLogoProps {
   h?: string;
 }
 
-const SpinningLogo: FunctionComponent<SpinningLogoProps> = ({ src, ...rest }): React.JSX.Element => (
+const SpinningLogo: FunctionComponent<SpinningLogoProps> = ({ src, ...rest }): React.ReactNode => (
   <Image src={src} className={styles["App-logo"]} {...rest} />
 );
 

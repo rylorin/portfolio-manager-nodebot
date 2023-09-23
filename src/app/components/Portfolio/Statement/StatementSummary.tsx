@@ -7,7 +7,7 @@ import Number from "../../Number/Number";
 
 type StatementSummaryProps = Record<string, never>;
 
-const StatementSummary: FunctionComponent<StatementSummaryProps> = ({ ..._rest }): React.JSX.Element => {
+const StatementSummary: FunctionComponent<StatementSummaryProps> = ({ ..._rest }): React.ReactNode => {
   // const [theSynthesys, setSynthesys] = useState({} as StatementsSynthesysEntries);
   // useEffect(() => {
   //   fetch(`/api/portfolio/${portfolioId}/statements`)

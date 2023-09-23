@@ -4,7 +4,7 @@ import Layout from "./Layout";
 
 type RoutesLayoutProps = Record<string, never>;
 
-const RoutesLayout: FunctionComponent<RoutesLayoutProps> = (): React.JSX.Element => {
+const RoutesLayout: FunctionComponent<RoutesLayoutProps> = (): React.ReactNode => {
   return (
     <Layout>
       {/* Render the app routes via the Layout Outlet */}

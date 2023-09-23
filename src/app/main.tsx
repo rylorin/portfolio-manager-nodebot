@@ -275,11 +275,10 @@ const router = createBrowserRouter([
   },
 ]);
 
-const root = createRoot(document.getElementById("root"));
-root.render(
-  <>
-    <ChakraBaseProvider theme={theme}>
-      <RouterProvider router={router} />
-    </ChakraBaseProvider>
-  </>,
+const App = (): React.ReactNode => (
+  <ChakraBaseProvider theme={theme}>
+    <RouterProvider router={router} />
+  </ChakraBaseProvider>
 );
+
+createRoot(document.getElementById("root")).render(App());

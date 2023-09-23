@@ -8,7 +8,7 @@ import TradesTable from "./TradesTable2";
 
 type Props = Record<string, never>;
 
-const TradesOpen: FunctionComponent<Props> = ({ ..._rest }): React.JSX.Element => {
+const TradesOpen: FunctionComponent<Props> = ({ ..._rest }): React.ReactNode => {
   const { _portfolioId } = useParams();
   const theTrades = useLoaderData() as TradeEntry[];
 

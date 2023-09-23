@@ -13,7 +13,7 @@ type BalancesIndexProps = Record<string, never>;
  * @param param0
  * @returns
  */
-const BalancesIndex: FunctionComponent<BalancesIndexProps> = ({ ..._rest }): React.JSX.Element => {
+const BalancesIndex: FunctionComponent<BalancesIndexProps> = ({ ..._rest }): React.ReactNode => {
   const { portfolioId } = useParams();
   const theBalances = useLoaderData() as BalanceEntry[];
 

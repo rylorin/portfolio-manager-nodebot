@@ -3,7 +3,7 @@ import React from "react";
 import { isRouteErrorResponse, useRouteError } from "react-router-dom";
 import Layout from "./components/Layout/Layout";
 
-export default function ErrorPage(): React.JSX.Element {
+export default function ErrorPage(): React.ReactNode {
   const error = useRouteError() as any;
   console.error(error);
 

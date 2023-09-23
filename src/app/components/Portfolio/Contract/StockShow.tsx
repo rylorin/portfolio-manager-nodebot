@@ -13,7 +13,7 @@ type Props = { thisContract: ContractEntry };
  * @param param
  * @returns
  */
-const StockShow: FunctionComponent<Props> = ({ thisContract, ..._rest }): React.JSX.Element => {
+const StockShow: FunctionComponent<Props> = ({ thisContract, ..._rest }): React.ReactNode => {
   return (
     <>
       <Text>

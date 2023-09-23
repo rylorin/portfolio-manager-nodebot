@@ -8,7 +8,7 @@ type LayoutProps = {
   children: React.ReactNode;
 };
 
-const Layout: React.FunctionComponent<LayoutProps> = ({ children, ..._rest }): React.JSX.Element => {
+const Layout: React.FunctionComponent<LayoutProps> = ({ children, ..._rest }): React.ReactNode => {
   const navigation = useNavigation();
   return (
     <>

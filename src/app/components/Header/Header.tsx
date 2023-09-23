@@ -14,7 +14,7 @@ interface HeaderProps {
   onCreateAccount: () => void;
 }
 
-export const Header = ({ user, onLogin, onLogout, onCreateAccount }: HeaderProps): React.JSX.Element => (
+export const Header = ({ user, onLogin, onLogout, onCreateAccount }: HeaderProps): React.ReactNode => (
   <header>
     <div className="storybook-header">
       <div>

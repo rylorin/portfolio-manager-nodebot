@@ -14,7 +14,7 @@ const TradesMonthlyTable: FunctionComponent<TradesMonthlyTableProps> = ({
   title,
   content,
   ..._rest
-}): React.JSX.Element => {
+}): React.ReactNode => {
   return (
     <TableContainer>
       <Table variant="simple" size="sm">

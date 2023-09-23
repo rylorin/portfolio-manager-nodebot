@@ -13,7 +13,7 @@ type Props = {
   content?: TradeEntry[];
 };
 
-const TradesTable: FunctionComponent<Props> = ({ title = "Trades index", content, ..._rest }): React.JSX.Element => {
+const TradesTable: FunctionComponent<Props> = ({ title = "Trades index", content, ..._rest }): React.ReactNode => {
   const { portfolioId } = useParams();
   const theTrades = content || (useLoaderData() as TradeEntry[]);
 

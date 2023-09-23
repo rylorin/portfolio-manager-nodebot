@@ -20,7 +20,7 @@ type LogoProps = {
   h?: string;
 };
 
-const Logo: FunctionComponent<LogoProps> = ({ src, alt, w, h, ...rest }): React.JSX.Element => (
+const Logo: FunctionComponent<LogoProps> = ({ src, alt, w, h, ...rest }): React.ReactNode => (
   <Image src={src} alt={alt} w={w} h={h} {...rest} />
 );
 

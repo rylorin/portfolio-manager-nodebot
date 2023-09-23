@@ -18,7 +18,7 @@ const Number: FunctionComponent<NumberProps> = ({
   color,
   isPercent,
   ...rest
-}): React.JSX.Element => {
+}): React.ReactNode => {
   const rounded = value
     ? (isPercent ? value * 100 : value).toLocaleString(undefined, {
         minimumFractionDigits: decimals,

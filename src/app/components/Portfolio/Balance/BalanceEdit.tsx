@@ -7,7 +7,7 @@ import { BalanceEntry } from "../../../../routers/balances.types";
 
 type Props = Record<string, never>;
 
-const BalanceEdit: FunctionComponent<Props> = ({ ..._rest }): React.JSX.Element => {
+const BalanceEdit: FunctionComponent<Props> = ({ ..._rest }): React.ReactNode => {
   const thisBalance = useLoaderData() as BalanceEntry;
   const navigate = useNavigate();
   const submit = useSubmit();
@@ -29,7 +29,7 @@ const BalanceEdit: FunctionComponent<Props> = ({ ..._rest }): React.JSX.Element 
         );
       }}
     >
-      {(formik: FormikProps<BalanceEntry>): React.JSX.Element => {
+      {(formik: FormikProps<BalanceEntry>): React.ReactNode => {
         return (
           <Form method="post" onSubmit={formik.handleSubmit}>
             <VStack>

@@ -33,7 +33,7 @@ export const Button = ({
   backgroundColor,
   label,
   ...props
-}: ButtonProps): React.JSX.Element => {
+}: ButtonProps): React.ReactNode => {
   const mode = primary ? "storybook-button--primary" : "storybook-button--secondary";
   return (
     <button
