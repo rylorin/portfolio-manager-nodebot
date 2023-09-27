@@ -4128,6 +4128,11 @@
   resolved "https://registry.yarnpkg.com/@types/json-schema/-/json-schema-7.0.12.tgz#d70faba7039d5fca54c83c7dbab41051d2b6f6cb"
   integrity sha512-Hr5Jfhc9eYOQNPYO5WLDq/n4jqijdHNlDXjuAQkkt+mWdQR+XJToOHrsD4cPaMXpn6KO7y2+wM8AZEs8VpBLVA==
 
+"@types/json-stringify-safe@^5.0.1":
+  version "5.0.1"
+  resolved "https://registry.yarnpkg.com/@types/json-stringify-safe/-/json-stringify-safe-5.0.1.tgz#00e17c6faa99909a22699773a85bc2c700eec503"
+  integrity sha512-fSRMt/jgdsBMPHoJ0GxivTdmo2HhBhubqLssKIsu9NgtvCZJ0haHjo24tfU/0nrkYZKbyTLw5GoTxWg8ExzIsw==
+
 "@types/lodash.mergewith@4.6.7":
   version "4.6.7"
   resolved "https://registry.yarnpkg.com/@types/lodash.mergewith/-/lodash.mergewith-4.6.7.tgz#eaa65aa5872abdd282f271eae447b115b2757212"

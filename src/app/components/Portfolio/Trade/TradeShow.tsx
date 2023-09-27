@@ -38,6 +38,26 @@ const TradeShow: FunctionComponent<Props> = ({ ..._rest }): React.ReactNode => {
             {new Date(item.openingDate).toLocaleString()}
           </Text>
         </Flex>
+        {item.expectedExpiry && (
+          <>
+            <Flex justifyContent="center" gap="2">
+              <Text w="90px" as="b" textAlign="right">
+                Expiry date:
+              </Text>
+              <Text w="200px" textAlign="right">
+                {new Date(item.expectedExpiry).toLocaleDateString()}
+              </Text>
+            </Flex>
+            <Flex justifyContent="center" gap="2">
+              <Text w="90px" as="b" textAlign="right">
+                Exp. Duration:
+              </Text>
+              <Text w="200px" textAlign="right">
+                {formatNumber(item.expectedDuration)}
+              </Text>
+            </Flex>
+          </>
+        )}
         <Flex justifyContent="center" gap="2">
           <Text w="90px" as="b" textAlign="right">
             Close date:
@@ -52,14 +72,6 @@ const TradeShow: FunctionComponent<Props> = ({ ..._rest }): React.ReactNode => {
           </Text>
           <Text w="200px" textAlign="right">
             {formatNumber(item.duration)}
-          </Text>
-        </Flex>
-        <Flex justifyContent="center" gap="2">
-          <Text w="90px" as="b" textAlign="right">
-            Exp. Duration:
-          </Text>
-          <Text w="200px" textAlign="right">
-            {formatNumber(item.expectedDuration)}
           </Text>
         </Flex>
         <Flex justifyContent="center" gap="2">
