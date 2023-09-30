@@ -4,7 +4,7 @@ import { Link as RouterLink, useLoaderData, useParams } from "react-router-dom";
 import { ContractType } from "../../../../models/contract.types";
 import { OptionPositionEntry, PositionEntry } from "../../../../routers/positions.types";
 import { TradeEntry } from "../../../../routers/trades.types";
-import TradesTable from "./TradesTable2";
+import TradesTable from "./TradesTable3";
 
 type Props = Record<string, never>;
 
