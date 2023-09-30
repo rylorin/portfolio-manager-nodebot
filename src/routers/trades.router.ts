@@ -92,19 +92,19 @@ const makeVirtualPositions = (statements: StatementEntry[] | undefined): Record<
   return virtuals;
 };
 
-const _updateTradeExpiry = (thisTrade: Trade, statements: StatementEntry[]): StatementEntry[] => {
-  // Compute expected expiry
-  const virtuals = makeVirtualPositions(statements);
-  thisTrade.expectedExpiry = null;
-
-  Object.values(virtuals).forEach((pos) => {
-    if (pos.contract.secType == ContractType.Option && pos.quantity) {
-      if (!thisTrade.expectedExpiry) thisTrade.expectedExpiry = (pos.contract as StatementOptionEntry).lastTradeDate;
-      else if (thisTrade.expectedExpiry < (pos.contract as StatementOptionEntry).lastTradeDate)
-        thisTrade.expectedExpiry = (pos.contract as StatementOptionEntry).lastTradeDate;
+/**
+ * Compute expected expiry
+ * @param thisTrade
+ * @param virtuals
+ */
+const updateTradeExpiry = (thisTrade: Trade, virtuals: Record<number, VirtualPositionEntry>): void => {
+  Object.values(virtuals).forEach((item) => {
+    if (item.contract.secType == ContractType.Option && item.quantity) {
+      if (!thisTrade.expectedExpiry) thisTrade.expectedExpiry = (item.contract as StatementOptionEntry).lastTradeDate;
+      else if (thisTrade.expectedExpiry < (item.contract as StatementOptionEntry).lastTradeDate)
+        thisTrade.expectedExpiry = (item.contract as StatementOptionEntry).lastTradeDate;
     }
   });
-  return statements;
 };
 
 /**
@@ -116,30 +116,31 @@ export const updateTradeDetails = (thisTrade: Trade): Promise<Trade> => {
   // logger.log(LogLevel.Trace, MODULE + ".updateTradeDetails", thisTrade.underlying?.symbol, "thisTrade", thisTrade);
   if (thisTrade && thisTrade.statements?.length) {
     // sort statements by date
-    const items = thisTrade.statements.sort((a, b) => a.date.getTime() - b.date.getTime());
-    thisTrade.openingDate = items[0].date;
+    const statements = thisTrade.statements.sort((a, b) => a.date.getTime() - b.date.getTime());
+    thisTrade.openingDate = statements[0].date;
     if (thisTrade.status == TradeStatus.closed && !thisTrade.closingDate) {
       // closing date is last trade (or trade option) statement date
       thisTrade.closingDate = thisTrade.openingDate;
-      for (let i = items.length - 1; i > 0; --i) {
+      for (let i = statements.length - 1; i > 0; --i) {
         if (
-          items[i].statementType == StatementTypes.EquityStatement ||
-          items[i].statementType == StatementTypes.OptionStatement
+          statements[i].statementType == StatementTypes.EquityStatement ||
+          statements[i].statementType == StatementTypes.OptionStatement
         ) {
           // console.log(items[i]);
-          thisTrade.closingDate = items[i].date;
+          thisTrade.closingDate = statements[i].date;
           break;
         }
       }
     } else if (thisTrade.status != TradeStatus.closed) thisTrade.closingDate = null;
     thisTrade.PnL = 0;
     thisTrade.pnlInBase = 0;
-    return (
-      prepareStatements(items) // Convert Statement[] to StatementEntry[]
-        .then((statements) => computeRisk_Generic(thisTrade, statements))
-        // .then((statements) => updateTradeExpiry(thisTrade, statements))
-        .then((_statements) => thisTrade.save())
-    );
+    return prepareStatements(statements) // Convert Statement[] to StatementEntry[]
+      .then((statement_entries) => {
+        const virtuals = makeVirtualPositions(statement_entries);
+        computeRisk_Generic(thisTrade, statement_entries);
+        updateTradeExpiry(thisTrade, virtuals);
+        return thisTrade.save();
+      });
   }
   return Promise.resolve(thisTrade);
 };
@@ -300,7 +301,7 @@ const getExpiration = (item: PositionEntry | OptionPositionEntry): string | unde
   }
 };
 
-const comparePositions = (a: PositionEntry | OptionPositionEntry, b: PositionEntry | OptionPositionEntry): number => {
+const _comparePositions = (a: PositionEntry | OptionPositionEntry, b: PositionEntry | OptionPositionEntry): number => {
   let result: number;
   const aExpiration = getExpiration(a);
   const bExpiration = getExpiration(b);
@@ -315,13 +316,6 @@ const comparePositions = (a: PositionEntry | OptionPositionEntry, b: PositionEnt
     }
     return result;
   }
-};
-
-const _sortTrades = (trades: TradeEntry[]): TradeEntry[] => {
-  trades.forEach((trade) => {
-    trade.positions = trade.positions?.sort(comparePositions);
-  });
-  return trades;
 };
 
 type StockSummary = { contract: Contract; risk: number; cost: number; quantity: number };
@@ -411,6 +405,16 @@ const computeTradeStrategy = (
   const short_put = Object.values(puts).reduce((p, item) => p + (item.quantity < 0 ? -item.quantity : 0), 0);
   const long_call = Object.values(calls).reduce((p, item) => p + (item.quantity > 0 ? item.quantity : 0), 0);
   const short_call = Object.values(calls).reduce((p, item) => p + (item.quantity < 0 ? -item.quantity : 0), 0);
+  console.log(
+    thisTrade.id,
+    "computeTradeStrategy",
+    long_stock,
+    short_stock,
+    long_put,
+    short_put,
+    long_call,
+    short_call,
+  );
   if (long_stock > 0) {
     // Longs stock strategies
     if (short_call > 0) {
@@ -430,9 +434,10 @@ const computeTradeStrategy = (
     else if (short_put > 0 && long_put == 0 && short_call == 0 && !long_call) strategy = TradeStrategy["short put"];
     else if (short_put == 0 && long_put > 0 && short_call == 0 && !long_call) strategy = TradeStrategy["long put"];
     else if (short_call > 0 && !long_call && !short_put && !long_put) strategy = TradeStrategy["naked short call"];
+    else if (!short_call && long_call > 0 && !short_put && !long_put) strategy = TradeStrategy["long call"];
     else if (!short_call && long_call > 0 && short_put > 0 && !long_put) strategy = TradeStrategy["risk reversal"];
   }
-  // console.log(thisTrade.id, "strategy", thisTrade.strategy, strategy);
+  console.log(thisTrade.id, "strategy", thisTrade.strategy, strategy);
   if (!thisTrade.strategy) thisTrade.strategy = strategy;
 };
 
@@ -538,21 +543,22 @@ const computeRisk_Generic = (thisTrade: Trade, statements: StatementEntry[]): St
     Object.values(puts).reduce((p, item) => (item.quantity ? p + item.cost : p), 0);
 
   // Compute expected expiry date
-  thisTrade.expectedExpiry = null;
-  Object.values(calls).forEach((pos) => {
-    if (pos.quantity) {
-      if (!thisTrade.expectedExpiry) thisTrade.expectedExpiry = pos.contract.lastTradeDate;
-      else if (thisTrade.expectedExpiry < pos.contract.lastTradeDate)
-        thisTrade.expectedExpiry = pos.contract.lastTradeDate;
-    }
-  });
-  Object.values(puts).forEach((pos) => {
-    if (pos.quantity) {
-      if (!thisTrade.expectedExpiry) thisTrade.expectedExpiry = pos.contract.lastTradeDate;
-      else if (thisTrade.expectedExpiry < pos.contract.lastTradeDate)
-        thisTrade.expectedExpiry = pos.contract.lastTradeDate;
-    }
-  });
+  // thisTrade.expectedExpiry = null;
+  // Object.values(calls).forEach((item) => {
+  //   if (item.quantity) {
+  //     if (!thisTrade.expectedExpiry) thisTrade.expectedExpiry = item.contract.lastTradeDate;
+  //     else if (thisTrade.expectedExpiry < item.contract.lastTradeDate)
+  //       thisTrade.expectedExpiry = item.contract.lastTradeDate;
+  //   }
+  // });
+  // Object.values(puts).forEach((item) => {
+  //   if (item.quantity) {
+  //     if (!thisTrade.expectedExpiry) thisTrade.expectedExpiry = item.contract.lastTradeDate;
+  //     else if (thisTrade.expectedExpiry < item.contract.lastTradeDate)
+  //       thisTrade.expectedExpiry = item.contract.lastTradeDate;
+  //   }
+  // });
+  // console.log("computeRisk_Generic", thisTrade.id, "expectedExpiry", thisTrade.expectedExpiry);
 
   // All done
   return statements;
