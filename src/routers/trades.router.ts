@@ -344,13 +344,13 @@ type OptionSummary = Record<number, { contract: StatementOptionEntry; cost: numb
  * @returns
  */
 const computeComboRisk = (thisTrade: Trade, virtuals: Record<number, VirtualPositionEntry>): number => {
-  let cash_risk = 0;
+  let cash_risk = 0; // What impact do we already have on cash?
   const stocks: StockSummary = {};
   const calls: OptionSummary = {};
   const puts: OptionSummary = {};
   const limits = [0];
   Object.values(virtuals).forEach((item) => {
-    cash_risk += item.cost;
+    cash_risk -= item.cost;
     switch (item.contract.secType) {
       case SecType.STK:
         if (item.quantity) limits.push(item.cost / item.quantity);
@@ -384,14 +384,14 @@ const computeComboRisk = (thisTrade: Trade, virtuals: Record<number, VirtualPosi
   limits.push(limits[limits.length - 1] * 2);
 
   console.log(thisTrade.id, "stocks", stocks, "puts", puts, "calls", calls);
-  console.log(thisTrade.id, "cash_risk", cash_risk);
   console.log(thisTrade.id, "limits", limits);
 
   let options_risk = 0;
   for (let i = 0; i < limits.length; i++) {
     const price = limits[i]; // Compute cost for this price
 
-    const stocks_risk = -Object.values(stocks).reduce((p, v) => p + v.cost + v.quantity * price, 0);
+    // How much do we get if we close stock position
+    const stocks_risk = Object.values(stocks).reduce((p, v) => p + price * v.quantity, 0);
 
     let put_risks = 0;
     let calls_risk = 0;
@@ -424,7 +424,7 @@ const computeComboRisk = (thisTrade: Trade, virtuals: Record<number, VirtualPosi
         }
       }
     }
-    console.log(thisTrade.id, "price", price, stocks_risk, put_risks, calls_risk);
+    console.log(thisTrade.id, "price", price, cash_risk, stocks_risk, put_risks, calls_risk);
     options_risk = Math.min(options_risk, stocks_risk + put_risks + calls_risk);
   }
 
@@ -525,14 +525,6 @@ const updateTradeStrategy = (thisTrade: Trade, virtuals: Record<number, VirtualP
 };
 
 const computeRisk_Generic = (thisTrade: Trade, statements: StatementEntry[]): Record<number, VirtualPositionEntry> => {
-  // let stocks: StockSummary = {
-  //   contract: thisTrade.underlying,
-  //   risk: 0,
-  //   cost: 0,
-  //   quantity: 0,
-  // };
-  // const calls: OptionSummary = {};
-  // const puts: OptionSummary = {};
   const virtuals: Record<number, VirtualPositionEntry> = {};
 
   thisTrade.PnL = 0;
