@@ -334,11 +334,18 @@ const _comparePositions = (a: PositionEntry | OptionPositionEntry, b: PositionEn
   }
 };
 
-type OptionSummary = Record<number, { contract: StatementOptionEntry; risk?: number; cost: number; quantity: number }>;
+type StockSummary = Record<number, { contract: StatementUnderlyingEntry; cost: number; quantity: number }>;
+type OptionSummary = Record<number, { contract: StatementOptionEntry; cost: number; quantity: number }>;
 
+/**
+ * Compute a combo position risk. A negative risk is the potential loss implied from the trade.
+ * @param thisTrade
+ * @param virtuals
+ * @returns
+ */
 const computeComboRisk = (thisTrade: Trade, virtuals: Record<number, VirtualPositionEntry>): number => {
   let cash_risk = 0;
-  const stocks: OptionSummary = {};
+  const stocks: StockSummary = {};
   const calls: OptionSummary = {};
   const puts: OptionSummary = {};
   const limits = [0];
@@ -346,15 +353,26 @@ const computeComboRisk = (thisTrade: Trade, virtuals: Record<number, VirtualPosi
     cash_risk += item.cost;
     switch (item.contract.secType) {
       case SecType.STK:
-        if (item.quantity) limits.push(-item.cost / item.quantity);
+        if (item.quantity) limits.push(item.cost / item.quantity);
+        stocks[item.contract.id] = { contract: item.contract, cost: item.cost, quantity: item.quantity };
         break;
       case SecType.OPT:
         if (item.quantity && !((item.contract as StatementOptionEntry).strike in limits))
           limits.push((item.contract as StatementOptionEntry).strike);
         switch ((item.contract as StatementOptionEntry).callOrPut) {
           case OptionType.Call:
+            calls[item.contract.id] = {
+              contract: item.contract as StatementOptionEntry,
+              cost: item.cost,
+              quantity: item.quantity,
+            };
             break;
           case OptionType.Put:
+            puts[item.contract.id] = {
+              contract: item.contract as StatementOptionEntry,
+              cost: item.cost,
+              quantity: item.quantity,
+            };
             break;
         }
         break;
@@ -373,7 +391,7 @@ const computeComboRisk = (thisTrade: Trade, virtuals: Record<number, VirtualPosi
   for (let i = 0; i < limits.length; i++) {
     const price = limits[i]; // Compute cost for this price
 
-    const stocks_risk = Object.values(stocks).reduce((p, v) => p + v.cost + v.quantity * price, 0);
+    const stocks_risk = -Object.values(stocks).reduce((p, v) => p + v.cost + v.quantity * price, 0);
 
     let put_risks = 0;
     let calls_risk = 0;
@@ -474,7 +492,7 @@ const computeTradeStrategy = (thisTrade: Trade, virtuals: Record<number, Virtual
             (item.contract as StatementOptionEntry).callOrPut == OptionType.Call,
         )
         .reduce((p, v) => Math.min(p, (v.contract as StatementOptionEntry).strike), Infinity);
-      if (strike < -stocks_cost / stocks_quantity) strategy = TradeStrategy["buy write"];
+      if (strike < stocks_cost / stocks_quantity) strategy = TradeStrategy["buy write"];
       else strategy = TradeStrategy["covered short call"];
     } else strategy = TradeStrategy["long stock"];
   } else if (short_stock > 0) {
@@ -541,7 +559,7 @@ const computeRisk_Generic = (thisTrade: Trade, statements: StatementEntry[]): Re
       if (first_time) computeTradeStrategy(thisTrade, virtuals);
       else updateTradeStrategy(thisTrade, virtuals);
       const comboRisk = computeComboRisk(thisTrade, virtuals);
-      console.log("computeRisk_Generic", thisTrade.id, thisTrade.risk, comboRisk, thisTrade.PnL);
+      console.log(thisTrade.id, "computeRisk_Generic", thisTrade.risk, comboRisk, thisTrade.PnL);
       thisTrade.risk = Math.min(thisTrade.risk, thisTrade.PnL + comboRisk);
       first_time = false;
     }
