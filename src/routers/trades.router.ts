@@ -335,7 +335,7 @@ const _comparePositions = (a: PositionEntry | OptionPositionEntry, b: PositionEn
 };
 
 type StockSummary = Record<number, { contract: StatementUnderlyingEntry; cost: number; quantity: number }>;
-type OptionSummary = Record<number, { contract: StatementOptionEntry; cost: number; quantity: number }>;
+type OptionSummary = Record<number, { cost: number; quantity: number }>;
 
 /**
  * Compute a combo position risk. A negative risk is the potential loss implied from the trade.
@@ -361,18 +361,32 @@ const computeComboRisk = (thisTrade: Trade, virtuals: Record<number, VirtualPosi
           limits.push((item.contract as StatementOptionEntry).strike);
         switch ((item.contract as StatementOptionEntry).callOrPut) {
           case OptionType.Call:
-            calls[item.contract.id] = {
-              contract: item.contract as StatementOptionEntry,
-              cost: item.cost,
-              quantity: item.quantity,
-            };
+            if (calls[(item.contract as StatementOptionEntry).strike])
+              calls[(item.contract as StatementOptionEntry).strike] = {
+                cost: calls[(item.contract as StatementOptionEntry).strike].cost + item.cost,
+                quantity:
+                  calls[(item.contract as StatementOptionEntry).strike].quantity +
+                  item.quantity * (item.contract as StatementOptionEntry).multiplier,
+              };
+            else
+              calls[(item.contract as StatementOptionEntry).strike] = {
+                cost: item.cost,
+                quantity: item.quantity * (item.contract as StatementOptionEntry).multiplier,
+              };
             break;
           case OptionType.Put:
-            puts[item.contract.id] = {
-              contract: item.contract as StatementOptionEntry,
-              cost: item.cost,
-              quantity: item.quantity,
-            };
+            if (puts[(item.contract as StatementOptionEntry).strike])
+              puts[(item.contract as StatementOptionEntry).strike] = {
+                cost: puts[(item.contract as StatementOptionEntry).strike].cost + item.cost,
+                quantity:
+                  puts[(item.contract as StatementOptionEntry).strike].quantity +
+                  item.quantity * (item.contract as StatementOptionEntry).multiplier,
+              };
+            else
+              puts[(item.contract as StatementOptionEntry).strike] = {
+                cost: item.cost,
+                quantity: item.quantity * (item.contract as StatementOptionEntry).multiplier,
+              };
             break;
         }
         break;
@@ -402,10 +416,10 @@ const computeComboRisk = (thisTrade: Trade, virtuals: Record<number, VirtualPosi
           // ITM Put
           if (puts[strike].quantity < 0)
             // short puts will be assigned. Example: strike = 300, price = 100, risk = -200
-            put_risks += (strike - price) * puts[strike].quantity * puts[strike].contract.multiplier;
+            put_risks += (strike - price) * puts[strike].quantity;
           else if (puts[strike].quantity > 0)
             // long puts will be exercized. Example: strike = 300, price = 100, risk = 200
-            put_risks += (strike - price) * puts[strike].quantity * puts[strike].contract.multiplier;
+            put_risks += (strike - price) * puts[strike].quantity;
         } else {
           // OTM puts voids
         }
@@ -415,10 +429,10 @@ const computeComboRisk = (thisTrade: Trade, virtuals: Record<number, VirtualPosi
           // ITM Call
           if (calls[strike].quantity < 0)
             // short calls will be assigned. Example: strike = 400, price = 600, risk = -200
-            calls_risk += (price - strike) * calls[strike].quantity * calls[strike].contract.multiplier;
+            calls_risk += (price - strike) * calls[strike].quantity;
           else if (calls[strike].quantity > 0)
             // long calls will be exercized. Example: strike = 400, price = 600, risk = 200
-            calls_risk += (price - strike) * calls[strike].quantity * calls[strike].contract.multiplier;
+            calls_risk += (price - strike) * calls[strike].quantity;
         } else {
           // OTM calls voids
         }
