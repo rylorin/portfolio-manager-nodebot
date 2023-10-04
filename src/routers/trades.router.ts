@@ -113,6 +113,7 @@ const makeVirtualPositions = (statements: StatementEntry[] | undefined): Record<
  * @param virtuals
  */
 const updateTradeExpiry = (thisTrade: Trade, virtuals: Record<number, VirtualPositionEntry>): void => {
+  thisTrade.expectedExpiry = null;
   Object.values(virtuals).forEach((item) => {
     if (item.contract.secType == ContractType.Option && item.quantity) {
       if (!thisTrade.expectedExpiry) thisTrade.expectedExpiry = (item.contract as StatementOptionEntry).lastTradeDate;
