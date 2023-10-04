@@ -580,8 +580,9 @@ export class ImporterBot extends ITradingBot {
   public start(): void {
     this.init()
       .then(() => {
-        // const awaitTimeout = (delay: number): Promise<unknown> =>
-        //   new Promise((resolve): NodeJS.Timeout => setTimeout(resolve, delay * 1000));
+        setInterval((): void => {
+          this.process().catch((error) => logger.error(MODULE + ".start", error));
+        }, 3600 * 1000);
         return awaitTimeout(5).then(() => this.process());
       })
       .catch((error) => console.error("start importer bot:", error));
