@@ -6,7 +6,7 @@ import { formatNumber } from "../../../utils";
 import Number from "../../Number/Number";
 import { ContractLink } from "../Contract/links";
 import { TradeLink } from "./links";
-import { tradeStatus2String } from "./utils";
+import { tradeStatus2String, tradeStrategy2String } from "./utils";
 
 type Props = {
   title?: string;
@@ -32,7 +32,7 @@ const TradesTable: FunctionComponent<Props> = ({ title = "Trades index", content
             <Td>Closed</Td>
             <Td>Status</Td>
             <Td>Days</Td>
-            <Td>Risk</Td>
+            <Td>Engaged</Td>
             <Td>PnL</Td>
             <Td>APY</Td>
           </Tr>
@@ -52,7 +52,7 @@ const TradesTable: FunctionComponent<Props> = ({ title = "Trades index", content
                     {item.underlying.symbol}
                   </Link>
                 </Td>
-                <Td>{item.strategy}</Td>
+                <Td>{tradeStrategy2String(item.strategy)}</Td>
                 <Td>{new Date(item.openingDate).toLocaleDateString()}</Td>
                 <Td>{item.closingDate ? new Date(item.closingDate).toLocaleDateString() : undefined}</Td>
                 <Td>{tradeStatus2String(item.status)}</Td>
