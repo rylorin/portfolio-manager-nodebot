@@ -1,10 +1,11 @@
 import { DeleteIcon, EditIcon, SearchIcon } from "@chakra-ui/icons";
-import { IconButton, Td, Tr } from "@chakra-ui/react";
+import { IconButton, Link, Td, Tr } from "@chakra-ui/react";
 import { FunctionComponent, default as React } from "react";
 import { Form, Link as RouterLink } from "react-router-dom";
 import { OptionPositionEntry } from "../../../../routers/positions.types";
 import { formatNumber } from "../../../utils";
 import Number from "../../Number/Number";
+import { ContractLink } from "../Contract/links";
 import { PositionLink } from "./links";
 
 type Props = { portfolioId: number; item: OptionPositionEntry };
@@ -28,7 +29,11 @@ const OptionRow: FunctionComponent<Props> = ({ portfolioId, item, ..._rest }): R
     <>
       <Tr id={`${item.id}`}>
         <Td isNumeric>{formatNumber(item.quantity)}</Td>
-        <Td>{item.option.symbol}</Td>
+        <Td>
+          <Link to={ContractLink.toItem(portfolioId, item.underlying.id)} as={RouterLink}>
+            {item.option.symbol}
+          </Link>
+        </Td>
         <Td isNumeric>{formatNumber(item.option.strike, 1)}</Td>
         <Td>{item.option.expiration}</Td>
         <Td>{item.option.type == "P" ? "Put" : "Call"}</Td>

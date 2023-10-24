@@ -68,6 +68,19 @@ const PositionsTable: FunctionComponent<Props> = ({
     return result;
   };
 
+  const getUnderlyingId = (a: PositionEntry | OptionPositionEntry): number => {
+    let result: number;
+    switch (a.contract.secType) {
+      case ContractType.Stock:
+        result = a.contract.id;
+        break;
+      case ContractType.Option:
+        result = (a as OptionPositionEntry).underlying.id;
+        break;
+    }
+    return result;
+  };
+
   return (
     <>
       <TableContainer>
@@ -96,7 +109,7 @@ const PositionsTable: FunctionComponent<Props> = ({
               <Tr key={item.id}>
                 <Td isNumeric>{formatNumber(item.quantity)}</Td>
                 <Td>
-                  <Link to={ContractLink.toItem(portfolioId, item.contract.id)} as={RouterLink}>
+                  <Link to={ContractLink.toItem(portfolioId, getUnderlyingId(item))} as={RouterLink}>
                     {item.contract.symbol}
                   </Link>
                 </Td>

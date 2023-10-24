@@ -561,12 +561,12 @@ export class ImporterBot extends ITradingBot {
   }
 
   protected process(): Promise<any> {
-    const parser = new XMLParser();
     return fetch(
       `https://gdcdyn.interactivebrokers.com/Universal/servlet/FlexStatementService.SendRequest?t=${this.token}&q=${this.query}&v=3`,
     )
       .then((response) => response.text())
       .then((XMLdata) => {
+        const parser = new XMLParser();
         const jObj = parser.parse(XMLdata);
         if (jObj["FlexStatementResponse"].Status == "Success") {
           return this.fetchReport(
