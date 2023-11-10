@@ -75,7 +75,7 @@ const PositionsTable: FunctionComponent<Props> = ({
         result = a.contract.id;
         break;
       case ContractType.Option:
-        result = (a as OptionPositionEntry).underlying.id;
+        result = (a as OptionPositionEntry).underlying?.id;
         break;
     }
     return result;
