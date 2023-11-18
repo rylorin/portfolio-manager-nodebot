@@ -33,6 +33,8 @@ const ibContractFromElement = (element: any): IbContract => {
     lastTradeDateOrContractMonth: element.expiry,
     multiplier: element.multiplier,
     right: element.putCall,
+    description: element.description,
+    localSymbol: element.symbol,
   };
   //   console.log(ibContract);
   return ibContract;
@@ -170,11 +172,28 @@ export class ImporterBot extends ITradingBot {
   }
 
   // eslint-disable-next-line @typescript-eslint/explicit-module-boundary-types
-  protected processSecurityInfo(element: any): Promise<Contract> {
-    // console.log(element.symbol);
-    return this.processSecurityInfoUnderlying(element).then((_underlying) =>
-      this.findOrCreateContract(ibContractFromElement(element)),
-    );
+  protected processSecurityInfo(element: any): Promise<Contract | undefined> {
+    logger.log(LogLevel.Trace, MODULE + ".processSecurityInfo", undefined, element);
+    // I don't understand where the next lint error comes from...
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-return
+    return this.processSecurityInfoUnderlying(element)
+      .then((underlying) => {
+        const ibContract = ibContractFromElement(element);
+        logger.log(
+          LogLevel.Trace,
+          MODULE + ".processSecurityInfo",
+          undefined,
+          "underlying",
+          underlying,
+          "contract",
+          ibContract,
+        );
+        return this.findOrCreateContract(ibContract);
+      })
+      .catch((_e) => {
+        logger.log(LogLevel.Error, MODULE + ".processSecurityInfo", undefined, element);
+        return undefined;
+      });
   }
 
   private processAllSecuritiesInfo(element: any): Promise<any> {
@@ -423,7 +442,7 @@ export class ImporterBot extends ITradingBot {
         throw Error("undefined cash trasaction type:" + element.type);
     }
     return (element.assetCategory ? this.processSecurityInfo(element) : Promise.resolve(null))
-      .then((contract: Contract | null) => {
+      .then((contract: Contract | null | undefined) => {
         const defaults = {
           portfolio_id: this.portfolio.id,
           statementType,
@@ -504,7 +523,7 @@ export class ImporterBot extends ITradingBot {
 
   // eslint-disable-next-line @typescript-eslint/explicit-module-boundary-types
   protected processReport(element: any): Promise<void> {
-    console.log("AccountInformation", element.AccountInformation);
+    logger.log(LogLevel.Info, MODULE + ".processReport", undefined, element.AccountInformation);
     return Portfolio.findOrCreate({
       where: {
         account: element.AccountInformation.accountId,
@@ -568,11 +587,16 @@ export class ImporterBot extends ITradingBot {
       .then((XMLdata) => {
         const parser = new XMLParser();
         const jObj = parser.parse(XMLdata);
-        if (jObj["FlexStatementResponse"].Status == "Success") {
+        if (jObj["FlexStatementResponse"]?.Status == "Success") {
           return this.fetchReport(
             `${jObj["FlexStatementResponse"].Url}?q=${jObj["FlexStatementResponse"].ReferenceCode}&t=${this.token}&v=3`,
           );
-        } else throw Error("Can t fetch data" + jObj["FlexStatementResponse"].ErrorMessage);
+        } else if (jObj["FlexStatementResponse"]?.ErrorMessage) {
+          throw Error("Can t fetch data" + jObj["FlexStatementResponse"].ErrorMessage);
+        } else {
+          console.error(jObj);
+          throw Error("Can t fetch data");
+        }
       })
       .catch((error) => console.error("importer bot fetch:", error));
   }
@@ -582,8 +606,8 @@ export class ImporterBot extends ITradingBot {
       .then(() => {
         setInterval((): void => {
           this.process().catch((error) => logger.error(MODULE + ".start", error));
-        }, 3600 * 1000);
-        return awaitTimeout(5).then(() => this.process());
+        }, 3600 * 1000); // On every hour
+        return awaitTimeout(3).then(() => this.process());
       })
       .catch((error) => console.error("start importer bot:", error));
   }

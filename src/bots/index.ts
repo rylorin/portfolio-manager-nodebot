@@ -14,7 +14,7 @@ import {
 import EventEmitter from "events";
 import { Op, Transaction } from "sequelize";
 import { MyTradingBotApp } from "..";
-import logger from "../logger";
+import { LogLevel, default as logger } from "../logger";
 import {
   Bag,
   Balance,
@@ -758,7 +758,7 @@ export class ITradingBot extends EventEmitter {
     details: ContractDetails,
     transaction?: Transaction,
   ): Promise<Contract> {
-    // console.log("createOptionContract", ibContract, details);
+    logger.log(LogLevel.Trace, MODULE + ".createOptionContract", undefined, ibContract, details);
     const contract_values = {
       // Contract part of the option
       conId: ibContract.conId!, // eslint-disable-line @typescript-eslint/no-unnecessary-type-assertion
@@ -821,6 +821,7 @@ export class ITradingBot extends EventEmitter {
   }
 
   protected async findOrCreateContract(ibContract: IbContract, transaction?: Transaction): Promise<Contract> {
+    logger.log(LogLevel.Trace, MODULE + ".findOrCreateContract", undefined, ibContract);
     const transaction_: Transaction | undefined = transaction; // the Transaction object that we eventually received
     let contract: Contract | null = null;
     try {
@@ -835,6 +836,7 @@ export class ITradingBot extends EventEmitter {
           transaction: transaction,
           // logging: console.log,
         });
+        logger.log(LogLevel.Trace, MODULE + ".findOrCreateContract", undefined, "DB lookup", contract);
       }
       if (!contract) {
         // console.log(
@@ -846,20 +848,53 @@ export class ITradingBot extends EventEmitter {
         // canonize ibContract
         let details: ContractDetails | undefined = undefined;
         if (ibContract.secType != IbSecType.BAG) {
-          // console.log("requesting contract details");
+          logger.log(
+            LogLevel.Trace,
+            MODULE + ".findOrCreateContract",
+            undefined,
+            "requesting contract details",
+            ibContract,
+          );
           await this.api
             .getContractDetails(ibContract)
             .then((detailstab) => {
-              // console.log("getContractDetails returned");
               if (detailstab.length >= 1) {
                 details = detailstab[0];
                 ibContract = details.contract;
+                logger.log(
+                  LogLevel.Trace,
+                  MODULE + ".findOrCreateContract",
+                  undefined,
+                  "got contract details",
+                  ibContract,
+                );
+              } else {
+                logger.log(
+                  LogLevel.Warning,
+                  MODULE + ".findOrCreateContract",
+                  undefined,
+                  "Contract details not found",
+                  ibContract,
+                );
               }
             })
             .catch((err: IBApiNextError) => {
-              // console.log("getContractDetails error");
-              const message = `findOrCreateContract.getContractDetails failed for ${ibContract.secType} ${ibContract.symbol} ${ibContract.lastTradeDateOrContractMonth} ${ibContract.strike} ${ibContract.right} with error #${err.code}: '${err.error.message}'`;
-              this.warn(message);
+              const message = `getContractDetails failed for ${ibContract.secType} ${ibContract.symbol} ${ibContract.lastTradeDateOrContractMonth} ${ibContract.strike} ${ibContract.right} with error #${err.code}: '${err.error.message}'`;
+              logger.log(LogLevel.Error, MODULE + ".findOrCreateContract", undefined, message, ibContract);
+              // let canContinue = false;
+              // if (ibContract.conId) {
+              //   // If we have an IB conId then we can try to continue if enougth data provided
+              //   switch (ibContract.secType) {
+              //     case SecType.FOP:
+              //     case SecType.OPT:
+              //       if (
+              //         ibContract.currency &&
+              //         ibContract.lastTradeDateOrContractMonth &&
+              //         ibContract.strike &&
+              //         ibContract.right) canContinue=true
+              //       break;
+              //   }
+              // }
               throw {
                 name: "IBApiNextError",
                 message,
@@ -868,13 +903,15 @@ export class ITradingBot extends EventEmitter {
                 original: Error,
               } as Error;
             });
-          // console.log("after await");
         }
-        // console.log(
-        //   "contract details found",
-        //   ibContract.secType,
-        //   ibContract.symbol
-        // );
+        logger.log(
+          LogLevel.Info,
+          MODULE + ".findOrCreateContract",
+          undefined,
+          "contract details found",
+          ibContract.secType,
+          ibContract.symbol,
+        );
         if (details && ibContract.secType == IbSecType.STK) {
           contract = await this.createStockContract(ibContract, details, transaction);
         } else if (details && ibContract.secType == IbSecType.IND) {
