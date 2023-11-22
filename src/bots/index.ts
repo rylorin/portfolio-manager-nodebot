@@ -904,14 +904,6 @@ export class ITradingBot extends EventEmitter {
               } as Error;
             });
         }
-        logger.log(
-          LogLevel.Info,
-          MODULE + ".findOrCreateContract",
-          undefined,
-          "contract details found",
-          ibContract.secType,
-          ibContract.symbol,
-        );
         if (details && ibContract.secType == IbSecType.STK) {
           contract = await this.createStockContract(ibContract, details, transaction);
         } else if (details && ibContract.secType == IbSecType.IND) {

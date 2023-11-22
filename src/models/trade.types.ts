@@ -30,8 +30,8 @@ export const TradeStrategy = {
   "long strangle": 13,
   "long straddle": 14,
   "short straddle": 15,
-  "iron condor": 18,
-  "short iron condor": 19,
+  "reverse iron condor": 18,
+  "iron condor": 19,
   "synthetic short call": 20,
   box: 21,
 } as const;

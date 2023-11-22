@@ -580,25 +580,28 @@ export class ImporterBot extends ITradingBot {
   }
 
   protected process(): Promise<any> {
-    return fetch(
-      `https://gdcdyn.interactivebrokers.com/Universal/servlet/FlexStatementService.SendRequest?t=${this.token}&q=${this.query}&v=3`,
-    )
-      .then((response) => response.text())
-      .then((XMLdata) => {
-        const parser = new XMLParser();
-        const jObj = parser.parse(XMLdata);
-        if (jObj["FlexStatementResponse"]?.Status == "Success") {
-          return this.fetchReport(
-            `${jObj["FlexStatementResponse"].Url}?q=${jObj["FlexStatementResponse"].ReferenceCode}&t=${this.token}&v=3`,
-          );
-        } else if (jObj["FlexStatementResponse"]?.ErrorMessage) {
-          throw Error("Can t fetch data" + jObj["FlexStatementResponse"].ErrorMessage);
-        } else {
-          console.error(jObj);
-          throw Error("Can t fetch data");
-        }
-      })
-      .catch((error) => console.error("importer bot fetch:", error));
+    return (
+      fetch(
+        `https://gdcdyn.interactivebrokers.com/Universal/servlet/FlexStatementService.SendRequest?t=${this.token}&q=${this.query}&v=3`,
+      )
+        .then((response) => response.text())
+        .then((XMLdata) => {
+          const parser = new XMLParser();
+          const jObj = parser.parse(XMLdata);
+          if (jObj["FlexStatementResponse"]?.Status == "Success") {
+            return this.fetchReport(
+              `${jObj["FlexStatementResponse"].Url}?q=${jObj["FlexStatementResponse"].ReferenceCode}&t=${this.token}&v=3`,
+            );
+          } else if (jObj["FlexStatementResponse"]?.ErrorMessage) {
+            throw Error("Can t fetch data: " + jObj["FlexStatementResponse"].ErrorMessage);
+          } else {
+            console.error(jObj);
+            throw Error("Can t fetch data");
+          }
+        })
+        // eslint-disable-next-line @typescript-eslint/no-unsafe-call
+        .catch((error) => logger.error(MODULE + ".process", "importer bot fetch:", error.toString()))
+    );
   }
 
   public start(): void {
