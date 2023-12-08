@@ -158,6 +158,38 @@ export const preparePositions = (portfolio: Portfolio): Promise<(PositionEntry |
               return positions;
             });
 
+          case SecType.BOND: {
+            const price = getPrice(item.contract);
+            const value = price ? price * item.quantity : undefined;
+            const baseRate =
+              1 / (portfolio.baseRates.find((currency) => currency.currency == item.contract.currency)?.rate || 1);
+            const result: PositionEntry = {
+              id: item.id,
+              openDate: item.createdAt.getTime(),
+              quantity: item.quantity,
+              contract: {
+                id: item.contract.id,
+                secType: item.contract.secType,
+                symbol: item.contract.symbol,
+                name: item.contract.name,
+                multiplier: 1,
+                currency: item.contract.currency,
+                price: getPrice(item.contract) || undefined,
+                expiration: undefined,
+              },
+              trade_id: item.trade_unit_id ? item.trade_unit_id : undefined,
+              price: price ? price : undefined,
+              value,
+              pru: item.cost / item.quantity,
+              cost: item.cost,
+              pnl: value ? value - item.cost : undefined,
+              baseRate,
+            };
+            // console.log(item.contract.currency, result);
+            positions.push(result);
+            return positions;
+          }
+
           default:
             throw Error("unimplemented sectype: " + item.contract.secType);
         }

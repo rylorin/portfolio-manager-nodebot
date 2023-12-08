@@ -351,6 +351,7 @@ export class ImporterBot extends ITradingBot {
       case SecType.STK:
       case SecType.FUT:
       case SecType.CASH:
+      case SecType.BOND:
         return this.processStockTrade(element).then((): void => undefined);
       case SecType.FOP:
       case SecType.OPT:
@@ -428,6 +429,8 @@ export class ImporterBot extends ITradingBot {
         break;
       case "Broker Interest Paid":
       case "Broker Interest Received":
+      case "Bond Interest Paid":
+      case "Bond Interest Received":
         statementType = StatementTypes.InterestStatement;
         break;
       case "Deposits/Withdrawals":
@@ -439,7 +442,7 @@ export class ImporterBot extends ITradingBot {
         break;
       default:
         console.error("undefined cash trasaction type:", element);
-        throw Error("undefined cash trasaction type:" + element.type);
+        throw Error("undefined cash trasaction type: " + element.type);
     }
     return (element.assetCategory ? this.processSecurityInfo(element) : Promise.resolve(null))
       .then((contract: Contract | null | undefined) => {

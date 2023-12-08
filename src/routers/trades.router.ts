@@ -303,7 +303,7 @@ const addFakeTrades = (theSynthesys: OpenTradesWithPositions): TradeEntry[] => {
   return theSynthesys.trades;
 };
 
-const getExpiration = (item: PositionEntry | OptionPositionEntry): string | undefined => {
+const _getExpiration = (item: PositionEntry | OptionPositionEntry): string | undefined => {
   switch (item.contract.secType) {
     case ContractType.Stock:
       return undefined;
@@ -315,23 +315,6 @@ const getExpiration = (item: PositionEntry | OptionPositionEntry): string | unde
     default:
       logger.error(MODULE + ".getExpiration", "not implemented", item);
       throw Error("not implemented!");
-  }
-};
-
-const _comparePositions = (a: PositionEntry | OptionPositionEntry, b: PositionEntry | OptionPositionEntry): number => {
-  let result: number;
-  const aExpiration = getExpiration(a);
-  const bExpiration = getExpiration(b);
-  if (!aExpiration && !bExpiration) return a.contract.symbol.localeCompare(b.contract.symbol);
-  else if (!aExpiration) return +1;
-  else if (!bExpiration) return -1;
-  else {
-    result = aExpiration.localeCompare(bExpiration);
-    if (!result) {
-      result = (a as OptionPositionEntry).option.symbol.localeCompare((b as OptionPositionEntry).option.symbol);
-      if (!result) result = (a as OptionPositionEntry).option.strike - (b as OptionPositionEntry).option.strike;
-    }
-    return result;
   }
 };
 
@@ -524,6 +507,10 @@ const computeTradeStrategy = (thisTrade: Trade, virtuals: Record<number, Virtual
     else if (short_call > 0 && !long_call && !short_put && !long_put) strategy = TradeStrategy["naked short call"];
     else if (!short_call && long_call > 0 && !short_put && !long_put) strategy = TradeStrategy["long call"];
     else if (!short_call && long_call > 0 && short_put > 0 && !long_put) strategy = TradeStrategy["risk reversal"];
+    else if (short_call && !long_call && short_put && !long_put)
+      strategy = TradeStrategy["short strangle"]; // Could be short straddle also
+    else if (short_call == long_call && short_put == long_put && long_call == long_put)
+      strategy = TradeStrategy["iron condor"]; // could be reverse iron condor also
   }
   console.log(thisTrade.id, "strategy", thisTrade.strategy, strategy);
   if (!thisTrade.strategy) thisTrade.strategy = strategy;

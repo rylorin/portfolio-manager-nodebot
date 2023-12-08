@@ -1,7 +1,7 @@
-const dotenv = require("dotenv");
-dotenv.config();
+import dotenv from "dotenv";
+dotenv.config(); // eslint-disable-line @typescript-eslint/no-var-requires,@typescript-eslint/no-unsafe-call
 
-const { createProxyMiddleware } = require("http-proxy-middleware");
+import createProxyMiddleware from "http-proxy-middleware";
 
 const { PORT = 3001 } = process.env;
 

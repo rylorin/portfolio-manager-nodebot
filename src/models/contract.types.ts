@@ -8,6 +8,7 @@ export const ContractType = {
   Future: "FUT",
   FutureOption: "FOP", // maybe OPT
   Index: "IND",
+  Bond: "BOND",
 } as const;
 export type ContractType = (typeof ContractType)[keyof typeof ContractType];
 

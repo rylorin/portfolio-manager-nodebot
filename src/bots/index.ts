@@ -29,6 +29,7 @@ import {
   Position,
   Stock,
 } from "../models";
+import { Bond } from "../models/bond.model";
 import { ContractType } from "../models/contract.types";
 import { expirationToDateString } from "../models/date_utils";
 
@@ -723,7 +724,6 @@ export class ITradingBot extends EventEmitter {
       currency: ibContract.currency,
     };
     return this.findOrCreateContract(underlying, transaction).then((future) => {
-      // future_values.stock_id = future.id;
       future_values.underlying_id = future.id;
       return Future.findOne({
         where: {
@@ -750,6 +750,37 @@ export class ITradingBot extends EventEmitter {
           });
         }
       });
+    });
+  }
+
+  protected createBondContract(
+    ibContract: IbContract,
+    details: ContractDetails,
+    transaction?: Transaction,
+  ): Promise<Contract> {
+    const contract_values = {
+      // Contract part
+      conId: ibContract.conId!,
+      secType: ibContract.secType as ContractType,
+      symbol: ITradingBot.formatOptionName(ibContract),
+      currency: ibContract.currency!,
+      exchange: ibContract.primaryExch || ibContract.exchange!,
+      name: ITradingBot.formatOptionName(ibContract),
+    };
+    const extended_values = {
+      // specific fields
+      id: undefined as unknown as number,
+      underlying_id: undefined as unknown as number,
+      lastTradeDate: expirationToDateString(ibContract.lastTradeDateOrContractMonth!),
+      multiplier: ibContract.multiplier!,
+    };
+    return Contract.create(contract_values, {
+      transaction: transaction /* logging: console.log, */,
+    }).then((contract) => {
+      extended_values.id = contract.id;
+      return Bond.create(extended_values, {
+        transaction: transaction /* logging: false, */,
+      }).then(() => Promise.resolve(contract));
     });
   }
 
@@ -914,6 +945,8 @@ export class ITradingBot extends EventEmitter {
           contract = await this.createCashContract(ibContract, details, transaction);
         } else if (details && ibContract.secType == IbSecType.FUT) {
           contract = await this.createFutureContract(ibContract, details, transaction);
+        } else if (details && ibContract.secType == IbSecType.BOND) {
+          contract = await this.createBondContract(ibContract, details, transaction);
         } else if (ibContract.secType == IbSecType.BAG) {
           contract = await this.createBagContract(ibContract, undefined, transaction);
         } else {

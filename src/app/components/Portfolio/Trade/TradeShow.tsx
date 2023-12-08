@@ -9,6 +9,7 @@ import Number from "../../Number/Number";
 import { ContractLink } from "../Contract/links";
 import PositionsTable from "../Position/PositionsTable";
 import StatementsTable from "../Statement/StatementsTable";
+import { StatementLink } from "../Statement/links";
 import { tradeStatus2String, tradeStrategy2String } from "./utils";
 
 type Props = Record<string, never>;
@@ -18,7 +19,6 @@ const TradeShow: FunctionComponent<Props> = ({ ..._rest }): React.ReactNode => {
   const item = useLoaderData() as TradeEntry;
   const navigate = useNavigate();
 
-  // console.log(item);
   return (
     <>
       <VStack>
@@ -35,7 +35,9 @@ const TradeShow: FunctionComponent<Props> = ({ ..._rest }): React.ReactNode => {
             Open date:
           </Text>
           <Text w="200px" textAlign="right">
-            {new Date(item.openingDate).toLocaleString()}
+            <Link to={StatementLink.toMonth(portfolioId, new Date(item.openingDate))} as={RouterLink}>
+              {new Date(item.openingDate).toLocaleString()}
+            </Link>
           </Text>
         </Flex>
         {item.expectedExpiry && (

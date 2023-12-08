@@ -34,6 +34,7 @@ export const TradeStrategy = {
   "iron condor": 19,
   "synthetic short call": 20,
   box: 21,
+  bond: 22,
 } as const;
 export type TradeStrategy = (typeof TradeStrategy)[keyof typeof TradeStrategy];
 
