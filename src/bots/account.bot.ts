@@ -51,20 +51,30 @@ export class AccountUpdateBot extends ITradingBot {
     if (this.qProcessing < 1) {
       this.qProcessing++;
       if (this.orderq.length > 0) {
-        console.log(`processOrderQueue ${this.orderq.length} item(s)`);
+        logger.log(
+          LogLevel.Info,
+          MODULE + ".processQueue",
+          undefined,
+          `processOrderQueue ${this.orderq.length} item(s)`,
+        );
         const item = this.orderq.shift()!;
         await this.updateOpenOrder(item);
-        console.log("processOrderQueue done");
+        logger.log(LogLevel.Info, MODULE + ".processQueue", undefined, "processOrderQueue done");
       } else if (this.positionq.length > 0) {
-        console.log(`processPositionQueue ${this.positionq.length} item(s)`);
+        logger.log(
+          LogLevel.Info,
+          MODULE + ".processQueue",
+          undefined,
+          `processPositionQueue ${this.positionq.length} item(s)`,
+        );
         const item = this.positionq.shift()!;
         await this.updatePosition(item);
-        console.log("processPositionQueue done");
+        logger.log(LogLevel.Info, MODULE + ".processQueue", undefined, "processPositionQueue done");
       } else if (this.cashq.length > 0) {
-        console.log(`processCashQueue ${this.cashq.length} item(s)`);
+        logger.log(LogLevel.Info, MODULE + ".processQueue", undefined, `processCashQueue ${this.cashq.length} item(s)`);
         const item = this.cashq.shift()!;
         await this.updateCashPosition(item);
-        console.log("procesCashQueue done");
+        logger.log(LogLevel.Info, MODULE + ".processQueue", undefined, "procesCashQueue done");
       }
       --this.qProcessing;
     }
@@ -126,60 +136,76 @@ export class AccountUpdateBot extends ITradingBot {
     }
   }
 
-  protected updateOpenOrder(order: IbOpenOrder): Promise<void> {
-    // console.log("updateOpenOrder", order.order.permId, order.contract.symbol);
-    // if (order.order.permId == 2126142192) console.log(order);
-    return this.app.sequelize.transaction((transaction) => {
-      // console.log("transaction acquired");
-      return this.findOrCreateContract(order.contract, transaction).then((contract: Contract) => {
-        // console.log("contract found", contract.id);
-        return OpenOrder.findOrCreate({
-          where: {
-            permId: order.order.permId,
-            portfolioId: this.portfolio.id,
-          },
-          defaults: {
-            permId: order.order.permId!,
-            portfolioId: this.portfolio.id,
-            contract_id: contract.id,
-            actionType: order.order.action!,
-            lmtPrice: order.order.lmtPrice,
-            auxPrice: order.order.auxPrice,
-            status: order.orderState.status!,
-            totalQty: order.order.totalQuantity!,
-            cashQty: order.order.cashQty,
-            remainingQty: order.orderStatus ? order.orderStatus.remaining! : order.order.totalQuantity!,
-            orderId: order.orderId,
-            clientId: order.order.clientId!,
-          },
-          transaction: transaction,
-          // logging: console.log,
+  protected async handleUpdateOpenOrder(order: IbOpenOrder, transaction: Transaction): Promise<void> {
+    logger.log(LogLevel.Info, MODULE + ".handleUpdateOpenOrder", undefined, order.order.permId, order.contract.symbol);
+    await this.findOrCreateContract(order.contract, transaction).then((contract: Contract) => {
+      logger.log(LogLevel.Info, MODULE + ".updateOpenOrder", contract.symbol, "contract found", contract.id);
+      return OpenOrder.findOrCreate({
+        where: {
+          permId: order.order.permId,
+          portfolioId: this.portfolio.id,
+        },
+        defaults: {
+          permId: order.order.permId!,
+          portfolioId: this.portfolio.id,
+          contract_id: contract.id,
+          actionType: order.order.action!,
+          lmtPrice: order.order.lmtPrice,
+          auxPrice: order.order.auxPrice,
+          status: order.orderState.status!,
+          totalQty: order.order.totalQuantity!,
+          cashQty: order.order.cashQty,
+          remainingQty: order.orderStatus ? order.orderStatus.remaining! : order.order.totalQuantity!,
+          orderId: order.orderId,
+          clientId: order.order.clientId!,
+        },
+        transaction: transaction,
+        // logging: console.log,
+      })
+        .then(([open_order, created]) => {
+          // console.log("OpenOrder.findOrCreate done");
+          if (created) return Promise.resolve(open_order);
+          else
+            return open_order.update(
+              {
+                // contract_id: contract.id,  // contract is not supposed to change
+                actionType: order.order.action,
+                lmtPrice: order.order.lmtPrice,
+                auxPrice: order.order.auxPrice,
+                status: order.orderState.status,
+                totalQty: order.order.totalQuantity,
+                cashQty: order.order.cashQty,
+                remainingQty: order.orderStatus?.remaining,
+                orderId: order.orderId,
+                clientId: order.order.clientId,
+              },
+              { transaction: transaction },
+            );
         })
-          .then(([open_order, created]) => {
-            // console.log("OpenOrder.findOrCreate done");
-            if (created) return Promise.resolve(open_order);
-            else
-              return open_order.update(
-                {
-                  // contract_id: contract.id,  // contract is not supposed to change
-                  actionType: order.order.action,
-                  lmtPrice: order.order.lmtPrice,
-                  auxPrice: order.order.auxPrice,
-                  status: order.orderState.status,
-                  totalQty: order.order.totalQuantity,
-                  cashQty: order.order.cashQty,
-                  remainingQty: order.orderStatus?.remaining,
-                  orderId: order.orderId,
-                  clientId: order.order.clientId,
-                },
-                { transaction: transaction },
-              );
-          })
-          .then(() => this.createAndUpdateLegs(order, transaction))
-          .then(() => console.log("updateOpenOrder done", order.order.permId, order.contract.symbol));
-        /* Committed */
-      });
+        .then(() => this.createAndUpdateLegs(order, transaction))
+        .then(() => console.log("updateOpenOrder done", order.order.permId, order.contract.symbol));
+      /* Committed */
     });
+  }
+
+  protected updateOpenOrder(order: IbOpenOrder): Promise<void> {
+    logger.log(LogLevel.Info, MODULE + ".updateOpenOrder", undefined, order.order.permId, order.contract.symbol);
+    return this.app.sequelize.transaction(async (t) => this.handleUpdateOpenOrder(order, t));
+
+    // // First, we start a transaction from your connection and save it into a variable
+    // const t = await this.app.sequelize.transaction();
+    // try {
+    //   // Then, we do some calls passing this transaction as an option:
+    //   await this.handleUpdateOpenOrder(order, t);
+    //   // If the execution reaches this line, no errors were thrown.
+    //   // We commit the transaction.
+    //   await t.commit();
+    // } catch (error) {
+    //   logger.log(LogLevel.Error, MODULE + ".updateOpenOrder", undefined, error);
+    //   // If the execution reaches this line, an error was thrown.
+    //   // We rollback the transaction.
+    //   await t.rollback();
+    // }
   }
 
   private iterateOpenOrdersForUpdate(orders: IbOpenOrder[]): void {

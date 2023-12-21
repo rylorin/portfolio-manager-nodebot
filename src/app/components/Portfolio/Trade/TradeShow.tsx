@@ -65,7 +65,11 @@ const TradeShow: FunctionComponent<Props> = ({ ..._rest }): React.ReactNode => {
             Close date:
           </Text>
           <Text w="200px" textAlign="right">
-            {item.closingDate && new Date(item.closingDate).toLocaleString()}
+            {item.closingDate && (
+              <Link to={StatementLink.toMonth(portfolioId, new Date(item.closingDate))} as={RouterLink}>
+                {new Date(item.closingDate).toLocaleString()}
+              </Link>
+            )}
           </Text>
         </Flex>
         <Flex justifyContent="center" gap="2">

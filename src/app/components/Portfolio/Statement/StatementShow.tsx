@@ -4,6 +4,7 @@ import { FunctionComponent, default as React } from "react";
 import { Form, Link as RouterLink, useLoaderData, useNavigate, useParams } from "react-router-dom";
 import { StatementEntry } from "../../../../routers/statements.types";
 import { ContractLink } from "../Contract/links";
+import { StatementLink } from "../Statement/links";
 import { TradeLink } from "../Trade/links";
 
 type Props = Record<string, never>;
@@ -42,7 +43,9 @@ const StatementShow: FunctionComponent<Props> = ({ ..._rest }): React.ReactNode 
             Date:
           </Text>
           <Text w="200px" textAlign="right">
-            {new Date(theStatement.date).toLocaleString()}
+            <Link to={StatementLink.toMonth(portfolioId, new Date(theStatement.date))} as={RouterLink}>
+              {new Date(theStatement.date).toLocaleString()}
+            </Link>
           </Text>
         </Flex>
         <Flex justifyContent="center" gap="2">

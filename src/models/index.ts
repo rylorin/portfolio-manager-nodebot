@@ -1,4 +1,5 @@
 import { Bag } from "./bag.model";
+import { Bond } from "./bond.model";
 import { Cash } from "./cash.model";
 import { Contract } from "./contract.model";
 import { Future } from "./future.model";
@@ -7,6 +8,7 @@ import { Option } from "./option.model";
 import { Stock } from "./stock.model";
 export * from "./bag.model";
 export * from "./balance.model";
+export * from "./bond.model";
 export * from "./cash.model";
 export * from "./contract.model";
 export * from "./contract.types";
@@ -30,4 +32,4 @@ export * from "./tax.model";
 export * from "./trade.model";
 export * from "./trade.types";
 
-export type AnyContract = Contract | Stock | Option | Bag | Cash | Future | Index;
+export type AnyContract = Contract | Stock | Option | Bag | Cash | Future | Index | Bond;

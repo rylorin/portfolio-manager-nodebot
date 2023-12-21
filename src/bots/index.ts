@@ -72,7 +72,7 @@ export class ITradingBot extends EventEmitter {
    */
   warn(message: string): void {
     // console.error(colors.bold.yellow(`[${new Date().toLocaleTimeString()}] Warning: ${message}`));
-    logger.warn(message);
+    logger.warn(undefined, message);
   }
 
   /**
@@ -80,7 +80,7 @@ export class ITradingBot extends EventEmitter {
    */
   error(message: string): void {
     // console.error(colors.bold.red(`[${new Date().toLocaleTimeString()}] Error: ${message}`));
-    logger.error(message);
+    logger.error(undefined, message);
   }
 
   protected static OptionComboContract(underlying: Contract, buyleg: number, sellleg: number): IbContract {
@@ -758,14 +758,15 @@ export class ITradingBot extends EventEmitter {
     details: ContractDetails,
     transaction?: Transaction,
   ): Promise<Contract> {
+    logger.log(LogLevel.Info, MODULE + ".createBondContract", ibContract.symbol, ibContract);
     const contract_values = {
       // Contract part
       conId: ibContract.conId!,
       secType: ibContract.secType as ContractType,
-      symbol: ITradingBot.formatOptionName(ibContract),
+      symbol: ibContract.symbol || `${ibContract.secType}-${ibContract.conId}`,
       currency: ibContract.currency!,
       exchange: ibContract.primaryExch || ibContract.exchange!,
-      name: ITradingBot.formatOptionName(ibContract),
+      name: ibContract.description ?? `${ibContract.secType}-${ibContract.conId}`,
     };
     const extended_values = {
       // specific fields
@@ -963,7 +964,8 @@ export class ITradingBot extends EventEmitter {
       if (err.name == "IBApiNextError") {
         // silently ignore, only propagate
       } else {
-        this.error(
+        logger.error(
+          MODULE + ".findOrCreateContract",
           `findOrCreateContract failed for ${ibContract.conId} ${ibContract.secType} ${ibContract.symbol} ${ibContract.lastTradeDateOrContractMonth} ${ibContract.strike} ${ibContract.right}:`,
         );
         // this.printObject(ibContract);

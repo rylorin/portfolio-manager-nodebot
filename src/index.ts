@@ -20,6 +20,7 @@ import { ImporterBot } from "./bots/importer.bot";
 import {
   Bag,
   Balance,
+  Bond,
   Cash,
   Contract,
   Currency,
@@ -105,6 +106,7 @@ export class MyTradingBotApp extends IBApiNextApp {
         InterestStatement,
         FeeStatement,
         Setting,
+        Bond,
       ],
       modelMatch: (filename, member) => {
         return filename.substring(0, filename.indexOf(".model")) === member.toLowerCase();

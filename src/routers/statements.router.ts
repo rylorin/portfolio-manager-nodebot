@@ -336,7 +336,7 @@ router.get("/:statementId(\\d+)/CreateTrade", (req, res): void => {
  */
 router.get("/:statementId(\\d+)/GuessTrade", (req, res): void => {
   const { portfolioId, statementId } = req.params as typeof req.params & parentParams;
-  // console.log("GuessTrade", portfolioId, statementId);
+  logger.log(LogLevel.Info, MODULE + ".GuessTrade", undefined, portfolioId, statementId);
   Statement.findByPk(statementId, {
     include: [{ model: Contract }, { model: Portfolio }],
   })
@@ -346,7 +346,7 @@ router.get("/:statementId(\\d+)/GuessTrade", (req, res): void => {
           case StatementTypes.EquityStatement:
           case StatementTypes.DividendStatement:
           case StatementTypes.TaxStatement:
-            // console.log("equity statement", statement);
+            logger.log(LogLevel.Info, MODULE + ".GuessTrade", undefined, "equity statement", statement);
             return Statement.findOne({
               where: {
                 portfolio_id: portfolioId,
@@ -362,7 +362,7 @@ router.get("/:statementId(\\d+)/GuessTrade", (req, res): void => {
             break;
           case StatementTypes.OptionStatement:
             return OptionStatement.findByPk(statementId).then((optstatement) => {
-              // console.log("guessing for optstatement", optstatement);
+              logger.log(LogLevel.Info, MODULE + ".GuessTrade", undefined, "guessing for optstatement", optstatement);
               if (optstatement) {
                 return OptionStatement.findOne({
                   where: {
@@ -407,7 +407,10 @@ router.get("/:statementId(\\d+)/GuessTrade", (req, res): void => {
     })
     .then((statement) => updateStatementTrade(statement))
     .then((statement) => res.status(200).json({ statement }))
-    .catch((error) => res.status(500).json({ error }));
+    .catch((error) => {
+      logger.log(LogLevel.Error, MODULE + ".GuessTrade", undefined, error);
+      res.status(500).json({ error });
+    });
 });
 
 /**
