@@ -14,6 +14,7 @@ export const expirationToDate = (value: string | number): Date => {
 /** convert YYYYMMDD to YYYY-MM-DD */
 export const expirationToDateString = (value: string | number): string => {
   let lastTradeDateOrContractMonth: string;
+  if (!value) return null;
   if (typeof value === "string") lastTradeDateOrContractMonth = value;
   else lastTradeDateOrContractMonth = `${value}`;
   const lastTradeDate =

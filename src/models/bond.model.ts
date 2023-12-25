@@ -56,6 +56,6 @@ export class Bond extends Model<
     return dte;
   }
 
-  @Column({ type: DataType.INTEGER, defaultValue: 100 })
+  @Column({ type: DataType.INTEGER, defaultValue: 1 })
   declare multiplier: number;
 }

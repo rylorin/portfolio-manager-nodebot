@@ -139,7 +139,7 @@ export class AccountUpdateBot extends ITradingBot {
   protected async handleUpdateOpenOrder(order: IbOpenOrder, transaction: Transaction): Promise<void> {
     logger.log(LogLevel.Info, MODULE + ".handleUpdateOpenOrder", undefined, order.order.permId, order.contract.symbol);
     await this.findOrCreateContract(order.contract, transaction).then((contract: Contract) => {
-      logger.log(LogLevel.Info, MODULE + ".updateOpenOrder", contract.symbol, "contract found", contract.id);
+      logger.log(LogLevel.Trace, MODULE + ".updateOpenOrder", contract.symbol, "contract found", contract.id);
       return OpenOrder.findOrCreate({
         where: {
           permId: order.order.permId,
@@ -183,7 +183,16 @@ export class AccountUpdateBot extends ITradingBot {
             );
         })
         .then(() => this.createAndUpdateLegs(order, transaction))
-        .then(() => console.log("updateOpenOrder done", order.order.permId, order.contract.symbol));
+        .then(() =>
+          logger.log(
+            LogLevel.Trace,
+            MODULE + ".handleUpdateOpenOrder",
+            undefined,
+            order.order.permId,
+            order.contract.symbol,
+            "done",
+          ),
+        );
       /* Committed */
     });
   }
@@ -250,7 +259,7 @@ export class AccountUpdateBot extends ITradingBot {
   }
 
   protected updateCashPosition(pos: { currency: string; balance: number }): Promise<Balance> {
-    console.log(`updateCashPosition(${pos.currency}, ${pos.balance})`);
+    logger.log(LogLevel.Info, MODULE + ".updateCashPosition", undefined, pos.currency, pos.balance);
     const where = {
       portfolio_id: this.portfolio.id,
       currency: pos.currency,

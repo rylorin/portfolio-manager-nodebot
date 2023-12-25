@@ -4,6 +4,7 @@ import { ITradingBot, awaitTimeout } from ".";
 import { MyTradingBotApp } from "..";
 import logger, { LogLevel } from "../logger";
 import {
+  Bond,
   Contract,
   DividendStatement,
   EquityStatement,
@@ -130,39 +131,39 @@ export class ImporterBot extends ITradingBot {
   }
 
   /*
-[0] processSecurityInfo {
-[0]   assetCategory: 'FOP',
-[0]   symbol: 'QN2M3 C14780',
-[0]   description: 'NQ 09JUN23 14780 C',
-[0]   conid: '635286755',
-[0]   securityID: '',
-[0]   listingExchange: 'CME',
-[0]   multiplier: '20',
-[0]   subCategory: 'C',
-[0]   code: '',
-[0]   currency: 'USD',
-[0]   issuer: '',
-[0]   underlyingCategory: 'FUT',
-[0]   underlyingConid: '551601533',
-[0]   underlyingSymbol: 'NQM3',
-[0]   underlyingListingExchange: 'CME',
-[0]   settlementPolicyMethod: 'Delivery',
-[0]   strike: '14780',
-[0]   expiry: '2023-06-09',
-[0]   putCall: 'C',
-[0]   securityIDType: '',
-[0]   cusip: '',
-[0]   isin: '',
-[0]   underlyingSecurityID: '',
-[0]   fineness: '0.0',
-[0]   maturity: '',
-[0]   issueDate: '',
-[0]   deliveryType: '',
-[0]   commodityType: '',
-[0]   principalAdjustFactor: '',
-[0]   weight: '0.0 ()',
-[0]   serialNumber: ''
-[0] }
+ processSecurityInfo {
+   assetCategory: 'FOP',
+   symbol: 'QN2M3 C14780',
+   description: 'NQ 09JUN23 14780 C',
+   conid: '635286755',
+   securityID: '',
+   listingExchange: 'CME',
+   multiplier: '20',
+   subCategory: 'C',
+   code: '',
+   currency: 'USD',
+   issuer: '',
+   underlyingCategory: 'FUT',
+   underlyingConid: '551601533',
+   underlyingSymbol: 'NQM3',
+   underlyingListingExchange: 'CME',
+   settlementPolicyMethod: 'Delivery',
+   strike: '14780',
+   expiry: '2023-06-09',
+   putCall: 'C',
+   securityIDType: '',
+   cusip: '',
+   isin: '',
+   underlyingSecurityID: '',
+   fineness: '0.0',
+   maturity: '',
+   issueDate: '',
+   deliveryType: '',
+   commodityType: '',
+   principalAdjustFactor: '',
+   weight: '0.0 ()',
+   serialNumber: ''
+ }
   */
   // eslint-disable-next-line @typescript-eslint/explicit-module-boundary-types
   protected processSecurityInfoUnderlying(element: any): Promise<Contract> | Promise<undefined> {
@@ -188,10 +189,34 @@ export class ImporterBot extends ITradingBot {
           "contract",
           ibContract,
         );
-        return this.findOrCreateContract(ibContract);
+        return this.findOrCreateContract(ibContract).then((contract) => {
+          if (contract.secType == SecType.BOND) {
+            logger.log(LogLevel.Trace, MODULE + ".processSecurityInfo", undefined, element);
+            // IB API does not provide any usefull information for BONDs therefore we update it using XML information
+            const contract_data = {
+              symbol: element.securityID,
+              name: element.symbol,
+              currency: element.currency,
+            };
+            const bond_data = {
+              lastTradeDate: element.maturity,
+              multiplier: element.multiplier,
+            };
+            return Bond.findOrCreate({
+              where: { id: contract.id },
+              defaults: bond_data,
+            }).then(([bond, _created]) => {
+              return bond.update(bond_data).then((_) => contract.update(contract_data));
+            });
+            // return Bond.update(bond_data, { where: { id: contract.id } }).then((_count) => {
+            //   return contract.update(contract_data);
+            // });
+          }
+          return contract;
+        });
       })
-      .catch((_e) => {
-        logger.log(LogLevel.Error, MODULE + ".processSecurityInfo", undefined, element);
+      .catch((e) => {
+        logger.log(LogLevel.Error, MODULE + ".processSecurityInfo", undefined, e, element);
         return undefined;
       });
   }
@@ -207,70 +232,6 @@ export class ImporterBot extends ITradingBot {
     else return Promise.resolve(undefined);
   }
 
-  /*
-[0] {
-[0]   accountId: 'U7802803',
-[0]   acctAlias: '',
-[0]   currency: 'USD',
-[0]   fxRateToBase: '0.92955',
-[0]   assetCategory: 'FOP',
-[0]   symbol: 'QN2M3 C14780',
-[0]   description: 'NQ 09JUN23 14780 C',
-[0]   conid: '635286755',
-[0]   securityID: '',
-[0]   securityIDType: '',
-[0]   cusip: '',
-[0]   isin: '',
-[0]   listingExchange: 'CME',
-[0]   underlyingConid: '551601533',
-[0]   underlyingSymbol: 'NQM3',
-[0]   underlyingSecurityID: '',
-[0]   underlyingListingExchange: 'CME',
-[0]   issuer: '',
-[0]   multiplier: '20',
-[0]   strike: '14780',
-[0]   expiry: '2023-06-09',
-[0]   tradeID: '556404027',
-[0]   putCall: 'C',
-[0]   reportDate: '2023-06-12',
-[0]   principalAdjustFactor: '',
-[0]   dateTime: '2023-06-09 16:20:00',
-[0]   serialNumber: '',
-[0]   tradeDate: '2023-06-09',
-[0]   deliveryType: '',
-[0]   commodityType: '',
-[0]   settleDateTarget: '2023-06-12',
-[0]   transactionType: 'BookTrade',
-[0]   exchange: '--',
-[0]   quantity: '5',
-[0]   tradePrice: '0',
-[0]   tradeMoney: '0',
-[0]   proceeds: '0',
-[0]   taxes: '0',
-[0]   ibCommission: '0',
-[0]   ibCommissionCurrency: 'USD',
-[0]   netCash: '0',
-[0]   closePrice: '0',
-[0]   openCloseIndicator: 'C',
-[0]   notes: 'Ep',
-[0]   cost: '112.9',
-[0]   fifoPnlRealized: '112.9',
-[0]   fxPnl: '0',
-[0]   mtmPnl: '0',
-[0]   transactionID: '1927093822',
-[0]   buySell: 'BUY',
-[0]   ibOrderID: '1927093822',
-[0]   ibExecID: '',
-[0]   extExecID: 'N/A',
-[0]   orderTime: '',
-[0]   levelOfDetail: 'EXECUTION',
-[0]   changeInPrice: '0',
-[0]   changeInQuantity: '0',
-[0]   orderType: '',
-[0]   isAPIOrder: 'N',
-[0]   accruedInt: '0'
-[0] }
-  */
   // eslint-disable-next-line @typescript-eslint/explicit-module-boundary-types
   protected processStockTrade(element: any): Promise<EquityStatement | null> {
     return this.processSecurityInfo(element).then((contract) =>
@@ -306,9 +267,72 @@ export class ImporterBot extends ITradingBot {
     );
   }
 
+  /*
+ {
+   accountId: '---',
+   acctAlias: '',
+   currency: 'USD',
+   fxRateToBase: '0.92955',
+   assetCategory: 'FOP',
+   symbol: 'QN2M3 C14780',
+   description: 'NQ 09JUN23 14780 C',
+   conid: '635286755',
+   securityID: '',
+   securityIDType: '',
+   cusip: '',
+   isin: '',
+   listingExchange: 'CME',
+   underlyingConid: '551601533',
+   underlyingSymbol: 'NQM3',
+   underlyingSecurityID: '',
+   underlyingListingExchange: 'CME',
+   issuer: '',
+   multiplier: '20',
+   strike: '14780',
+   expiry: '2023-06-09',
+   tradeID: '556404027',
+   putCall: 'C',
+   reportDate: '2023-06-12',
+   principalAdjustFactor: '',
+   dateTime: '2023-06-09 16:20:00',
+   serialNumber: '',
+   tradeDate: '2023-06-09',
+   deliveryType: '',
+   commodityType: '',
+   settleDateTarget: '2023-06-12',
+   transactionType: 'BookTrade',
+   exchange: '--',
+   quantity: '5',
+   tradePrice: '0',
+   tradeMoney: '0',
+   proceeds: '0',
+   taxes: '0',
+   ibCommission: '0',
+   ibCommissionCurrency: 'USD',
+   netCash: '0',
+   closePrice: '0',
+   openCloseIndicator: 'C',
+   notes: 'Ep',
+   cost: '112.9',
+   fifoPnlRealized: '112.9',
+   fxPnl: '0',
+   mtmPnl: '0',
+   transactionID: '1927093822',
+   buySell: 'BUY',
+   ibOrderID: '1927093822',
+   ibExecID: '',
+   extExecID: 'N/A',
+   orderTime: '',
+   levelOfDetail: 'EXECUTION',
+   changeInPrice: '0',
+   changeInQuantity: '0',
+   orderType: '',
+   isAPIOrder: 'N',
+   accruedInt: '0'
+ }
+  */
   // eslint-disable-next-line @typescript-eslint/explicit-module-boundary-types
   protected processOptionTrade(element: any): Promise<Statement> {
-    // console.log("processStockTrade", element);
     return this.processSecurityInfoUnderlying(element).then((contract) =>
       Statement.findOrCreate({
         where: { transactionId: element.transactionID },
@@ -345,17 +369,118 @@ export class ImporterBot extends ITradingBot {
     );
   }
 
+  /*
+  {
+    "accountId": "---",
+    "acctAlias": "",
+    "currency": "EUR",
+    "fxRateToBase": "1",
+    "assetCategory": "BOND",
+    "symbol": "RABOBK 6 1/2 PERP",
+    "description": "RABOBK 6 1/2 PERP",
+    "conid": "143137669",
+    "securityID": "XS1002121454",
+    "securityIDType": "ISIN",
+    "cusip": "EK0456492",
+    "isin": "XS1002121454",
+    "listingExchange": "",
+    "underlyingConid": "",
+    "underlyingSymbol": "",
+    "underlyingSecurityID": "",
+    "underlyingListingExchange": "",
+    "issuer": "",
+    "multiplier": "1",
+    "strike": "",
+    "expiry": "",
+    "tradeID": "642855443",
+    "putCall": "",
+    "reportDate": "2023-11-28",
+    "principalAdjustFactor": "1",
+    "dateTime": "2023-11-28 09:04:28",
+    "serialNumber": "",
+    "tradeDate": "2023-11-28",
+    "deliveryType": "",
+    "commodityType": "",
+    "settleDateTarget": "2023-11-30",
+    "transactionType": "ExchTrade",
+    "exchange": "EURONEXT",
+    "quantity": "4000",
+    "tradePrice": "96.6",
+    "tradeMoney": "3864",
+    "proceeds": "-3864",
+    "taxes": "0",
+    "ibCommission": "-5.764",
+    "ibCommissionCurrency": "EUR",
+    "netCash": "-3869.764",
+    "closePrice": "96.332",
+    "openCloseIndicator": "O",
+    "notes": "",
+    "cost": "3869.764",
+    "fifoPnlRealized": "0",
+    "mtmPnl": "-10.72",
+    "transactionID": "2303468007",
+    "buySell": "BUY",
+    "ibOrderID": "544474826",
+    "ibExecID": "0000e3d0.65658324.01.01",
+    "extExecID": "77313XS1002121454/B:1145027",
+    "orderTime": "2023-11-28 06:08:09",
+    "levelOfDetail": "EXECUTION",
+    "changeInPrice": "0",
+    "changeInQuantity": "0",
+    "orderType": "LMT",
+    "isAPIOrder": "N",
+    "accruedInt": "-44.06"
+  }
+  */
+  // eslint-disable-next-line @typescript-eslint/explicit-module-boundary-types
+  protected processBondTrade(element: any): Promise<EquityStatement | null> {
+    logger.log(LogLevel.Info, MODULE + ".processBondTrade", element.symbol as string, element);
+    this.printObject(element);
+    return this.processSecurityInfo(element).then((contract) =>
+      Statement.findOrCreate({
+        where: { transactionId: element.transactionID },
+        defaults: {
+          portfolio_id: this.portfolio.id,
+          statementType: StatementTypes.EquityStatement,
+          date: element.dateTime,
+          currency: element.currency,
+          amount: element.netCash,
+          description: transactionDescriptionFromElement(element),
+          transactionId: element.transactionID,
+          fxRateToBase: element.fxRateToBase,
+          stock_id: contract?.id,
+        },
+      }).then(([statement, created]) => {
+        if (created) {
+          logger.log(LogLevel.Debug, MODULE + ".processBondTrade", element.symbol as string, element);
+          return EquityStatement.create({
+            id: statement.id,
+            quantity: element.quantity,
+            price: element.price,
+            proceeds: element.proceeds,
+            fees: element.ibCommission,
+            realizedPnL: element.fifoPnlRealized,
+            status: transactionStatusFromElement(element),
+          });
+        } else {
+          return EquityStatement.findByPk(statement.id);
+        }
+      }),
+    );
+  }
+
   // eslint-disable-next-line @typescript-eslint/explicit-module-boundary-types
   protected processOneTrade(element: any): Promise<void> {
     switch (element.assetCategory) {
       case SecType.STK:
       case SecType.FUT:
       case SecType.CASH:
-      case SecType.BOND:
         return this.processStockTrade(element).then((): void => undefined);
       case SecType.FOP:
       case SecType.OPT:
         return this.processOptionTrade(element).then((): void => undefined);
+      case SecType.BOND:
+        return this.processBondTrade(element).then((): void => undefined);
       default:
         logger.error(MODULE + ".processOneTrade", "Unsupported assetCategory: " + element.assetCategory, element);
         throw Error("unsupported assetCategory: " + element.assetCategory);
@@ -375,45 +500,45 @@ export class ImporterBot extends ITradingBot {
   }
 
   /*
-[0] processCashTransaction {
-[0]   accountId: 'U7802803',
-[0]   acctAlias: '',
-[0]   model: '',
-[0]   currency: 'EUR',
-[0]   fxRateToBase: '1',
-[0]   assetCategory: '',
-[0]   symbol: '',
-[0]   description: 'DISBURSEMENT INITIATED BY Ronan-Yann Lorin',
-[0]   conid: '',
-[0]   securityID: '',
-[0]   securityIDType: '',
-[0]   cusip: '',
-[0]   isin: '',
-[0]   listingExchange: '',
-[0]   underlyingConid: '',
-[0]   underlyingSymbol: '',
-[0]   underlyingSecurityID: '',
-[0]   underlyingListingExchange: '',
-[0]   issuer: '',
-[0]   multiplier: '0',
-[0]   strike: '',
-[0]   expiry: '',
-[0]   putCall: '',
-[0]   principalAdjustFactor: '',
-[0]   serialNumber: '',
-[0]   deliveryType: '',
-[0]   commodityType: '',
-[0]   dateTime: '2023-06-14',
-[0]   settleDate: '2023-06-14',
-[0]   amount: '-11914.7',
-[0]   type: 'Deposits/Withdrawals',
-[0]   tradeID: '',
-[0]   code: '',
-[0]   transactionID: '1934082449',
-[0]   reportDate: '2023-06-14',
-[0]   clientReference: '',
-[0]   levelOfDetail: 'DETAIL'
-[0] }
+ processCashTransaction {
+   accountId: '---',
+   acctAlias: '',
+   model: '',
+   currency: 'EUR',
+   fxRateToBase: '1',
+   assetCategory: '',
+   symbol: '',
+   description: 'DISBURSEMENT INITIATED BY Ronan-Yann Lorin',
+   conid: '',
+   securityID: '',
+   securityIDType: '',
+   cusip: '',
+   isin: '',
+   listingExchange: '',
+   underlyingConid: '',
+   underlyingSymbol: '',
+   underlyingSecurityID: '',
+   underlyingListingExchange: '',
+   issuer: '',
+   multiplier: '0',
+   strike: '',
+   expiry: '',
+   putCall: '',
+   principalAdjustFactor: '',
+   serialNumber: '',
+   deliveryType: '',
+   commodityType: '',
+   dateTime: '2023-06-14',
+   settleDate: '2023-06-14',
+   amount: '-11914.7',
+   type: 'Deposits/Withdrawals',
+   tradeID: '',
+   code: '',
+   transactionID: '1934082449',
+   reportDate: '2023-06-14',
+   clientReference: '',
+   levelOfDetail: 'DETAIL'
+ }
   */
   // eslint-disable-next-line @typescript-eslint/explicit-module-boundary-types
   protected processCashTransaction(element: any): Promise<Statement | null> {

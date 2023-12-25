@@ -32,7 +32,7 @@ export class Contract extends Model<
   declare secType: ContractType;
 
   /** The destination exchange. */
-  @Column({ type: DataType.STRING })
+  @Column({ type: DataType.STRING, defaultValue: "SMART" })
   declare exchange: string;
 
   /** The trading currency. */

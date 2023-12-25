@@ -755,7 +755,7 @@ export class ITradingBot extends EventEmitter {
 
   protected createBondContract(
     ibContract: IbContract,
-    details: ContractDetails,
+    _details: ContractDetails,
     transaction?: Transaction,
   ): Promise<Contract> {
     logger.log(LogLevel.Info, MODULE + ".createBondContract", ibContract.symbol, ibContract);
@@ -763,7 +763,7 @@ export class ITradingBot extends EventEmitter {
       // Contract part
       conId: ibContract.conId!,
       secType: ibContract.secType as ContractType,
-      symbol: ibContract.symbol || `${ibContract.secType}-${ibContract.conId}`,
+      symbol: ibContract.localSymbol || `${ibContract.secType}-${ibContract.conId}`,
       currency: ibContract.currency!,
       exchange: ibContract.primaryExch || ibContract.exchange!,
       name: ibContract.description ?? `${ibContract.secType}-${ibContract.conId}`,
@@ -773,12 +773,13 @@ export class ITradingBot extends EventEmitter {
       id: undefined as unknown as number,
       underlying_id: undefined as unknown as number,
       lastTradeDate: expirationToDateString(ibContract.lastTradeDateOrContractMonth!),
-      multiplier: ibContract.multiplier!,
+      multiplier: ibContract.multiplier || 1,
     };
     return Contract.create(contract_values, {
       transaction: transaction /* logging: console.log, */,
     }).then((contract) => {
       extended_values.id = contract.id;
+      // console.log(contract_values, extended_values);
       return Bond.create(extended_values, {
         transaction: transaction /* logging: false, */,
       }).then(() => Promise.resolve(contract));
@@ -871,11 +872,6 @@ export class ITradingBot extends EventEmitter {
         logger.log(LogLevel.Trace, MODULE + ".findOrCreateContract", undefined, "DB lookup", contract);
       }
       if (!contract) {
-        // console.log(
-        //   "contract not found",
-        //   ibContract.secType,
-        //   ibContract.symbol
-        // );
         // ibContract conId not found in DB, find by data and update it or create it
         // canonize ibContract
         let details: ContractDetails | undefined = undefined;
@@ -913,20 +909,6 @@ export class ITradingBot extends EventEmitter {
             .catch((err: IBApiNextError) => {
               const message = `getContractDetails failed for ${ibContract.secType} ${ibContract.symbol} ${ibContract.lastTradeDateOrContractMonth} ${ibContract.strike} ${ibContract.right} with error #${err.code}: '${err.error.message}'`;
               logger.log(LogLevel.Error, MODULE + ".findOrCreateContract", undefined, message, ibContract);
-              // let canContinue = false;
-              // if (ibContract.conId) {
-              //   // If we have an IB conId then we can try to continue if enougth data provided
-              //   switch (ibContract.secType) {
-              //     case SecType.FOP:
-              //     case SecType.OPT:
-              //       if (
-              //         ibContract.currency &&
-              //         ibContract.lastTradeDateOrContractMonth &&
-              //         ibContract.strike &&
-              //         ibContract.right) canContinue=true
-              //       break;
-              //   }
-              // }
               throw {
                 name: "IBApiNextError",
                 message,
@@ -947,6 +929,10 @@ export class ITradingBot extends EventEmitter {
         } else if (details && ibContract.secType == IbSecType.FUT) {
           contract = await this.createFutureContract(ibContract, details, transaction);
         } else if (details && ibContract.secType == IbSecType.BOND) {
+          contract = await this.createBondContract(ibContract, details, transaction);
+        } else if (ibContract.secType == IbSecType.BOND && !details && ibContract.conId) {
+          // Special case for BONDs. We often don't get details
+          details = { contract: ibContract };
           contract = await this.createBondContract(ibContract, details, transaction);
         } else if (ibContract.secType == IbSecType.BAG) {
           contract = await this.createBagContract(ibContract, undefined, transaction);
