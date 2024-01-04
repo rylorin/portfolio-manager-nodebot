@@ -310,8 +310,17 @@ export class AccountUpdateBot extends ITradingBot {
 
     this.ordersSubscription$ = this.api.getOpenOrders().subscribe({
       next: (data) => {
-        console.log("got next event", data.all.length, "open orders");
-        console.log(`${data.added?.length} orders added, ${data.changed?.length} changed`);
+        logger.log(
+          LogLevel.Info,
+          MODULE + ".getOpenOrders",
+          undefined,
+          "current",
+          data.all.length,
+          "added",
+          data.added?.length,
+          "changed",
+          data.changed?.length,
+        );
         if (data.added && data.added.length > 0) this.iterateOpenOrdersForUpdate(data.added);
         if (data.changed && data.changed.length > 0) this.iterateOpenOrdersForUpdate(data.changed);
       },

@@ -5,7 +5,7 @@ import { Quote } from "yahoo-finance2/dist/esm/src/modules/quote";
 import { ITradingBot } from ".";
 import { greeks, option_implied_volatility } from "../black_scholes";
 import logger, { LogLevel } from "../logger";
-import { AnyContract, Contract, Currency, Option, Stock } from "../models";
+import { AnyContract, Contract, Currency, OptionContract, StockContract } from "../models";
 
 const MODULE = "YahooBot";
 
@@ -50,7 +50,7 @@ export class YahooUpdateBot extends ITradingBot {
         if (contract.exchange == "VALUE") return;
         quote = { contract, symbol: YahooUpdateBot.getYahooTicker(contract) };
       } else if (contract.secType == SecType.OPT) {
-        const option: Option | null = await Option.findByPk(contract.id);
+        const option: OptionContract | null = await OptionContract.findByPk(contract.id);
         quote = { contract, symbol: YahooUpdateBot.formatOptionName(option!) };
       } else if (contract.secType == SecType.CASH) {
         quote = {
@@ -60,12 +60,12 @@ export class YahooUpdateBot extends ITradingBot {
       } else {
         this.error("enqueueContract unhandled contract type (1)");
       }
-    } else if (contract instanceof Stock) {
+    } else if (contract instanceof StockContract) {
       quote = {
         contract: contract.contract,
         symbol: YahooUpdateBot.getYahooTicker(contract.contract),
       };
-    } else if (contract instanceof Option) {
+    } else if (contract instanceof OptionContract) {
       quote = {
         contract: contract.contract,
         symbol: YahooUpdateBot.formatOptionName(contract),
@@ -121,7 +121,7 @@ export class YahooUpdateBot extends ITradingBot {
     return $ticker;
   }
 
-  protected static formatOptionName(option: Option): string {
+  protected static formatOptionName(option: OptionContract): string {
     const lastTradeDateOrContractMonth: string = option.lastTradeDate;
     const year = lastTradeDateOrContractMonth.substring(2, 4);
     const month = lastTradeDateOrContractMonth.substring(5, 7);
@@ -164,10 +164,10 @@ export class YahooUpdateBot extends ITradingBot {
             epsForward: r.quote.epsForward,
             trailingAnnualDividendRate: r.quote.trailingAnnualDividendRate,
           };
-          promises.push(Stock.update(stock_values, { where: { id: r.contract.id } }).then());
+          promises.push(StockContract.update(stock_values, { where: { id: r.contract.id } }).then());
         } else if (r.contract.secType == SecType.OPT) {
           promises.push(
-            Option.findByPk(r.contract.id, {
+            OptionContract.findByPk(r.contract.id, {
               include: { as: "stock", model: Contract, required: true },
             })
               .then((option) =>
@@ -184,7 +184,7 @@ export class YahooUpdateBot extends ITradingBot {
                         r.quote?.regularMarketPrice,
                       );
                     } catch (e: unknown) {
-                      await Stock.findByPk(option.stock.id).then((stock) => {
+                      await StockContract.findByPk(option.stock.id).then((stock) => {
                         iv_ = stock.historicalVolatility;
                       });
                     }
@@ -298,7 +298,7 @@ export class YahooUpdateBot extends ITradingBot {
 
   private findStocks(limit: number): Promise<MappedQuote[]> {
     const now: number = Date.now();
-    return Stock.findAll({
+    return StockContract.findAll({
       include: {
         association: "contract",
         model: Contract,
@@ -332,7 +332,7 @@ export class YahooUpdateBot extends ITradingBot {
 
   private findOptions(limit: number): Promise<MappedQuote[]> {
     const now: number = Date.now();
-    return Option.findAll({
+    return OptionContract.findAll({
       where: {
         lastTradeDate: {
           // [Op.gt]: new Date(now + (7 * 1440 * 60 * 1000)),   // don't update short term options as their price should be real time updated

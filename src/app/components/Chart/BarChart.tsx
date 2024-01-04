@@ -33,7 +33,7 @@ const BarChart: FunctionComponent<BarChartProps> = ({
       },
       {
         id: 2,
-        label: "Dividends",
+        label: "Div+Int",
         backgroundColor: "rgba(75, 192, 192, 0.2)",
         borderColor: "rgb(75, 192, 192)",
         borderWidth: 1,

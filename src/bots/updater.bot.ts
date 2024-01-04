@@ -15,7 +15,7 @@ import { Op, QueryTypes } from "sequelize";
 import { ITradingBot, YahooUpdateBot } from ".";
 import { MyTradingBotApp } from "..";
 import logger from "../logger";
-import { AnyContract, Contract, Currency, Option, Position, Stock } from "../models";
+import { AnyContract, Contract, Currency, OptionContract, Position, StockContract } from "../models";
 import { expirationToDate } from "../models/date_utils";
 
 const MODULE = "UpdaterBot";
@@ -57,7 +57,7 @@ export class ContractsUpdaterBot extends ITradingBot {
   private updateHistoricalVolatility(id: number, bars: Bar[]): Promise<void> {
     const histVol: number = bars[bars.length - 1].close!;
     // console.log(`updateHistoricalVolatility got ${histVol} for contract id ${id}`)
-    return Stock.update(
+    return StockContract.update(
       {
         historicalVolatility: histVol,
       },
@@ -302,7 +302,7 @@ export class ContractsUpdaterBot extends ITradingBot {
       },
     }).then(() => {
       if (contract.secType == "OPT") {
-        return Option.update(optdataset, { where: { id: contract.id } }).then(() => price);
+        return OptionContract.update(optdataset, { where: { id: contract.id } }).then(() => price);
       } else if (contract.secType == "CASH") {
         return Currency.update(
           { rate: price! },
@@ -370,14 +370,14 @@ export class ContractsUpdaterBot extends ITradingBot {
         positions.map((position: Position) => {
           // console.log("position", position);
           if (position.contract.secType == SecType.STK) {
-            return Stock.findByPk(position.contract.id, {
+            return StockContract.findByPk(position.contract.id, {
               include: { association: "contract", required: true },
             }).then((contract) => {
               if (contract) return contract;
               else throw Error("Can not find Stock id: " + position.contract.id);
             });
           } else if (position.contract.secType == SecType.OPT) {
-            return Option.findByPk(position.contract.id, {
+            return OptionContract.findByPk(position.contract.id, {
               include: [
                 {
                   as: "contract",
@@ -519,10 +519,10 @@ export class ContractsUpdaterBot extends ITradingBot {
       .catch((error) => console.error("updater bot build options list:", error));
   }
 
-  private findOptionsToUpdatePrice(dte: number, age: number, limit: number): Promise<Option[]> {
+  private findOptionsToUpdatePrice(dte: number, age: number, limit: number): Promise<OptionContract[]> {
     // console.log("findOptionsToUpdatePrice", dte, age/1400, limit);
     const now: number = Date.now();
-    return Option.findAll({
+    return OptionContract.findAll({
       where: {
         lastTradeDate: {
           [Op.and]: {
@@ -566,9 +566,9 @@ export class ContractsUpdaterBot extends ITradingBot {
     let contract: Contract;
     if (aContract instanceof Contract) {
       contract = aContract;
-    } else if (aContract instanceof Stock) {
+    } else if (aContract instanceof StockContract) {
       contract = aContract.contract;
-    } else if (aContract instanceof Option) {
+    } else if (aContract instanceof OptionContract) {
       contract = aContract.contract;
     } else {
       logger.error(MODULE + ".getBaseContract", "Unhandled contract type");
@@ -589,7 +589,7 @@ export class ContractsUpdaterBot extends ITradingBot {
         currency: contract.currency,
         exchange: contract.exchange,
       };
-      if (contract instanceof Option) {
+      if (contract instanceof OptionContract) {
         ibContract.lastTradeDateOrContractMonth = `${contract.expiry}`;
         ibContract.strike = contract.strike;
         ibContract.right = contract.callOrPut;

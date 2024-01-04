@@ -2,7 +2,7 @@ import { CreationOptional, InferAttributes, InferCreationAttributes } from "sequ
 import { BelongsTo, Column, DataType, Model, Table } from "sequelize-typescript";
 import { Statement } from ".";
 
-@Table({ tableName: "tax", timestamps: false, createdAt: false, updatedAt: false })
+@Table({ tableName: "tax_statement", timestamps: false, createdAt: false, updatedAt: false })
 export class TaxStatement extends Model<
   InferAttributes<TaxStatement>,
   InferCreationAttributes<TaxStatement, { omit: "statement" }>

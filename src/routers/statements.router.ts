@@ -8,13 +8,14 @@ import {
   EquityStatement,
   FeeStatement,
   InterestStatement,
-  Option,
+  OptionContract,
   OptionStatement,
   Portfolio,
   Statement,
   TaxStatement,
   Trade,
 } from "../models";
+import { BondStatement } from "../models/bond_statement.model";
 import { StatementTypes } from "../models/statement.types";
 import { TradeStatus, TradeStrategy } from "../models/trade.types";
 import { StatementEntry, StatementsSynthesysEntries } from "./statements.types";
@@ -60,7 +61,7 @@ export const statementModelToStatementEntry = (item: Statement): Promise<Stateme
     date: item.date.getTime(),
     statementType: item.statementType,
     currency: item.currency,
-    amount: item.amount,
+    amount: item.netCash,
     pnl: undefined,
     fees: undefined,
     fxRateToBase: item.fxRateToBase,
@@ -73,18 +74,16 @@ export const statementModelToStatementEntry = (item: Statement): Promise<Stateme
   switch (item.statementType) {
     case StatementTypes.EquityStatement:
       return EquityStatement.findByPk(item.id).then((thisStatement) => {
-        // console.log(value);
         statement.quantity = thisStatement?.quantity;
         statement.pnl = thisStatement?.realizedPnL;
         statement.fees = thisStatement?.fees;
         return statement;
       });
-      break;
     case StatementTypes.OptionStatement:
       return OptionStatement.findByPk(item.id, {
         include: [
           { model: Contract, as: "contract" },
-          { model: Option, as: "option" },
+          { model: OptionContract, as: "option" },
         ],
       }).then((thisStatement) => {
         if (thisStatement) {
@@ -106,23 +105,26 @@ export const statementModelToStatementEntry = (item: Statement): Promise<Stateme
         }
         return statement;
       });
-      break;
     case StatementTypes.DividendStatement:
     case StatementTypes.TaxStatement:
     case StatementTypes.InterestStatement:
-      statement.pnl = item.amount;
+      statement.pnl = item.netCash;
       return Promise.resolve(statement);
-      break;
     case StatementTypes.FeeStatement:
-      statement.fees = item.amount;
+      statement.fees = item.netCash;
       return Promise.resolve(statement);
-      break;
     case StatementTypes.CorporateStatement:
     case StatementTypes.CashStatement:
       return Promise.resolve(statement);
-      break;
+    case StatementTypes.BondStatement:
+      return BondStatement.findByPk(item.id).then((thisStatement) => {
+        statement.quantity = thisStatement?.quantity;
+        statement.fees = thisStatement?.fees;
+        statement.pnl = thisStatement?.accruedInterests;
+        return statement;
+      });
     default:
-      throw Error("Undefined statement type: " + Object.keys(TradeStrategy)[item.statementType]);
+      throw Error("Undefined statement type: " + Object.keys(StatementTypes)[item.statementType]);
   }
 };
 
@@ -165,29 +167,43 @@ const makeSynthesys = (statements: Statement[]): Promise<StatementsSynthesysEntr
             return EquityStatement.findByPk(item.id).then((statement) => {
               value[idx].stocks += statement ? statement.realizedPnL * item.fxRateToBase : 0;
               value[idx].total += statement ? statement.realizedPnL * item.fxRateToBase : 0;
-              // console.log(value);
               return value;
             });
-            break;
           case StatementTypes.OptionStatement:
             return OptionStatement.findByPk(item.id).then((statement) => {
               value[idx].options += statement ? statement.realizedPnL * item.fxRateToBase : 0;
               value[idx].total += statement ? statement.realizedPnL * item.fxRateToBase : 0;
-              // console.log(value);
               return value;
             });
-            break;
           case StatementTypes.DividendStatement:
-            value[idx].dividends += item.amount * item.fxRateToBase;
-            value[idx].total += item.amount * item.fxRateToBase;
-            break;
+            value[idx].dividends += item.netCash * item.fxRateToBase;
+            value[idx].total += item.netCash * item.fxRateToBase;
+            return Promise.resolve(value);
           case StatementTypes.InterestStatement:
-            value[idx].interests += item.amount * item.fxRateToBase;
-            value[idx].total += item.amount * item.fxRateToBase;
-            break;
+            value[idx].interests += item.netCash * item.fxRateToBase;
+            value[idx].total += item.netCash * item.fxRateToBase;
+            return Promise.resolve(value);
+          case StatementTypes.BondStatement:
+            return BondStatement.findByPk(item.id).then((statement) => {
+              value[idx].interests += statement ? statement.accruedInterests * item.fxRateToBase : 0;
+              value[idx].total += statement ? statement.accruedInterests * item.fxRateToBase : 0;
+              return value;
+            });
+          case StatementTypes.TaxStatement:
+          case StatementTypes.CashStatement:
+          case StatementTypes.FeeStatement:
+            // Not included in synthesys
+            return Promise.resolve(value);
+          default: // Fallback
+            logger.log(
+              LogLevel.Warning,
+              MODULE + ".makeSynthesys",
+              undefined,
+              "unimplemented statement type",
+              item.statementType,
+            );
+            return Promise.resolve(value);
         }
-        // console.log(value);
-        return Promise.resolve(value);
       });
     },
     Promise.resolve({} as StatementsSynthesysEntries),
@@ -344,15 +360,17 @@ router.get("/:statementId(\\d+)/GuessTrade", (req, res): void => {
       if (statement) {
         switch (statement.statementType) {
           case StatementTypes.EquityStatement:
+          case StatementTypes.BondStatement:
           case StatementTypes.DividendStatement:
           case StatementTypes.TaxStatement:
+          case StatementTypes.InterestStatement:
             logger.log(LogLevel.Info, MODULE + ".GuessTrade", undefined, "equity statement", statement);
             return Statement.findOne({
               where: {
                 portfolio_id: portfolioId,
                 date: { [Op.lt]: statement.date },
                 stock_id: statement.stock.id,
-                trade_unit_id: { [Op.not]: null },
+                trade_unit_id: { [Op.gt]: 0 },
               },
               order: [["date", "DESC"]],
             }).then((ref) => {
@@ -399,7 +417,7 @@ router.get("/:statementId(\\d+)/GuessTrade", (req, res): void => {
             });
             break;
           default:
-            throw Error("invalid statement type");
+            throw Error("invalid statement type: " + statement.statementType);
         }
       } else {
         throw Error("statement doesn't exist");
@@ -408,7 +426,7 @@ router.get("/:statementId(\\d+)/GuessTrade", (req, res): void => {
     .then((statement) => updateStatementTrade(statement))
     .then((statement) => res.status(200).json({ statement }))
     .catch((error) => {
-      logger.log(LogLevel.Error, MODULE + ".GuessTrade", undefined, error);
+      logger.log(LogLevel.Error, MODULE + ".GuessTrade", undefined, error.message);
       res.status(500).json({ error });
     });
 });
@@ -490,22 +508,18 @@ router.get("/:statementId(\\d+)/DeleteStatement", (req, res): void => {
             return statement;
           case StatementTypes.TaxStatement:
             return TaxStatement.destroy({ where: { id: statement.id } }).then((_count) => statement);
-            break;
           case StatementTypes.DividendStatement:
             return DividendStatement.destroy({ where: { id: statement.id } }).then((_count) => statement);
-            break;
           case StatementTypes.InterestStatement:
             return InterestStatement.destroy({ where: { id: statement.id } }).then((_count) => statement);
-            break;
           case StatementTypes.CashStatement:
             return Promise.resolve(statement);
-            break;
           case StatementTypes.FeeStatement:
             return FeeStatement.destroy({ where: { id: statement.id } }).then((_count) => statement);
-            break;
           case StatementTypes.OptionStatement:
             return OptionStatement.destroy({ where: { id: statement.id } }).then((_count) => statement);
-            break;
+          case StatementTypes.BondStatement:
+            return BondStatement.destroy({ where: { id: statement.id } }).then((_count) => statement);
           default:
             console.error("invalid statement type:", statement.statementType);
             throw Error("invalid statement type: " + statement.statementType);

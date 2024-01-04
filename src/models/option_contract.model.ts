@@ -6,10 +6,10 @@ import { Contract } from "./contract.model";
 // @DefaultScope(() => ({
 //   include: [{association:'contract'}]
 // }))
-@Table({ tableName: "option", timestamps: true, deletedAt: false })
-export class Option extends Model<
-  InferAttributes<Option>,
-  InferCreationAttributes<Option, { omit: "contract" | "stock" }>
+@Table({ tableName: "option_contract", timestamps: true, deletedAt: false })
+export class OptionContract extends Model<
+  InferAttributes<OptionContract>,
+  InferCreationAttributes<OptionContract, { omit: "contract" | "stock" }>
 > {
   // id can be undefined during creation when using `autoIncrement`
   declare id: CreationOptional<number>;

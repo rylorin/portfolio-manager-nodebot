@@ -1,9 +1,9 @@
 import { OptionType, OrderAction } from "@stoqey/ib";
 import { Op } from "sequelize";
 import { ITradingBot } from ".";
-import { Contract, Option, Position, Setting } from "../models";
+import { Contract, OptionContract, Position, Setting } from "../models";
 
-interface OptionEx extends Option {
+interface OptionEx extends OptionContract {
   yield?: number;
 }
 
@@ -52,7 +52,7 @@ export class SellCoveredCallsBot extends ITradingBot {
           parameter.ccStrategy == 1
             ? Math.max(parameter.underlying.livePrice, position.averagePrice)
             : parameter.underlying.livePrice;
-        const options = await Option.findAll({
+        const options = await OptionContract.findAll({
           where: {
             stock_id: parameter.underlying.id,
             strike: {

@@ -3,7 +3,7 @@ import { SecurityDefinitionOptionParameterType } from "@stoqey/ib/dist/api-next"
 import { Op, QueryTypes } from "sequelize";
 import { ITradingBot } from ".";
 import { greeks, option_implied_volatility } from "../black_scholes";
-import { Contract, Option, Stock } from "../models";
+import { Contract, OptionContract, StockContract } from "../models";
 import { expirationToDate } from "../models/date_utils";
 
 const OPTIONS_LIST_BUILD_FREQ: number = process.env.OPTIONS_LIST_BUILD_FREQ
@@ -151,7 +151,7 @@ export class OptionsCreateBot extends ITradingBot {
 
   private async updateGreeks(): Promise<void> {
     console.log("updateGreeks");
-    const stocks: Stock[] = await Stock.findAll({
+    const stocks: StockContract[] = await StockContract.findAll({
       include: {
         model: Contract,
         association: "contract",
@@ -167,7 +167,7 @@ export class OptionsCreateBot extends ITradingBot {
     });
     for (const stock of stocks) {
       console.log(stock.contract.symbol);
-      const options: Option[] = await Option.findAll({
+      const options: OptionContract[] = await OptionContract.findAll({
         where: {
           stock_id: stock.id,
           updatedAt: {

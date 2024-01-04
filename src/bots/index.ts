@@ -16,20 +16,20 @@ import { Op, Transaction } from "sequelize";
 import { MyTradingBotApp } from "..";
 import { LogLevel, default as logger } from "../logger";
 import {
-  Bag,
+  BagContract,
   Balance,
-  Cash,
+  CashContract,
   Contract,
   Currency,
-  Future,
+  FutureContract,
   Index,
   OpenOrder,
-  Option,
+  OptionContract,
   Portfolio,
   Position,
-  Stock,
+  StockContract,
 } from "../models";
-import { Bond } from "../models/bond.model";
+import { BondContract } from "../models/bond_contract.model";
 import { ContractType } from "../models/contract.types";
 import { expirationToDateString } from "../models/date_utils";
 
@@ -43,7 +43,7 @@ type OptionsSynthesis = {
   engaged: number;
   risk: number;
   quantity: number;
-  options: Option[];
+  options: OptionContract[];
 };
 
 export class ITradingBot extends EventEmitter {
@@ -106,7 +106,7 @@ export class ITradingBot extends EventEmitter {
     return contract;
   }
 
-  protected static OptionToIbContract(option: Option): IbContract {
+  protected static OptionToIbContract(option: OptionContract): IbContract {
     const contract: IbContract = {
       secType: option.contract.secType as SecType,
       symbol: option.stock.symbol,
@@ -312,14 +312,14 @@ export class ITradingBot extends EventEmitter {
     underlying?: number,
     right?: OptionType,
   ): Promise<OptionsSynthesis> {
-    const result = { value: 0, engaged: 0, risk: 0, quantity: 0, options: [] as Option[] };
+    const result = { value: 0, engaged: 0, risk: 0, quantity: 0, options: [] as OptionContract[] };
     const where: { id?: number; stock_id?: number; callOrPut?: OptionType } = {};
     if (underlying) where.stock_id = underlying;
     if (right) where.callOrPut = right;
     for (const position of positions) {
       where.id = position.contract.id;
       // strange ... we might have more than one option matching criteria!
-      const opt = await Option.findOne({
+      const opt = await OptionContract.findOne({
         where: where,
       });
       if (opt != null) {
@@ -411,7 +411,7 @@ export class ITradingBot extends EventEmitter {
         stock_id: underlying,
       };
       if (right) where.callOrPut = right;
-      await Option.findOne({
+      await OptionContract.findOne({
         where: where,
         include: { as: "contract", model: Contract, required: true },
       }).then((opt) =>
@@ -580,7 +580,7 @@ export class ITradingBot extends EventEmitter {
       // logging: console.log,
     }).then(([contract, created]) => {
       if (created) {
-        return Stock.create(
+        return StockContract.create(
           {
             id: contract.id,
             industry: details.industry as string,
@@ -651,7 +651,9 @@ export class ITradingBot extends EventEmitter {
       // logging: console.log,
     }).then(([contract, created]) => {
       if (created) {
-        return Cash.create({ id: contract.id }, { transaction: transaction }).then(() => Promise.resolve(contract));
+        return CashContract.create({ id: contract.id }, { transaction: transaction }).then(() =>
+          Promise.resolve(contract),
+        );
       } else {
         return contract.update(defaults, { transaction: transaction }).then(() => Promise.resolve(contract));
       }
@@ -682,7 +684,7 @@ export class ITradingBot extends EventEmitter {
       // logging: console.log,
     }).then(([contract, created]) => {
       if (created) {
-        return Bag.create({ id: contract.id }, { transaction: transaction }).then(() =>
+        return BagContract.create({ id: contract.id }, { transaction: transaction }).then(() =>
           ibContract.comboLegs!.reduce(
             (p, leg) =>
               p.then((contract) => this.findOrCreateContract({ conId: leg.conId }, transaction).then(() => contract)),
@@ -725,7 +727,7 @@ export class ITradingBot extends EventEmitter {
     };
     return this.findOrCreateContract(underlying, transaction).then((future) => {
       future_values.underlying_id = future.id;
-      return Future.findOne({
+      return FutureContract.findOne({
         where: {
           underlying_id: future_values.underlying_id,
           lastTradeDate: future_values.lastTradeDate,
@@ -736,7 +738,7 @@ export class ITradingBot extends EventEmitter {
           // update
           future_values.id = option.id;
           return Contract.update(contract_values, { where: { id: option.id }, transaction: transaction })
-            .then(() => Future.update(future_values, { where: { id: option.id }, transaction: transaction }))
+            .then(() => FutureContract.update(future_values, { where: { id: option.id }, transaction: transaction }))
             .then(() => Contract.findByPk(option.id, { transaction: transaction }))
             .then((contract) => contract!);
         } else {
@@ -744,7 +746,7 @@ export class ITradingBot extends EventEmitter {
             transaction: transaction /* logging: console.log, */,
           }).then((contract) => {
             future_values.id = contract.id;
-            return Future.create(future_values, {
+            return FutureContract.create(future_values, {
               transaction: transaction /* logging: false, */,
             }).then(() => Promise.resolve(contract));
           });
@@ -780,7 +782,7 @@ export class ITradingBot extends EventEmitter {
     }).then((contract) => {
       extended_values.id = contract.id;
       // console.log(contract_values, extended_values);
-      return Bond.create(extended_values, {
+      return BondContract.create(extended_values, {
         transaction: transaction /* logging: false, */,
       }).then(() => Promise.resolve(contract));
     });
@@ -823,7 +825,7 @@ export class ITradingBot extends EventEmitter {
     };
     return this.findOrCreateContract(underlying, transaction).then((stock) => {
       opt_values.stock_id = stock.id;
-      return Option.findOne({
+      return OptionContract.findOne({
         where: {
           stock_id: opt_values.stock_id,
           lastTradeDate: opt_values.lastTradeDate,
@@ -836,7 +838,7 @@ export class ITradingBot extends EventEmitter {
           // update
           opt_values.id = option.id;
           return Contract.update(contract_values, { where: { id: option.id }, transaction: transaction })
-            .then(() => Option.update(opt_values, { where: { id: option.id }, transaction: transaction }))
+            .then(() => OptionContract.update(opt_values, { where: { id: option.id }, transaction: transaction }))
             .then(() => Contract.findByPk(option.id, { transaction: transaction }))
             .then((contract) => contract!);
         } else {
@@ -844,7 +846,7 @@ export class ITradingBot extends EventEmitter {
             transaction: transaction /* logging: console.log, */,
           }).then((contract) => {
             opt_values.id = contract.id;
-            return Option.create(opt_values, {
+            return OptionContract.create(opt_values, {
               transaction: transaction /* logging: false, */,
             }).then(() => Promise.resolve(contract));
           });

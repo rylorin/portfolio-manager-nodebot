@@ -1,7 +1,7 @@
 import { OptionType, OrderAction } from "@stoqey/ib";
 import { Op } from "sequelize";
 import { ITradingBot } from ".";
-import { Contract, Option, Position, Setting } from "../models";
+import { Contract, OptionContract, Position, Setting } from "../models";
 
 const ROLL_FREQ: number = parseInt(process.env.ROLL_FREQ) || 10; // mins
 const DEFENSIVE_ROLL_DAYS: number = parseInt(process.env.DEFENSIVE_ROLL_DAYS) || 6; // days
@@ -14,7 +14,9 @@ export class RollOptionPositionsBot extends ITradingBot {
       // at the moment we only roll short positions
       const order = await this.getContractOrdersQuantity(position.contract, null);
       if (order == 0) {
-        const option = await Option.findByPk(position.contract.id, { include: { model: Contract, as: "stock" } });
+        const option = await OptionContract.findByPk(position.contract.id, {
+          include: { model: Contract, as: "stock" },
+        });
         const stock: Contract = await Contract.findByPk(option.stock.id);
         const parameter = await Setting.findOne({
           where: {
@@ -33,7 +35,7 @@ export class RollOptionPositionsBot extends ITradingBot {
           console.log("stock price:", stock.symbol, stock.livePrice);
           if (option.callOrPut == OptionType.Put) {
             // PUT
-            const rolllist = await Option.findAll({
+            const rolllist = await OptionContract.findAll({
               where: {
                 stock_id: option.stock.id,
                 strike: { [Op.lte]: option.strike },
@@ -66,8 +68,8 @@ export class RollOptionPositionsBot extends ITradingBot {
             );
             // this.printObject(rolllist);
             if (rolllist.length > 0) {
-              let defensive: Option = undefined; // lowest delta
-              let agressive: Option = undefined; // first OTM
+              let defensive: OptionContract = undefined; // lowest delta
+              let agressive: OptionContract = undefined; // first OTM
               // rolllist is ordered by expiration date ASC strike DESC
               for (const opt of rolllist) {
                 // agressive is the first contract with strike under stock price
@@ -96,7 +98,7 @@ export class RollOptionPositionsBot extends ITradingBot {
               this.printObject(agressive);
               console.log("option contract for defensive strategy:");
               this.printObject(defensive);
-              let selected: Option = undefined;
+              let selected: OptionContract = undefined;
               let price: number = undefined;
               if (!parameter.rollPutStrategy) {
                 console.log("rollPutStrategy set to: off");
@@ -127,7 +129,7 @@ export class RollOptionPositionsBot extends ITradingBot {
             }
           } else if (option.callOrPut == OptionType.Call) {
             // CALL
-            const rolllist = await Option.findAll({
+            const rolllist = await OptionContract.findAll({
               where: {
                 stock_id: option.stock.id,
                 strike: { [Op.gte]: option.strike },
@@ -159,8 +161,8 @@ export class RollOptionPositionsBot extends ITradingBot {
             // console.log("parameters:")
             // this.printObject(parameter);
             if (rolllist.length > 0) {
-              let defensive: Option = undefined; // lowest delta
-              let agressive: Option = undefined; // first OTM
+              let defensive: OptionContract = undefined; // lowest delta
+              let agressive: OptionContract = undefined; // first OTM
               for (const opt of rolllist) {
                 if (!agressive && opt.strike > stock.livePrice) agressive = opt;
                 if (!defensive && opt.delta !== null) defensive = opt;
@@ -178,7 +180,7 @@ export class RollOptionPositionsBot extends ITradingBot {
               this.printObject(defensive);
               console.log("option contract for agressive strategy:");
               this.printObject(agressive);
-              let selected: Option = undefined;
+              let selected: OptionContract = undefined;
               let price: number = undefined;
               if (!parameter.rollCallStrategy) {
                 console.log("rollCallStrategy set to: off");
@@ -228,7 +230,9 @@ export class RollOptionPositionsBot extends ITradingBot {
       const result: Position[] = [];
       for (const position of positions) {
         if (position.contract.secType == "OPT" && position.quantity) {
-          const opt = await Option.findByPk(position.contract.id, { include: { model: Contract, as: "stock" } });
+          const opt = await OptionContract.findByPk(position.contract.id, {
+            include: { model: Contract, as: "stock" },
+          });
           const stock: Contract = await Contract.findByPk(opt.stock.id, {});
           const price = stock.livePrice;
           // console.log(price);

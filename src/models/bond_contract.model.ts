@@ -2,10 +2,10 @@ import { CreationOptional, ForeignKey, InferAttributes, InferCreationAttributes,
 import { BelongsTo, Column, DataType, Model, Table } from "sequelize-typescript";
 import { Contract } from "./contract.model";
 
-@Table({ tableName: "bond", timestamps: true, deletedAt: false })
-export class Bond extends Model<
-  InferAttributes<Bond>,
-  InferCreationAttributes<Bond, { omit: "contract" | "underlying" }>
+@Table({ tableName: "bond_contract", timestamps: true, deletedAt: false })
+export class BondContract extends Model<
+  InferAttributes<BondContract>,
+  InferCreationAttributes<BondContract, { omit: "contract" | "underlying" }>
 > {
   // id can be undefined during creation when using `autoIncrement`
   declare id: CreationOptional<number>;

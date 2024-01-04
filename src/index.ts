@@ -18,28 +18,29 @@ import {
 } from "./bots";
 import { ImporterBot } from "./bots/importer.bot";
 import {
-  Bag,
+  BagContract,
   Balance,
-  Bond,
-  Cash,
+  BondContract,
+  CashContract,
   Contract,
   Currency,
   DividendStatement,
   EquityStatement,
   FeeStatement,
-  Future,
+  FutureContract,
   Index,
   InterestStatement,
   OpenOrder,
-  Option,
+  OptionContract,
   OptionStatement,
   Portfolio,
   Position,
   Setting,
-  Stock,
+  StockContract,
   TaxStatement,
   Trade,
 } from "./models";
+import { BondStatement } from "./models/bond_statement.model";
 import { Statement } from "./models/statement.model";
 import StartServer from "./server";
 
@@ -85,18 +86,18 @@ export class MyTradingBotApp extends IBApiNextApp {
       dialect: "sqlite",
       storage: __dirname + "/../../db/var/db/data.db",
       models: [
-        Bag,
+        BagContract,
         Balance,
-        Cash,
+        CashContract,
         Contract,
         Currency,
-        Future,
+        FutureContract,
         Index,
         OpenOrder,
-        Option,
+        OptionContract,
         Portfolio,
         Position,
-        Stock,
+        StockContract,
         Trade,
         Statement,
         EquityStatement,
@@ -106,7 +107,8 @@ export class MyTradingBotApp extends IBApiNextApp {
         InterestStatement,
         FeeStatement,
         Setting,
-        Bond,
+        BondContract,
+        BondStatement,
       ],
       modelMatch: (filename, member) => {
         return filename.substring(0, filename.indexOf(".model")) === member.toLowerCase();

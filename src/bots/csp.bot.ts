@@ -2,7 +2,7 @@ import { OptionType, OrderAction } from "@stoqey/ib";
 import { Op } from "sequelize";
 import { ITradingBot } from ".";
 import logger from "../logger";
-import { Contract, OpenOrder, Option, Position, Setting, Stock } from "../models";
+import { Contract, OpenOrder, OptionContract, Position, Setting, StockContract } from "../models";
 
 const MODULE = "CspBot";
 
@@ -11,14 +11,14 @@ const _sequelize_logging = (...args: any[]): void => logger.trace(MODULE + ".squ
 
 const CSP_FREQ: number = parseInt(process.env.CSP_FREQ || "10"); // mins
 
-interface OptionEx extends Option {
+interface OptionEx extends OptionContract {
   yield?: number;
 }
 
 type Row = {
   symbol: string;
   engaged_options: number;
-  options: Option[];
+  options: OptionContract[];
 };
 
 export class SellCashSecuredPutBot extends ITradingBot {
@@ -29,7 +29,7 @@ export class SellCashSecuredPutBot extends ITradingBot {
   ): Promise<number> {
     let result = 0;
     for (const position of positions) {
-      const opt = await Option.findOne({
+      const opt = await OptionContract.findOne({
         where: {
           id: position.contract.id,
           callOrPut: right,
@@ -44,7 +44,7 @@ export class SellCashSecuredPutBot extends ITradingBot {
   private async sumOptionsOrders(orders: OpenOrder[], underlying: number, right: OptionType): Promise<number> {
     let result = 0;
     for (const order of orders) {
-      const opt = await Option.findOne({
+      const opt = await OptionContract.findOne({
         where: {
           id: order.contract.id,
           stock_id: underlying,
@@ -103,7 +103,7 @@ export class SellCashSecuredPutBot extends ITradingBot {
     const options =
       parameter.underlying.livePrice > parameter.underlying.previousClosePrice
         ? []
-        : await Option.findAll({
+        : await OptionContract.findAll({
             where: {
               stock_id: parameter.underlying.id,
               strike: {
@@ -163,7 +163,7 @@ export class SellCashSecuredPutBot extends ITradingBot {
     const filtered_options: OptionEx[] = [];
     for (const option of all_options) {
       // RULE 6: check overall margin space
-      const stock = await Stock.findByPk(option.stock.id);
+      const stock = await StockContract.findByPk(option.stock.id);
       if (option.strike * option.multiplier * this.base_rates[option.contract.currency] < max_for_all_symbols) {
         // eslint-disable-next-line @typescript-eslint/no-unnecessary-type-assertion,@typescript-eslint/no-non-null-assertion
         if (option.impliedVolatility > stock!.historicalVolatility) {

@@ -12,7 +12,7 @@ export const StatementStatus = {
 } as const;
 export type StatementStatus = (typeof StatementStatus)[keyof typeof StatementStatus];
 
-@Table({ tableName: "trade", timestamps: false, createdAt: false, updatedAt: false })
+@Table({ tableName: "equity_statement", timestamps: false, createdAt: false, updatedAt: false })
 export class EquityStatement extends Model<
   InferAttributes<EquityStatement>,
   InferCreationAttributes<EquityStatement, { omit: "statement" }>

@@ -3,7 +3,10 @@ import { BelongsTo, Model, Table } from "sequelize-typescript";
 import { Contract } from ".";
 
 @Table({ tableName: "cash_contract", timestamps: true, deletedAt: false })
-export class Cash extends Model<InferAttributes<Cash>, InferCreationAttributes<Cash, { omit: "contract" }>> {
+export class CashContract extends Model<
+  InferAttributes<CashContract>,
+  InferCreationAttributes<CashContract, { omit: "contract" }>
+> {
   // id can be undefined during creation when using `autoIncrement`
   declare id: CreationOptional<number>;
   // timestamps!

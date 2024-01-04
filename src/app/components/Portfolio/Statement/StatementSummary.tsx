@@ -8,12 +8,6 @@ import Number from "../../Number/Number";
 type StatementSummaryProps = Record<string, never>;
 
 const StatementSummary: FunctionComponent<StatementSummaryProps> = ({ ..._rest }): React.ReactNode => {
-  // const [theSynthesys, setSynthesys] = useState({} as StatementsSynthesysEntries);
-  // useEffect(() => {
-  //   fetch(`/api/portfolio/${portfolioId}/statements`)
-  //     .then((response) => response.json())
-  //     .then((data) => setSynthesys(data.data));
-  // }, []);
   const theSynthesys = useLoaderData() as StatementsSynthesysEntries;
 
   return (
@@ -42,7 +36,7 @@ const StatementSummary: FunctionComponent<StatementSummaryProps> = ({ ..._rest }
         title="Realized Performance"
         labels={Object.keys(theSynthesys)}
         options_pnl={Object.values(theSynthesys).map((item) => Math.round(item.options))}
-        dividends={Object.values(theSynthesys).map((item) => Math.round(item.dividends))}
+        dividends={Object.values(theSynthesys).map((item) => Math.round(item.dividends + item.interests))}
         stocks_pnl={Object.values(theSynthesys).map((item) => Math.round(item.stocks))}
       />
       <TableContainer>

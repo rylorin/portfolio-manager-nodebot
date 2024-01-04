@@ -1,7 +1,17 @@
 import { OptionType, SecType } from "@stoqey/ib";
 import { default as express } from "express";
 import logger, { LogLevel } from "../logger";
-import { Contract, Currency, Future, Option, OptionStatement, Portfolio, Position, Statement } from "../models";
+import {
+  Contract,
+  ContractType,
+  Currency,
+  FutureContract,
+  OptionContract,
+  OptionStatement,
+  Portfolio,
+  Position,
+  Statement,
+} from "../models";
 import { OptionPositionEntry, PositionEntry } from "./positions.types";
 
 const MODULE = "PositionsRouter";
@@ -56,7 +66,7 @@ export const preparePositions = (portfolio: Portfolio): Promise<(PositionEntry |
           }
 
           case SecType.OPT:
-            return Option.findByPk(item.contract.id, {
+            return OptionContract.findByPk(item.contract.id, {
               include: [
                 { model: Contract, as: "contract" },
                 { model: Contract, as: "stock" },
@@ -119,7 +129,7 @@ export const preparePositions = (portfolio: Portfolio): Promise<(PositionEntry |
             });
 
           case SecType.FUT:
-            return Future.findByPk(item.contract.id, {
+            return FutureContract.findByPk(item.contract.id, {
               include: [
                 { model: Contract, as: "contract" },
                 { model: Contract, as: "underlying" },
@@ -322,33 +332,49 @@ router.get("/:positionId(\\d+)/GuessTrade", (req, res): void => {
     .then((portfolio) => {
       if (portfolio) {
         const position = portfolio.positions[0];
-        if (position.contract.secType == SecType.STK) {
-          return Statement.findOne({
-            where: {
-              portfolio_id: portfolioId,
-              stock_id: position.contract.id,
-            },
-            order: [["date", "DESC"]],
-          }).then((ref) => position.update({ trade_unit_id: ref?.trade_unit_id }));
-        } else if (position.contract.secType == SecType.OPT) {
-          return OptionStatement.findOne({
-            where: {
-              contract_id: position.contract.id,
-            },
-            order: [["statement", "date", "DESC"]],
-            // logging: console.log,
-            include: [{ model: Statement, as: "statement", where: { portfolio_id: portfolioId }, required: true }],
-          })
-            .then((statement) => {
-              if (statement) return Statement.findByPk(statement.id);
-              else return null;
+        switch (position.contract.secType) {
+          case ContractType.Stock:
+          case ContractType.Bond:
+            return Statement.findOne({
+              where: {
+                portfolio_id: portfolioId,
+                stock_id: position.contract.id,
+              },
+              order: [["date", "DESC"]],
+            }).then((ref) => position.update({ trade_unit_id: ref?.trade_unit_id }));
+
+          case ContractType.Option:
+          case ContractType.FutureOption:
+            return OptionStatement.findOne({
+              where: {
+                contract_id: position.contract.id,
+              },
+              order: [["statement", "date", "DESC"]],
+              // logging: console.log,
+              include: [{ model: Statement, as: "statement", where: { portfolio_id: portfolioId }, required: true }],
             })
-            .then((ref) => position.update({ trade_unit_id: ref?.trade_unit_id }));
-        } else throw Error("invalid position SecType" + position.contract.secType);
+              .then((statement) => {
+                if (statement) return Statement.findByPk(statement.id);
+                else return null;
+              })
+              .then((ref) => position.update({ trade_unit_id: ref?.trade_unit_id }));
+
+          default:
+            logger.log(
+              LogLevel.Error,
+              MODULE + ".GuessTrade",
+              position.contract.symbol,
+              "Invalid position SecType: " + position.contract.secType,
+            );
+            throw Error("Invalid position SecType: " + position.contract.secType);
+        }
       } else throw Error("Portfolio or position not found");
     })
     .then((position) => res.status(200).json({ position }))
-    .catch((error) => res.status(500).json({ error }));
+    .catch((error) => {
+      logger.log(LogLevel.Error, MODULE + ".GuessTrade", undefined, error.message);
+      res.status(500).json({ error });
+    });
 });
 
 /**

@@ -4,7 +4,7 @@ import { ITradingBot, awaitTimeout } from ".";
 import { MyTradingBotApp } from "..";
 import logger, { LogLevel } from "../logger";
 import {
-  Bond,
+  BondContract,
   Contract,
   DividendStatement,
   EquityStatement,
@@ -16,6 +16,7 @@ import {
   StatementStatus,
   TaxStatement,
 } from "../models";
+import { BondStatement } from "../models/bond_statement.model";
 import { StatementTypes } from "../models/statement.types";
 
 const MODULE = "ImporterBot";
@@ -87,6 +88,19 @@ const transactionStatusFromElement = (element: any): StatementStatus => {
   }
 };
 
+const getCurrencyFromElement = (element: any): string => {
+  switch (element.currency) {
+    case "USD":
+      return "$";
+    case "EUR":
+      return "€";
+    case "GBP":
+      return "£";
+    default:
+      return element.currency as string;
+  }
+};
+
 const transactionDescriptionFromElement = (element: any): string => {
   let description = "";
   switch (transactionStatusFromElement(element)) {
@@ -111,12 +125,14 @@ const transactionDescriptionFromElement = (element: any): string => {
   return (
     description +
     " " +
-    element.quantity +
+    (element.assetCategory == "BOND"
+      ? Math.round(element.quantity / 1000) + "k" + getCurrencyFromElement(element)
+      : element.quantity) +
     " " +
     (element.assetCategory == "STK" ? element.symbol : element.description) +
     "@" +
     element.tradePrice +
-    element.currency
+    (element.assetCategory == "BOND" ? "%" : getCurrencyFromElement(element))
   );
 };
 
@@ -174,7 +190,7 @@ export class ImporterBot extends ITradingBot {
 
   // eslint-disable-next-line @typescript-eslint/explicit-module-boundary-types
   protected processSecurityInfo(element: any): Promise<Contract | undefined> {
-    logger.log(LogLevel.Trace, MODULE + ".processSecurityInfo", undefined, element);
+    logger.log(LogLevel.Trace, MODULE + ".processSecurityInfo", element.securityID as string, element);
     // I don't understand where the next lint error comes from...
     // eslint-disable-next-line @typescript-eslint/no-unsafe-return
     return this.processSecurityInfoUnderlying(element)
@@ -183,7 +199,7 @@ export class ImporterBot extends ITradingBot {
         logger.log(
           LogLevel.Trace,
           MODULE + ".processSecurityInfo",
-          undefined,
+          element.securityID as string,
           "underlying",
           underlying,
           "contract",
@@ -202,7 +218,7 @@ export class ImporterBot extends ITradingBot {
               lastTradeDate: element.maturity,
               multiplier: element.multiplier,
             };
-            return Bond.findOrCreate({
+            return BondContract.findOrCreate({
               where: { id: contract.id },
               defaults: bond_data,
             }).then(([bond, _created]) => {
@@ -242,7 +258,7 @@ export class ImporterBot extends ITradingBot {
           statementType: StatementTypes.EquityStatement,
           date: element.dateTime,
           currency: element.currency,
-          amount: element.netCash,
+          netCash: element.netCash,
           description: transactionDescriptionFromElement(element),
           transactionId: element.transactionID,
           fxRateToBase: element.fxRateToBase,
@@ -341,7 +357,7 @@ export class ImporterBot extends ITradingBot {
           statementType: StatementTypes.OptionStatement,
           date: element.dateTime,
           currency: element.currency,
-          amount: element.netCash,
+          netCash: element.netCash,
           description: transactionDescriptionFromElement(element),
           transactionId: element.transactionID,
           fxRateToBase: element.fxRateToBase,
@@ -433,39 +449,35 @@ export class ImporterBot extends ITradingBot {
   }
   */
   // eslint-disable-next-line @typescript-eslint/explicit-module-boundary-types
-  protected processBondTrade(element: any): Promise<EquityStatement | null> {
-    logger.log(LogLevel.Info, MODULE + ".processBondTrade", element.symbol as string, element);
-    this.printObject(element);
+  protected processBondTrade(element: any): Promise<BondStatement | null> {
+    logger.log(LogLevel.Debug, MODULE + ".processBondTrade", element.securityID as string, element);
+    // this.printObject(element);
     return this.processSecurityInfo(element).then((contract) =>
       Statement.findOrCreate({
         where: { transactionId: element.transactionID },
         defaults: {
           portfolio_id: this.portfolio.id,
-          statementType: StatementTypes.EquityStatement,
+          statementType: StatementTypes.BondStatement,
           date: element.dateTime,
           currency: element.currency,
-          amount: element.netCash,
+          netCash: element.netCash,
           description: transactionDescriptionFromElement(element),
           transactionId: element.transactionID,
           fxRateToBase: element.fxRateToBase,
           stock_id: contract?.id,
         },
-      }).then(([statement, created]) => {
-        if (created) {
-          logger.log(LogLevel.Debug, MODULE + ".processBondTrade", element.symbol as string, element);
-          return EquityStatement.create({
-            id: statement.id,
+      }).then(([statement, _created]) =>
+        BondStatement.findOrCreate({
+          where: { id: statement.id },
+          defaults: {
             quantity: element.quantity,
-            price: element.price,
+            price: element.tradePrice,
             proceeds: element.proceeds,
             fees: element.ibCommission,
-            realizedPnL: element.fifoPnlRealized,
-            status: transactionStatusFromElement(element),
-          });
-        } else {
-          return EquityStatement.findByPk(statement.id);
-        }
-      }),
+            accruedInterests: element.accruedInt,
+          },
+        }).then(([bondstatement, _created]) => bondstatement),
+      ),
     );
   }
 
@@ -542,7 +554,7 @@ export class ImporterBot extends ITradingBot {
   */
   // eslint-disable-next-line @typescript-eslint/explicit-module-boundary-types
   protected processCashTransaction(element: any): Promise<Statement | null> {
-    // console.log("processCashTransaction", element);
+    logger.log(LogLevel.Trace, MODULE + ".processCashTransaction", element.securityID as string, element);
     let statementType: StatementTypes;
     switch (element.type) {
       case "Withholding Tax":
@@ -554,8 +566,12 @@ export class ImporterBot extends ITradingBot {
         break;
       case "Broker Interest Paid":
       case "Broker Interest Received":
+        statementType = StatementTypes.InterestStatement;
+        break;
       case "Bond Interest Paid":
       case "Bond Interest Received":
+        // Ignore Accrued interests as they are saved with purchasing transaction
+        if ((element.description as string).includes("ACCRUED")) return Promise.resolve(null as unknown as Statement);
         statementType = StatementTypes.InterestStatement;
         break;
       case "Deposits/Withdrawals":
@@ -571,54 +587,57 @@ export class ImporterBot extends ITradingBot {
     }
     return (element.assetCategory ? this.processSecurityInfo(element) : Promise.resolve(null))
       .then((contract: Contract | null | undefined) => {
-        const defaults = {
-          portfolio_id: this.portfolio.id,
-          statementType,
-          date: element.dateTime,
-          currency: element.currency,
-          amount: element.amount,
-          description: element.description,
-          transactionId: element.transactionID,
-          fxRateToBase: element.fxRateToBase,
-          stock_id: contract?.id,
-        };
         return Statement.findOrCreate({
           where: { transactionId: element.transactionID },
-          defaults,
+          defaults: {
+            portfolio_id: this.portfolio.id,
+            statementType,
+            date: element.dateTime,
+            currency: element.currency,
+            netCash: element.amount,
+            description: element.description,
+            transactionId: element.transactionID,
+            fxRateToBase: element.fxRateToBase,
+            stock_id: contract?.id,
+          },
           //   logging: console.log,
         });
       })
-      .then(([statement, created]) => {
-        if (created) {
-          switch (statementType) {
-            case StatementTypes.TaxStatement:
-              {
-                const idx = (element.description as string).indexOf("(");
-                const country = (element.description as string).substring(idx + 1, idx + 3);
-                return TaxStatement.create({ id: statement.id, country }).then((_taxStatement) => statement);
-              }
-              break;
-            case StatementTypes.DividendStatement:
-              {
-                const idx = (element.description as string).indexOf("(");
-                const country = (element.description as string).substring(idx + 1, idx + 3);
-                return DividendStatement.create({ id: statement.id, country }).then((_dividendStatement) => statement);
-              }
-              break;
-            case StatementTypes.InterestStatement:
-              return InterestStatement.create({ id: statement.id }).then((_interestStatement) => statement);
-              break;
-            case StatementTypes.CashStatement:
-              return Promise.resolve(statement);
-              break;
-            case StatementTypes.FeeStatement:
-              return FeeStatement.create({ id: statement.id }).then((_interestStatement) => statement);
-              break;
-            default:
-              throw Error("invalide statement type: " + statementType);
-          }
+      .then(([statement, _created]) => {
+        switch (statementType) {
+          case StatementTypes.TaxStatement:
+            {
+              const idx = (element.description as string).indexOf("(");
+              const country = (element.description as string).substring(idx + 1, idx + 3);
+              return TaxStatement.findOrCreate({
+                where: { id: statement.id },
+                defaults: { id: statement.id, country },
+              }).then(([_taxStatement, _created]) => statement);
+            }
+            break;
+          case StatementTypes.DividendStatement:
+            {
+              const idx = (element.description as string).indexOf("(");
+              const country = (element.description as string).substring(idx + 1, idx + 3);
+              return DividendStatement.findOrCreate({
+                where: { id: statement.id },
+                defaults: { id: statement.id, country },
+              }).then(([_dividendStatement, _created]) => statement);
+            }
+            break;
+          case StatementTypes.InterestStatement:
+            return InterestStatement.findOrCreate({ where: { id: statement.id }, defaults: { id: statement.id } }).then(
+              ([_interestStatement, _created]) => statement,
+            );
+          case StatementTypes.CashStatement:
+            return Promise.resolve(statement);
+          case StatementTypes.FeeStatement:
+            return FeeStatement.findOrCreate({ where: { id: statement.id }, defaults: { id: statement.id } }).then(
+              ([_interestStatement, _created]) => statement,
+            );
+          default:
+            throw Error("invalide statement type: " + statementType);
         }
-        return statement;
       });
   }
 

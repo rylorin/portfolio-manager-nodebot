@@ -1,5 +1,5 @@
-import { CreationOptional, ForeignKey, InferAttributes, InferCreationAttributes } from "sequelize";
-import { BelongsTo, Column, DataType, Model, Table } from "sequelize-typescript";
+import { CreationOptional, InferAttributes, InferCreationAttributes } from "sequelize";
+import { BelongsTo, Column, DataType, ForeignKey, Model, Table } from "sequelize-typescript";
 import { Contract } from "./contract.model";
 import { Portfolio } from "./portfolio.model";
 import { StatementTypes } from "./statement.types";
@@ -32,6 +32,8 @@ import { Trade } from "./trade.model";
 //   contract: Contract;
 // }
 
+// export type StatementCreationAttributes = InferCreationAttributes<Statement, { omit: "stock" | "portfolio" | "trade" |"stock_id"|"trade_unit_id"}>;
+
 @Table({ tableName: "statement", timestamps: true })
 export class Statement extends Model<
   InferAttributes<Statement>,
@@ -46,7 +48,10 @@ export class Statement extends Model<
   declare updatedAt: CreationOptional<Date>;
 
   /** Portfolio */
-  declare portfolio_id: ForeignKey<Portfolio["id"]>;
+  // declare portfolio_id: ForeignKey<Portfolio["id"]>;
+  @ForeignKey(() => Portfolio)
+  @Column
+  declare portfolio_id: number;
   @BelongsTo(() => Portfolio, "portfolio_id")
   declare portfolio: Portfolio;
 
@@ -60,7 +65,7 @@ export class Statement extends Model<
   declare currency: string;
 
   @Column({ type: DataType.FLOAT, field: "amount" })
-  declare amount: number;
+  declare netCash: number;
 
   @Column({ type: DataType.STRING })
   declare description: string;
@@ -72,12 +77,18 @@ export class Statement extends Model<
   declare fxRateToBase: number;
 
   /** Related underlying */
-  declare stock_id: ForeignKey<Contract["id"]>;
+  // declare stock_id: ForeignKey<Contract["id"]>;
+  @ForeignKey(() => Contract)
+  @Column
+  declare stock_id: number | null;
   @BelongsTo(() => Contract, "stock_id")
   declare stock: Contract;
 
   /** Trade */
-  declare trade_unit_id: ForeignKey<Trade["id"]> | null;
+  // declare trade_unit_id: ForeignKey<Trade["id"]> | null;
+  @ForeignKey(() => Trade)
+  @Column
+  declare trade_unit_id: number | null;
   @BelongsTo(() => Trade, "trade_unit_id")
   declare trade: Trade;
 }

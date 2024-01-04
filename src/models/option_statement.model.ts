@@ -1,9 +1,9 @@
 import { CreationOptional, ForeignKey, InferAttributes, InferCreationAttributes } from "sequelize";
 import { BelongsTo, Column, DataType, Model, Table } from "sequelize-typescript";
 import { Contract, Statement } from ".";
-import { Option } from "./option.model";
+import { OptionContract } from "./option_contract.model";
 
-@Table({ tableName: "trade_option", timestamps: false, createdAt: false, updatedAt: false })
+@Table({ tableName: "option_statement", timestamps: false, createdAt: false, updatedAt: false })
 export class OptionStatement extends Model<
   InferAttributes<OptionStatement>,
   InferCreationAttributes<OptionStatement, { omit: "statement" | "contract" | "option" }>
@@ -47,6 +47,6 @@ export class OptionStatement extends Model<
   declare contract_id: ForeignKey<Contract["id"]>;
   @BelongsTo(() => Contract, "contract_id")
   declare contract: Contract;
-  @BelongsTo(() => Option, "contract_id")
-  declare option: Option;
+  @BelongsTo(() => OptionContract, "contract_id")
+  declare option: OptionContract;
 }

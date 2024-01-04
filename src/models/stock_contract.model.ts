@@ -2,8 +2,11 @@ import { CreationOptional, InferAttributes, InferCreationAttributes } from "sequ
 import { BelongsTo, Column, DataType, Model, Table } from "sequelize-typescript";
 import { Contract } from ".";
 
-@Table({ tableName: "stock", timestamps: false, createdAt: false, updatedAt: false })
-export class Stock extends Model<InferAttributes<Stock>, InferCreationAttributes<Stock, { omit: "contract" }>> {
+@Table({ tableName: "stock_contract", timestamps: false, createdAt: false, updatedAt: false })
+export class StockContract extends Model<
+  InferAttributes<StockContract>,
+  InferCreationAttributes<StockContract, { omit: "contract" }>
+> {
   // id can be undefined during creation when using `autoIncrement`
   declare id: CreationOptional<number>;
   // timestamps!

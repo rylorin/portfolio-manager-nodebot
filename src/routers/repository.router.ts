@@ -1,5 +1,5 @@
 import express from "express";
-import { Contract, Option } from "../models";
+import { Contract, OptionContract } from "../models";
 
 const router = express.Router();
 
@@ -10,7 +10,7 @@ const router = express.Router();
  */
 router.get("/options/:optionId(\\d+)", (req, res): void => {
   const { optionId } = req.params;
-  Option.findByPk(optionId, { include: { model: Contract, as: "contract" } })
+  OptionContract.findByPk(optionId, { include: { model: Contract, as: "contract" } })
     .then((option) => {
       res.status(200).json({ option });
     })
