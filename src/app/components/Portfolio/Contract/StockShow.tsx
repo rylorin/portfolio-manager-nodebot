@@ -4,7 +4,7 @@ import { TradeStatus } from "../../../../models/trade.types";
 import { ContractEntry } from "../../../../routers/contracts.types";
 import PositionsTable from "../Position/PositionsTable";
 import StatementsTable from "../Statement/StatementsTable";
-import TradesTable from "../Trade/TradesTable";
+import TradesTable from "../Trade/ClosedTradesTable";
 
 type Props = { thisContract: ContractEntry };
 

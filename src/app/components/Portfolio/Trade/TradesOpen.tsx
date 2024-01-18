@@ -4,10 +4,15 @@ import { Link as RouterLink, useLoaderData, useParams } from "react-router-dom";
 import { ContractType } from "../../../../models/contract.types";
 import { OptionPositionEntry, PositionEntry } from "../../../../routers/positions.types";
 import { TradeEntry } from "../../../../routers/trades.types";
-import TradesTable from "./TradesTable3";
+import TradesTable from "./OpenTradesTable";
 
 type Props = Record<string, never>;
 
+/**
+ * Open trades component
+ * @param param0
+ * @returns
+ */
 const TradesOpen: FunctionComponent<Props> = ({ ..._rest }): React.ReactNode => {
   const { _portfolioId } = useParams();
   const theTrades = useLoaderData() as TradeEntry[];

@@ -6,13 +6,18 @@ import { formatNumber } from "../../../utils";
 import Number from "../../Number/Number";
 import { ContractLink } from "../Contract/links";
 import { TradeLink } from "./links";
-import { tradeStatus2String, tradeStrategy2String } from "./utils";
+import { tradeStrategy2String } from "./utils";
 
 type Props = {
   title?: string;
   content?: TradeEntry[];
 };
 
+/**
+ * Open trades tables
+ * @param param0
+ * @returns
+ */
 const TradesTable: FunctionComponent<Props> = ({ title = "Trades index", content, ..._rest }): React.ReactNode => {
   const { portfolioId } = useParams();
   const theTrades = content || (useLoaderData() as TradeEntry[]);
@@ -29,43 +34,41 @@ const TradesTable: FunctionComponent<Props> = ({ title = "Trades index", content
             <Td>Symbol</Td>
             <Td>Strategy</Td>
             <Td>Open</Td>
-            <Td>Closed</Td>
-            <Td>Status</Td>
+            <Td>Expiration</Td>
             <Td>Days</Td>
-            <Td>Engaged</Td>
+            <Td>Risk</Td>
             <Td>PnL</Td>
             <Td>APY</Td>
           </Tr>
         </Thead>
         <Tbody>
-          {theTrades
-            .sort((a, b) => (a.closingDate ? b.closingDate - a.closingDate : b.openingDate - a.openingDate))
-            .map((item) => (
-              <Tr key={item.id}>
-                <Td>
+          {theTrades.map((item) => (
+            <Tr key={item.id}>
+              <Td>
+                {item.id > 0 && (
                   <Link to={TradeLink.toItem(portfolioId, item.id)} as={RouterLink}>
                     {item.id}
                   </Link>
-                </Td>
-                <Td>
-                  <Link to={ContractLink.toItem(portfolioId, item.underlying.id)} as={RouterLink}>
-                    {item.underlying.symbol}
-                  </Link>
-                </Td>
-                <Td>{tradeStrategy2String(item.strategy)}</Td>
-                <Td>{new Date(item.openingDate).toLocaleDateString()}</Td>
-                <Td>{item.closingDate ? new Date(item.closingDate).toLocaleDateString() : undefined}</Td>
-                <Td>{tradeStatus2String(item.status)}</Td>
-                <Td isNumeric>{formatNumber(item.duration)}</Td>
-                <Td isNumeric>{formatNumber(item.risk)}</Td>
-                <Td isNumeric>
-                  <Number value={item.pnlInBase} />
-                </Td>
-                <Td isNumeric>
-                  <Number value={item.apy} decimals={1} isPercent />
-                </Td>
-              </Tr>
-            ))}
+                )}
+              </Td>
+              <Td>
+                <Link to={ContractLink.toItem(portfolioId, item.underlying.id)} as={RouterLink}>
+                  {item.underlying.symbol}
+                </Link>
+              </Td>
+              <Td>{tradeStrategy2String(item.strategy)}</Td>
+              <Td>{new Date(item.openingDate).toLocaleDateString()}</Td>
+              <Td>{item.expectedExpiry && new Date(item.expectedExpiry).toLocaleDateString()}</Td>
+              <Td isNumeric>{formatNumber(item.expectedDuration)}</Td>
+              <Td isNumeric>{formatNumber(item.risk)}</Td>
+              <Td isNumeric>
+                <Number value={item.pnlInBase} />
+              </Td>
+              <Td isNumeric>
+                <Number value={item.apy} decimals={1} isPercent />
+              </Td>
+            </Tr>
+          ))}
         </Tbody>
         <Tfoot>
           <Tr fontWeight="bold">
@@ -75,8 +78,9 @@ const TradesTable: FunctionComponent<Props> = ({ title = "Trades index", content
             <Td></Td>
             <Td></Td>
             <Td></Td>
-            <Td></Td>
-            <Td></Td>
+            <Td isNumeric>
+              <Number value={theTrades.reduce((p: number, item) => (p += item.risk || 0), 0)} />
+            </Td>
             <Td isNumeric>
               <Number value={theTrades.reduce((p: number, item) => (p += item.pnlInBase || 0), 0)} />
             </Td>

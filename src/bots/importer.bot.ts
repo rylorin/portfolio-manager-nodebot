@@ -349,7 +349,8 @@ export class ImporterBot extends ITradingBot {
   */
   // eslint-disable-next-line @typescript-eslint/explicit-module-boundary-types
   protected processOptionTrade(element: any): Promise<Statement> {
-    return this.processSecurityInfoUnderlying(element).then((contract) =>
+    logger.log(LogLevel.Trace, MODULE + ".processOptionTrade", element.underlyingSymbol as string, element);
+    return this.processSecurityInfoUnderlying(element).then((underlying) =>
       Statement.findOrCreate({
         where: { transactionId: element.transactionID },
         defaults: {
@@ -361,13 +362,13 @@ export class ImporterBot extends ITradingBot {
           description: transactionDescriptionFromElement(element),
           transactionId: element.transactionID,
           fxRateToBase: element.fxRateToBase,
-          stock_id: contract?.id,
+          stock_id: underlying?.id,
         },
-      }).then(([statement, created]) => {
-        if (created) {
-          logger.log(LogLevel.Debug, MODULE + ".processOptionTrade", element.underlyingSymbol as string, element);
-          return this.processSecurityInfo(element).then((contract) =>
-            OptionStatement.create({
+      }).then(([statement, _created]) =>
+        this.processSecurityInfo(element).then((contract) =>
+          OptionStatement.findOrCreate({
+            where: { id: statement.id },
+            defaults: {
               id: statement.id,
               quantity: element.quantity,
               price: element.price,
@@ -376,12 +377,10 @@ export class ImporterBot extends ITradingBot {
               realizedPnL: element.fifoPnlRealized,
               status: transactionStatusFromElement(element),
               contract_id: contract?.id,
-            }).then((_optStatement) => statement),
-          );
-        } else {
-          return statement;
-        }
-      }),
+            },
+          }).then((_optStatement) => statement),
+        ),
+      ),
     );
   }
 
@@ -554,7 +553,7 @@ export class ImporterBot extends ITradingBot {
   */
   // eslint-disable-next-line @typescript-eslint/explicit-module-boundary-types
   protected processCashTransaction(element: any): Promise<Statement | null> {
-    logger.log(LogLevel.Trace, MODULE + ".processCashTransaction", element.securityID as string, element);
+    logger.log(LogLevel.Debug, MODULE + ".processCashTransaction", element.securityID as string, element);
     let statementType: StatementTypes;
     switch (element.type) {
       case "Withholding Tax":
