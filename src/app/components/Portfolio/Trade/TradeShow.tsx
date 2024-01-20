@@ -168,10 +168,14 @@ const TradeShow: FunctionComponent<Props> = ({ ..._rest }): React.ReactNode => {
             <IconButton aria-label="Delete" icon={<DeleteIcon />} variant="ghost" type="submit" />
           </Form>
         </Flex>
-        {item.positions && item.positions.length && <PositionsTable content={item.positions} />}
-        {item.statements && <StatementsTable content={item.statements} />}
-        {item.virtuals && item.virtuals.length && (
-          <PositionsTable content={item.virtuals as PositionEntry[]} title="Virtual positions" />
+        {item.positions?.length && <PositionsTable content={item.positions} currency={item.currency} />}
+        {item.statements?.length && <StatementsTable content={item.statements} currency={item.currency} />}
+        {item.virtuals?.length && (
+          <PositionsTable
+            content={item.virtuals.filter((pos) => pos.quantity) as PositionEntry[]}
+            title="Virtual positions"
+            currency={item.currency}
+          />
         )}
       </VStack>
     </>

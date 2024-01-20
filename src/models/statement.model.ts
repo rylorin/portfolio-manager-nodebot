@@ -64,7 +64,7 @@ export class Statement extends Model<
   @Column({ type: DataType.STRING(3), field: "currency" })
   declare currency: string;
 
-  @Column({ type: DataType.FLOAT, field: "amount" })
+  @Column({ type: DataType.FLOAT, defaultValue: 0 })
   declare netCash: number;
 
   @Column({ type: DataType.STRING })

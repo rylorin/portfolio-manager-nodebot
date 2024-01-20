@@ -28,14 +28,14 @@ import { ContractLink } from "../Contract/links";
 import { TradeLink } from "../Trade/links";
 import { StatementLink } from "./links";
 
-type Props = { content?: StatementEntry[] };
+type Props = { content?: StatementEntry[]; currency?: string };
 
 /**
  * Statements list component
  * @param param
  * @returns
  */
-const StatementsTable: FunctionComponent<Props> = ({ content, ..._rest }): React.ReactNode => {
+const StatementsTable: FunctionComponent<Props> = ({ content, currency, ..._rest }): React.ReactNode => {
   const { portfolioId } = useParams();
   const theStatements = content || (useLoaderData() as StatementEntry[]);
   let previousId: number;
@@ -172,25 +172,34 @@ const StatementsTable: FunctionComponent<Props> = ({ content, ..._rest }): React
               ))}
           </Tbody>
           <Tfoot>
-            <Tr>
-              <Td fontWeight="bold">Total</Td>
-              <Td>Base</Td>
+            <Tr fontWeight="bold">
+              <Td>Total</Td>
+              <Td>{currency ?? "Base"}</Td>
               <Td isNumeric>
                 <Number
-                  value={theStatements.reduce((p: number, item) => (p += (item.amount || 0) * item.fxRateToBase), 0)}
-                  fontWeight="bold"
+                  value={theStatements.reduce(
+                    (p: number, item) =>
+                      (p += (item.amount || 0) * (currency ? (currency == item.currency ? 1 : 0) : item.fxRateToBase)),
+                    0,
+                  )}
                 />
               </Td>
               <Td isNumeric>
                 <Number
-                  value={theStatements.reduce((p: number, item) => (p += (item.pnl || 0) * item.fxRateToBase), 0)}
-                  fontWeight="bold"
+                  value={theStatements.reduce(
+                    (p: number, item) =>
+                      (p += (item.pnl || 0) * (currency ? (currency == item.currency ? 1 : 0) : item.fxRateToBase)),
+                    0,
+                  )}
                 />
               </Td>
               <Td isNumeric>
                 <Number
-                  value={theStatements.reduce((p: number, item) => (p += (item.fees || 0) * item.fxRateToBase), 0)}
-                  fontWeight="bold"
+                  value={theStatements.reduce(
+                    (p: number, item) =>
+                      (p += (item.fees || 0) * (currency ? (currency == item.currency ? 1 : 0) : item.fxRateToBase)),
+                    0,
+                  )}
                 />
               </Td>
               <Td></Td>

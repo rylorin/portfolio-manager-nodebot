@@ -172,9 +172,13 @@ const TradesTable: FunctionComponent<Props> = ({ title = "Trades index", content
                   <AccordionIcon />
                 </AccordionButton>
                 <AccordionPanel>
-                  {item.positions?.length > 0 && <PositionsTable content={item.positions} />}
+                  {/* {item.positions?.length > 0 && <PositionsTable content={item.positions} />} */}
                   {item.virtuals?.length > 0 && (
-                    <PositionsTable content={item.virtuals as PositionEntry[]} title="Virtual positions" />
+                    <PositionsTable
+                      content={item.virtuals.filter((pos) => pos.quantity) as PositionEntry[]}
+                      title="Virtual positions"
+                      currency={item.currency}
+                    />
                   )}
                 </AccordionPanel>
               </VStack>

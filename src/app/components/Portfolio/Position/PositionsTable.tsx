@@ -12,16 +12,18 @@ import { PositionLink } from "./links";
 type Props = {
   title?: string;
   content?: PositionEntry[];
+  currency?: string;
 };
 
 /**
- * Statements list component
+ * Positions list component
  * @param param
  * @returns
  */
 const PositionsTable: FunctionComponent<Props> = ({
   title = "Positions index",
   content,
+  currency,
   ..._rest
 }): React.ReactNode => {
   const { portfolioId } = useParams();
@@ -194,17 +196,36 @@ const PositionsTable: FunctionComponent<Props> = ({
               <Td></Td>
               <Td></Td>
               <Td></Td>
-              <Td>Base</Td>
+              <Td>{currency ?? "Base"}</Td>
               <Td></Td>
               <Td isNumeric>
-                <Number value={thePositions.reduce((p, v) => (p += (v.value || 0) * v.baseRate), 0)} />
+                <Number
+                  value={thePositions.reduce(
+                    (p, v) =>
+                      (p += (v.value || 0) * (currency ? (currency == v.contract.currency ? 1 : 0) : v.baseRate)),
+                    0,
+                  )}
+                />
               </Td>
               <Td></Td>
               <Td isNumeric>
-                <Number value={thePositions.reduce((p, v) => (p += (v.cost || 0) * v.baseRate), 0)} />
+                <Number
+                  value={thePositions.reduce(
+                    (p, v) =>
+                      (p += (v.cost || 0) * (currency ? (currency == v.contract.currency ? 1 : 0) : v.baseRate)),
+                    0,
+                  )}
+                />
               </Td>
               <Td isNumeric>
-                <Number value={thePositions.reduce((p, v) => (p += (v.value - v.cost || 0) * v.baseRate), 0)} />
+                <Number
+                  value={thePositions.reduce(
+                    (p, v) =>
+                      (p +=
+                        (v.value - v.cost || 0) * (currency ? (currency == v.contract.currency ? 1 : 0) : v.baseRate)),
+                    0,
+                  )}
+                />
               </Td>
               <Td></Td>
               <Td></Td>

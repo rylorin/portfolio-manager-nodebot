@@ -249,7 +249,9 @@ export class ImporterBot extends ITradingBot {
   }
 
   // eslint-disable-next-line @typescript-eslint/explicit-module-boundary-types
-  protected processStockTrade(element: any): Promise<EquityStatement | null> {
+  protected processStockTrade(element: any): Promise<void> {
+    if (element.symbol == "PSEC")
+      logger.log(LogLevel.Debug, MODULE + ".processStockTrade", element.symbol as string, element);
     return this.processSecurityInfo(element).then((contract) =>
       Statement.findOrCreate({
         where: { transactionId: element.transactionID },
@@ -264,22 +266,22 @@ export class ImporterBot extends ITradingBot {
           fxRateToBase: element.fxRateToBase,
           stock_id: contract?.id,
         },
-      }).then(([statement, created]) => {
-        if (created) {
-          logger.log(LogLevel.Debug, MODULE + ".processStockTrade", element.symbol as string, element);
-          return EquityStatement.create({
-            id: statement.id,
-            quantity: element.quantity,
-            price: element.price,
-            proceeds: element.proceeds,
-            fees: element.ibCommission,
-            realizedPnL: element.fifoPnlRealized,
-            status: transactionStatusFromElement(element),
-          });
-        } else {
-          return EquityStatement.findByPk(statement.id);
-        }
-      }),
+      })
+        .then(([statement, _created]) =>
+          EquityStatement.findOrCreate({
+            where: { id: statement.id },
+            defaults: {
+              id: statement.id,
+              quantity: element.quantity,
+              price: element.price,
+              proceeds: element.proceeds,
+              fees: element.ibCommission,
+              realizedPnL: element.fifoPnlRealized,
+              status: transactionStatusFromElement(element),
+            },
+          }),
+        )
+        .then(([_equityStatement, _created]): void => undefined),
     );
   }
 
@@ -449,7 +451,7 @@ export class ImporterBot extends ITradingBot {
   */
   // eslint-disable-next-line @typescript-eslint/explicit-module-boundary-types
   protected processBondTrade(element: any): Promise<BondStatement | null> {
-    logger.log(LogLevel.Debug, MODULE + ".processBondTrade", element.securityID as string, element);
+    logger.log(LogLevel.Trace, MODULE + ".processBondTrade", element.securityID as string, element);
     // this.printObject(element);
     return this.processSecurityInfo(element).then((contract) =>
       Statement.findOrCreate({
@@ -499,7 +501,6 @@ export class ImporterBot extends ITradingBot {
   }
 
   private processAllTrades(element: any): Promise<void> {
-    // console.log("processAllStatements", element);
     if (element instanceof Array) {
       return element.reduce(
         (p: Promise<void>, element: any) => p.then(() => this.processOneTrade(element)),
@@ -553,7 +554,7 @@ export class ImporterBot extends ITradingBot {
   */
   // eslint-disable-next-line @typescript-eslint/explicit-module-boundary-types
   protected processCashTransaction(element: any): Promise<Statement | null> {
-    logger.log(LogLevel.Debug, MODULE + ".processCashTransaction", element.securityID as string, element);
+    logger.log(LogLevel.Trace, MODULE + ".processCashTransaction", element.securityID as string, element);
     let statementType: StatementTypes;
     switch (element.type) {
       case "Withholding Tax":
@@ -641,7 +642,6 @@ export class ImporterBot extends ITradingBot {
   }
 
   private processAllCashTransactions(element: any): Promise<any> {
-    // console.log("processAllCashTransactions", element);
     if (element instanceof Array) {
       return element.reduce(
         (p: Promise<any>, element: any) => p.then(() => this.processCashTransaction(element)),
