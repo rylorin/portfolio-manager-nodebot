@@ -54,7 +54,7 @@ const StatementsTable: FunctionComponent<Props> = ({ content, currency, ..._rest
             <Tr>
               <Td>Date</Td>
               <Td>Curr.</Td>
-              <Td>Proceeds</Td>
+              <Td>Amount</Td>
               <Td>PnL</Td>
               <Td>Fees</Td>
               <Td>Under.</Td>

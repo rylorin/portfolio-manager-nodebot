@@ -250,8 +250,8 @@ export class ImporterBot extends ITradingBot {
 
   // eslint-disable-next-line @typescript-eslint/explicit-module-boundary-types
   protected processStockTrade(element: any): Promise<void> {
-    if (element.symbol == "PSEC")
-      logger.log(LogLevel.Debug, MODULE + ".processStockTrade", element.symbol as string, element);
+    // if (element.symbol == "PSEC")
+    logger.log(LogLevel.Debug, MODULE + ".processStockTrade", element.symbol as string, element);
     return this.processSecurityInfo(element).then((contract) =>
       Statement.findOrCreate({
         where: { transactionId: element.transactionID },
