@@ -179,6 +179,7 @@ export const tradeModelToTradeEntry = (
   // Init TradeEntry
   return Promise.resolve({
     id: thisTrade.id,
+    portfolioId: thisTrade.portfolio_id,
     underlying: thisTrade.underlying,
     currency: thisTrade.currency,
     openingDate: thisTrade.openingDate.getTime(),
@@ -509,10 +510,10 @@ const computeTradeStrategy = (thisTrade: Trade, virtuals: Record<number, Virtual
     else if (!short_call && long_call > 0 && short_put > 0 && !long_put) strategy = TradeStrategy["risk reversal"];
     else if (short_call && !long_call && short_put && !long_put)
       strategy = TradeStrategy["short strangle"]; // Could be short straddle also
-    else if (short_call == long_call && short_put == long_put && long_call == long_put)
+    else if (short_call && short_call == long_call && short_put == long_put && long_call == long_put)
       strategy = TradeStrategy["iron condor"]; // could be reverse iron condor also
   }
-  console.log(thisTrade.id, "strategy", thisTrade.strategy, strategy);
+  // console.log(thisTrade.id, "strategy", thisTrade.strategy, strategy);
   if (!thisTrade.strategy) thisTrade.strategy = strategy;
 };
 

@@ -21,6 +21,7 @@ export type VirtualPositionEntry = {
 export type TradeEntry = {
   /** unique trade id */
   id: number;
+  portfolioId: number;
   underlying: StatementUnderlyingEntry;
   currency: string;
   status: TradeStatus;
