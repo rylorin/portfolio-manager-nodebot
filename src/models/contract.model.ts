@@ -22,7 +22,11 @@ export class Contract extends Model<
   @Column({ type: DataType.INTEGER, field: "con_id" })
   declare conId: number;
 
-  /** The asset symbol. */
+  /** ISIN */
+  @Column({ type: DataType.CHAR(12) })
+  declare isin: string;
+
+  /** The asset ticker. */
   @Column({ type: DataType.STRING })
   declare symbol: string;
 
@@ -36,7 +40,7 @@ export class Contract extends Model<
   declare exchange: string;
 
   /** The trading currency. */
-  @Column({ type: DataType.STRING })
+  @Column({ type: DataType.CHAR(3) })
   declare currency: string;
 
   /* other fields to be documented */

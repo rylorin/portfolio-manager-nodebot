@@ -465,16 +465,16 @@ const countContratTypes = (virtuals: Record<number, VirtualPositionEntry>): numb
 const computeTradeStrategy = (thisTrade: Trade, virtuals: Record<number, VirtualPositionEntry>): void => {
   let strategy: TradeStrategy = TradeStrategy.undefined;
   const [long_stock, short_stock, long_call, short_call, long_put, short_put] = countContratTypes(virtuals);
-  console.log(
-    thisTrade.id,
-    "computeTradeStrategy",
-    long_stock,
-    short_stock,
-    long_put,
-    short_put,
-    long_call,
-    short_call,
-  );
+  // console.log(
+  //   thisTrade.id,
+  //   "computeTradeStrategy",
+  //   long_stock,
+  //   short_stock,
+  //   long_put,
+  //   short_put,
+  //   long_call,
+  //   short_call,
+  // );
   if (long_stock > 0) {
     // Longs stock strategies
     if (short_call > 0) {

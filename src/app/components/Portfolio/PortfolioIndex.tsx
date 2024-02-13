@@ -14,6 +14,7 @@ const PortfolioIndex = (): React.ReactNode => {
         <TableCaption>Portfolio index ({portfolios.length})</TableCaption>
         <Thead>
           <Tr>
+            <Td>#</Td>
             <Td>Name</Td>
             <Td>Account</Td>
             <Td>Currency</Td>
@@ -22,6 +23,7 @@ const PortfolioIndex = (): React.ReactNode => {
         <Tbody>
           {portfolios.map((item) => (
             <Tr key={item.id}>
+              <Td>{item.id}</Td>
               <Td>
                 <Link to={StatementLink.toIndex(item.id)} as={RouterLink}>
                   {item.name}
