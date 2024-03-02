@@ -7,7 +7,7 @@ import { Balance, Contract, OpenOrder, Position } from "../models";
 
 const MODULE = "AccountBot";
 
-// eslint-disable-next-line @typescript-eslint/no-unsafe-argument
+// eslint-disable-next-line @typescript-eslint/no-unsafe-argument,@typescript-eslint/no-unused-vars
 const sequelize_logging = (...args: any[]): void => logger.trace(MODULE + ".squelize", ...args);
 
 export class AccountUpdateBot extends ITradingBot {
@@ -248,7 +248,7 @@ export class AccountUpdateBot extends ITradingBot {
               contract.price = pos.marketValue / pos.pos / (pos.contract.multiplier || 1);
               contract.changed("price", true); // force update
             }
-            return contract.save({ logging: sequelize_logging }).then(() => position);
+            return contract.save({ logging: undefined }).then(() => position);
           });
       } else {
         return Position.destroy({ where: { portfolio_id: defaults.portfolio_id, contract_id: contract.id } }).then(

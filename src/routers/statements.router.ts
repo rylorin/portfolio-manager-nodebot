@@ -372,7 +372,19 @@ router.get("/:statementId(\\d+)/GuessTrade", (req, res): void => {
                 stock_id: statement.stock.id,
                 trade_unit_id: { [Op.gt]: 0 },
               },
+              // Find statements related to an open trade
+              include: [
+                {
+                  required: true,
+                  model: Trade,
+                  as: "trade",
+                  where: {
+                    status: TradeStatus.open,
+                  },
+                },
+              ],
               order: [["date", "DESC"]],
+              logging: sequelize_logging,
             }).then((ref) => {
               if (ref) statement.trade_unit_id = ref.trade_unit_id;
               return statement.save();

@@ -24,7 +24,7 @@ export class Contract extends Model<
 
   /** ISIN */
   @Column({ type: DataType.CHAR(12) })
-  declare isin: string;
+  declare isin?: string;
 
   /** The asset ticker. */
   @Column({ type: DataType.STRING })

@@ -35,7 +35,7 @@ import { expirationToDateString } from "../models/date_utils";
 
 const MODULE = "BotIndex";
 
-// eslint-disable-next-line @typescript-eslint/no-unsafe-argument
+// eslint-disable-next-line @typescript-eslint/no-unsafe-argument,@typescript-eslint/no-unused-vars
 const sequelize_logging = (...args: any[]): void => logger.trace(MODULE + ".squelize", ...args);
 
 type OptionsSynthesis = {
@@ -200,7 +200,7 @@ export class ITradingBot extends EventEmitter {
           portfolio_id: this.portfolio.id,
           contract_id: contract.id,
         },
-        logging: sequelize_logging,
+        // logging: sequelize_logging,
       }).then((position) => {
         console.log("getContractPosition", position);
         return position ? position.quantity : 0;
