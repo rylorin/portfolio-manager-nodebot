@@ -65,35 +65,11 @@ const transactionStatusFromElement = (element: any): StatementStatus => {
   else if (element.notes == "Ex") return StatementStatus.EXERCISED_STATUS;
   else if (element.openCloseIndicator == "O") return StatementStatus.OPEN_STATUS;
   else if (element.openCloseIndicator == "C") return StatementStatus.CLOSE_STATUS;
-  console.error("unknown status: ", element);
-  throw Error("undefined status");
-  //   const key = element.notes.length ? element.openCloseIndicator + ";" + element.notes : element.openCloseIndicator;
-  // switch (key) {
-  //     case "O;A":
-  //     case "C;A":
-  //       return StatementStatus.ASSIGNED_STATUS;
-  //     case "C;Ep":
-  //       return StatementStatus.EXPIRED_STATUS;
-  //     case "O":
-  //     case "C;O":
-  //     case "O;P": // What does P mean?
-  //       return StatementStatus.OPEN_STATUS;
-  //     case "C":
-  //     case "C;P":
-  //     case "C;IA":
-  //       return StatementStatus.CLOSE_STATUS;
-  //     case "O;Ex":
-  //     case "C;Ex":
-  //       return StatementStatus.EXERCISED_STATUS;
-  //     case ";P": // What does P mean?
-  //     case "":
-  //       return StatementStatus.UNDEFINED_STATUS;
-  //     default:
-  //       console.error("unknown status: ", key);
-  //       console.error(element);
-  //       throw Error("undefined status: " + key);
-  //       return StatementStatus.UNDEFINED_STATUS;
-  //   }
+  else if (element.assetCategory == "CASH") return StatementStatus.UNDEFINED_STATUS;
+  else {
+    logger.error(MODULE + ".transactionStatusFromElement", "unknown status: ", element);
+    throw Error("undefined status");
+  }
 };
 
 const getCurrencyFromElement = (element: any): string => {

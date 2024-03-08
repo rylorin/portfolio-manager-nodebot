@@ -17,7 +17,6 @@
     "clean": "rm -rf dist",
     "client:build": "vite build",
     "client:dev": "vite",
-    "dev": "concurrently \"yarn run server:dev\" \"yarn run client:dev\"",
     "doc": "typedoc --excludeInternal",
     "doc:dev": "typedoc --out ./doc-dev",
     "postinstall": "patch-package && yarn build:ib",
@@ -30,6 +29,7 @@
     "server:build": "tsc --project tsconfig.server.json",
     "server:dev": "ts-node-dev --project tsconfig.server.json src/index -watch -server -account",
     "start": "node dist/index.js -server",
+    "start:dev": "concurrently \"yarn run server:dev\" \"yarn run client:dev\"",
     "storybook": "storybook dev -p 6006",
     "storybook:build": "storybook build -o dist/storybook"
   },
