@@ -156,7 +156,9 @@ const StatementsTable: FunctionComponent<Props> = ({ content, currency, ..._rest
                     <Link to={StatementLink.toItem(portfolioId, item.id)} as={RouterLink}>
                       <IconButton aria-label="Show detail" icon={<SearchIcon />} size="xs" variant="ghost" />
                     </Link>
-                    <IconButton aria-label="Edit details" icon={<EditIcon />} size="xs" variant="ghost" />
+                    <Link to={StatementLink.edit(portfolioId, item.id)} as={RouterLink}>
+                      <IconButton aria-label="Edit details" icon={<EditIcon />} size="xs" variant="ghost" />
+                    </Link>
                     <Form method="post" action={`DeleteStatement/${item.id}`} className="inline">
                       <IconButton
                         aria-label="Delete statement"

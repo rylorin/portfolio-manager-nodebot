@@ -6,4 +6,6 @@ export const StatementLink = {
     if (typeof date != "string") date = date.toISOString();
     return `/portfolio/${portfolioId}/statements/month/${date.substring(0, 4)}/${date.substring(5, 7)}/`;
   },
+  edit: (portfolioId: number | string, itemId: number | string): string =>
+    `/portfolio/${portfolioId}/statements/id/${itemId}/edit`,
 };
