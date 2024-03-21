@@ -568,6 +568,7 @@ export class ITradingBot extends EventEmitter {
       currency: ibContract.currency!, // eslint-disable-line @typescript-eslint/no-unnecessary-type-assertion
       exchange: ibContract.primaryExch || ibContract.exchange!, // eslint-disable-line @typescript-eslint/no-unnecessary-type-assertion
       name: details.longName,
+      isin: ibContract.secIdType == "ISIN" ? ibContract.secId : undefined,
     };
     return Contract.findOrCreate({
       where: {

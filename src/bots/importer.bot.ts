@@ -29,7 +29,7 @@ const ibContractFromElement = (element: any): IbContract => {
       element.assetCategory == SecType.OPT || element.assetCategory == SecType.FOP
         ? element.underlyingSymbol
         : element.symbol,
-    exchange: element.listingExchange,
+    primaryExch: element.listingExchange,
     currency: element.currency,
     strike: element.strike,
     lastTradeDateOrContractMonth: element.expiry,
@@ -37,6 +37,8 @@ const ibContractFromElement = (element: any): IbContract => {
     right: element.putCall,
     description: element.description,
     localSymbol: element.symbol,
+    secIdType: element.securityIDType,
+    secId: element.securityIDType == "ISIN" ? element.isin : undefined,
   };
   //   console.log(ibContract);
   return ibContract;
@@ -221,20 +223,27 @@ export class ImporterBot extends ITradingBot {
       });
   }
 
-  private processAllSecuritiesInfo(element: any): Promise<any> {
-    // console.log("processAllSecuritiesInfo");
+  private processAllSecuritiesInfo(element: any): Promise<Contract | undefined> {
+    logger.trace(MODULE + ".processAllSecuritiesInfo", undefined, element);
     if (element instanceof Array) {
       return element.reduce(
-        (p: Promise<any>, element: any): Promise<any> => p.then(() => this.processSecurityInfo(element)),
-        Promise.resolve(undefined),
+        (p: Promise<Contract | undefined>, element: any): Promise<Contract | undefined> =>
+          p.then(() =>
+            this.processSecurityInfo(element).catch((error) => {
+              logger.error(MODULE + ".processAllSecuritiesInfo", undefined, error, element);
+              return Promise.resolve(undefined as undefined);
+            }),
+          ),
+        Promise.resolve(undefined as undefined),
       );
-    } else if (element) return this.processSecurityInfo(element);
-    else return Promise.resolve(undefined);
+    } else {
+      if (element) return this.processSecurityInfo(element);
+    }
+    return Promise.resolve(undefined as undefined);
   }
 
   // eslint-disable-next-line @typescript-eslint/explicit-module-boundary-types
   protected processStockTrade(element: any): Promise<void> {
-    // if (element.symbol == "PSEC")
     logger.log(LogLevel.Trace, MODULE + ".processStockTrade", element.symbol as string, element);
     return this.processSecurityInfo(element).then((contract) =>
       Statement.findOrCreate({
@@ -485,9 +494,13 @@ export class ImporterBot extends ITradingBot {
   }
 
   private processAllTrades(element: any): Promise<void> {
+    logger.trace(MODULE + ".processAllTrades", undefined, element);
     if (element instanceof Array) {
       return element.reduce(
-        (p: Promise<void>, element: any) => p.then(() => this.processOneTrade(element)),
+        (p: Promise<void>, element: any) =>
+          p
+            .then(() => this.processOneTrade(element))
+            .catch((error) => logger.error(MODULE + ".processAllTrades", undefined, error, element)),
         Promise.resolve(),
       );
     } else if (element) {
@@ -671,7 +684,7 @@ export class ImporterBot extends ITradingBot {
       .then(() => this.processAllCorporateActions(element))
       .then(() => logger.log(LogLevel.Info, MODULE + ".processReport", undefined, "Report loaded"))
       .then(() => Promise.resolve())
-      .catch((error) => console.error("importer bot process report:", error));
+      .catch((error) => logger.error(MODULE + ".processReport", undefined, "importer bot process report:", error));
   }
 
   protected fetchReport(url: string): Promise<any> {

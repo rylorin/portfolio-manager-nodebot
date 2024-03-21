@@ -27,7 +27,7 @@
     "release": "yarn lint && yarn qc && yarn doc && yarn build && yarn run storybook:build",
     "serve": "vite preview",
     "server:build": "tsc --project tsconfig.server.json",
-    "server:dev": "ts-node-dev --project tsconfig.server.json src/index -watch -server -account",
+    "server:dev": "ts-node-dev --project tsconfig.server.json src/index -watch -server -account -import",
     "start": "node dist/index.js -server",
     "start:dev": "concurrently \"yarn run server:dev\" \"yarn run client:dev\"",
     "storybook": "storybook dev -p 6006",
