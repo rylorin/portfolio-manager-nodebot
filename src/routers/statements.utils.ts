@@ -10,7 +10,7 @@ import {
   Statement,
 } from "../models";
 import { StatementTypes } from "../models/statement.types";
-import { ReportEntry } from "./reports.types";
+import { DididendSummary, ReportEntry } from "./reports.types";
 import { BaseStatement, StatementEntry, StatementOptionEntry } from "./statements.types";
 
 export const statementModelToStatementEntry = (item: Statement): Promise<StatementEntry> => {
@@ -165,17 +165,16 @@ export const prepareReport = (portfolio: Portfolio, year: number, month: number)
       //   const date = statement.date.toString();
       //   const year = parseInt(date.substring(0, 4));
       //   const month = parseInt(date.substring(5, 7));
+      let entry: DididendSummary | undefined;
       switch (statement.statementType) {
         case StatementTypes.DividendStatement:
-          {
-            let entry = report.dividendsSummary.find((item) => item.country == statement.country);
-            if (!entry) {
-              entry = { country: statement.country, totalAmountInBase: 0 };
-              report.dividendsSummary.push(entry);
-            }
-            entry.totalAmountInBase += statement.amount * statement.fxRateToBase;
-            report.dividendsDetails.push(statement);
+          entry = report.dividendsSummary.find((item) => item.country == statement.country);
+          if (!entry) {
+            entry = { country: statement.country, totalAmountInBase: 0 };
+            report.dividendsSummary.push(entry);
           }
+          entry.totalAmountInBase += statement.amount * statement.fxRateToBase;
+          report.dividendsDetails.push(statement);
           break;
 
         case StatementTypes.InterestStatement:
