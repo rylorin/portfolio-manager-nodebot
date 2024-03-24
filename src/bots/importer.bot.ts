@@ -633,7 +633,7 @@ export class ImporterBot extends ITradingBot {
               ([_interestStatement, _created]) => statement,
             );
           default:
-            throw Error("invalide statement type: " + statementType);
+            throw Error("invalide statement type");
         }
       });
   }
