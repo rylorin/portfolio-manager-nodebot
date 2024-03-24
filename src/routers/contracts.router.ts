@@ -6,8 +6,8 @@ import { BalanceEntry } from "./balances.types";
 import { ContractEntry } from "./contracts.types";
 import { preparePositions } from "./positions.router";
 import { OptionPositionEntry, PositionEntry } from "./positions.types";
-import { statementModelToStatementEntry } from "./statements.router";
 import { StatementEntry } from "./statements.types";
+import { statementModelToStatementEntry } from "./statements.utils";
 import { tradeModelToTradeEntry } from "./trades.router";
 import { TradeEntry } from "./trades.types";
 

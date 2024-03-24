@@ -94,6 +94,14 @@ const StatementShow: FunctionComponent<Props> = ({ ..._rest }): React.ReactNode 
             {theStatement.statementType}
           </Text>
         </Flex>
+        <Flex justifyContent="center" gap="2">
+          <Text w="90px" as="b" textAlign="right">
+            Description:
+          </Text>
+          <Text w="200px" textAlign="right">
+            {theStatement.description}
+          </Text>
+        </Flex>
 
         <Flex justifyContent="center" gap="2" mt="1">
           <IconButton aria-label="Back" icon={<ArrowBackIcon />} variant="ghost" onClick={(): void => navigate(-1)} />

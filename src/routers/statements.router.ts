@@ -3,12 +3,10 @@ import { Op } from "sequelize";
 import logger, { LogLevel } from "../logger";
 import {
   Contract,
-  ContractType,
   DividendStatement,
   EquityStatement,
   FeeStatement,
   InterestStatement,
-  OptionContract,
   OptionStatement,
   Portfolio,
   Statement,
@@ -19,6 +17,7 @@ import { BondStatement } from "../models/bond_statement.model";
 import { StatementTypes } from "../models/statement.types";
 import { TradeStatus, TradeStrategy } from "../models/trade.types";
 import { StatementEntry, StatementsSynthesysEntries } from "./statements.types";
+import { statementModelToStatementEntry } from "./statements.utils";
 import { updateTradeDetails } from "./trades.router";
 
 const MODULE = "StatementsRouter";
@@ -52,100 +51,6 @@ const updateStatementTrade = (statement: Statement): Promise<Statement> => {
         return Promise.resolve(statement);
       });
   } else return Promise.resolve(statement);
-};
-
-export const statementModelToStatementEntry = (item: Statement): Promise<StatementEntry> => {
-  const statement: StatementEntry = {
-    id: item.id,
-    transactionId: item.transactionId,
-    date: item.date.getTime(),
-    statementType: item.statementType,
-    currency: item.currency,
-    amount: item.netCash,
-    pnl: undefined,
-    fees: undefined,
-    fxRateToBase: item.fxRateToBase,
-    description: item.description,
-    trade_id: item.trade_unit_id,
-    underlying: item.stock,
-    quantity: undefined,
-    option: undefined,
-  };
-  switch (item.statementType) {
-    case StatementTypes.EquityStatement:
-      return EquityStatement.findByPk(item.id).then((thisStatement) => {
-        statement.quantity = thisStatement?.quantity;
-        statement.pnl = thisStatement?.realizedPnL;
-        statement.fees = thisStatement?.fees;
-        return statement;
-      });
-    case StatementTypes.OptionStatement:
-      return OptionStatement.findByPk(item.id, {
-        include: [
-          { model: Contract, as: "contract" },
-          { model: OptionContract, as: "option" },
-        ],
-      }).then((thisStatement) => {
-        if (thisStatement) {
-          statement.quantity = thisStatement.quantity;
-          statement.pnl = thisStatement.realizedPnL;
-          statement.fees = thisStatement.fees;
-          statement.option = {
-            id: thisStatement.contract_id,
-            secType: ContractType.Option,
-            symbol: thisStatement.contract.symbol,
-            strike: thisStatement.option.strike,
-            lastTradeDate: thisStatement.option.lastTradeDate,
-            callOrPut: thisStatement.option.callOrPut,
-            multiplier: thisStatement.option.multiplier,
-            currency: item.currency,
-            name: thisStatement.contract.name,
-            price: thisStatement.contract.price,
-          };
-        }
-        return statement;
-      });
-    case StatementTypes.DividendStatement:
-    case StatementTypes.TaxStatement:
-    case StatementTypes.InterestStatement:
-      statement.pnl = item.netCash;
-      return Promise.resolve(statement);
-    case StatementTypes.FeeStatement:
-      statement.fees = item.netCash;
-      return Promise.resolve(statement);
-    case StatementTypes.CorporateStatement:
-    case StatementTypes.CashStatement:
-      return Promise.resolve(statement);
-    case StatementTypes.BondStatement:
-      return BondStatement.findByPk(item.id).then((thisStatement) => {
-        statement.quantity = thisStatement?.quantity;
-        statement.fees = thisStatement?.fees;
-        statement.pnl = thisStatement?.accruedInterests;
-        return statement;
-      });
-    default:
-      throw Error("Undefined statement type: " + Object.keys(StatementTypes)[item.statementType]);
-  }
-};
-
-/**
- * Transform Statement[] to sorted StatementEntry[]
- * @param statements
- * @returns
- */
-export const prepareStatements = (statements: Statement[]): Promise<StatementEntry[]> => {
-  return statements
-    .sort((a, b) => a.date.getTime() - b.date.getTime())
-    .reduce(
-      (p, item) =>
-        p.then((statements) => {
-          return statementModelToStatementEntry(item).then((statement_entry) => {
-            statements.push(statement_entry);
-            return statements;
-          });
-        }),
-      Promise.resolve([] as StatementEntry[]),
-    );
 };
 
 const formatDate = (when: Date): string => {
@@ -229,7 +134,11 @@ router.get("/summary/all", (req, res): void => {
   })
     .then((statements: Statement[]): Promise<StatementsSynthesysEntries> => makeSynthesys(statements))
     .then((synthesysentries: StatementsSynthesysEntries) => res.status(200).json({ synthesysentries }))
-    .catch((error) => res.status(500).json({ error }));
+    .catch((error) => {
+      console.error(error);
+      logger.log(LogLevel.Error, MODULE + ".All", undefined, JSON.stringify(error));
+      res.status(500).json({ error });
+    });
 });
 
 /**
@@ -249,7 +158,11 @@ router.get("/summary/ytd", (req, res): void => {
   })
     .then((statements: Statement[]): Promise<StatementsSynthesysEntries> => makeSynthesys(statements))
     .then((synthesysentries: StatementsSynthesysEntries) => res.status(200).json({ synthesysentries }))
-    .catch((error) => res.status(500).json({ error }));
+    .catch((error) => {
+      console.error(error);
+      logger.log(LogLevel.Error, MODULE + ".YTD", undefined, JSON.stringify(error));
+      res.status(500).json({ error });
+    });
 });
 
 /**
@@ -269,7 +182,11 @@ router.get("/summary/12m", (req, res): void => {
   })
     .then((statements: Statement[]): Promise<StatementsSynthesysEntries> => makeSynthesys(statements))
     .then((synthesysentries: StatementsSynthesysEntries) => res.status(200).json({ synthesysentries }))
-    .catch((error) => res.status(500).json({ error }));
+    .catch((error) => {
+      console.error(error);
+      logger.log(LogLevel.Error, MODULE + ".12m", undefined, JSON.stringify(error));
+      res.status(500).json({ error });
+    });
 });
 
 /**
@@ -462,11 +379,15 @@ router.get("/:statementId(\\d+)/AddToTrade/:tradeId(\\d+)", (req, res): void => 
     })
     .then((statement) => updateStatementTrade(statement))
     .then((statement) => res.status(200).json({ statement }))
-    .catch((error) => res.status(500).json({ error }));
+    .catch((error) => {
+      console.error(error);
+      logger.log(LogLevel.Error, MODULE + ".AddToTrade", undefined, JSON.stringify(error));
+      res.status(500).json({ error });
+    });
 });
 
 /**
- * Delete a statement
+ * Unlink a statement frim a trade
  */
 router.get("/:statementId(\\d+)/UnlinkTrade", (req, res): void => {
   const { _portfolioId, statementId } = req.params as typeof req.params & parentParams;
@@ -481,7 +402,11 @@ router.get("/:statementId(\\d+)/UnlinkTrade", (req, res): void => {
     })
     .then((statement) => updateStatementTrade(statement))
     .then((statement) => res.status(200).json({ statement }))
-    .catch((error) => res.status(500).json({ error }));
+    .catch((error) => {
+      console.error(error);
+      logger.log(LogLevel.Error, MODULE + ".UnlinkTrade", undefined, JSON.stringify(error));
+      res.status(500).json({ error });
+    });
 });
 
 /**
@@ -502,7 +427,11 @@ router.get("/id/:statementId(\\d+)", (req, res): void => {
     })
     .then((statement) => statementModelToStatementEntry(statement))
     .then((statement) => res.status(200).json({ statement }))
-    .catch((error) => res.status(500).json({ error }));
+    .catch((error) => {
+      console.error(error);
+      logger.log(LogLevel.Error, MODULE + ".GetStatement", undefined, JSON.stringify(error));
+      res.status(500).json({ error });
+    });
 });
 
 /**
@@ -554,7 +483,11 @@ router.get("/:statementId(\\d+)/DeleteStatement", (req, res): void => {
       // console.log("statement deleted");
       res.status(200).end();
     })
-    .catch((error) => res.status(500).json({ error }));
+    .catch((error) => {
+      console.error(error);
+      logger.log(LogLevel.Error, MODULE + ".DeleteStatement", undefined, JSON.stringify(error));
+      res.status(500).json({ error });
+    });
 });
 
 /**
@@ -566,17 +499,17 @@ router.post("/id/:statementId(\\d+)/SaveStatement", (req, res): void => {
 
   Statement.findByPk(statementId)
     .then((statement) => {
-      // console.log(JSON.stringify(position));
       if (statement)
         return statement.update({
-          trade_unit_id: data.trade_id,
+          trade_unit_id: data.trade_id || null,
+          statementType: data.statementType,
         });
       else throw Error("statement not found");
     })
     .then((statement) => res.status(200).json({ statement }))
     .catch((error) => {
       console.error(error);
-      logger.log(LogLevel.Error, MODULE + ".SaveStatement", undefined, JSON.stringify(error));
+      logger.log(LogLevel.Error, MODULE + ".SaveStatement", undefined, JSON.stringify(error), data);
       res.status(500).json({ error });
     });
 });

@@ -4,6 +4,7 @@ export const StatementTypes = {
   DividendStatement: "Dividend",
   TaxStatement: "Tax",
   InterestStatement: "Interest",
+  WithHoldingStatement: "WithHolding",
   FeeStatement: "OtherFee",
   CorporateStatement: "CorporateStatement",
   CashStatement: "Cash",

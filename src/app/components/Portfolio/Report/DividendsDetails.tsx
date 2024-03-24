@@ -25,17 +25,17 @@ import { Form, Link as RouterLink, useLoaderData, useParams } from "react-router
 import { StatementEntry } from "../../../../routers/statements.types";
 import Number from "../../Number/Number";
 import { ContractLink } from "../Contract/links";
+import { StatementLink } from "../Statement/links";
 import { TradeLink } from "../Trade/links";
-import { StatementLink } from "./links";
 
-type Props = { content?: StatementEntry[]; currency?: string; title?: string };
+type Props = { content?: StatementEntry[]; currency?: string };
 
 /**
  * Statements list component
  * @param param
  * @returns
  */
-const StatementsTable: FunctionComponent<Props> = ({ content, currency, title, ..._rest }): React.ReactNode => {
+const DividendsDetails: FunctionComponent<Props> = ({ content, currency, ..._rest }): React.ReactNode => {
   const { portfolioId } = useParams();
   const theStatements = content || (useLoaderData() as StatementEntry[]);
   let previousId: number;
@@ -49,9 +49,7 @@ const StatementsTable: FunctionComponent<Props> = ({ content, currency, title, .
     <>
       <TableContainer>
         <Table variant="simple" size="sm" className="table-tiny">
-          <TableCaption>
-            {title || "Statements index"} ({theStatements.length})
-          </TableCaption>
+          <TableCaption>Statements index ({theStatements.length})</TableCaption>
           <Thead>
             <Tr>
               <Td>Date</Td>
@@ -218,4 +216,4 @@ const StatementsTable: FunctionComponent<Props> = ({ content, currency, title, .
   );
 };
 
-export default StatementsTable;
+export default DividendsDetails;

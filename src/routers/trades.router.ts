@@ -7,8 +7,8 @@ import { expirationToDate } from "../models/date_utils";
 import { TradeStatus, TradeStrategy } from "../models/trade.types";
 import { preparePositions } from "./positions.router";
 import { OptionPositionEntry, PositionEntry } from "./positions.types";
-import { prepareStatements } from "./statements.router";
 import { StatementEntry, StatementOptionEntry, StatementUnderlyingEntry } from "./statements.types";
+import { prepareStatements } from "./statements.utils";
 import {
   OpenTradesWithPositions,
   TradeEntry,
@@ -73,22 +73,22 @@ const updateVirtuals = (
         id = statement_entry.underlying.id;
         if (!virtuals[id]) virtuals[id] = initVirtualFromStatement(statement_entry);
         virtual = virtuals[id];
+        virtual.pru = virtual.cost / virtual.quantity;
       }
+      virtual.price = statement_entry.underlying?.price;
       break;
     case StatementTypes.OptionStatement:
       id = statement_entry.option!.id;
       if (!virtuals[id]) virtuals[id] = initVirtualFromStatement(statement_entry);
       virtual = virtuals[id];
+      virtual.pru = virtual.cost / virtual.quantity / statement_entry.option!.multiplier;
+      virtual.price = statement_entry.option.price;
       break;
   }
   if (virtual) {
     virtual.quantity += statement_entry.quantity!;
     virtual.cost -= statement_entry.amount;
-    virtual.pru = statement_entry.option?.multiplier
-      ? virtual.cost / virtual.quantity / statement_entry.option!.multiplier
-      : virtual.cost / virtual.quantity;
     virtual.pnl = virtual.pnl ? virtual.pnl + statement_entry.pnl! : statement_entry.pnl!;
-    virtual.price = statement_entry.option?.price ? statement_entry.option.price : statement_entry.underlying?.price;
 
     if (!virtual.quantity) virtual.cost = 0; // is this usefull?
   }

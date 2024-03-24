@@ -6,11 +6,15 @@ import { Currency } from "./currency.model";
 import { CashStrategy } from "./portfolio.types";
 import { Position } from "./position.model";
 import { Setting } from "./setting.model";
+import { Statement } from "./statement.model";
 
 @Table({ tableName: "portfolio", timestamps: false, deletedAt: false, updatedAt: false })
 export class Portfolio extends Model<
   InferAttributes<Portfolio>,
-  InferCreationAttributes<Portfolio, { omit: "benchmark" | "positions" | "balances" | "baseRates" | "settings" }>
+  InferCreationAttributes<
+    Portfolio,
+    { omit: "benchmark" | "positions" | "balances" | "baseRates" | "settings" | "statements" }
+  >
 > {
   // id can be undefined during creation when using `autoIncrement`
   declare id: CreationOptional<number>;
@@ -80,6 +84,9 @@ export class Portfolio extends Model<
   @HasMany(() => Setting, "portfolio_id")
   declare settings: Setting[];
 
+  @HasMany(() => Statement, "portfolio_id")
+  declare statements: Statement[];
+
   declare static associations: {
     benchmark: Association<Portfolio, Contract>;
 
@@ -87,5 +94,6 @@ export class Portfolio extends Model<
     balances: Association<Portfolio, Balance>;
     baseRates: Association<Portfolio, Currency>;
     settings: Association<Portfolio, Setting>;
+    statements: Association<Portfolio, Statement>;
   };
 }

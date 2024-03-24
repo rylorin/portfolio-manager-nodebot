@@ -9,8 +9,6 @@ import SettingsTable from "./SettingsTable";
 type PortfolioShowProps = Record<string, never>;
 
 const PortfolioShow: FunctionComponent<PortfolioShowProps> = ({ ..._rest }): React.ReactNode => {
-  // const { portfolioId } = useParams();
-  // const [thisPortfolio, setPortfolio] = useState({} as PortfolioModel);
   const thisPortfolio = useLoaderData() as PortfolioModel;
 
   return (

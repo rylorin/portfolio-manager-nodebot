@@ -9,6 +9,7 @@ import { StockContract } from "./stock_contract.model";
 export * from "./bag_contract.model";
 export * from "./balance.model";
 export * from "./bond_contract.model";
+export * from "./bond_statement.model";
 export * from "./cash_contract.model";
 export * from "./contract.model";
 export * from "./contract.types";

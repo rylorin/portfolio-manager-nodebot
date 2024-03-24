@@ -94,11 +94,13 @@ export const statementDelete = ({ request, params }: ActionFunctionArgs): Promis
  */
 export const statementSave = ({ request, params }: ActionFunctionArgs): Promise<Response> => {
   const { portfolioId, statementId } = params;
-  // console.log("statementSave", portfolioId, statementId);
   return request
     .formData()
     .then((formData: Iterable<readonly [PropertyKey, any]>) => {
       const data = Object.fromEntries(formData);
+      Object.keys(data).forEach((key) => {
+        if (data[key] == "null") data[key] = null;
+      });
       return fetch(`/api/portfolio/${portfolioId}/statements/id/${statementId}/SaveStatement`, {
         method: "POST",
         headers: {

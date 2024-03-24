@@ -1,6 +1,5 @@
 import { OptionType } from "@stoqey/ib";
 import { ContractType } from "../models/contract.types";
-import { StatementTypes } from "../models/statement.types";
 
 export type SynthesysEntry = { stocks: number; options: number; dividends: number; interests: number; total: number };
 export type StatementsSynthesysEntries = Record<"string", SynthesysEntry>;
@@ -21,11 +20,10 @@ export type StatementOptionEntry = StatementUnderlyingEntry & {
   multiplier: number;
 };
 
-export type StatementEntry = {
+export type BaseStatement = {
   id: number;
   transactionId: number;
   date: number;
-  statementType: StatementTypes;
   currency: string;
   amount: number;
   pnl: number | undefined;
@@ -33,7 +31,37 @@ export type StatementEntry = {
   fxRateToBase: number;
   description: string;
   trade_id: number | null;
-  underlying: StatementUnderlyingEntry | undefined;
   quantity: number | undefined;
-  option: StatementOptionEntry | undefined;
+
+  underlying: StatementUnderlyingEntry | undefined;
 };
+
+export type EquityStatementEntry = BaseStatement & {
+  statementType: "Trade";
+};
+export type OptionStatementEntry = BaseStatement & {
+  statementType: "TradeOption";
+  option: StatementOptionEntry;
+};
+export type DividendStatementEntry = BaseStatement & {
+  statementType: "Dividend";
+  country: string;
+};
+export type TaxStatementEntry = BaseStatement & { statementType: "Tax" };
+export type InterestStatementEntry = BaseStatement & { statementType: "Interest" };
+export type WithHoldingStatementEntry = BaseStatement & { statementType: "WithHolding" };
+export type FeeStatementEntry = BaseStatement & { statementType: "OtherFee" };
+export type CorporateStatementEntry = BaseStatement & { statementType: "CorporateStatement" };
+export type CashStatementEntry = BaseStatement & { statementType: "Cash" };
+export type BondStatementEntry = BaseStatement & { statementType: "Bond" };
+export type StatementEntry =
+  | EquityStatementEntry
+  | OptionStatementEntry
+  | DividendStatementEntry
+  | TaxStatementEntry
+  | InterestStatementEntry
+  | WithHoldingStatementEntry
+  | FeeStatementEntry
+  | CorporateStatementEntry
+  | CashStatementEntry
+  | BondStatementEntry;

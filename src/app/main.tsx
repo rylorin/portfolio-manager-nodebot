@@ -32,6 +32,9 @@ import {
   positionsIndexLoader,
   positionsOptionsLoader,
 } from "./components/Portfolio/Position/loaders";
+import ReportsIndex from "./components/Portfolio/Report/ReportIndex";
+import ReportSummary from "./components/Portfolio/Report/ReportSummary";
+import { reportSummaryLoader, reportsIndexLoader } from "./components/Portfolio/Report/loaders";
 import StatementEdit from "./components/Portfolio/Statement/StatementEdit";
 import StatementShow from "./components/Portfolio/Statement/StatementShow";
 import StatementSummary from "./components/Portfolio/Statement/StatementSummary";
@@ -265,6 +268,15 @@ const router = createBrowserRouter([
                       { path: "DeleteStatement/:statementId", action: statementDelete },
                     ],
                   },
+                ],
+              },
+
+              /* Tax reports */
+              {
+                path: "reports",
+                children: [
+                  { index: true, Component: ReportsIndex, loader: reportsIndexLoader },
+                  { path: "year/:year", Component: ReportSummary, loader: reportSummaryLoader },
                 ],
               },
             ],

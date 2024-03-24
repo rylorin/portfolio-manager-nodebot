@@ -1,5 +1,5 @@
 import { ArrowBackIcon, CheckIcon } from "@chakra-ui/icons";
-import { Flex, IconButton, Link, Text, VStack } from "@chakra-ui/react";
+import { Flex, IconButton, Link, Select, Text, VStack } from "@chakra-ui/react";
 import { Field, Formik, FormikProps } from "formik";
 import { FunctionComponent, default as React } from "react";
 import {
@@ -10,6 +10,7 @@ import {
   useParams,
   useSubmit,
 } from "react-router-dom";
+import { StatementTypes } from "../../../../models/statement.types";
 import { StatementEntry } from "../../../../routers/statements.types";
 import { ContractLink } from "../Contract/links";
 
@@ -111,8 +112,22 @@ const StatementEdit: FunctionComponent<Props> = ({ ..._rest }): React.ReactNode 
                 <Text w="90px" as="b" textAlign="right">
                   Type:
                 </Text>
-                <Text w="200px" textAlign="right">
-                  {theStatement.statementType}
+                {/* <Select w="200px" name="status" variant="outline" value={formik.values.status}> */}
+                <Field as={Select} name="statementType" w="200px" type="number" variant="outline">
+                  {Object.entries(StatementTypes).map((v, k) => (
+                    <option value={v[1]} key={`k${k}`}>
+                      {v[0]} ({v[1]})
+                    </option>
+                  ))}
+                </Field>
+                {/* </Select> */}
+              </Flex>
+              <Flex justifyContent="center" gap="2">
+                <Text w="90px" as="b" textAlign="right">
+                  Description:
+                </Text>
+                <Text w="200px">
+                  <Field name="description" />
                 </Text>
               </Flex>
 
