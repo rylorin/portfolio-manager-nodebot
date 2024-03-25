@@ -31,21 +31,37 @@ const ReportSummary: FunctionComponent<Props> = ({ ..._rest }): React.ReactNode 
       <VStack align="left">
         <HStack alignContent="left">
           <Box width="xs">Country</Box>
-          <Box width="xs">Amount</Box>
+          <Box width="xs" textAlign="right">
+            Gross Amount
+          </Box>
+          <Box width="xs" textAlign="right">
+            Taxes
+          </Box>
+          <Box width="xs" textAlign="right">
+            Net Amount
+          </Box>
           <Spacer />
         </HStack>
         {theReport.dividendsSummary.map((item: DididendSummary) => (
           <HStack key={item.country}>
             <Box width="xs">{item.country}</Box>
             <Box width="xs" textAlign="right">
-              <Number value={item.totalAmountInBase} />
+              <Number value={item.grossAmountInBase} />
+            </Box>
+            <Box width="xs" textAlign="right">
+              <Number value={item.taxes} />
+            </Box>
+            <Box width="xs" textAlign="right">
+              <Number value={item.grossAmountInBase + item.taxes} />
             </Box>
             <Spacer />
           </HStack>
         ))}
         <HStack>
           <Box width="xs">Total</Box>
-          <Box width="xs">Amount</Box>
+          <Box width="xs">Gross Amount</Box>
+          <Box width="xs">Taxes</Box>
+          <Box width="xs">Net Amount</Box>
           <Spacer />
         </HStack>
       </VStack>
@@ -53,9 +69,9 @@ const ReportSummary: FunctionComponent<Props> = ({ ..._rest }): React.ReactNode 
       {/* <InterestsTable /> */}
       <h2>Interests</h2>
       <SimpleGrid columns={2}>
-        <Box>Net credit</Box>
+        <Box>Gross credit</Box>
         <Box textAlign="right">
-          <Number value={theReport.interestsSummary.netCredit} />
+          <Number value={theReport.interestsSummary.grossCredit} />
         </Box>
         <Box>Tax</Box>
         <Box textAlign="right">

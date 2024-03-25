@@ -1,4 +1,9 @@
-import { DividendStatementEntry, InterestStatementEntry, WithHoldingStatementEntry } from "./statements.types";
+import {
+  DividendStatementEntry,
+  InterestStatementEntry,
+  TaxStatementEntry,
+  WithHoldingStatementEntry,
+} from "./statements.types";
 
 /**
  * Dididend details entry data transfered between frontend and backend
@@ -19,14 +24,15 @@ export type DididendSummary = {
   //   year: number;
   //   month: number;
   country: string;
-  totalAmountInBase: number;
+  grossAmountInBase: number;
+  taxes: number;
 };
 
 /**
  * Dididend Summary entry data transfered between frontend and backend
  */
 export type InterestsSummary = {
-  netCredit: number;
+  grossCredit: number;
   netDebit: number;
   withHolding: number;
   totalAmountInBase: number;
@@ -40,7 +46,7 @@ export type ReportEntry = {
   year: number;
   month: number;
   dividendsSummary: DididendSummary[];
-  dividendsDetails: DividendStatementEntry[];
+  dividendsDetails: (DividendStatementEntry | TaxStatementEntry)[];
   interestsSummary: InterestsSummary;
   interestsDetails: (InterestStatementEntry | WithHoldingStatementEntry)[];
 };
