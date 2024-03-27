@@ -6,7 +6,7 @@ import { ReportEntry } from "../../../../routers/reports.types";
  * @param param0
  * @returns
  */
-export const reportsIndexLoader = ({ params }: LoaderFunctionArgs): Promise<number[]> => {
+export const reportsIndexLoader0 = ({ params }: LoaderFunctionArgs): Promise<number[]> => {
   const { portfolioId } = params;
   return fetch(`/api/portfolio/${portfolioId}/reports/index`)
     .then((response) => response.json())
@@ -14,13 +14,25 @@ export const reportsIndexLoader = ({ params }: LoaderFunctionArgs): Promise<numb
 };
 
 /**
+ * Fetch all reports
+ * @param param0
+ * @returns
+ */
+export const reportsIndexLoader = ({ params }: LoaderFunctionArgs): Promise<ReportEntry[]> => {
+  const { portfolioId } = params;
+  return fetch(`/api/portfolio/${portfolioId}/reports/summary/all`)
+    .then((response) => response.json())
+    .then((data) => data.reports as ReportEntry[]);
+};
+
+/**
  * Fetch a report
  * @param param0
  * @returns
  */
-export const reportSummaryLoader = ({ params }: LoaderFunctionArgs): Promise<ReportEntry> => {
+export const reportSummaryLoader = ({ params }: LoaderFunctionArgs): Promise<ReportEntry[]> => {
   const { portfolioId, year } = params;
   return fetch(`/api/portfolio/${portfolioId}/reports/year/${year}`)
     .then((response) => response.json())
-    .then((data) => data.report as ReportEntry);
+    .then((data) => data.reports as ReportEntry[]);
 };

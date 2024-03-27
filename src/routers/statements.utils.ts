@@ -6,7 +6,6 @@ import {
   EquityStatement,
   OptionContract,
   OptionStatement,
-  Portfolio,
   Statement,
   TaxStatement,
 } from "../models";
@@ -19,7 +18,6 @@ export const statementModelToStatementEntry = (item: Statement): Promise<Stateme
     id: item.id,
     transactionId: item.transactionId,
     date: item.date.getTime(),
-    // statementType: item.statementType,
     currency: item.currency,
     amount: item.netCash,
     pnl: undefined,
@@ -29,7 +27,6 @@ export const statementModelToStatementEntry = (item: Statement): Promise<Stateme
     trade_id: item.trade_unit_id,
     underlying: item.stock,
     quantity: undefined,
-    // option: undefined,
   };
   switch (item.statementType) {
     case StatementTypes.EquityStatement:
@@ -42,6 +39,7 @@ export const statementModelToStatementEntry = (item: Statement): Promise<Stateme
           ...baseStatement,
         };
       });
+
     case StatementTypes.OptionStatement:
       return OptionStatement.findByPk(item.id, {
         include: [
@@ -98,29 +96,35 @@ export const statementModelToStatementEntry = (item: Statement): Promise<Stateme
       return Promise.resolve({
         statementType: StatementTypes.InterestStatement,
         ...baseStatement,
+        country: null,
       });
+
     case StatementTypes.WithHoldingStatement:
       baseStatement.pnl = item.netCash;
       return Promise.resolve({
         statementType: StatementTypes.WithHoldingStatement,
         ...baseStatement,
       });
+
     case StatementTypes.FeeStatement:
       baseStatement.fees = item.netCash;
       return Promise.resolve({
         statementType: StatementTypes.FeeStatement,
         ...baseStatement,
       });
+
     case StatementTypes.CorporateStatement:
       return Promise.resolve({
         statementType: StatementTypes.CorporateStatement,
         ...baseStatement,
       });
+
     case StatementTypes.CashStatement:
       return Promise.resolve({
         statementType: StatementTypes.CashStatement,
         ...baseStatement,
       });
+
     case StatementTypes.BondStatement:
       return BondStatement.findByPk(item.id).then((thisStatement) => {
         baseStatement.quantity = thisStatement?.quantity;
@@ -131,6 +135,7 @@ export const statementModelToStatementEntry = (item: Statement): Promise<Stateme
           ...baseStatement,
         };
       });
+
     default:
       throw Error("Undefined statement type");
   }
@@ -156,24 +161,28 @@ export const prepareStatements = (statements: Statement[]): Promise<StatementEnt
     );
 };
 
-export const prepareReport = (portfolio: Portfolio, year: number, month: number): Promise<ReportEntry> => {
-  return prepareStatements(portfolio.statements).then((statements) => {
-    const report: ReportEntry = {
-      portfolioId: portfolio.id,
-      year,
-      month,
-      dividendsSummary: [],
-      dividendsDetails: [],
-      interestsSummary: { totalAmountInBase: 0, grossCredit: 0, netDebit: 0, withHolding: 0 },
-      interestsDetails: [],
-      feesSummary: { totalAmountInBase: 0 },
-      feesDetails: [],
-    };
+export const prepareReport = (statements: Statement[]): Promise<ReportEntry[]> => {
+  return prepareStatements(statements).then((statements) => {
+    const result: ReportEntry[] = [];
     statements.forEach((statement) => {
-      // const date = statement.date.toString();
-      // const year = parseInt(date.substring(0, 4));
-      // const month = parseInt(date.substring(5, 7));
+      const year = new Date(statement.date).getUTCFullYear();
+      const month = new Date(statement.date).getUTCMonth() + 1;
       let entry: DididendSummary | undefined;
+      let report = result.find((item) => item.year == year && item.month == month);
+      if (!report) {
+        // console.log(date, "creating report for ", year, month);
+        report = {
+          year,
+          month,
+          dividendsSummary: [],
+          dividendsDetails: [],
+          interestsSummary: { totalAmountInBase: 0, grossCredit: 0, netDebit: 0, withHolding: 0 },
+          interestsDetails: [],
+          feesSummary: { totalAmountInBase: 0 },
+          feesDetails: [],
+        };
+        result.push(report);
+      }
       switch (statement.statementType) {
         case StatementTypes.DividendStatement:
           entry = report.dividendsSummary.find((item) => item.country == statement.country);
@@ -214,7 +223,7 @@ export const prepareReport = (portfolio: Portfolio, year: number, month: number)
           break;
       }
     });
-    console.log(report.dividendsSummary);
-    return report;
+    // console.log(report.dividendsSummary);
+    return result;
   });
 };

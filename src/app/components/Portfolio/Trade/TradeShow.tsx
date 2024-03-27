@@ -35,7 +35,7 @@ const TradeShow: FunctionComponent<Props> = ({ ..._rest }): React.ReactNode => {
             Open date:
           </Text>
           <Text w="200px" textAlign="right">
-            <Link to={StatementLink.toMonth(portfolioId, new Date(item.openingDate))} as={RouterLink}>
+            <Link to={StatementLink.toDate(portfolioId, new Date(item.openingDate))} as={RouterLink}>
               {new Date(item.openingDate).toLocaleString()}
             </Link>
           </Text>
@@ -66,7 +66,7 @@ const TradeShow: FunctionComponent<Props> = ({ ..._rest }): React.ReactNode => {
           </Text>
           <Text w="200px" textAlign="right">
             {item.closingDate && (
-              <Link to={StatementLink.toMonth(portfolioId, new Date(item.closingDate))} as={RouterLink}>
+              <Link to={StatementLink.toDate(portfolioId, new Date(item.closingDate))} as={RouterLink}>
                 {new Date(item.closingDate).toLocaleString()}
               </Link>
             )}

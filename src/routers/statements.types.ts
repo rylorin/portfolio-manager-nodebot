@@ -48,7 +48,7 @@ export type DividendStatementEntry = BaseStatement & {
   country: string;
 };
 export type TaxStatementEntry = BaseStatement & { statementType: "Tax"; country: string };
-export type InterestStatementEntry = BaseStatement & { statementType: "Interest"; country: string };
+export type InterestStatementEntry = BaseStatement & { statementType: "Interest"; country: string | null };
 export type WithHoldingStatementEntry = BaseStatement & { statementType: "WithHolding" };
 export type FeeStatementEntry = BaseStatement & { statementType: "OtherFee" };
 export type CorporateStatementEntry = BaseStatement & { statementType: "CorporateStatement" };

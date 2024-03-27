@@ -3,7 +3,6 @@ import { FunctionComponent, default as React } from "react";
 import { Link as RouterLink, useLoaderData, useParams } from "react-router-dom";
 import { DididendSummary, ReportEntry } from "../../../../routers/reports.types";
 import Number from "../../Number/Number";
-import StatementsTable from "../Statement/StatementsTable";
 import { ReportLink } from "./links";
 
 type Props = Record<string, never>;
@@ -15,7 +14,7 @@ type Props = Record<string, never>;
  */
 const ReportSummary: FunctionComponent<Props> = ({ ..._rest }): React.ReactNode => {
   const { portfolioId } = useParams();
-  const theReport = useLoaderData() as ReportEntry;
+  const theReport = useLoaderData()[0] as ReportEntry;
 
   return (
     <>
@@ -26,7 +25,6 @@ const ReportSummary: FunctionComponent<Props> = ({ ..._rest }): React.ReactNode 
         </Link>
         <Spacer />
       </Box>
-      {/* <DividendsSummaryTable /> */}
       <h2>Dividends</h2>
       <VStack align="left">
         <HStack alignContent="left">
@@ -65,8 +63,7 @@ const ReportSummary: FunctionComponent<Props> = ({ ..._rest }): React.ReactNode 
           <Spacer />
         </HStack>
       </VStack>
-      <StatementsTable content={theReport.dividendsDetails} title="Dividends" />
-      {/* <InterestsTable /> */}
+      {/* <StatementsTable content={theReport.dividendsDetails} title="Dividends" /> */}
       <h2>Interests</h2>
       <SimpleGrid columns={2}>
         <Box>Gross credit</Box>
@@ -86,7 +83,7 @@ const ReportSummary: FunctionComponent<Props> = ({ ..._rest }): React.ReactNode 
           <Number value={theReport.interestsSummary.totalAmountInBase} />
         </Box>
       </SimpleGrid>
-      <StatementsTable content={theReport.interestsDetails} title="Interests" />
+      {/* <StatementsTable content={theReport.interestsDetails} title="Interests" /> */}
       <h2>Fees</h2>
       <HStack align="left">
         <Box>Total</Box>
@@ -95,7 +92,7 @@ const ReportSummary: FunctionComponent<Props> = ({ ..._rest }): React.ReactNode 
         </Box>
         <Spacer />
       </HStack>
-      <StatementsTable content={theReport.feesDetails} title="Fees" />
+      {/* <StatementsTable content={theReport.feesDetails} title="Fees" /> */}
     </>
   );
 };

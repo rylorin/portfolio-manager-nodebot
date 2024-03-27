@@ -32,7 +32,7 @@ const BaseStatement = ({ portfolioId, statement }: Props): React.ReactNode => {
           Date:
         </Text>
         <Text w="200px" textAlign="right">
-          <Link to={StatementLink.toMonth(portfolioId, new Date(statement.date))} as={RouterLink}>
+          <Link to={StatementLink.toDate(portfolioId, new Date(statement.date))} as={RouterLink}>
             {new Date(statement.date).toLocaleString()}
           </Link>
         </Text>

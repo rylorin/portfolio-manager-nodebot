@@ -53,7 +53,7 @@ export type FeesSummary = {
  * Report entry data transfered between frontend and backend
  */
 export type ReportEntry = {
-  portfolioId: number;
+  // portfolioId: number;
   year: number;
   month: number;
   dividendsSummary: DididendSummary[];

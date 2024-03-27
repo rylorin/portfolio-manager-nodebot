@@ -1,6 +1,6 @@
 import express from "express";
 import { Op } from "sequelize";
-import logger, { LogLevel } from "../logger";
+import { default as logger, LogLevel } from "../logger";
 import {
   Contract,
   DividendStatement,
