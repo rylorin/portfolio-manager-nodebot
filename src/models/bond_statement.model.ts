@@ -18,6 +18,9 @@ export class BondStatement extends Model<
   @BelongsTo(() => Statement, "id")
   public statement: Statement;
 
+  @Column({ type: DataType.STRING(2), field: "country" })
+  declare country: string;
+
   @Column({ type: DataType.FLOAT, field: "accruedInt" })
   declare accruedInterests: number;
 

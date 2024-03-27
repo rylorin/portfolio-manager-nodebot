@@ -1,5 +1,5 @@
 import { CreationOptional, InferAttributes, InferCreationAttributes } from "sequelize";
-import { BelongsTo, Model, Table } from "sequelize-typescript";
+import { BelongsTo, Column, DataType, Model, Table } from "sequelize-typescript";
 import { Statement } from ".";
 
 @Table({ tableName: "interest_statement", timestamps: false, createdAt: false, updatedAt: false })
@@ -17,4 +17,7 @@ export class InterestStatement extends Model<
 
   @BelongsTo(() => Statement, "id")
   public statement: Statement;
+
+  @Column({ type: DataType.STRING(2), field: "country" })
+  declare country: string;
 }

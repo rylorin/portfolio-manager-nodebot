@@ -87,6 +87,15 @@ const ReportSummary: FunctionComponent<Props> = ({ ..._rest }): React.ReactNode 
         </Box>
       </SimpleGrid>
       <StatementsTable content={theReport.interestsDetails} title="Interests" />
+      <h2>Fees</h2>
+      <HStack align="left">
+        <Box>Total</Box>
+        <Box textAlign="right">
+          <Number value={theReport.feesSummary.totalAmountInBase} />
+        </Box>
+        <Spacer />
+      </HStack>
+      <StatementsTable content={theReport.feesDetails} title="Fees" />
     </>
   );
 };

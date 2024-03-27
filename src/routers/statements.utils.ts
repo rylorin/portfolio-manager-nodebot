@@ -166,11 +166,13 @@ export const prepareReport = (portfolio: Portfolio, year: number, month: number)
       dividendsDetails: [],
       interestsSummary: { totalAmountInBase: 0, grossCredit: 0, netDebit: 0, withHolding: 0 },
       interestsDetails: [],
+      feesSummary: { totalAmountInBase: 0 },
+      feesDetails: [],
     };
     statements.forEach((statement) => {
-      //   const date = statement.date.toString();
-      //   const year = parseInt(date.substring(0, 4));
-      //   const month = parseInt(date.substring(5, 7));
+      // const date = statement.date.toString();
+      // const year = parseInt(date.substring(0, 4));
+      // const month = parseInt(date.substring(5, 7));
       let entry: DididendSummary | undefined;
       switch (statement.statementType) {
         case StatementTypes.DividendStatement:
@@ -204,6 +206,11 @@ export const prepareReport = (portfolio: Portfolio, year: number, month: number)
           report.interestsSummary.totalAmountInBase += statement.amount * statement.fxRateToBase;
           report.interestsSummary.withHolding += statement.amount * statement.fxRateToBase;
           report.interestsDetails.push(statement);
+          break;
+
+        case StatementTypes.FeeStatement:
+          report.feesSummary.totalAmountInBase += statement.amount * statement.fxRateToBase;
+          report.feesDetails.push(statement);
           break;
       }
     });

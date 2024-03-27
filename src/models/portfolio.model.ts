@@ -39,6 +39,9 @@ export class Portfolio extends Model<
   @Column({ type: DataType.STRING(3), field: "base_currency" })
   declare baseCurrency: string;
 
+  @Column({ type: DataType.STRING(2), field: "country" })
+  declare country: string;
+
   @Column({ type: DataType.FLOAT, field: "put_ratio", defaultValue: 0 })
   declare putRatio?: number;
 
