@@ -26,7 +26,6 @@ export type BaseStatement = {
   date: number;
   currency: string;
   amount: number;
-  pnl: number | undefined;
   fees: number | undefined;
   fxRateToBase: number;
   description: string;
@@ -38,11 +37,15 @@ export type BaseStatement = {
 
 export type EquityStatementEntry = BaseStatement & {
   statementType: "Trade";
+  pnl: number;
 };
+
 export type OptionStatementEntry = BaseStatement & {
   statementType: "TradeOption";
   option: StatementOptionEntry;
+  pnl: number;
 };
+
 export type DividendStatementEntry = BaseStatement & {
   statementType: "Dividend";
   country: string;

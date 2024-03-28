@@ -76,6 +76,7 @@ const updateVirtuals = (
         virtual.pru = virtual.cost / virtual.quantity;
       }
       virtual.price = statement_entry.underlying?.price;
+      virtual.pnl = virtual.pnl ? virtual.pnl + statement_entry.pnl! : statement_entry.pnl!;
       break;
     case StatementTypes.OptionStatement:
       id = statement_entry.option!.id;
@@ -83,12 +84,12 @@ const updateVirtuals = (
       virtual = virtuals[id];
       virtual.pru = virtual.cost / virtual.quantity / statement_entry.option!.multiplier;
       virtual.price = statement_entry.option.price;
+      virtual.pnl = virtual.pnl ? virtual.pnl + statement_entry.pnl! : statement_entry.pnl!;
       break;
   }
   if (virtual) {
     virtual.quantity += statement_entry.quantity!;
     virtual.cost -= statement_entry.amount;
-    virtual.pnl = virtual.pnl ? virtual.pnl + statement_entry.pnl! : statement_entry.pnl!;
 
     if (!virtual.quantity) virtual.cost = 0; // is this usefull?
   }
@@ -540,7 +541,7 @@ const computeRisk_Generic = (thisTrade: Trade, statements: StatementEntry[]): Re
     const statement_entry = statements[i];
 
     // Update trade PnL, whatever statement type is
-    if (statement_entry.pnl) {
+    if ("pnl" in statement_entry) {
       thisTrade.PnL += statement_entry.pnl;
       thisTrade.pnlInBase += statement_entry.pnl * statement_entry.fxRateToBase;
     }

@@ -1,7 +1,7 @@
 import { default as express } from "express";
 import { Op } from "sequelize";
 import { LogLevel, default as logger } from "../logger";
-import { Balance, Currency, Portfolio, Statement } from "../models";
+import { Portfolio, Statement } from "../models";
 import { prepareReport } from "./statements.utils";
 
 const MODULE = "ReportsRouter";
@@ -12,26 +12,6 @@ const sequelize_logging = (...args: any[]): void => logger.trace(MODULE + ".sque
 const router = express.Router({ mergeParams: true });
 
 type parentParams = { portfolioId: number };
-
-/**
- * List all available reports
- */
-router.get("/index", (req, res) => {
-  const { portfolioId } = req.params as typeof req.params & parentParams;
-
-  Portfolio.findByPk(portfolioId, {
-    include: [
-      { model: Balance, as: "balances" },
-      { model: Currency, as: "baseRates" },
-    ],
-  })
-    .then((portfolio) => {
-      if (!portfolio) throw Error("Portfolio not found!");
-      const reports: number[] = [2022, 2023, 2024];
-      res.status(200).json({ reports });
-    })
-    .catch((error) => res.status(500).json({ error }));
-});
 
 /**
  * Get a yearly report
@@ -82,6 +62,57 @@ router.get("/summary/all", (req, res): void => {
       portfolio_id: portfolioId,
       date: {
         [Op.gte]: new Date(2021, 0, 1),
+      },
+    },
+  })
+    .then((statements) => prepareReport(statements))
+    .then((reports) => {
+      res.status(200).json({ reports });
+    })
+    .catch((error) => {
+      console.error(error);
+      logger.log(LogLevel.Error, MODULE + ".All", undefined, JSON.stringify(error));
+      res.status(500).json({ error });
+    });
+});
+
+/**
+ * Get YTD monthly reports
+ */
+router.get("/summary/ytd", (req, res): void => {
+  const { portfolioId } = req.params as typeof req.params & parentParams;
+
+  Statement.findAll({
+    where: {
+      portfolio_id: portfolioId,
+      date: {
+        [Op.gte]: new Date(new Date().getFullYear(), 0, 1),
+      },
+    },
+  })
+    .then((statements) => prepareReport(statements))
+    .then((reports) => {
+      res.status(200).json({ reports });
+    })
+    .catch((error) => {
+      console.error(error);
+      logger.log(LogLevel.Error, MODULE + ".All", undefined, JSON.stringify(error));
+      res.status(500).json({ error });
+    });
+});
+
+/**
+ * Get last 12 months monthly reports
+ */
+router.get("/summary/12m", (req, res): void => {
+  const { portfolioId } = req.params as typeof req.params & parentParams;
+  const today = new Date();
+
+  Statement.findAll({
+    where: {
+      portfolio_id: portfolioId,
+      date: {
+        [Op.gte]: new Date(today.getFullYear() - 1, today.getMonth(), today.getDate()),
       },
     },
   })

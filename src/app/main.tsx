@@ -34,7 +34,12 @@ import {
 } from "./components/Portfolio/Position/loaders";
 import ReportsIndex from "./components/Portfolio/Report/ReportIndex";
 import ReportSummary from "./components/Portfolio/Report/ReportSummary";
-import { reportSummaryLoader, reportsIndexLoader } from "./components/Portfolio/Report/loaders";
+import {
+  reportSummaryLoader,
+  reportsIndexLoader,
+  reportsIndexLoader12m,
+  reportsIndexLoaderYtd,
+} from "./components/Portfolio/Report/loaders";
 import StatementEdit from "./components/Portfolio/Statement/StatementEdit";
 import StatementShow from "./components/Portfolio/Statement/StatementShow";
 import StatementSummary from "./components/Portfolio/Statement/StatementSummary";
@@ -275,7 +280,9 @@ const router = createBrowserRouter([
               {
                 path: "reports",
                 children: [
-                  { index: true, Component: ReportsIndex, loader: reportsIndexLoader },
+                  { path: "index", Component: ReportsIndex, loader: reportsIndexLoader },
+                  { path: "ytd", Component: ReportsIndex, loader: reportsIndexLoaderYtd },
+                  { path: "12m", Component: ReportsIndex, loader: reportsIndexLoader12m },
                   { path: "year/:year", Component: ReportSummary, loader: reportSummaryLoader },
                 ],
               },

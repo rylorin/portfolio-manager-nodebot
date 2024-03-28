@@ -1,7 +1,8 @@
-import { Link, Table, TableCaption, TableContainer, Tbody, Td, Thead, Tr } from "@chakra-ui/react";
+import { Box, Link, Spacer, Table, TableCaption, TableContainer, Tbody, Td, Thead, Tr } from "@chakra-ui/react";
 import { FunctionComponent, default as React } from "react";
 import { Link as RouterLink, useLoaderData, useParams } from "react-router-dom";
 import { ReportEntry } from "../../../../routers/reports.types";
+import BarChart from "../../Chart/BarChart";
 import Number from "../../Number/Number";
 import { StatementLink } from "../Statement/links";
 import { ReportLink } from "./links";
@@ -10,6 +11,11 @@ type Props = Record<string, never>;
 
 const months = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
 
+const compareReports = (a: ReportEntry, b: ReportEntry): number => {
+  let result = a.year - b.year;
+  if (!result) result = a.month - b.month;
+  return result;
+};
 /**
  * Statements list component
  * @param param0
@@ -17,7 +23,7 @@ const months = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "
  */
 const ReportsIndex: FunctionComponent<Props> = ({ ..._rest }): React.ReactNode => {
   const { portfolioId } = useParams();
-  const theReports = useLoaderData() as ReportEntry[];
+  const theReports: ReportEntry[] = (useLoaderData() as ReportEntry[]).sort(compareReports);
   const years = theReports.reduce((p, v) => {
     if (!p.includes(v.year)) p.push(v.year);
     return p;
@@ -28,7 +34,8 @@ const ReportsIndex: FunctionComponent<Props> = ({ ..._rest }): React.ReactNode =
     const value = report
       ? report.dividendsSummary.reduce((p, v) => p + v.grossAmountInBase, 0) +
         report.interestsSummary.totalAmountInBase +
-        report.feesSummary.totalAmountInBase
+        report.feesSummary.totalAmountInBase +
+        report.tradesSummary.totalPnLInBase
       : 0;
     return (
       <>
@@ -41,38 +48,90 @@ const ReportsIndex: FunctionComponent<Props> = ({ ..._rest }): React.ReactNode =
     );
   };
 
+  const TotalCell = ({ year }: { year: number }): React.ReactNode => {
+    const value = theReports
+      .filter((item) => item.year == year)
+      .reduce(
+        (p, report) =>
+          p +
+          report.dividendsSummary.reduce((p, v) => p + v.grossAmountInBase, 0) +
+          report.interestsSummary.totalAmountInBase +
+          report.feesSummary.totalAmountInBase +
+          report.tradesSummary.totalPnLInBase,
+        0,
+      );
+    return (
+      <>
+        <Link to={ReportLink.toItem(portfolioId, year)} as={RouterLink}>
+          <Number value={value} />
+        </Link>
+      </>
+    );
+  };
+
   return (
     <>
+      <Box>
+        <Spacer />
+        <Link to={"../ytd"} as={RouterLink}>
+          YTD
+        </Link>
+        {" | "}
+        <Link to={"../12m"} as={RouterLink}>
+          12M
+        </Link>
+        {" | "}
+        <Link to={"../index"} as={RouterLink}>
+          All
+        </Link>
+        {/* <Routes>
+          <Route index element={"All"} /> |
+          <Route path="/YTD" element={"YTD"} /> |
+          <Route path="/12M" element={"12M"} />
+        </Routes> */}
+        <Spacer />
+      </Box>
+      <BarChart
+        title="Realized Performance"
+        labels={theReports.map((item) => `${item.year}-${item.month}`)}
+        options_pnl={[]}
+        dividends={[]}
+        stocks_pnl={[]}
+      />
       <TableContainer>
         <Table variant="simple" size="sm" className="table-tiny">
-          <TableCaption>TableCaption</TableCaption>
+          <TableCaption>Available reports</TableCaption>
           <Thead>
             <Tr>
               <Td>Year</Td>
               {months.map((month) => {
                 return (
-                  <td key={month} align="right">
+                  <Td key={month} isNumeric>
                     {month}
-                  </td>
+                  </Td>
                 );
               })}
+              <Td isNumeric>Total</Td>
             </Tr>
           </Thead>
           <Tbody>
             {years.map((year) => (
               <Tr key={year}>
-                <td>
+                <Td>
                   <Link to={ReportLink.toItem(portfolioId, year)} as={RouterLink}>
                     {year}
                   </Link>
-                </td>
+                </Td>
                 {months.map((month, i) => {
                   return (
-                    <td key={year + "-" + month} align="right">
+                    <Td key={year + "-" + month} isNumeric>
                       <Cell year={year} month={i + 1} />
-                    </td>
+                    </Td>
                   );
-                })}
+                })}{" "}
+                <Td isNumeric>
+                  <TotalCell year={year} />
+                </Td>
               </Tr>
             ))}
           </Tbody>

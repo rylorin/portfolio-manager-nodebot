@@ -4,6 +4,7 @@ import {
   ContractType,
   DividendStatement,
   EquityStatement,
+  InterestStatement,
   OptionContract,
   OptionStatement,
   Statement,
@@ -20,7 +21,7 @@ export const statementModelToStatementEntry = (item: Statement): Promise<Stateme
     date: item.date.getTime(),
     currency: item.currency,
     amount: item.netCash,
-    pnl: undefined,
+    // pnl: undefined,
     fees: undefined,
     fxRateToBase: item.fxRateToBase,
     description: item.description,
@@ -32,11 +33,11 @@ export const statementModelToStatementEntry = (item: Statement): Promise<Stateme
     case StatementTypes.EquityStatement:
       return EquityStatement.findByPk(item.id).then((thisStatement) => {
         baseStatement.quantity = thisStatement?.quantity;
-        baseStatement.pnl = thisStatement?.realizedPnL;
         baseStatement.fees = thisStatement?.fees;
         return {
           statementType: StatementTypes.EquityStatement,
           ...baseStatement,
+          pnl: thisStatement!.realizedPnL || 0,
         };
       });
 
@@ -47,33 +48,30 @@ export const statementModelToStatementEntry = (item: Statement): Promise<Stateme
           { model: OptionContract, as: "option" },
         ],
       }).then((thisStatement) => {
-        if (thisStatement) {
-          baseStatement.quantity = thisStatement.quantity;
-          baseStatement.pnl = thisStatement.realizedPnL;
-          baseStatement.fees = thisStatement.fees;
-          const option: StatementOptionEntry = {
-            id: thisStatement.contract_id,
-            secType: ContractType.Option,
-            symbol: thisStatement.contract.symbol,
-            strike: thisStatement.option.strike,
-            lastTradeDate: thisStatement.option.lastTradeDate,
-            callOrPut: thisStatement.option.callOrPut,
-            multiplier: thisStatement.option.multiplier,
-            currency: item.currency,
-            name: thisStatement.contract.name,
-            price: thisStatement.contract.price,
-          };
-          return {
-            statementType: StatementTypes.OptionStatement,
-            ...baseStatement,
-            option,
-          };
-        } else return baseStatement as StatementEntry;
+        baseStatement.quantity = thisStatement!.quantity;
+        baseStatement.fees = thisStatement!.fees;
+        const option: StatementOptionEntry = {
+          id: thisStatement!.contract_id,
+          secType: ContractType.Option,
+          symbol: thisStatement!.contract.symbol,
+          strike: thisStatement!.option.strike,
+          lastTradeDate: thisStatement!.option.lastTradeDate,
+          callOrPut: thisStatement!.option.callOrPut,
+          multiplier: thisStatement!.option.multiplier,
+          currency: item.currency,
+          name: thisStatement!.contract.name,
+          price: thisStatement!.contract.price,
+        };
+        return {
+          statementType: StatementTypes.OptionStatement,
+          ...baseStatement,
+          option,
+          pnl: thisStatement!.realizedPnL,
+        };
       });
 
     case StatementTypes.DividendStatement:
       return DividendStatement.findByPk(item.id).then((thisStatement) => {
-        baseStatement.pnl = item.netCash;
         return {
           statementType: StatementTypes.DividendStatement,
           ...baseStatement,
@@ -83,7 +81,6 @@ export const statementModelToStatementEntry = (item: Statement): Promise<Stateme
 
     case StatementTypes.TaxStatement:
       return TaxStatement.findByPk(item.id).then((thisStatement) => {
-        baseStatement.pnl = item.netCash;
         return {
           statementType: StatementTypes.TaxStatement,
           ...baseStatement,
@@ -92,15 +89,15 @@ export const statementModelToStatementEntry = (item: Statement): Promise<Stateme
       });
 
     case StatementTypes.InterestStatement:
-      baseStatement.pnl = item.netCash;
-      return Promise.resolve({
-        statementType: StatementTypes.InterestStatement,
-        ...baseStatement,
-        country: null,
+      return InterestStatement.findByPk(item.id).then((thisStatement) => {
+        return {
+          statementType: StatementTypes.TaxStatement,
+          ...baseStatement,
+          country: thisStatement!.country,
+        };
       });
 
     case StatementTypes.WithHoldingStatement:
-      baseStatement.pnl = item.netCash;
       return Promise.resolve({
         statementType: StatementTypes.WithHoldingStatement,
         ...baseStatement,
@@ -127,9 +124,8 @@ export const statementModelToStatementEntry = (item: Statement): Promise<Stateme
 
     case StatementTypes.BondStatement:
       return BondStatement.findByPk(item.id).then((thisStatement) => {
-        baseStatement.quantity = thisStatement?.quantity;
-        baseStatement.fees = thisStatement?.fees;
-        baseStatement.pnl = thisStatement?.accruedInterests;
+        baseStatement.quantity = thisStatement!.quantity;
+        baseStatement.fees = thisStatement!.fees;
         return {
           statementType: StatementTypes.BondStatement,
           ...baseStatement,
@@ -180,6 +176,9 @@ export const prepareReport = (statements: Statement[]): Promise<ReportEntry[]> =
           interestsDetails: [],
           feesSummary: { totalAmountInBase: 0 },
           feesDetails: [],
+          tradesSummary: { totalPnLInBase: 0 },
+          tradesDetails: [],
+          otherDetails: [],
         };
         result.push(report);
       }
@@ -221,6 +220,15 @@ export const prepareReport = (statements: Statement[]): Promise<ReportEntry[]> =
           report.feesSummary.totalAmountInBase += statement.amount * statement.fxRateToBase;
           report.feesDetails.push(statement);
           break;
+
+        case StatementTypes.EquityStatement:
+        case StatementTypes.OptionStatement:
+          report.tradesSummary.totalPnLInBase += statement.pnl * statement.fxRateToBase;
+          report.tradesDetails.push(statement);
+          break;
+
+        default:
+          report.otherDetails.push(statement);
       }
     });
     // console.log(report.dividendsSummary);
