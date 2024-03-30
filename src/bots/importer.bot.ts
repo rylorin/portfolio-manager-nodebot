@@ -40,7 +40,6 @@ const ibContractFromElement = (element: any): IbContract => {
     secIdType: element.securityIDType,
     secId: element.securityIDType == "ISIN" ? element.isin : undefined,
   };
-  //   console.log(ibContract);
   return ibContract;
 };
 
@@ -54,10 +53,9 @@ const ibUnderlyingContractFromElement = (element: any): IbContract => {
     secType,
     conId: element.underlyingConid,
     symbol: element.underlyingSymbol,
-    exchange: element.underlyingListingExchange,
+    primaryExch: element.underlyingListingExchange,
     currency: element.currency,
   };
-  //   console.log(ibContract);
   return ibContract;
 };
 
@@ -192,27 +190,46 @@ export class ImporterBot extends ITradingBot {
           ibContract,
         );
         return this.findOrCreateContract(ibContract).then((contract) => {
-          if (contract.secType == SecType.BOND) {
-            logger.log(LogLevel.Trace, MODULE + ".processSecurityInfo", undefined, element);
+          if (contract.secType == SecType.STK) {
+            const contract_data = {
+              symbol: element.symbol,
+              name: element.description,
+              currency: element.currency,
+              isin: element.isin,
+              exchange: element.listingExchange,
+            };
+            return contract.update(contract_data);
+          } else if (contract.secType == SecType.BOND) {
             // IB API does not provide any usefull information for BONDs therefore we update it using XML information
             const contract_data = {
-              symbol: element.securityID,
+              symbol: element.isin,
               name: element.symbol,
               currency: element.currency,
+              isin: element.isin,
+              exchange: "BONDDESK",
             };
             const bond_data = {
               lastTradeDate: element.maturity,
               multiplier: element.multiplier,
+              country: (element.isin as string).substring(0, 2),
             };
             return BondContract.findOrCreate({
               where: { id: contract.id },
               defaults: bond_data,
             }).then(([bond, _created]) => {
-              return bond.update(bond_data).then((_) => contract.update(contract_data));
+              // Don't update bond's country prop with 'XS'
+              const bond_update = {
+                ...bond_data,
+                country: (element.isin as string).startsWith("XS")
+                  ? undefined
+                  : (element.isin as string).substring(0, 2),
+              };
+              return bond.update(bond_update).then((_) => contract.update(contract_data));
+              // .then((contract) => {
+              //   console.log(element, contract_data, contract);
+              //   return contract;
+              // });
             });
-            // return Bond.update(bond_data, { where: { id: contract.id } }).then((_count) => {
-            //   return contract.update(contract_data);
-            // });
           }
           return contract;
         });
@@ -245,7 +262,7 @@ export class ImporterBot extends ITradingBot {
   // eslint-disable-next-line @typescript-eslint/explicit-module-boundary-types
   protected processStockTrade(element: any): Promise<void> {
     logger.log(LogLevel.Trace, MODULE + ".processStockTrade", element.symbol as string, element);
-    return this.processSecurityInfo(element).then((contract) =>
+    return this.findOrCreateContract(ibContractFromElement(element)).then((contract) =>
       Statement.findOrCreate({
         where: { transactionId: element.transactionID },
         defaults: {
@@ -446,7 +463,7 @@ export class ImporterBot extends ITradingBot {
   protected processBondTrade(element: any): Promise<BondStatement | null> {
     logger.log(LogLevel.Trace, MODULE + ".processBondTrade", element.securityID as string, element);
     // this.printObject(element);
-    return this.processSecurityInfo(element).then((contract) =>
+    return this.findOrCreateContract(ibContractFromElement(element)).then((contract) =>
       Statement.findOrCreate({
         where: { transactionId: element.transactionID },
         defaults: {
@@ -460,23 +477,27 @@ export class ImporterBot extends ITradingBot {
           fxRateToBase: element.fxRateToBase,
           stock_id: contract?.id,
         },
-      }).then(([statement, _created]) =>
-        BondStatement.findOrCreate({
+      }).then(([statement, _created]) => {
+        const defaults = {
+          quantity: element.quantity,
+          price: element.tradePrice,
+          proceeds: element.proceeds,
+          fees: element.ibCommission,
+          accruedInterests: element.accruedInt,
+          country: (element.isin as string).substring(0, 2),
+          realizedPnL: element.fifoPnlRealized,
+        };
+        return BondStatement.findOrCreate({
           where: { id: statement.id },
-          defaults: {
-            quantity: element.quantity,
-            price: element.tradePrice,
-            proceeds: element.proceeds,
-            fees: element.ibCommission,
-            accruedInterests: element.accruedInt,
-          },
-        }).then(([bondstatement, _created]) => bondstatement),
-      ),
+          defaults,
+        }).then(([bondstatement, _created]) => bondstatement.update(defaults));
+      }),
     );
   }
 
   // eslint-disable-next-line @typescript-eslint/explicit-module-boundary-types
   protected processOneTrade(element: any): Promise<void> {
+    logger.log(LogLevel.Trace, MODULE + ".processOneTrade", element.securityID as string, element);
     switch (element.assetCategory) {
       case SecType.STK:
       case SecType.FUT:
@@ -486,6 +507,7 @@ export class ImporterBot extends ITradingBot {
       case SecType.OPT:
         return this.processOptionTrade(element).then((): void => undefined);
       case SecType.BOND:
+        // console.log("processOneTrade", element);
         return this.processBondTrade(element).then((): void => undefined);
       default:
         logger.error(MODULE + ".processOneTrade", "Unsupported assetCategory: " + element.assetCategory, element);
@@ -552,6 +574,7 @@ export class ImporterBot extends ITradingBot {
   // eslint-disable-next-line @typescript-eslint/explicit-module-boundary-types
   protected processCashTransaction(element: any): Promise<Statement | null> {
     logger.log(LogLevel.Trace, MODULE + ".processCashTransaction", element.securityID as string, element);
+    // console.log("processCashTransaction", element);
     let statementType: StatementTypes;
     switch (element.type) {
       case "Withholding Tax":
@@ -567,8 +590,8 @@ export class ImporterBot extends ITradingBot {
         break;
       case "Bond Interest Paid":
       case "Bond Interest Received":
-        // Ignore Accrued interests as they are saved with purchasing transaction
-        if ((element.description as string).includes("ACCRUED")) return Promise.resolve(null as unknown as Statement);
+        // Ignore Accrued interests as they are saved with purchase/sell transaction
+        if ((element.description as string).includes("ACCRUED")) return Promise.resolve(null as null);
         statementType = StatementTypes.InterestStatement;
         break;
       case "Deposits/Withdrawals":
@@ -582,7 +605,7 @@ export class ImporterBot extends ITradingBot {
         console.error("undefined cash trasaction type:", element);
         throw Error("undefined cash trasaction type: " + element.type);
     }
-    return (element.assetCategory ? this.processSecurityInfo(element) : Promise.resolve(null))
+    return (element.assetCategory ? this.findOrCreateContract(ibContractFromElement(element)) : Promise.resolve(null))
       .then((contract: Contract | null | undefined) => {
         return Statement.findOrCreate({
           where: { transactionId: element.transactionID },
@@ -597,7 +620,6 @@ export class ImporterBot extends ITradingBot {
             fxRateToBase: element.fxRateToBase,
             stock_id: contract?.id,
           },
-          //   logging: console.log,
         });
       })
       .then(([statement, _created]) => {
@@ -612,6 +634,7 @@ export class ImporterBot extends ITradingBot {
               }).then(([_taxStatement, _created]) => statement);
             }
             break;
+
           case StatementTypes.DividendStatement:
             {
               const idx = (element.description as string).indexOf("(");
@@ -622,18 +645,24 @@ export class ImporterBot extends ITradingBot {
               }).then(([_dividendStatement, _created]) => statement);
             }
             break;
+
           case StatementTypes.InterestStatement:
-            return InterestStatement.findOrCreate({ where: { id: statement.id }, defaults: { id: statement.id } }).then(
-              ([_interestStatement, _created]) => statement,
-            );
+            return InterestStatement.findOrCreate({
+              where: { id: statement.id },
+              defaults: { id: statement.id, country: "XX" },
+            }).then(([_interestStatement, _created]) => statement);
+
           case StatementTypes.CashStatement:
             return Promise.resolve(statement);
+
           case StatementTypes.FeeStatement:
             return FeeStatement.findOrCreate({ where: { id: statement.id }, defaults: { id: statement.id } }).then(
               ([_interestStatement, _created]) => statement,
             );
+
           default:
-            throw Error("invalide statement type");
+            console.error(element);
+            throw Error("invalid statement type");
         }
       });
   }
@@ -651,7 +680,7 @@ export class ImporterBot extends ITradingBot {
 
   // eslint-disable-next-line @typescript-eslint/explicit-module-boundary-types
   protected processCorporateAction(element: any): void {
-    console.log("processCorporateAction", element);
+    console.warn("processCorporateAction", element);
   }
 
   private processAllCorporateActions(element: any): Promise<void> {
@@ -676,6 +705,7 @@ export class ImporterBot extends ITradingBot {
         account: element.AccountInformation.accountId,
         baseCurrency: element.AccountInformation.currency,
         name: element.AccountInformation.name,
+        country: (element.AccountInformation.ibEntity as string).substring(3),
       },
     })
       .then(([_portfolio, _created]) => this.processAllSecuritiesInfo(element.SecuritiesInfo.SecurityInfo))

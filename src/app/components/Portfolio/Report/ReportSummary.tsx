@@ -1,11 +1,17 @@
-import { Box, HStack, Link, SimpleGrid, Spacer, VStack } from "@chakra-ui/react";
+import { Box, Link, Spacer } from "@chakra-ui/react";
 import { FunctionComponent, default as React } from "react";
 import { Link as RouterLink, useLoaderData, useParams } from "react-router-dom";
-import { DididendSummary, ReportEntry } from "../../../../routers/reports.types";
-import Number from "../../Number/Number";
+import { ReportEntry } from "../../../../routers/reports.types";
+import Dividends from "./DividendsComponent";
 import { ReportLink } from "./links";
 
 type Props = Record<string, never>;
+
+const compareReports = (a: ReportEntry, b: ReportEntry): number => {
+  let result = a.year - b.year;
+  if (!result) result = a.month - b.month;
+  return result;
+};
 
 /**
  * Statements list component
@@ -14,7 +20,7 @@ type Props = Record<string, never>;
  */
 const ReportSummary: FunctionComponent<Props> = ({ ..._rest }): React.ReactNode => {
   const { portfolioId } = useParams();
-  const theReport = useLoaderData()[0] as ReportEntry;
+  const theReports: ReportEntry[] = (useLoaderData() as ReportEntry[]).sort(compareReports);
 
   return (
     <>
@@ -25,7 +31,8 @@ const ReportSummary: FunctionComponent<Props> = ({ ..._rest }): React.ReactNode 
         </Link>
         <Spacer />
       </Box>
-      <h2>Dividends</h2>
+      <Dividends theReports={theReports} />
+      {/* <h2>Dividends</h2>
       <VStack align="left">
         <HStack alignContent="left">
           <Box width="xs">Country</Box>
@@ -63,7 +70,7 @@ const ReportSummary: FunctionComponent<Props> = ({ ..._rest }): React.ReactNode 
           <Spacer />
         </HStack>
       </VStack>
-      {/* <StatementsTable content={theReport.dividendsDetails} title="Dividends" /> */}
+
       <h2>Interests</h2>
       <SimpleGrid columns={2}>
         <Box>Gross credit</Box>
@@ -83,7 +90,7 @@ const ReportSummary: FunctionComponent<Props> = ({ ..._rest }): React.ReactNode 
           <Number value={theReport.interestsSummary.totalAmountInBase} />
         </Box>
       </SimpleGrid>
-      {/* <StatementsTable content={theReport.interestsDetails} title="Interests" /> */}
+
       <h2>Fees</h2>
       <HStack align="left">
         <Box>Total</Box>
@@ -91,8 +98,7 @@ const ReportSummary: FunctionComponent<Props> = ({ ..._rest }): React.ReactNode 
           <Number value={theReport.feesSummary.totalAmountInBase} />
         </Box>
         <Spacer />
-      </HStack>
-      {/* <StatementsTable content={theReport.feesDetails} title="Fees" /> */}
+      </HStack> */}
     </>
   );
 };

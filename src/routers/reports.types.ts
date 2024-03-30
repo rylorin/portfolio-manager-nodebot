@@ -1,4 +1,5 @@
 import {
+  BondStatementEntry,
   DividendStatementEntry,
   EquityStatementEntry,
   FeeStatementEntry,
@@ -16,6 +17,7 @@ export type DididendSummary = {
   country: string;
   grossAmountInBase: number;
   taxes: number;
+  netAmountInBase: number;
 };
 
 /**
@@ -39,7 +41,9 @@ export type FeesSummary = {
  * Trades summary
  */
 export type TradesSummary = {
-  totalPnLInBase: number;
+  stocksPnLInBase: number;
+  optionsPnLInBase: number;
+  bondPnLInBase: number;
 };
 
 /**
@@ -52,10 +56,10 @@ export type ReportEntry = {
   dividendsSummary: DididendSummary[];
   dividendsDetails: (DividendStatementEntry | TaxStatementEntry)[];
   interestsSummary: InterestsSummary;
-  interestsDetails: (InterestStatementEntry | WithHoldingStatementEntry)[];
+  interestsDetails: (InterestStatementEntry | WithHoldingStatementEntry | BondStatementEntry)[];
   feesSummary: FeesSummary;
   feesDetails: FeeStatementEntry[];
   tradesSummary: TradesSummary;
-  tradesDetails: (EquityStatementEntry | OptionStatementEntry)[];
+  tradesDetails: (EquityStatementEntry | OptionStatementEntry | BondStatementEntry)[];
   otherDetails: StatementEntry[];
 };

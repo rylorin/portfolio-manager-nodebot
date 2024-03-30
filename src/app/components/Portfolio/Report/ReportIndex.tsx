@@ -16,6 +16,7 @@ const compareReports = (a: ReportEntry, b: ReportEntry): number => {
   if (!result) result = a.month - b.month;
   return result;
 };
+
 /**
  * Statements list component
  * @param param0
@@ -35,7 +36,9 @@ const ReportsIndex: FunctionComponent<Props> = ({ ..._rest }): React.ReactNode =
       ? report.dividendsSummary.reduce((p, v) => p + v.grossAmountInBase, 0) +
         report.interestsSummary.totalAmountInBase +
         report.feesSummary.totalAmountInBase +
-        report.tradesSummary.totalPnLInBase
+        report.tradesSummary.stocksPnLInBase +
+        report.tradesSummary.optionsPnLInBase +
+        report.tradesSummary.bondPnLInBase
       : 0;
     return (
       <>
@@ -57,12 +60,14 @@ const ReportsIndex: FunctionComponent<Props> = ({ ..._rest }): React.ReactNode =
           report.dividendsSummary.reduce((p, v) => p + v.grossAmountInBase, 0) +
           report.interestsSummary.totalAmountInBase +
           report.feesSummary.totalAmountInBase +
-          report.tradesSummary.totalPnLInBase,
+          report.tradesSummary.stocksPnLInBase +
+          report.tradesSummary.optionsPnLInBase +
+          report.tradesSummary.bondPnLInBase,
         0,
       );
     return (
       <>
-        <Link to={ReportLink.toItem(portfolioId, year)} as={RouterLink}>
+        <Link to={ReportLink.toDetails(portfolioId, year)} as={RouterLink}>
           <Number value={value} />
         </Link>
       </>
@@ -94,9 +99,13 @@ const ReportsIndex: FunctionComponent<Props> = ({ ..._rest }): React.ReactNode =
       <BarChart
         title="Realized Performance"
         labels={theReports.map((item) => `${item.year}-${item.month}`)}
-        options_pnl={[]}
-        dividends={[]}
-        stocks_pnl={[]}
+        pnl={theReports.map((item) => item.tradesSummary.stocksPnLInBase + item.tradesSummary.optionsPnLInBase)}
+        dividends={theReports.map(
+          (item) =>
+            item.dividendsSummary.reduce((p, v) => (p += v.grossAmountInBase), 0) +
+            item.interestsSummary.totalAmountInBase,
+        )}
+        fees={theReports.map((item) => item.feesSummary.totalAmountInBase)}
       />
       <TableContainer>
         <Table variant="simple" size="sm" className="table-tiny">
@@ -118,7 +127,7 @@ const ReportsIndex: FunctionComponent<Props> = ({ ..._rest }): React.ReactNode =
             {years.map((year) => (
               <Tr key={year}>
                 <Td>
-                  <Link to={ReportLink.toItem(portfolioId, year)} as={RouterLink}>
+                  <Link to={ReportLink.toSummary(portfolioId, year)} as={RouterLink}>
                     {year}
                   </Link>
                 </Td>
@@ -128,7 +137,7 @@ const ReportsIndex: FunctionComponent<Props> = ({ ..._rest }): React.ReactNode =
                       <Cell year={year} month={i + 1} />
                     </Td>
                   );
-                })}{" "}
+                })}
                 <Td isNumeric>
                   <TotalCell year={year} />
                 </Td>

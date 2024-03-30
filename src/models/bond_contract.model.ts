@@ -23,6 +23,10 @@ export class BondContract extends Model<
   @BelongsTo(() => Contract, "underlying_id")
   declare underlying: Contract;
 
+  /** country */
+  @Column({ type: DataType.STRING(2) })
+  declare country: string;
+
   /**
    * last tradable date as YYYY-MM-DD formated string, can be null for perpetuals
    */

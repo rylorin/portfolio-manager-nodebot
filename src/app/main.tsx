@@ -32,6 +32,7 @@ import {
   positionsIndexLoader,
   positionsOptionsLoader,
 } from "./components/Portfolio/Position/loaders";
+import ReportDetails from "./components/Portfolio/Report/ReportDetails";
 import ReportsIndex from "./components/Portfolio/Report/ReportIndex";
 import ReportSummary from "./components/Portfolio/Report/ReportSummary";
 import {
@@ -284,6 +285,7 @@ const router = createBrowserRouter([
                   { path: "ytd", Component: ReportsIndex, loader: reportsIndexLoaderYtd },
                   { path: "12m", Component: ReportsIndex, loader: reportsIndexLoader12m },
                   { path: "year/:year", Component: ReportSummary, loader: reportSummaryLoader },
+                  { path: "year/:year/details", Component: ReportDetails, loader: reportSummaryLoader },
                 ],
               },
             ],

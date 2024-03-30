@@ -75,7 +75,7 @@ export const statementModelToStatementEntry = (item: Statement): Promise<Stateme
         return {
           statementType: StatementTypes.DividendStatement,
           ...baseStatement,
-          country: thisStatement!.country,
+          country: thisStatement!.country || "XX",
         };
       });
 
@@ -84,16 +84,16 @@ export const statementModelToStatementEntry = (item: Statement): Promise<Stateme
         return {
           statementType: StatementTypes.TaxStatement,
           ...baseStatement,
-          country: thisStatement!.country,
+          country: thisStatement!.country || "XX",
         };
       });
 
     case StatementTypes.InterestStatement:
       return InterestStatement.findByPk(item.id).then((thisStatement) => {
         return {
-          statementType: StatementTypes.TaxStatement,
+          statementType: StatementTypes.InterestStatement,
           ...baseStatement,
-          country: thisStatement!.country,
+          country: thisStatement!.country || "XX",
         };
       });
 
@@ -129,6 +129,9 @@ export const statementModelToStatementEntry = (item: Statement): Promise<Stateme
         return {
           statementType: StatementTypes.BondStatement,
           ...baseStatement,
+          country: thisStatement!.country || "XX",
+          accruedInterests: thisStatement!.accruedInterests,
+          pnl: thisStatement!.realizedPnL,
         };
       });
 
@@ -176,7 +179,7 @@ export const prepareReport = (statements: Statement[]): Promise<ReportEntry[]> =
           interestsDetails: [],
           feesSummary: { totalAmountInBase: 0 },
           feesDetails: [],
-          tradesSummary: { totalPnLInBase: 0 },
+          tradesSummary: { stocksPnLInBase: 0, optionsPnLInBase: 0, bondPnLInBase: 0 },
           tradesDetails: [],
           otherDetails: [],
         };
@@ -186,20 +189,22 @@ export const prepareReport = (statements: Statement[]): Promise<ReportEntry[]> =
         case StatementTypes.DividendStatement:
           entry = report.dividendsSummary.find((item) => item.country == statement.country);
           if (!entry) {
-            entry = { country: statement.country, grossAmountInBase: 0, taxes: 0 };
+            entry = { country: statement.country, grossAmountInBase: 0, taxes: 0, netAmountInBase: 0 };
             report.dividendsSummary.push(entry);
           }
           entry.grossAmountInBase += statement.amount * statement.fxRateToBase;
+          entry.netAmountInBase += statement.amount * statement.fxRateToBase;
           report.dividendsDetails.push(statement);
           break;
 
         case StatementTypes.TaxStatement:
           entry = report.dividendsSummary.find((item) => item.country == statement.country);
           if (!entry) {
-            entry = { country: statement.country, grossAmountInBase: 0, taxes: 0 };
+            entry = { country: statement.country, grossAmountInBase: 0, taxes: 0, netAmountInBase: 0 };
             report.dividendsSummary.push(entry);
           }
           entry.taxes += statement.amount * statement.fxRateToBase;
+          entry.netAmountInBase += statement.amount * statement.fxRateToBase;
           report.dividendsDetails.push(statement);
           break;
 
@@ -222,8 +227,22 @@ export const prepareReport = (statements: Statement[]): Promise<ReportEntry[]> =
           break;
 
         case StatementTypes.EquityStatement:
+          report.tradesSummary.stocksPnLInBase += statement.pnl * statement.fxRateToBase;
+          report.tradesDetails.push(statement);
+          break;
+
         case StatementTypes.OptionStatement:
-          report.tradesSummary.totalPnLInBase += statement.pnl * statement.fxRateToBase;
+          report.tradesSummary.optionsPnLInBase += statement.pnl * statement.fxRateToBase;
+          report.tradesDetails.push(statement);
+          break;
+
+        case StatementTypes.BondStatement:
+          if (statement.accruedInterests > 0)
+            report.interestsSummary.grossCredit += statement.accruedInterests * statement.fxRateToBase;
+          else report.interestsSummary.netDebit += statement.accruedInterests * statement.fxRateToBase;
+          report.interestsSummary.totalAmountInBase += statement.accruedInterests * statement.fxRateToBase;
+          report.interestsDetails.push(statement);
+          report.tradesSummary.bondPnLInBase += statement.pnl * statement.fxRateToBase;
           report.tradesDetails.push(statement);
           break;
 

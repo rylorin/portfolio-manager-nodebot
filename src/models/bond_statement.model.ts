@@ -39,4 +39,8 @@ export class BondStatement extends Model<
   /** fees */
   @Column({ type: DataType.FLOAT(8, 2), defaultValue: 0 })
   declare fees: number;
+
+  /** realizedPnL */
+  @Column({ type: DataType.FLOAT(8, 2), defaultValue: 0, field: "pnl" })
+  declare realizedPnL: number;
 }

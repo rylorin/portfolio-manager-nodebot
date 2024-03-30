@@ -35,9 +35,9 @@ const StatementSummary: FunctionComponent<StatementSummaryProps> = ({ ..._rest }
       <BarChart
         title="Realized Performance"
         labels={Object.keys(theSynthesys)}
-        options_pnl={Object.values(theSynthesys).map((item) => Math.round(item.options))}
+        pnl={Object.values(theSynthesys).map((item) => Math.round(item.options))}
         dividends={Object.values(theSynthesys).map((item) => Math.round(item.dividends + item.interests))}
-        stocks_pnl={Object.values(theSynthesys).map((item) => Math.round(item.stocks))}
+        fees={Object.values(theSynthesys).map((item) => Math.round(item.stocks))}
       />
       <TableContainer>
         <Table variant="simple" size="sm">

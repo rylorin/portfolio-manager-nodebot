@@ -7,17 +7,17 @@ ChartJS.register(CategoryScale, LinearScale, BarElement, Title, Tooltip, Legend)
 type BarChartProps = {
   title: string;
   labels: string[];
-  options_pnl: number[];
+  pnl: number[];
   dividends: number[];
-  stocks_pnl: number[];
+  fees: number[];
 };
 
 const BarChart: FunctionComponent<BarChartProps> = ({
   title,
   labels,
-  options_pnl,
+  pnl,
   dividends,
-  stocks_pnl,
+  fees,
   ...rest
 }): React.ReactNode => {
   const chartData = {
@@ -25,11 +25,11 @@ const BarChart: FunctionComponent<BarChartProps> = ({
     datasets: [
       {
         id: 1,
-        label: "Options P/L",
+        label: "P/L",
         backgroundColor: "rgba(54, 162, 235, 0.2)",
         borderColor: "rgb(54, 162, 235)",
         borderWidth: 1,
-        data: options_pnl,
+        data: pnl,
       },
       {
         id: 2,
@@ -41,11 +41,11 @@ const BarChart: FunctionComponent<BarChartProps> = ({
       },
       {
         id: 3,
-        label: "Stocks P/L",
+        label: "Fees",
         backgroundColor: "rgba(255, 159, 64, 0.2)",
         borderColor: "rgb(255, 159, 64)",
         borderWidth: 1,
-        data: stocks_pnl,
+        data: fees,
       },
     ],
   };

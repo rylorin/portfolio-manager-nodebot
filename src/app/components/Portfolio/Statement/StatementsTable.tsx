@@ -86,7 +86,7 @@ const StatementsTable: FunctionComponent<Props> = ({ content, currency, title, .
                     <Number value={item.amount} decimals={2} />
                   </Td>
                   <Td isNumeric>
-                    <Number value={item.pnl} decimals={2} />
+                    <Number value={"pnl" in item ? item.pnl : 0} decimals={2} />
                   </Td>
                   <Td isNumeric>
                     <Number value={item.fees} decimals={2} />
@@ -192,7 +192,9 @@ const StatementsTable: FunctionComponent<Props> = ({ content, currency, title, .
                 <Number
                   value={theStatements.reduce(
                     (p: number, item) =>
-                      (p += (item.pnl || 0) * (currency ? (currency == item.currency ? 1 : 0) : item.fxRateToBase)),
+                      (p +=
+                        ("pnl" in item ? item.pnl || 0 : 0) *
+                        (currency ? (currency == item.currency ? 1 : 0) : item.fxRateToBase)),
                     0,
                   )}
                 />

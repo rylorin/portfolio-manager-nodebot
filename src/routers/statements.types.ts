@@ -56,7 +56,12 @@ export type WithHoldingStatementEntry = BaseStatement & { statementType: "WithHo
 export type FeeStatementEntry = BaseStatement & { statementType: "OtherFee" };
 export type CorporateStatementEntry = BaseStatement & { statementType: "CorporateStatement" };
 export type CashStatementEntry = BaseStatement & { statementType: "Cash" };
-export type BondStatementEntry = BaseStatement & { statementType: "Bond" };
+export type BondStatementEntry = BaseStatement & {
+  statementType: "Bond";
+  country: string;
+  accruedInterests: number;
+  pnl: number;
+};
 export type StatementEntry =
   | EquityStatementEntry
   | OptionStatementEntry
