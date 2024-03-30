@@ -185,7 +185,7 @@ export const prepareReport = (portfolio: Portfolio): Promise<ReportEntry[]> => {
           interestsDetails: [],
           feesSummary: { totalAmountInBase: 0 },
           feesDetails: [],
-          tradesSummary: { stocksPnLInBase: 0, optionsPnLInBase: 0, bondPnLInBase: 0 },
+          tradesSummary: { stocksPnLInBase: 0, optionsPnLInBase: 0, bondPnLInBase: 0, totalPnL: 0 },
           tradesDetails: [],
           otherDetails: [],
         };
@@ -258,10 +258,12 @@ export const prepareReport = (portfolio: Portfolio): Promise<ReportEntry[]> => {
 
         case StatementTypes.EquityStatement:
           report.tradesSummary.stocksPnLInBase += statement.pnl * statement.fxRateToBase;
+          report.tradesSummary.totalPnL += statement.pnl * statement.fxRateToBase;
           report.tradesDetails.push(statement);
           break;
 
         case StatementTypes.OptionStatement:
+          report.tradesSummary.totalPnL += statement.pnl * statement.fxRateToBase;
           report.tradesSummary.optionsPnLInBase += statement.pnl * statement.fxRateToBase;
           report.tradesDetails.push(statement);
           break;
@@ -288,6 +290,7 @@ export const prepareReport = (portfolio: Portfolio): Promise<ReportEntry[]> => {
           report.interestsDetails.push(statement);
           // PnL part
           report.tradesSummary.bondPnLInBase += statement.pnl * statement.fxRateToBase;
+          report.tradesSummary.totalPnL += statement.pnl * statement.fxRateToBase;
           report.tradesDetails.push(statement);
           break;
 

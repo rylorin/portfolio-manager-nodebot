@@ -36,9 +36,7 @@ const ReportsIndex: FunctionComponent<Props> = ({ ..._rest }): React.ReactNode =
       ? report.dividendsSummary.reduce((p, v) => p + v.grossAmountInBase, 0) +
         report.interestsSummary.reduce((p, v) => p + v.netTotal, 0) +
         report.feesSummary.totalAmountInBase +
-        report.tradesSummary.stocksPnLInBase +
-        report.tradesSummary.optionsPnLInBase +
-        report.tradesSummary.bondPnLInBase
+        report.tradesSummary.totalPnL
       : 0;
     return (
       <>
@@ -60,9 +58,7 @@ const ReportsIndex: FunctionComponent<Props> = ({ ..._rest }): React.ReactNode =
           report.dividendsSummary.reduce((p, v) => p + v.grossAmountInBase, 0) +
           report.interestsSummary.reduce((p, v) => p + v.netTotal, 0) +
           report.feesSummary.totalAmountInBase +
-          report.tradesSummary.stocksPnLInBase +
-          report.tradesSummary.optionsPnLInBase +
-          report.tradesSummary.bondPnLInBase,
+          report.tradesSummary.totalPnL,
         0,
       );
     return (
@@ -99,7 +95,7 @@ const ReportsIndex: FunctionComponent<Props> = ({ ..._rest }): React.ReactNode =
       <BarChart
         title="Realized Performance"
         labels={theReports.map((item) => `${item.year}-${item.month}`)}
-        pnl={theReports.map((item) => item.tradesSummary.stocksPnLInBase + item.tradesSummary.optionsPnLInBase)}
+        pnl={theReports.map((item) => item.tradesSummary.totalPnL)}
         dividends={theReports.map(
           (item) =>
             item.dividendsSummary.reduce((p, v) => (p += v.grossAmountInBase), 0) +

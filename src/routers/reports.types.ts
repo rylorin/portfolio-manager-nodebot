@@ -45,6 +45,7 @@ export type TradesSummary = {
   stocksPnLInBase: number;
   optionsPnLInBase: number;
   bondPnLInBase: number;
+  totalPnL: number;
 };
 
 /**

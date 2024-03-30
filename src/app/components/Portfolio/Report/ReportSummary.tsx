@@ -3,6 +3,7 @@ import { FunctionComponent, default as React } from "react";
 import { Link as RouterLink, useLoaderData, useParams } from "react-router-dom";
 import { ReportEntry } from "../../../../routers/reports.types";
 import Dividends from "./DividendsComponent";
+import Fees from "./FeeComponent";
 import Interests from "./InterestsComponent";
 import { ReportLink } from "./links";
 
@@ -32,20 +33,15 @@ const ReportSummary: FunctionComponent<Props> = ({ ..._rest }): React.ReactNode 
         </Link>
         <Spacer />
       </Box>
+
       <h2>Dividends</h2>
       <Dividends theReports={theReports} />
 
       <h2>Interests</h2>
       <Interests theReports={theReports} />
-      {/*
+
       <h2>Fees</h2>
-      <HStack align="left">
-        <Box>Total</Box>
-        <Box textAlign="right">
-          <Number value={theReport.feesSummary.totalAmountInBase} />
-        </Box>
-        <Spacer />
-      </HStack> */}
+      <Fees theReports={theReports} />
     </>
   );
 };
