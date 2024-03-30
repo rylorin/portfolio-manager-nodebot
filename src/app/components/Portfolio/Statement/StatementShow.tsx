@@ -5,6 +5,7 @@ import { Form, Link as RouterLink, useLoaderData, useNavigate, useParams } from 
 import { StatementTypes } from "../../../../models/statement.types";
 import { StatementEntry } from "../../../../routers/statements.types";
 import BaseStatement from "./BaseStatement";
+import BondStatementProps from "./BondStatementProps";
 import DividendStatementProps from "./DividendStatementProps";
 import InterestStatementProps from "./InterestStatementProps";
 
@@ -29,6 +30,9 @@ const StatementShow: FunctionComponent<Props> = ({ ..._rest }): React.ReactNode 
         )}
         {theStatement.statementType == StatementTypes.DividendStatement && (
           <DividendStatementProps portfolioId={parseInt(portfolioId)} statement={theStatement} />
+        )}
+        {theStatement.statementType == StatementTypes.BondStatement && (
+          <BondStatementProps portfolioId={parseInt(portfolioId)} statement={theStatement} />
         )}
         <Flex justifyContent="center" gap="2" mt="1">
           <IconButton aria-label="Back" icon={<ArrowBackIcon />} variant="ghost" onClick={(): void => navigate(-1)} />

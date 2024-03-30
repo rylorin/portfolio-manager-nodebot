@@ -34,7 +34,7 @@ const ReportsIndex: FunctionComponent<Props> = ({ ..._rest }): React.ReactNode =
     const report = theReports.find((item) => item.year == year && item.month == month);
     const value = report
       ? report.dividendsSummary.reduce((p, v) => p + v.grossAmountInBase, 0) +
-        report.interestsSummary.totalAmountInBase +
+        report.interestsSummary.reduce((p, v) => p + v.netTotal, 0) +
         report.feesSummary.totalAmountInBase +
         report.tradesSummary.stocksPnLInBase +
         report.tradesSummary.optionsPnLInBase +
@@ -58,7 +58,7 @@ const ReportsIndex: FunctionComponent<Props> = ({ ..._rest }): React.ReactNode =
         (p, report) =>
           p +
           report.dividendsSummary.reduce((p, v) => p + v.grossAmountInBase, 0) +
-          report.interestsSummary.totalAmountInBase +
+          report.interestsSummary.reduce((p, v) => p + v.netTotal, 0) +
           report.feesSummary.totalAmountInBase +
           report.tradesSummary.stocksPnLInBase +
           report.tradesSummary.optionsPnLInBase +
@@ -103,7 +103,7 @@ const ReportsIndex: FunctionComponent<Props> = ({ ..._rest }): React.ReactNode =
         dividends={theReports.map(
           (item) =>
             item.dividendsSummary.reduce((p, v) => (p += v.grossAmountInBase), 0) +
-            item.interestsSummary.totalAmountInBase,
+            item.interestsSummary.reduce((p, v) => p + v.netTotal, 0),
         )}
         fees={theReports.map((item) => item.feesSummary.totalAmountInBase)}
       />

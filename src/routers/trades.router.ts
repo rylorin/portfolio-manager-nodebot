@@ -624,6 +624,8 @@ const prepareTrades = (trades: Trade[]): Promise<TradeEntry[]> => {
   );
 };
 
+/* +++++ Routes +++++ */
+
 /**
  * Get full trades history synthesys
  */

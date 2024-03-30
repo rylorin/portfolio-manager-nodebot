@@ -1,7 +1,7 @@
 import { default as express } from "express";
 import { Op } from "sequelize";
 import { LogLevel, default as logger } from "../logger";
-import { Statement } from "../models";
+import { Contract, Portfolio, Statement } from "../models";
 import { prepareReport } from "./statements.utils";
 
 const MODULE = "ReportsRouter";
@@ -13,22 +13,31 @@ const router = express.Router({ mergeParams: true });
 
 type parentParams = { portfolioId: number };
 
+/* +++++ Routes +++++ */
+
 /**
  * Get a yearly report
  */
 router.get("/year/:year(\\d+)", (req, res): void => {
   const { portfolioId, year } = req.params as typeof req.params & parentParams;
 
-  Statement.findAll({
-    where: {
-      portfolio_id: portfolioId,
-      date: {
-        [Op.gte]: new Date(parseInt(year), 0, 1),
-        [Op.lt]: new Date(parseInt(year) + 1, 0, 1),
+  Portfolio.findByPk(portfolioId, {
+    include: [
+      {
+        model: Statement,
+        as: "statements",
+        required: false,
+        include: [{ model: Contract, as: "stock", required: false }],
+        where: {
+          date: {
+            [Op.gte]: new Date(parseInt(year), 0, 1),
+            [Op.lt]: new Date(parseInt(year) + 1, 0, 1),
+          },
+        },
       },
-    },
+    ],
   })
-    .then((statements) => prepareReport(statements))
+    .then((portfolio) => prepareReport(portfolio!))
     .then((reports) => {
       res.status(200).json({ reports });
     })
@@ -45,15 +54,22 @@ router.get("/year/:year(\\d+)", (req, res): void => {
 router.get("/summary/all", (req, res): void => {
   const { portfolioId } = req.params as typeof req.params & parentParams;
 
-  Statement.findAll({
-    where: {
-      portfolio_id: portfolioId,
-      date: {
-        [Op.gte]: new Date(2021, 0, 1),
+  Portfolio.findByPk(portfolioId, {
+    include: [
+      {
+        model: Statement,
+        as: "statements",
+        required: false,
+        include: [{ model: Contract, as: "stock", required: false }],
+        where: {
+          date: {
+            [Op.gte]: new Date(2021, 0, 1),
+          },
+        },
       },
-    },
+    ],
   })
-    .then((statements) => prepareReport(statements))
+    .then((portfolio) => prepareReport(portfolio!))
     .then((reports) => {
       res.status(200).json({ reports });
     })
@@ -70,15 +86,22 @@ router.get("/summary/all", (req, res): void => {
 router.get("/summary/ytd", (req, res): void => {
   const { portfolioId } = req.params as typeof req.params & parentParams;
 
-  Statement.findAll({
-    where: {
-      portfolio_id: portfolioId,
-      date: {
-        [Op.gte]: new Date(new Date().getFullYear(), 0, 1),
+  Portfolio.findByPk(portfolioId, {
+    include: [
+      {
+        model: Statement,
+        as: "statements",
+        required: false,
+        include: [{ model: Contract, as: "stock", required: false }],
+        where: {
+          date: {
+            [Op.gte]: new Date(new Date().getFullYear(), 0, 1),
+          },
+        },
       },
-    },
+    ],
   })
-    .then((statements) => prepareReport(statements))
+    .then((portfolio) => prepareReport(portfolio!))
     .then((reports) => {
       res.status(200).json({ reports });
     })
@@ -96,15 +119,22 @@ router.get("/summary/12m", (req, res): void => {
   const { portfolioId } = req.params as typeof req.params & parentParams;
   const today = new Date();
 
-  Statement.findAll({
-    where: {
-      portfolio_id: portfolioId,
-      date: {
-        [Op.gte]: new Date(today.getFullYear() - 1, today.getMonth(), today.getDate()),
+  Portfolio.findByPk(portfolioId, {
+    include: [
+      {
+        model: Statement,
+        as: "statements",
+        required: false,
+        include: [{ model: Contract, as: "stock", required: false }],
+        where: {
+          date: {
+            [Op.gte]: new Date(today.getFullYear() - 1, today.getMonth(), today.getDate()),
+          },
+        },
       },
-    },
+    ],
   })
-    .then((statements) => prepareReport(statements))
+    .then((portfolio) => prepareReport(portfolio!))
     .then((reports) => {
       res.status(200).json({ reports });
     })

@@ -8,7 +8,7 @@ const InterestStatementProps = ({ statement, ..._rest }: Props): React.ReactNode
   return (
     <>
       <Flex justifyContent="center" gap="2">
-        <Text w="90px" as="b" textAlign="right">
+        <Text w="110px" as="b" textAlign="right">
           Country:
         </Text>
         <Text w="200px" textAlign="right">

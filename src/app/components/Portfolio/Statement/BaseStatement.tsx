@@ -12,7 +12,7 @@ const BaseStatement = ({ portfolioId, statement }: Props): React.ReactNode => {
   return (
     <>
       <Flex justifyContent="center" gap="2">
-        <Text w="90px" as="b" textAlign="right">
+        <Text w="110px" as="b" textAlign="right">
           Statement Id:
         </Text>
         <Text w="200px" textAlign="right">
@@ -20,7 +20,7 @@ const BaseStatement = ({ portfolioId, statement }: Props): React.ReactNode => {
         </Text>
       </Flex>
       <Flex justifyContent="center" gap="2">
-        <Text w="90px" as="b" textAlign="right">
+        <Text w="110px" as="b" textAlign="right">
           Transaction:
         </Text>
         <Text w="200px" textAlign="right">
@@ -28,7 +28,7 @@ const BaseStatement = ({ portfolioId, statement }: Props): React.ReactNode => {
         </Text>
       </Flex>
       <Flex justifyContent="center" gap="2">
-        <Text w="90px" as="b" textAlign="right">
+        <Text w="110px" as="b" textAlign="right">
           Date:
         </Text>
         <Text w="200px" textAlign="right">
@@ -38,7 +38,7 @@ const BaseStatement = ({ portfolioId, statement }: Props): React.ReactNode => {
         </Text>
       </Flex>
       <Flex justifyContent="center" gap="2">
-        <Text w="90px" as="b" textAlign="right">
+        <Text w="110px" as="b" textAlign="right">
           Currency:
         </Text>
         <Text w="200px" textAlign="right">
@@ -46,7 +46,7 @@ const BaseStatement = ({ portfolioId, statement }: Props): React.ReactNode => {
         </Text>
       </Flex>
       <Flex justifyContent="center" gap="2">
-        <Text w="90px" as="b" textAlign="right">
+        <Text w="110px" as="b" textAlign="right">
           Trade:
         </Text>
         <Text w="200px" textAlign="right">
@@ -56,7 +56,7 @@ const BaseStatement = ({ portfolioId, statement }: Props): React.ReactNode => {
         </Text>
       </Flex>
       <Flex justifyContent="center" gap="2">
-        <Text w="90px" as="b" textAlign="right">
+        <Text w="110px" as="b" textAlign="right">
           Fx Rate:
         </Text>
         <Text w="200px" textAlign="right">
@@ -65,7 +65,7 @@ const BaseStatement = ({ portfolioId, statement }: Props): React.ReactNode => {
       </Flex>
       {statement.underlying && (
         <Flex justifyContent="center" gap="2">
-          <Text w="90px" as="b" textAlign="right">
+          <Text w="110px" as="b" textAlign="right">
             Underlying:
           </Text>
           <Text w="200px" textAlign="right">
@@ -76,7 +76,7 @@ const BaseStatement = ({ portfolioId, statement }: Props): React.ReactNode => {
         </Flex>
       )}
       <Flex justifyContent="center" gap="2">
-        <Text w="90px" as="b" textAlign="right">
+        <Text w="110px" as="b" textAlign="right">
           Type:
         </Text>
         <Text w="200px" textAlign="right">
@@ -84,7 +84,7 @@ const BaseStatement = ({ portfolioId, statement }: Props): React.ReactNode => {
         </Text>
       </Flex>
       <Flex justifyContent="center" gap="2">
-        <Text w="90px" as="b" textAlign="right">
+        <Text w="110px" as="b" textAlign="right">
           Description:
         </Text>
         <Text w="200px" textAlign="right">

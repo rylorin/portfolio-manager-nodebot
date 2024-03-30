@@ -7,11 +7,12 @@ import {
   InterestStatement,
   OptionContract,
   OptionStatement,
+  Portfolio,
   Statement,
   TaxStatement,
 } from "../models";
 import { StatementTypes } from "../models/statement.types";
-import { DididendSummary, ReportEntry } from "./reports.types";
+import { DididendSummary, InterestsSummary, ReportEntry } from "./reports.types";
 import { BaseStatement, StatementEntry, StatementOptionEntry } from "./statements.types";
 
 export const statementModelToStatementEntry = (item: Statement): Promise<StatementEntry> => {
@@ -75,7 +76,7 @@ export const statementModelToStatementEntry = (item: Statement): Promise<Stateme
         return {
           statementType: StatementTypes.DividendStatement,
           ...baseStatement,
-          country: thisStatement!.country || "XX",
+          country: thisStatement!.country || "XY",
         };
       });
 
@@ -84,7 +85,7 @@ export const statementModelToStatementEntry = (item: Statement): Promise<Stateme
         return {
           statementType: StatementTypes.TaxStatement,
           ...baseStatement,
-          country: thisStatement!.country || "XX",
+          country: thisStatement!.country || "YY",
         };
       });
 
@@ -93,7 +94,7 @@ export const statementModelToStatementEntry = (item: Statement): Promise<Stateme
         return {
           statementType: StatementTypes.InterestStatement,
           ...baseStatement,
-          country: thisStatement!.country || "XX",
+          country: thisStatement!.country || "",
         };
       });
 
@@ -124,12 +125,16 @@ export const statementModelToStatementEntry = (item: Statement): Promise<Stateme
 
     case StatementTypes.BondStatement:
       return BondStatement.findByPk(item.id).then((thisStatement) => {
+        let country: string;
+        if (thisStatement!.country) country = thisStatement!.country;
+        else if (item.stock.isin) country = item.stock.isin.substring(0, 2);
+        else country = "ZZ";
         baseStatement.quantity = thisStatement!.quantity;
         baseStatement.fees = thisStatement!.fees;
         return {
           statementType: StatementTypes.BondStatement,
           ...baseStatement,
-          country: thisStatement!.country || "XX",
+          country,
           accruedInterests: thisStatement!.accruedInterests,
           pnl: thisStatement!.realizedPnL,
         };
@@ -160,13 +165,14 @@ export const prepareStatements = (statements: Statement[]): Promise<StatementEnt
     );
 };
 
-export const prepareReport = (statements: Statement[]): Promise<ReportEntry[]> => {
-  return prepareStatements(statements).then((statements) => {
+export const prepareReport = (portfolio: Portfolio): Promise<ReportEntry[]> => {
+  return prepareStatements(portfolio.statements).then((statements) => {
     const result: ReportEntry[] = [];
     statements.forEach((statement) => {
       const year = new Date(statement.date).getUTCFullYear();
       const month = new Date(statement.date).getUTCMonth() + 1;
-      let entry: DididendSummary | undefined;
+      let dividendEntry: DididendSummary | undefined;
+      let interestEntry: InterestsSummary | undefined;
       let report = result.find((item) => item.year == year && item.month == month);
       if (!report) {
         // console.log(date, "creating report for ", year, month);
@@ -175,7 +181,7 @@ export const prepareReport = (statements: Statement[]): Promise<ReportEntry[]> =
           month,
           dividendsSummary: [],
           dividendsDetails: [],
-          interestsSummary: { totalAmountInBase: 0, grossCredit: 0, netDebit: 0, withHolding: 0 },
+          interestsSummary: [],
           interestsDetails: [],
           feesSummary: { totalAmountInBase: 0 },
           feesDetails: [],
@@ -187,37 +193,61 @@ export const prepareReport = (statements: Statement[]): Promise<ReportEntry[]> =
       }
       switch (statement.statementType) {
         case StatementTypes.DividendStatement:
-          entry = report.dividendsSummary.find((item) => item.country == statement.country);
-          if (!entry) {
-            entry = { country: statement.country, grossAmountInBase: 0, taxes: 0, netAmountInBase: 0 };
-            report.dividendsSummary.push(entry);
+          dividendEntry = report.dividendsSummary.find((item) => item.country == statement.country);
+          if (!dividendEntry) {
+            dividendEntry = { country: statement.country, grossAmountInBase: 0, taxes: 0, netAmountInBase: 0 };
+            report.dividendsSummary.push(dividendEntry);
           }
-          entry.grossAmountInBase += statement.amount * statement.fxRateToBase;
-          entry.netAmountInBase += statement.amount * statement.fxRateToBase;
+          dividendEntry.grossAmountInBase += statement.amount * statement.fxRateToBase;
+          dividendEntry.netAmountInBase += statement.amount * statement.fxRateToBase;
           report.dividendsDetails.push(statement);
           break;
 
         case StatementTypes.TaxStatement:
-          entry = report.dividendsSummary.find((item) => item.country == statement.country);
-          if (!entry) {
-            entry = { country: statement.country, grossAmountInBase: 0, taxes: 0, netAmountInBase: 0 };
-            report.dividendsSummary.push(entry);
+          dividendEntry = report.dividendsSummary.find((item) => item.country == statement.country);
+          if (!dividendEntry) {
+            dividendEntry = { country: statement.country, grossAmountInBase: 0, taxes: 0, netAmountInBase: 0 };
+            report.dividendsSummary.push(dividendEntry);
           }
-          entry.taxes += statement.amount * statement.fxRateToBase;
-          entry.netAmountInBase += statement.amount * statement.fxRateToBase;
+          dividendEntry.taxes += statement.amount * statement.fxRateToBase;
+          dividendEntry.netAmountInBase += statement.amount * statement.fxRateToBase;
           report.dividendsDetails.push(statement);
           break;
 
         case StatementTypes.InterestStatement:
-          report.interestsSummary.totalAmountInBase += statement.amount * statement.fxRateToBase;
-          if (statement.amount > 0) report.interestsSummary.grossCredit += statement.amount * statement.fxRateToBase;
-          else report.interestsSummary.netDebit += statement.amount * statement.fxRateToBase;
+          interestEntry = report.interestsSummary.find(
+            (item) => item.country == (statement.country || portfolio.country),
+          );
+          if (!interestEntry) {
+            interestEntry = {
+              country: statement.country || portfolio.country,
+              grossCredit: 0,
+              netDebit: 0,
+              withHolding: 0,
+              netTotal: 0,
+            };
+            report.interestsSummary.push(interestEntry);
+          }
+          if (statement.amount > 0) interestEntry.grossCredit += statement.amount * statement.fxRateToBase;
+          else interestEntry.netDebit += statement.amount * statement.fxRateToBase;
+          interestEntry.netTotal += statement.amount * statement.fxRateToBase;
           report.interestsDetails.push(statement);
           break;
 
         case StatementTypes.WithHoldingStatement:
-          report.interestsSummary.totalAmountInBase += statement.amount * statement.fxRateToBase;
-          report.interestsSummary.withHolding += statement.amount * statement.fxRateToBase;
+          interestEntry = report.interestsSummary.find((item) => item.country == portfolio.country);
+          if (!interestEntry) {
+            interestEntry = {
+              country: portfolio.country,
+              grossCredit: 0,
+              netDebit: 0,
+              withHolding: 0,
+              netTotal: 0,
+            };
+            report.interestsSummary.push(interestEntry);
+          }
+          interestEntry.withHolding += statement.amount * statement.fxRateToBase;
+          interestEntry.netTotal += statement.amount * statement.fxRateToBase;
           report.interestsDetails.push(statement);
           break;
 
@@ -237,11 +267,26 @@ export const prepareReport = (statements: Statement[]): Promise<ReportEntry[]> =
           break;
 
         case StatementTypes.BondStatement:
+          // interest part
+          interestEntry = report.interestsSummary.find(
+            (item) => item.country == (statement.country || portfolio.country),
+          );
+          if (!interestEntry) {
+            interestEntry = {
+              country: statement.country || portfolio.country,
+              grossCredit: 0,
+              netDebit: 0,
+              withHolding: 0,
+              netTotal: 0,
+            };
+            report.interestsSummary.push(interestEntry);
+          }
           if (statement.accruedInterests > 0)
-            report.interestsSummary.grossCredit += statement.accruedInterests * statement.fxRateToBase;
-          else report.interestsSummary.netDebit += statement.accruedInterests * statement.fxRateToBase;
-          report.interestsSummary.totalAmountInBase += statement.accruedInterests * statement.fxRateToBase;
+            interestEntry.grossCredit += statement.accruedInterests * statement.fxRateToBase;
+          else interestEntry.netDebit += statement.accruedInterests * statement.fxRateToBase;
+          interestEntry.netTotal += statement.accruedInterests * statement.fxRateToBase;
           report.interestsDetails.push(statement);
+          // PnL part
           report.tradesSummary.bondPnLInBase += statement.pnl * statement.fxRateToBase;
           report.tradesDetails.push(statement);
           break;

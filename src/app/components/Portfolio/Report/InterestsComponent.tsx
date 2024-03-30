@@ -1,6 +1,6 @@
 import { Box, HStack, Spacer, Text, VStack } from "@chakra-ui/react";
 import { default as React } from "react";
-import { DididendSummary, ReportEntry } from "../../../../routers/reports.types";
+import { InterestsSummary, ReportEntry } from "../../../../routers/reports.types";
 import Number from "../../Number/Number";
 
 type Props = { theReports: ReportEntry[] };
@@ -19,13 +19,16 @@ const OneCountryTable = ({
   theReports: ReportEntry[];
   country: string;
 }): React.ReactNode => {
-  let grossTotal = 0;
-  let taxesTotal = 0;
+  // Store subtotal
+  let creditTotal = 0;
+  let debitTotal = 0;
+  let withHoldingTotal = 0;
   let netTotal = 0;
-  const addToTotal = (summary: DididendSummary): React.ReactNode => {
-    grossTotal += summary.grossAmountInBase;
-    taxesTotal += summary.taxes;
-    netTotal += summary.grossAmountInBase + summary.taxes;
+  const addToTotal = (summary: InterestsSummary): React.ReactNode => {
+    creditTotal += summary.grossCredit;
+    debitTotal += summary.netDebit;
+    withHoldingTotal += summary.withHolding;
+    netTotal += summary.netTotal;
     return <></>;
   };
 
@@ -33,24 +36,26 @@ const OneCountryTable = ({
     <>
       <VStack>
         {theReports.map((report) =>
-          report.dividendsSummary
-            .filter((summary: DididendSummary) => summary.country == country)
+          report.interestsSummary
+            .filter((summary: InterestsSummary) => summary.country == country)
             .map((item) => (
               <HStack key={`${report.year}-${report.month}-${item.country}`}>
                 <Text width="120px">
                   {report.year}-{report.month}
                 </Text>
-                <Number value={item.grossAmountInBase} width="120px" />
-                <Number value={item.taxes} width="120px" />
-                <Number value={item.grossAmountInBase + item.taxes} width="120px" />
+                <Number value={item.grossCredit} width="120px" />
+                <Number value={item.netDebit} width="120px" />
+                <Number value={item.withHolding} width="120px" />
+                <Number value={item.netTotal} width="120px" />
                 {addToTotal(item)}
               </HStack>
             )),
         )}
         <HStack>
           <Text width="120px">Subtotal</Text>
-          <Number value={grossTotal} width="120px" />
-          <Number value={taxesTotal} width="120px" />
+          <Number value={creditTotal} width="120px" />
+          <Number value={debitTotal} width="120px" />
+          <Number value={withHoldingTotal} width="120px" />
           <Number value={netTotal} width="120px" />
         </HStack>
       </VStack>
@@ -63,17 +68,19 @@ const OneCountryTable = ({
  * @param theReports Tax reports to summarize. Assume their summaries are sorted by date
  * @returns
  */
-const Dividends = ({ theReports, ..._rest }: Props): React.ReactNode => {
-  let grossTotal = 0;
-  let taxesTotal = 0;
+const Interests = ({ theReports, ..._rest }: Props): React.ReactNode => {
+  let creditTotal = 0;
+  let debitTotal = 0;
+  let withHoldingTotal = 0;
   let netTotal = 0;
   const countries: string[] = [];
   theReports.forEach((report) => {
-    report.dividendsSummary.forEach((summary) => {
+    report.interestsSummary.forEach((summary) => {
       if (!countries.includes(summary.country)) countries.push(summary.country);
-      grossTotal += summary.grossAmountInBase;
-      taxesTotal += summary.taxes;
-      netTotal += summary.grossAmountInBase + summary.taxes;
+      creditTotal += summary.grossCredit;
+      debitTotal += summary.netDebit;
+      withHoldingTotal += summary.withHolding;
+      netTotal += summary.netTotal;
     });
   });
 
@@ -84,13 +91,16 @@ const Dividends = ({ theReports, ..._rest }: Props): React.ReactNode => {
           <Box width="120px">Country</Box>
           <Box width="120px">Month</Box>
           <Box width="120px" textAlign="right">
-            Gross Amount
+            Gross credit
           </Box>
           <Box width="120px" textAlign="right">
-            Taxes
+            Net debit
           </Box>
           <Box width="120px" textAlign="right">
-            Net Amount
+            Withholding
+          </Box>
+          <Box width="120px" textAlign="right">
+            Net total
           </Box>
           <Spacer />
         </HStack>
@@ -103,8 +113,9 @@ const Dividends = ({ theReports, ..._rest }: Props): React.ReactNode => {
         <HStack>
           <Text width="120px">Total</Text>
           <Box width="120px"></Box>
-          <Number value={grossTotal} width="120px" />
-          <Number value={taxesTotal} width="120px" />
+          <Number value={creditTotal} width="120px" />
+          <Number value={debitTotal} width="120px" />
+          <Number value={withHoldingTotal} width="120px" />
           <Number value={netTotal} width="120px" />
           <Spacer />
         </HStack>
@@ -113,4 +124,4 @@ const Dividends = ({ theReports, ..._rest }: Props): React.ReactNode => {
   );
 };
 
-export default Dividends;
+export default Interests;

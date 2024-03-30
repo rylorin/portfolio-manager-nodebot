@@ -590,8 +590,12 @@ export class ImporterBot extends ITradingBot {
         break;
       case "Bond Interest Paid":
       case "Bond Interest Received":
+        logger.info(MODULE + ".processCashTransaction", element.type, element);
         // Ignore Accrued interests as they are saved with purchase/sell transaction
-        if ((element.description as string).includes("ACCRUED")) return Promise.resolve(null as null);
+        if ((element.description as string).includes("ACCRUED")) {
+          logger.warn(MODULE + ".processCashTransaction", "accrued interests statement ignored", element);
+          return Promise.resolve(null as null);
+        }
         statementType = StatementTypes.InterestStatement;
         break;
       case "Deposits/Withdrawals":
@@ -649,7 +653,7 @@ export class ImporterBot extends ITradingBot {
           case StatementTypes.InterestStatement:
             return InterestStatement.findOrCreate({
               where: { id: statement.id },
-              defaults: { id: statement.id, country: "XX" },
+              defaults: { id: statement.id, country: "" },
             }).then(([_interestStatement, _created]) => statement);
 
           case StatementTypes.CashStatement:
