@@ -125,6 +125,7 @@ export const statementModelToStatementEntry = (item: Statement): Promise<Stateme
 
     case StatementTypes.BondStatement:
       return BondStatement.findByPk(item.id).then((thisStatement) => {
+        if (!thisStatement) throw Error(`BondStatement ${item.id} not found!`);
         let country: string;
         if (thisStatement!.country) country = thisStatement!.country;
         else if (item.stock.isin) country = item.stock.isin.substring(0, 2);

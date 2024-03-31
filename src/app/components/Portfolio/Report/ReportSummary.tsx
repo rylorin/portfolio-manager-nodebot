@@ -5,6 +5,7 @@ import { ReportEntry } from "../../../../routers/reports.types";
 import Dividends from "./DividendsComponent";
 import Fees from "./FeeComponent";
 import Interests from "./InterestsComponent";
+import PnL from "./PnLComponent";
 import { ReportLink } from "./links";
 
 type Props = Record<string, never>;
@@ -42,6 +43,9 @@ const ReportSummary: FunctionComponent<Props> = ({ ..._rest }): React.ReactNode 
 
       <h2>Fees</h2>
       <Fees theReports={theReports} />
+
+      <h2>P&L</h2>
+      <PnL theReports={theReports} />
     </>
   );
 };
