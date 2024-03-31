@@ -1,7 +1,6 @@
 import {
   BondStatement,
   Contract,
-  ContractType,
   DividendStatement,
   EquityStatement,
   InterestStatement,
@@ -11,7 +10,7 @@ import {
   Statement,
   TaxStatement,
 } from "../models";
-import { StatementTypes } from "../models/statement.types";
+import { ContractType, StatementTypes } from "../models/types";
 import { DididendSummary, InterestsSummary, ReportEntry } from "./reports.types";
 import { BaseStatement, StatementEntry, StatementOptionEntry } from "./statements.types";
 
@@ -22,22 +21,22 @@ export const statementModelToStatementEntry = (item: Statement): Promise<Stateme
     date: item.date.getTime(),
     currency: item.currency,
     amount: item.netCash,
-    // pnl: undefined,
     fees: undefined,
     fxRateToBase: item.fxRateToBase,
     description: item.description,
     trade_id: item.trade_unit_id,
     underlying: item.stock,
-    quantity: undefined,
+    // quantity: undefined,
   };
   switch (item.statementType) {
     case StatementTypes.EquityStatement:
       return EquityStatement.findByPk(item.id).then((thisStatement) => {
-        baseStatement.quantity = thisStatement?.quantity;
+        // baseStatement.quantity = thisStatement?.quantity;
         baseStatement.fees = thisStatement?.fees;
         return {
           statementType: StatementTypes.EquityStatement,
           ...baseStatement,
+          quantity: thisStatement?.quantity,
           pnl: thisStatement!.realizedPnL || 0,
         };
       });
@@ -49,7 +48,7 @@ export const statementModelToStatementEntry = (item: Statement): Promise<Stateme
           { model: OptionContract, as: "option" },
         ],
       }).then((thisStatement) => {
-        baseStatement.quantity = thisStatement!.quantity;
+        // baseStatement.quantity = thisStatement!.quantity;
         baseStatement.fees = thisStatement!.fees;
         const option: StatementOptionEntry = {
           id: thisStatement!.contract_id,
@@ -67,6 +66,7 @@ export const statementModelToStatementEntry = (item: Statement): Promise<Stateme
           statementType: StatementTypes.OptionStatement,
           ...baseStatement,
           option,
+          quantity: thisStatement?.quantity,
           pnl: thisStatement!.realizedPnL,
         };
       });
@@ -127,17 +127,18 @@ export const statementModelToStatementEntry = (item: Statement): Promise<Stateme
       return BondStatement.findByPk(item.id).then((thisStatement) => {
         if (!thisStatement) throw Error(`BondStatement ${item.id} not found!`);
         let country: string;
-        if (thisStatement!.country) country = thisStatement!.country;
+        if (thisStatement.country) country = thisStatement.country;
         else if (item.stock.isin) country = item.stock.isin.substring(0, 2);
         else country = "ZZ";
-        baseStatement.quantity = thisStatement!.quantity;
-        baseStatement.fees = thisStatement!.fees;
+        baseStatement.fees = thisStatement.fees;
+        // console.log("baseStatement", baseStatement);
         return {
           statementType: StatementTypes.BondStatement,
           ...baseStatement,
           country,
-          accruedInterests: thisStatement!.accruedInterests,
-          pnl: thisStatement!.realizedPnL,
+          accruedInterests: thisStatement.accruedInterests,
+          quantity: thisStatement.quantity,
+          pnl: thisStatement.realizedPnL || 0,
         };
       });
 

@@ -25,6 +25,14 @@ const BondStatementProps = ({ statement, ..._rest }: Props): React.ReactNode => 
       </Flex>
       <Flex justifyContent="center" gap="2">
         <Text w="110px" as="b" textAlign="right">
+          Quantity:
+        </Text>
+        <Text w="200px" textAlign="right">
+          {statement.quantity}
+        </Text>
+      </Flex>
+      <Flex justifyContent="center" gap="2">
+        <Text w="110px" as="b" textAlign="right">
           PnL:
         </Text>
         <Text w="200px" textAlign="right">

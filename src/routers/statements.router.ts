@@ -414,18 +414,19 @@ router.get("/:statementId(\\d+)/UnlinkTrade", (req, res): void => {
  */
 router.get("/id/:statementId(\\d+)", (req, res): void => {
   const { _portfolioId, statementId } = req.params as typeof req.params & parentParams;
-  // console.log("statement", portfolioId, statementId);
+
   Statement.findByPk(statementId, {
     include: [{ model: Contract }, { model: Portfolio }],
   })
     .then((statement) => {
-      if (statement) {
-        return statement;
-      } else {
-        throw Error("statement doesn't exist");
-      }
+      if (!statement) throw Error("statement doesn't exist");
+      return statement;
     })
     .then((statement) => statementModelToStatementEntry(statement))
+    // .then((statement) => {
+    //   console.log("statement", statement);
+    //   return statement;
+    // })
     .then((statement) => res.status(200).json({ statement }))
     .catch((error) => {
       console.error(error);

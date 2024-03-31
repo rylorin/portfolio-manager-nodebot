@@ -25,24 +25,25 @@ export type BaseStatement = {
   transactionId: number;
   date: number;
   currency: string;
-  amount: number;
-  fees: number | undefined;
   fxRateToBase: number;
-  description: string;
-  trade_id: number | null;
-  quantity: number | undefined;
-
+  amount: number;
   underlying: StatementUnderlyingEntry | undefined;
+  trade_id: number | null;
+  description: string;
+
+  fees: number | undefined;
 };
 
 export type EquityStatementEntry = BaseStatement & {
   statementType: "Trade";
+  quantity: number | undefined;
   pnl: number;
 };
 
 export type OptionStatementEntry = BaseStatement & {
   statementType: "TradeOption";
   option: StatementOptionEntry;
+  quantity: number | undefined;
   pnl: number;
 };
 
@@ -51,8 +52,10 @@ export type DividendStatementEntry = BaseStatement & {
   country: string;
 };
 export type TaxStatementEntry = BaseStatement & { statementType: "Tax"; country: string };
+
 export type InterestStatementEntry = BaseStatement & { statementType: "Interest"; country: string | null };
 export type WithHoldingStatementEntry = BaseStatement & { statementType: "WithHolding" };
+
 export type FeeStatementEntry = BaseStatement & { statementType: "OtherFee" };
 export type CorporateStatementEntry = BaseStatement & { statementType: "CorporateStatement" };
 export type CashStatementEntry = BaseStatement & { statementType: "Cash" };
@@ -60,6 +63,7 @@ export type BondStatementEntry = BaseStatement & {
   statementType: "Bond";
   country: string;
   accruedInterests: number;
+  quantity: number | undefined;
   pnl: number;
 };
 export type StatementEntry =

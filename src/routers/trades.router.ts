@@ -77,6 +77,7 @@ const updateVirtuals = (
       }
       virtual.price = statement_entry.underlying?.price;
       virtual.pnl = virtual.pnl ? virtual.pnl + statement_entry.pnl! : statement_entry.pnl!;
+      virtual.quantity += statement_entry.quantity!;
       break;
     case StatementTypes.OptionStatement:
       id = statement_entry.option!.id;
@@ -85,10 +86,10 @@ const updateVirtuals = (
       virtual.pru = virtual.cost / virtual.quantity / statement_entry.option!.multiplier;
       virtual.price = statement_entry.option.price;
       virtual.pnl = virtual.pnl ? virtual.pnl + statement_entry.pnl! : statement_entry.pnl!;
+      virtual.quantity += statement_entry.quantity!;
       break;
   }
   if (virtual) {
-    virtual.quantity += statement_entry.quantity!;
     virtual.cost -= statement_entry.amount;
 
     if (!virtual.quantity) virtual.cost = 0; // is this usefull?

@@ -12,7 +12,6 @@ export * from "./bond_contract.model";
 export * from "./bond_statement.model";
 export * from "./cash_contract.model";
 export * from "./contract.model";
-export * from "./contract.types";
 export * from "./currency.model";
 export * from "./dividend_statement.model";
 export * from "./equity_statement.model";
@@ -31,7 +30,6 @@ export * from "./statement.types";
 export * from "./stock_contract.model";
 export * from "./tax_statement.model";
 export * from "./trade.model";
-export * from "./trade.types";
 
 export type AnyContract =
   | Contract

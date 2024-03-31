@@ -41,6 +41,7 @@
     "@emotion/react": "^11.11.4",
     "@emotion/styled": "^11.11.0",
     "@stoqey/ib": "stoqey/ib#bae47e65685f6b752e424450966e4e9df715830c",
+    "@tanstack/react-table": "^8.15.3",
     "chakra-react-select": "^4.7.6",
     "chart.js": "^4.4.2",
     "cors": "^2.8.5",
