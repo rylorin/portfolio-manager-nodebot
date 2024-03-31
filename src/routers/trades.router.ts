@@ -2,12 +2,10 @@ import { OptionType, SecType } from "@stoqey/ib";
 import express from "express";
 import { Op } from "sequelize";
 import logger, { LogLevel } from "../logger";
-import { Contract, ContractType, Currency, Portfolio, Position, Statement, StatementTypes, Trade } from "../models";
+import { Contract, Currency, Portfolio, Position, Statement, StatementTypes, Trade } from "../models";
 import { expirationToDate } from "../models/date_utils";
-import { TradeStatus, TradeStrategy } from "../models/trade.types";
+import { ContractType, TradeStatus, TradeStrategy } from "../models/types";
 import { preparePositions } from "./positions.router";
-import { OptionPositionEntry, PositionEntry } from "./positions.types";
-import { StatementEntry, StatementOptionEntry, StatementUnderlyingEntry } from "./statements.types";
 import { prepareStatements } from "./statements.utils";
 import {
   OpenTradesWithPositions,
@@ -16,6 +14,13 @@ import {
   TradeSynthesys,
   VirtualPositionEntry,
 } from "./trades.types";
+import {
+  OptionPositionEntry,
+  PositionEntry,
+  StatementEntry,
+  StatementOptionEntry,
+  StatementUnderlyingEntry,
+} from "./types";
 
 const MODULE = "TradesRouter";
 

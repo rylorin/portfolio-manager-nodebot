@@ -3,7 +3,6 @@ import { default as express } from "express";
 import logger, { LogLevel } from "../logger";
 import {
   Contract,
-  ContractType,
   Currency,
   FutureContract,
   OptionContract,
@@ -12,7 +11,8 @@ import {
   Position,
   Statement,
 } from "../models";
-import { OptionPositionEntry, PositionEntry } from "./positions.types";
+import { ContractType } from "../models/types";
+import { OptionPositionEntry, PositionEntry } from "./types";
 
 const MODULE = "PositionsRouter";
 
