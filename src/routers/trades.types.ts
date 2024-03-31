@@ -1,6 +1,11 @@
-import { TradeStatus, TradeStrategy } from "../models";
-import { OptionPositionEntry, PositionEntry } from "./positions.types";
-import { StatementEntry, StatementOptionEntry, StatementUnderlyingEntry } from "./statements.types";
+import { TradeStatus, TradeStrategy } from "../models/types";
+import {
+  OptionPositionEntry,
+  PositionEntry,
+  StatementEntry,
+  StatementOptionEntry,
+  StatementUnderlyingEntry,
+} from "./types";
 
 export type VirtualPositionEntry = {
   id: number;
