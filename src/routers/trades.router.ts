@@ -79,10 +79,10 @@ const updateVirtuals = (
         if (!virtuals[id]) virtuals[id] = initVirtualFromStatement(statement_entry);
         virtual = virtuals[id];
         virtual.pru = virtual.cost / virtual.quantity;
+        virtual.price = statement_entry.underlying?.price;
+        virtual.pnl = virtual.pnl ? virtual.pnl + statement_entry.pnl! : statement_entry.pnl!;
+        virtual.quantity += statement_entry.quantity!;
       }
-      virtual.price = statement_entry.underlying?.price;
-      virtual.pnl = virtual.pnl ? virtual.pnl + statement_entry.pnl! : statement_entry.pnl!;
-      virtual.quantity += statement_entry.quantity!;
       break;
     case StatementTypes.OptionStatement:
       id = statement_entry.option!.id;

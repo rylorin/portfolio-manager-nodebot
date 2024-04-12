@@ -777,6 +777,7 @@ export class ITradingBot extends EventEmitter {
       underlying_id: undefined as unknown as number,
       lastTradeDate: expirationToDateString(ibContract.lastTradeDateOrContractMonth!),
       multiplier: ibContract.multiplier || 1,
+      country: ibContract.localSymbol ? ibContract.localSymbol.substring(0, 2) : undefined,
     };
     return Contract.create(contract_values, {
       transaction: transaction /* logging: console.log, */,

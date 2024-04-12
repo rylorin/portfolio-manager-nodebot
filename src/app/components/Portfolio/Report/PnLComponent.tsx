@@ -66,7 +66,7 @@ const PnL = ({ theReports, ..._rest }: Props): React.ReactNode => {
     <>
       <VStack align="left">
         <HStack alignContent="left" borderBottom="1px" borderColor="gray.200">
-          <Box width="120px">Country</Box>
+          <Box width="120px">Underlying</Box>
           <Box width="120px">Month</Box>
           <Box width="120px" textAlign="right">
             P&L

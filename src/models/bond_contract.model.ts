@@ -25,7 +25,7 @@ export class BondContract extends Model<
 
   /** country */
   @Column({ type: DataType.STRING(2) })
-  declare country: string;
+  declare country?: string;
 
   /**
    * last tradable date as YYYY-MM-DD formated string, can be null for perpetuals

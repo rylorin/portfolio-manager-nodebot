@@ -196,9 +196,10 @@ export class ImporterBot extends ITradingBot {
               name: element.description,
               currency: element.currency,
               isin: element.isin,
+              // isin: "XY0123456789",
               exchange: element.listingExchange,
             };
-            return contract.update(contract_data);
+            return contract.update(contract_data, {});
           } else if (contract.secType == SecType.BOND) {
             // IB API does not provide any usefull information for BONDs therefore we update it using XML information
             const contract_data = {
@@ -235,7 +236,8 @@ export class ImporterBot extends ITradingBot {
         });
       })
       .catch((e) => {
-        logger.log(LogLevel.Error, MODULE + ".processSecurityInfo", undefined, e, element);
+        console.error(e);
+        logger.log(LogLevel.Error, MODULE + ".processSecurityInfo", element.securityID as string, e, element);
         return undefined;
       });
   }
@@ -574,7 +576,7 @@ export class ImporterBot extends ITradingBot {
   // eslint-disable-next-line @typescript-eslint/explicit-module-boundary-types
   protected processCashTransaction(element: any): Promise<Statement | null> {
     logger.log(LogLevel.Trace, MODULE + ".processCashTransaction", element.securityID as string, element);
-    // console.log("processCashTransaction", element);
+    if (element.assetCategory == "BOND") console.log("processCashTransaction", element);
     let statementType: StatementTypes;
     switch (element.type) {
       case "Withholding Tax":
@@ -590,7 +592,6 @@ export class ImporterBot extends ITradingBot {
         break;
       case "Bond Interest Paid":
       case "Bond Interest Received":
-        logger.info(MODULE + ".processCashTransaction", element.type, element);
         // Ignore Accrued interests as they are saved with purchase/sell transaction
         if ((element.description as string).includes("ACCRUED")) {
           logger.warn(MODULE + ".processCashTransaction", "accrued interests statement ignored", element);

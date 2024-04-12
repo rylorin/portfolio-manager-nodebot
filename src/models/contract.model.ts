@@ -23,7 +23,7 @@ export class Contract extends Model<
   declare conId: number;
 
   /** ISIN */
-  @Column({ type: DataType.CHAR(12) })
+  @Column({ type: DataType.CHAR(12), field: "ISIN" })
   declare isin?: string;
 
   /** The asset ticker. */
