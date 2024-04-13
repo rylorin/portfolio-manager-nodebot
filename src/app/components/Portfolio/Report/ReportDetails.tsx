@@ -3,6 +3,7 @@ import { FunctionComponent, default as React } from "react";
 import { Link as RouterLink, useLoaderData, useParams } from "react-router-dom";
 import { ReportEntry } from "../../../../routers/reports.types";
 import StatementsTable from "../Statement/StatementsTable";
+import FeesDetails from "./FeesDetails";
 import InterestsDetails from "./InterestsDetails";
 import { ReportLink } from "./links";
 
@@ -39,24 +40,9 @@ const ReportDetails: FunctionComponent<Props> = ({ ..._rest }): React.ReactNode 
 
       <h2>Interests</h2>
       <InterestsDetails theReports={theReports} />
-      {/* {theReports.map((theReport) => (
-        <Box key={`${theReport.year}-${theReport.month}`}>
-          <h3>
-            {theReport.year}-{theReport.month}
-          </h3>
-          <StatementsTable content={theReport.interestsDetails} title={`${theReport.year}-${theReport.month}`} />
-        </Box>
-      ))} */}
 
       <h2>Fees</h2>
-      {theReports.map((theReport) => (
-        <Box key={`${theReport.year}-${theReport.month}`}>
-          <h3>
-            {theReport.year}-{theReport.month}
-          </h3>
-          <StatementsTable content={theReport.feesDetails} title={`${theReport.year}-${theReport.month}`} />
-        </Box>
-      ))}
+      <FeesDetails theReports={theReports} />
 
       <h2>P/L</h2>
       {theReports.map((theReport) => (

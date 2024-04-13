@@ -3,7 +3,7 @@ import { FunctionComponent, default as React } from "react";
 import { Link as RouterLink, useLoaderData, useParams } from "react-router-dom";
 import { ReportEntry } from "../../../../routers/reports.types";
 import Dividends from "./DividendsComponent";
-import Fees from "./FeeComponent";
+import Fees from "./FeesComponent";
 import Interests from "./InterestsComponent";
 import PnL from "./PnLComponent";
 import { ReportLink } from "./links";
