@@ -131,6 +131,57 @@ const StatementEdit: FunctionComponent<Props> = ({ ..._rest }): React.ReactNode 
                 </Text>
               </Flex>
 
+              {/* Bond properties */}
+              {theStatement.statementType == StatementTypes.BondStatement && (
+                <Flex justifyContent="center" gap="2">
+                  <Text w="90px" as="b" textAlign="right">
+                    Country:
+                  </Text>
+                  <Field as={Select} name="country" w="200px" variant="outline">
+                    <option value="">---</option>
+                    {["US", "NL", "IE"].map((v) => (
+                      <option value={v} key={v}>
+                        {v}
+                      </option>
+                    ))}
+                  </Field>
+                </Flex>
+              )}
+
+              {/* Interest properties */}
+              {theStatement.statementType == StatementTypes.InterestStatement && (
+                <Flex justifyContent="center" gap="2">
+                  <Text w="90px" as="b" textAlign="right">
+                    Country:
+                  </Text>
+                  <Field as={Select} name="country" w="200px" variant="outline">
+                    <option value="">---</option>
+                    {["US", "NL", "IE"].map((v) => (
+                      <option value={v} key={v}>
+                        {v}
+                      </option>
+                    ))}
+                  </Field>
+                </Flex>
+              )}
+
+              {/* Tax properties */}
+              {theStatement.statementType == StatementTypes.TaxStatement && (
+                <Flex justifyContent="center" gap="2">
+                  <Text w="90px" as="b" textAlign="right">
+                    Country:
+                  </Text>
+                  <Field as={Select} name="country" w="200px" variant="outline">
+                    <option value="">---</option>
+                    {["US", "NL", "IE"].map((v) => (
+                      <option value={v} key={v}>
+                        {v}
+                      </option>
+                    ))}
+                  </Field>
+                </Flex>
+              )}
+
               <Flex justifyContent="center" gap="2" mt="1">
                 <IconButton
                   aria-label="Back"

@@ -6,66 +6,59 @@ import { Link as RouterLink, useParams } from "react-router-dom";
 import { StatementTypes } from "../../../../models/types";
 import {
   BondStatementEntry,
-  InterestStatementEntry,
+  EquityStatementEntry,
+  OptionStatementEntry,
   ReportEntry,
-  WithHoldingStatementEntry,
+  StatementUnderlyingEntry,
 } from "../../../../routers/types";
 import Number from "../../Number/Number";
 import { StatementLink } from "../Statement/links";
 import { DataTable } from "./DataTable";
 type Props = { theReports: ReportEntry[] };
 
-type InterestDetails = {
+type PnLDetails = {
   id: number;
   date: Date;
-  country: string;
-  credit: number;
-  debit: number;
-  withHolding: number;
+  pnl: number;
+  underlying: StatementUnderlyingEntry;
   description: string;
 };
 
-const columnHelper = createColumnHelper<InterestDetails>();
+const columnHelper = createColumnHelper<PnLDetails>();
 
 /**
  * Interests table component
  * @param theReports Underlying tax reports. Assume their summaries are sorted by date
  * @returns
  */
-const InterestsDetails = ({ theReports, ..._rest }: Props): React.ReactNode => {
+const PnLsDetails = ({ theReports, ..._rest }: Props): React.ReactNode => {
   const { portfolioId } = useParams();
 
-  let totalCredit = 0;
-  let totalDebit = 0;
-  let totalTax = 0;
+  let totalPnl = 0;
 
-  const data: InterestDetails[] = theReports
+  const data: PnLDetails[] = theReports
     .reduce(
-      (p, report) => p.concat(report.interestsDetails),
-      [] as (InterestStatementEntry | WithHoldingStatementEntry | BondStatementEntry)[],
+      (p, report) => p.concat(report.tradesDetails),
+      [] as (EquityStatementEntry | OptionStatementEntry | BondStatementEntry)[],
     )
     .map((statement) => {
-      let result: InterestDetails;
+      let result: PnLDetails;
       switch (statement.statementType) {
-        case StatementTypes.InterestStatement:
+        case StatementTypes.EquityStatement:
           result = {
             id: statement.id,
             date: new Date(statement.date),
-            country: statement.country,
-            credit: statement.amount > 0 ? statement.amount * statement.fxRateToBase : 0,
-            debit: statement.amount < 0 ? statement.amount * statement.fxRateToBase : 0,
-            withHolding: 0,
+            pnl: statement.pnl * statement.fxRateToBase,
+            underlying: statement.underlying,
             description: statement.description,
           };
           break;
-        case StatementTypes.WithHoldingStatement:
+        case StatementTypes.OptionStatement:
           result = {
             id: statement.id,
             date: new Date(statement.date),
-            country: "",
-            credit: 0,
-            debit: 0,
-            withHolding: statement.amount * statement.fxRateToBase,
+            pnl: statement.pnl * statement.fxRateToBase,
+            underlying: statement.underlying,
             description: statement.description,
           };
           break;
@@ -73,19 +66,16 @@ const InterestsDetails = ({ theReports, ..._rest }: Props): React.ReactNode => {
           result = {
             id: statement.id,
             date: new Date(statement.date),
-            country: statement.country,
-            credit: statement.accruedInterests > 0 ? statement.accruedInterests * statement.fxRateToBase : 0,
-            debit: statement.accruedInterests < 0 ? statement.accruedInterests * statement.fxRateToBase : 0,
-            withHolding: 0,
+            pnl: statement.pnl * statement.fxRateToBase,
+            underlying: statement.underlying,
             description: statement.description,
           };
           break;
       }
-      totalCredit += result.credit;
-      totalDebit += result.debit;
-      totalTax += result.withHolding;
+      totalPnl += result.pnl;
       return result;
-    });
+    })
+    .filter((item) => item.pnl);
 
   const columns = [
     columnHelper.accessor("id", {
@@ -104,38 +94,27 @@ const InterestsDetails = ({ theReports, ..._rest }: Props): React.ReactNode => {
       ),
       footer: "Total",
     }),
-    columnHelper.accessor("country", {
-      cell: (info) => info.getValue(),
-      header: "CY",
+    columnHelper.accessor("underlying", {
+      cell: (info) => info.getValue().symbol,
+      sortingFn: (a, b) =>
+        (a.getValue("underlying") as StatementUnderlyingEntry).symbol.localeCompare(
+          (b.getValue("underlying") as StatementUnderlyingEntry).symbol,
+        ),
+      footer: () => <Number value={totalPnl} />,
     }),
-    columnHelper.accessor("credit", {
+    columnHelper.accessor("pnl", {
       cell: (info) => <Number value={info.getValue()} decimals={2} />,
       meta: {
         isNumeric: true,
       },
-      footer: () => <Number value={totalCredit} />,
-    }),
-    columnHelper.accessor("debit", {
-      cell: (info) => <Number value={info.getValue()} decimals={2} />,
-      meta: {
-        isNumeric: true,
-      },
-      footer: () => <Number value={totalDebit} />,
-    }),
-    columnHelper.accessor("withHolding", {
-      cell: (info) => <Number value={info.getValue()} decimals={2} />,
-      header: "Tax",
-      meta: {
-        isNumeric: true,
-      },
-      footer: () => <Number value={totalTax} />,
+      footer: () => <Number value={totalPnl} />,
     }),
     columnHelper.accessor("description", {
       cell: (info) => info.getValue(),
     }),
   ];
 
-  return <DataTable columns={columns} data={data} title="Interests" />;
+  return <DataTable columns={columns} data={data} title="P/L" />;
 };
 
-export default InterestsDetails;
+export default PnLsDetails;

@@ -26,7 +26,6 @@ export const statementModelToStatementEntry = (item: Statement): Promise<Stateme
     description: item.description,
     trade_id: item.trade_unit_id,
     underlying: item.stock,
-    // quantity: undefined,
   };
   switch (item.statementType) {
     case StatementTypes.EquityStatement:

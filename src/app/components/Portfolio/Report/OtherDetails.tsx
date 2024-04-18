@@ -4,46 +4,56 @@ import { createColumnHelper } from "@tanstack/react-table";
 import { default as React } from "react";
 import { Link as RouterLink, useParams } from "react-router-dom";
 import { StatementTypes } from "../../../../models/types";
-import { FeeStatementEntry, ReportEntry } from "../../../../routers/types";
+import { ReportEntry, StatementEntry } from "../../../../routers/types";
 import Number from "../../Number/Number";
 import { StatementLink } from "../Statement/links";
 import { DataTable } from "./DataTable";
 type Props = { theReports: ReportEntry[] };
 
-type FeesDetails = {
+type RowDetails = {
   id: number;
   date: Date;
   amount: number;
   description: string;
 };
 
-const columnHelper = createColumnHelper<FeesDetails>();
+const columnHelper = createColumnHelper<RowDetails>();
 
 /**
  * Dividends table component
  * @param theReports Underlying tax reports. Assume their summaries are sorted by date
  * @returns
  */
-const FeesDetails = ({ theReports, ..._rest }: Props): React.ReactNode => {
+const OtherDetails = ({ theReports, ..._rest }: Props): React.ReactNode => {
   const { portfolioId } = useParams();
 
-  let totalFees = 0;
+  let totalAmount = 0;
 
-  const data: FeesDetails[] = theReports
-    .reduce((p, report) => p.concat(report.feesDetails), [] as FeeStatementEntry[])
+  const data: RowDetails[] = theReports
+    .reduce((p, report) => p.concat(report.otherDetails), [] as StatementEntry[])
     .map((statement) => {
-      let result: FeesDetails;
+      let result: RowDetails;
       switch (statement.statementType) {
+        case StatementTypes.DividendStatement:
+        case StatementTypes.TaxStatement:
+        case StatementTypes.InterestStatement:
+        case StatementTypes.WithHoldingStatement:
+        case StatementTypes.BondStatement:
+        case StatementTypes.EquityStatement:
+        case StatementTypes.OptionStatement:
         case StatementTypes.FeeStatement:
+        case StatementTypes.CashStatement:
           result = {
             id: statement.id,
             date: new Date(statement.date),
-            amount: statement.fees * statement.fxRateToBase,
+            amount: statement.amount * statement.fxRateToBase,
             description: statement.description,
           };
           break;
+        default:
+          throw Error(`Unimplemented statement type: #${statement.id}`);
       }
-      totalFees += result.amount;
+      totalAmount += result.amount;
       return result;
     });
 
@@ -69,14 +79,14 @@ const FeesDetails = ({ theReports, ..._rest }: Props): React.ReactNode => {
       meta: {
         isNumeric: true,
       },
-      footer: () => <Number value={totalFees} />,
+      footer: () => <Number value={totalAmount} />,
     }),
     columnHelper.accessor("description", {
       cell: (info) => info.getValue(),
     }),
   ];
 
-  return <DataTable columns={columns} data={data} title="Fees" />;
+  return <DataTable columns={columns} data={data} title="Other" />;
 };
 
-export default FeesDetails;
+export default OtherDetails;

@@ -438,7 +438,7 @@ router.get("/id/:statementId(\\d+)", (req, res): void => {
 /**
  * Delete a statement
  */
-router.get("/:statementId(\\d+)/DeleteStatement", (req, res): void => {
+router.delete("/:statementId(\\d+)/DeleteStatement", (req, res): void => {
   const { _portfolioId, statementId } = req.params as typeof req.params & parentParams;
 
   Statement.findByPk(statementId)
@@ -501,10 +501,25 @@ router.post("/id/:statementId(\\d+)/SaveStatement", (req, res): void => {
   Statement.findByPk(statementId)
     .then((statement) => {
       if (statement)
-        return statement.update({
-          trade_unit_id: data.trade_id || null,
-          statementType: data.statementType,
-        });
+        return statement
+          .update({
+            trade_unit_id: data.trade_id || null,
+            statementType: data.statementType,
+            description: data.description,
+          })
+          .then((_statement) => {
+            switch (data.statementType) {
+              case StatementTypes.BondStatement:
+                return BondStatement.update({ country: data.country }, { where: { id: statementId } });
+              case StatementTypes.InterestStatement:
+                return InterestStatement.update({ country: data.country! }, { where: { id: statementId } });
+              case StatementTypes.TaxStatement:
+                return TaxStatement.update({ country: data.country }, { where: { id: statementId } });
+              default:
+                return [0];
+            }
+          })
+          .then(() => statement);
       else throw Error("statement not found");
     })
     .then((statement) => res.status(200).json({ statement }))

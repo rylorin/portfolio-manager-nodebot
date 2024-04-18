@@ -5,7 +5,7 @@ import { ReportEntry } from "../../../../routers/reports.types";
 import Dividends from "./DividendsComponent";
 import Fees from "./FeesComponent";
 import Interests from "./InterestsComponent";
-import PnL from "./PnLComponent";
+import PnL from "./PnLsComponent";
 import { ReportLink } from "./links";
 
 type Props = Record<string, never>;

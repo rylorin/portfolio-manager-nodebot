@@ -81,7 +81,7 @@ export const statementDelete = ({ request, params }: ActionFunctionArgs): Promis
     .formData()
     .then((formData: Iterable<readonly [PropertyKey, any]>) => {
       const _data = Object.fromEntries(formData);
-      return fetch(`/api/portfolio/${portfolioId}/statements/${statementId}/DeleteStatement`);
+      return fetch(`/api/portfolio/${portfolioId}/statements/${statementId}/DeleteStatement`, { method: "DELETE" });
     })
     .then((response: Response) => response.text())
     .then((_data) => redirect("../"));
@@ -101,6 +101,12 @@ export const statementSave = ({ request, params }: ActionFunctionArgs): Promise<
       Object.keys(data).forEach((key) => {
         if (data[key] == "null") data[key] = null;
       });
+      // console.log("data:", data);
+      // const data_:Record<string,any>={}
+      // for (const entry of formData) {
+      //   if (entry[1]=="null") data[entry[0]]=null
+      //   else data[0]
+      // }
       return fetch(`/api/portfolio/${portfolioId}/statements/id/${statementId}/SaveStatement`, {
         method: "POST",
         headers: {

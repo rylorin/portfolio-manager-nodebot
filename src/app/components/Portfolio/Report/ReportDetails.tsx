@@ -2,9 +2,11 @@ import { Box, Link, Spacer } from "@chakra-ui/react";
 import { FunctionComponent, default as React } from "react";
 import { Link as RouterLink, useLoaderData, useParams } from "react-router-dom";
 import { ReportEntry } from "../../../../routers/reports.types";
-import StatementsTable from "../Statement/StatementsTable";
+import DividendsDetails from "./DividendsDetails";
 import FeesDetails from "./FeesDetails";
 import InterestsDetails from "./InterestsDetails";
+import OtherDetails from "./OtherDetails";
+import PnLsDetails from "./PnLsDetails";
 import { ReportLink } from "./links";
 
 type Props = Record<string, never>;
@@ -29,14 +31,7 @@ const ReportDetails: FunctionComponent<Props> = ({ ..._rest }): React.ReactNode 
       </Box>
 
       <h2>Dividends</h2>
-      {theReports.map((theReport) => (
-        <Box key={`${theReport.year}-${theReport.month}`}>
-          <h3>
-            {theReport.year}-{theReport.month}
-          </h3>
-          <StatementsTable content={theReport.dividendsDetails} title={`${theReport.year}-${theReport.month}`} />
-        </Box>
-      ))}
+      <DividendsDetails theReports={theReports} />
 
       <h2>Interests</h2>
       <InterestsDetails theReports={theReports} />
@@ -45,24 +40,10 @@ const ReportDetails: FunctionComponent<Props> = ({ ..._rest }): React.ReactNode 
       <FeesDetails theReports={theReports} />
 
       <h2>P/L</h2>
-      {theReports.map((theReport) => (
-        <Box key={`${theReport.year}-${theReport.month}`}>
-          <h3>
-            {theReport.year}-{theReport.month}
-          </h3>
-          <StatementsTable content={theReport.tradesDetails} title={`${theReport.year}-${theReport.month}`} />
-        </Box>
-      ))}
+      <PnLsDetails theReports={theReports} />
 
       <h2>Other statements</h2>
-      {theReports.map((theReport) => (
-        <Box key={`${theReport.year}-${theReport.month}`}>
-          <h3>
-            {theReport.year}-{theReport.month}
-          </h3>
-          <StatementsTable content={theReport.otherDetails} title={`${theReport.year}-${theReport.month}`} />
-        </Box>
-      ))}
+      <OtherDetails theReports={theReports} />
     </>
   );
 };
