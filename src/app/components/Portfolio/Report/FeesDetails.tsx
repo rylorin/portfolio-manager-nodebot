@@ -38,7 +38,7 @@ const FeesDetails = ({ theReports, ..._rest }: Props): React.ReactNode => {
           result = {
             id: statement.id,
             date: new Date(statement.date),
-            amount: statement.fees * statement.fxRateToBase,
+            amount: statement.amount * statement.fxRateToBase,
             description: statement.description,
           };
           break;

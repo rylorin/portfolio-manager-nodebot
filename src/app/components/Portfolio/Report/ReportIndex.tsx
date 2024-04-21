@@ -105,7 +105,7 @@ const ReportsIndex: FunctionComponent<Props> = ({ ..._rest }): React.ReactNode =
       />
       <TableContainer>
         <Table variant="simple" size="sm" className="table-tiny">
-          <TableCaption>Available reports</TableCaption>
+          <TableCaption>Available reports ({months.length})</TableCaption>
           <Thead>
             <Tr>
               <Td>Year</Td>

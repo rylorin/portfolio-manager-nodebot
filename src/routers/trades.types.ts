@@ -3,15 +3,15 @@ import {
   OptionPositionEntry,
   PositionEntry,
   StatementEntry,
-  StatementOptionEntry,
   StatementUnderlyingEntry,
+  StatementUnderlyingOption,
 } from "./types";
 
 export type VirtualPositionEntry = {
   id: number;
   openDate: number;
   quantity: number;
-  contract: StatementUnderlyingEntry | StatementOptionEntry;
+  contract: StatementUnderlyingEntry | StatementUnderlyingOption;
   trade_id: number | undefined;
   price: number | null; // current unit price
   value: number | undefined;

@@ -3,13 +3,14 @@ import { IconButton, Link, Tooltip } from "@chakra-ui/react";
 import { createColumnHelper } from "@tanstack/react-table";
 import { default as React } from "react";
 import { Link as RouterLink, useParams } from "react-router-dom";
-import { StatementTypes } from "../../../../models/types";
+import { ContractType, StatementTypes } from "../../../../models/types";
 import {
   BondStatementEntry,
   EquityStatementEntry,
   OptionStatementEntry,
   ReportEntry,
   StatementUnderlyingEntry,
+  StatementUnderlyingOption,
 } from "../../../../routers/types";
 import Number from "../../Number/Number";
 import { StatementLink } from "../Statement/links";
@@ -36,6 +37,15 @@ const PnLsDetails = ({ theReports, ..._rest }: Props): React.ReactNode => {
 
   let totalPnl = 0;
 
+  const getSymbol = (contract: StatementUnderlyingEntry | StatementUnderlyingOption): string => {
+    switch (contract.secType) {
+      case ContractType.Option:
+        return contract.name;
+      default:
+        return contract.symbol;
+    }
+  };
+
   const data: PnLDetails[] = theReports
     .reduce(
       (p, report) => p.concat(report.tradesDetails),
@@ -53,15 +63,17 @@ const PnLsDetails = ({ theReports, ..._rest }: Props): React.ReactNode => {
             description: statement.description,
           };
           break;
+
         case StatementTypes.OptionStatement:
           result = {
             id: statement.id,
             date: new Date(statement.date),
             pnl: statement.pnl * statement.fxRateToBase,
-            underlying: statement.underlying,
+            underlying: statement.option,
             description: statement.description,
           };
           break;
+
         case StatementTypes.BondStatement:
           result = {
             id: statement.id,
@@ -95,7 +107,7 @@ const PnLsDetails = ({ theReports, ..._rest }: Props): React.ReactNode => {
       footer: "Total",
     }),
     columnHelper.accessor("underlying", {
-      cell: (info) => info.getValue().symbol,
+      cell: (info) => getSymbol(info.getValue()),
       sortingFn: (a, b) =>
         (a.getValue("underlying") as StatementUnderlyingEntry).symbol.localeCompare(
           (b.getValue("underlying") as StatementUnderlyingEntry).symbol,

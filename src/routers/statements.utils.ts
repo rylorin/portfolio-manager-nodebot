@@ -12,7 +12,7 @@ import {
 } from "../models";
 import { ContractType, StatementTypes } from "../models/types";
 import { DididendSummary, InterestsSummary, ReportEntry } from "./reports.types";
-import { BaseStatement, StatementEntry, StatementOptionEntry } from "./statements.types";
+import { BaseStatement, StatementEntry, StatementUnderlyingOption } from "./statements.types";
 
 export const statementModelToStatementEntry = (item: Statement): Promise<StatementEntry> => {
   const baseStatement: BaseStatement = {
@@ -21,22 +21,20 @@ export const statementModelToStatementEntry = (item: Statement): Promise<Stateme
     date: item.date.getTime(),
     currency: item.currency,
     amount: item.netCash,
-    fees: undefined,
     fxRateToBase: item.fxRateToBase,
     description: item.description,
     trade_id: item.trade_unit_id,
-    underlying: item.stock,
   };
   switch (item.statementType) {
     case StatementTypes.EquityStatement:
       return EquityStatement.findByPk(item.id).then((thisStatement) => {
-        // baseStatement.quantity = thisStatement?.quantity;
-        baseStatement.fees = thisStatement?.fees;
         return {
           statementType: StatementTypes.EquityStatement,
           ...baseStatement,
-          quantity: thisStatement?.quantity,
-          pnl: thisStatement!.realizedPnL || 0,
+          underlying: item.stock,
+          quantity: thisStatement!.quantity,
+          pnl: thisStatement!.realizedPnL,
+          fees: thisStatement!.fees,
         };
       });
 
@@ -47,9 +45,7 @@ export const statementModelToStatementEntry = (item: Statement): Promise<Stateme
           { model: OptionContract, as: "option" },
         ],
       }).then((thisStatement) => {
-        // baseStatement.quantity = thisStatement!.quantity;
-        baseStatement.fees = thisStatement!.fees;
-        const option: StatementOptionEntry = {
+        const option: StatementUnderlyingOption = {
           id: thisStatement!.contract_id,
           secType: ContractType.Option,
           symbol: thisStatement!.contract.symbol,
@@ -64,9 +60,11 @@ export const statementModelToStatementEntry = (item: Statement): Promise<Stateme
         return {
           statementType: StatementTypes.OptionStatement,
           ...baseStatement,
+          underlying: item.stock,
           option,
-          quantity: thisStatement?.quantity,
+          quantity: thisStatement!.quantity,
           pnl: thisStatement!.realizedPnL,
+          fees: thisStatement!.fees,
         };
       });
 
@@ -76,6 +74,7 @@ export const statementModelToStatementEntry = (item: Statement): Promise<Stateme
           statementType: StatementTypes.DividendStatement,
           ...baseStatement,
           country: thisStatement!.country || "XY",
+          underlying: item.stock,
         };
       });
 
@@ -94,6 +93,7 @@ export const statementModelToStatementEntry = (item: Statement): Promise<Stateme
           statementType: StatementTypes.InterestStatement,
           ...baseStatement,
           country: thisStatement!.country || "",
+          underlying: item.stock,
         };
       });
 
@@ -104,7 +104,7 @@ export const statementModelToStatementEntry = (item: Statement): Promise<Stateme
       });
 
     case StatementTypes.FeeStatement:
-      baseStatement.fees = item.netCash;
+      // baseStatement.fees = item.netCash;
       return Promise.resolve({
         statementType: StatementTypes.FeeStatement,
         ...baseStatement,
@@ -127,17 +127,17 @@ export const statementModelToStatementEntry = (item: Statement): Promise<Stateme
         if (!thisStatement) throw Error(`BondStatement ${item.id} not found!`);
         let country: string;
         if (thisStatement.country) country = thisStatement.country;
-        else if (item.stock.isin) country = item.stock.isin.substring(0, 2);
+        else if (item.stock?.isin) country = item.stock.isin.substring(0, 2);
         else country = "ZZ";
-        baseStatement.fees = thisStatement.fees;
-        // console.log("baseStatement", baseStatement);
         return {
           statementType: StatementTypes.BondStatement,
           ...baseStatement,
           country,
+          underlying: item.stock,
           accruedInterests: thisStatement.accruedInterests,
           quantity: thisStatement.quantity,
-          pnl: thisStatement.realizedPnL || 0,
+          pnl: thisStatement.realizedPnL,
+          fees: thisStatement.fees,
         };
       });
 
@@ -176,7 +176,6 @@ export const prepareReport = (portfolio: Portfolio): Promise<ReportEntry[]> => {
       let interestEntry: InterestsSummary | undefined;
       let report = result.find((item) => item.year == year && item.month == month);
       if (!report) {
-        // console.log(date, "creating report for ", year, month);
         report = {
           year,
           month,

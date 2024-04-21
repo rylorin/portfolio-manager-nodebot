@@ -13,7 +13,7 @@ export type StatementUnderlyingEntry = {
   price: number | null;
 };
 
-export type StatementOptionEntry = StatementUnderlyingEntry & {
+export type StatementUnderlyingOption = StatementUnderlyingEntry & {
   lastTradeDate: string;
   strike: number;
   callOrPut: OptionType;
@@ -27,45 +27,54 @@ export type BaseStatement = {
   currency: string;
   fxRateToBase: number;
   amount: number;
-  underlying: StatementUnderlyingEntry | undefined;
+  // underlying: StatementUnderlyingEntry | undefined;
   trade_id: number | null;
   description: string;
-
-  fees: number | undefined;
 };
 
 export type EquityStatementEntry = BaseStatement & {
   statementType: "Trade";
-  quantity: number | undefined;
+  underlying: StatementUnderlyingEntry;
+  quantity: number;
   pnl: number;
+  fees: number;
 };
 
 export type OptionStatementEntry = BaseStatement & {
   statementType: "TradeOption";
-  option: StatementOptionEntry;
-  quantity: number | undefined;
+  option: StatementUnderlyingOption;
+  quantity: number;
   pnl: number;
+  fees: number;
+};
+
+export type BondStatementEntry = BaseStatement & {
+  statementType: "Bond";
+  country: string;
+  underlying: StatementUnderlyingEntry | undefined;
+  accruedInterests: number;
+  quantity: number;
+  pnl: number;
+  fees: number;
 };
 
 export type DividendStatementEntry = BaseStatement & {
   statementType: "Dividend";
   country: string;
+  underlying: StatementUnderlyingEntry | undefined;
 };
 export type TaxStatementEntry = BaseStatement & { statementType: "Tax"; country: string };
 
-export type InterestStatementEntry = BaseStatement & { statementType: "Interest"; country: string | null };
+export type InterestStatementEntry = BaseStatement & {
+  statementType: "Interest";
+  country: string | null;
+  underlying: StatementUnderlyingEntry | undefined;
+};
 export type WithHoldingStatementEntry = BaseStatement & { statementType: "WithHolding" };
 
 export type FeeStatementEntry = BaseStatement & { statementType: "OtherFee" };
 export type CorporateStatementEntry = BaseStatement & { statementType: "CorporateStatement" };
 export type CashStatementEntry = BaseStatement & { statementType: "Cash" };
-export type BondStatementEntry = BaseStatement & {
-  statementType: "Bond";
-  country: string;
-  accruedInterests: number;
-  quantity: number | undefined;
-  pnl: number;
-};
 export type StatementEntry =
   | EquityStatementEntry
   | OptionStatementEntry

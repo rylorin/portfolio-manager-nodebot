@@ -576,7 +576,7 @@ export class ImporterBot extends ITradingBot {
   // eslint-disable-next-line @typescript-eslint/explicit-module-boundary-types
   protected processCashTransaction(element: any): Promise<Statement | null> {
     logger.log(LogLevel.Trace, MODULE + ".processCashTransaction", element.securityID as string, element);
-    if (element.assetCategory == "BOND") console.log("processCashTransaction", element);
+    // if (element.assetCategory == "BOND") console.log("processCashTransaction", element);
     let statementType: StatementTypes;
     switch (element.type) {
       case "Withholding Tax":

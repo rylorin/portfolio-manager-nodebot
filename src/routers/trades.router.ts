@@ -18,8 +18,8 @@ import {
   OptionPositionEntry,
   PositionEntry,
   StatementEntry,
-  StatementOptionEntry,
   StatementUnderlyingEntry,
+  StatementUnderlyingOption,
 } from "./types";
 
 const MODULE = "TradesRouter";
@@ -33,7 +33,7 @@ type parentParams = { portfolioId: number };
 
 const initVirtualFromStatement = (item: StatementEntry): VirtualPositionEntry => {
   let id: number;
-  let contract: StatementUnderlyingEntry | StatementOptionEntry;
+  let contract: StatementUnderlyingEntry | StatementUnderlyingOption;
   switch (item.statementType) {
     case StatementTypes.EquityStatement:
       id = item.underlying!.id;
@@ -123,9 +123,10 @@ const updateTradeExpiry = (thisTrade: Trade, virtuals: Record<number, VirtualPos
   thisTrade.expectedExpiry = null;
   Object.values(virtuals).forEach((item) => {
     if (item.contract.secType == ContractType.Option && item.quantity) {
-      if (!thisTrade.expectedExpiry) thisTrade.expectedExpiry = (item.contract as StatementOptionEntry).lastTradeDate;
-      else if (thisTrade.expectedExpiry < (item.contract as StatementOptionEntry).lastTradeDate)
-        thisTrade.expectedExpiry = (item.contract as StatementOptionEntry).lastTradeDate;
+      if (!thisTrade.expectedExpiry)
+        thisTrade.expectedExpiry = (item.contract as StatementUnderlyingOption).lastTradeDate;
+      else if (thisTrade.expectedExpiry < (item.contract as StatementUnderlyingOption).lastTradeDate)
+        thisTrade.expectedExpiry = (item.contract as StatementUnderlyingOption).lastTradeDate;
     }
   });
 };
@@ -349,35 +350,35 @@ const computeComboRisk = (thisTrade: Trade, virtuals: Record<number, VirtualPosi
         stocks[item.contract.id] = { contract: item.contract, cost: item.cost, quantity: item.quantity };
         break;
       case SecType.OPT:
-        if (item.quantity && !((item.contract as StatementOptionEntry).strike in limits))
-          limits.push((item.contract as StatementOptionEntry).strike);
-        switch ((item.contract as StatementOptionEntry).callOrPut) {
+        if (item.quantity && !((item.contract as StatementUnderlyingOption).strike in limits))
+          limits.push((item.contract as StatementUnderlyingOption).strike);
+        switch ((item.contract as StatementUnderlyingOption).callOrPut) {
           case OptionType.Call:
-            if (calls[(item.contract as StatementOptionEntry).strike])
-              calls[(item.contract as StatementOptionEntry).strike] = {
-                cost: calls[(item.contract as StatementOptionEntry).strike].cost + item.cost,
+            if (calls[(item.contract as StatementUnderlyingOption).strike])
+              calls[(item.contract as StatementUnderlyingOption).strike] = {
+                cost: calls[(item.contract as StatementUnderlyingOption).strike].cost + item.cost,
                 quantity:
-                  calls[(item.contract as StatementOptionEntry).strike].quantity +
-                  item.quantity * (item.contract as StatementOptionEntry).multiplier,
+                  calls[(item.contract as StatementUnderlyingOption).strike].quantity +
+                  item.quantity * (item.contract as StatementUnderlyingOption).multiplier,
               };
             else
-              calls[(item.contract as StatementOptionEntry).strike] = {
+              calls[(item.contract as StatementUnderlyingOption).strike] = {
                 cost: item.cost,
-                quantity: item.quantity * (item.contract as StatementOptionEntry).multiplier,
+                quantity: item.quantity * (item.contract as StatementUnderlyingOption).multiplier,
               };
             break;
           case OptionType.Put:
-            if (puts[(item.contract as StatementOptionEntry).strike])
-              puts[(item.contract as StatementOptionEntry).strike] = {
-                cost: puts[(item.contract as StatementOptionEntry).strike].cost + item.cost,
+            if (puts[(item.contract as StatementUnderlyingOption).strike])
+              puts[(item.contract as StatementUnderlyingOption).strike] = {
+                cost: puts[(item.contract as StatementUnderlyingOption).strike].cost + item.cost,
                 quantity:
-                  puts[(item.contract as StatementOptionEntry).strike].quantity +
-                  item.quantity * (item.contract as StatementOptionEntry).multiplier,
+                  puts[(item.contract as StatementUnderlyingOption).strike].quantity +
+                  item.quantity * (item.contract as StatementUnderlyingOption).multiplier,
               };
             else
-              puts[(item.contract as StatementOptionEntry).strike] = {
+              puts[(item.contract as StatementUnderlyingOption).strike] = {
                 cost: item.cost,
-                quantity: item.quantity * (item.contract as StatementOptionEntry).multiplier,
+                quantity: item.quantity * (item.contract as StatementUnderlyingOption).multiplier,
               };
             break;
         }
@@ -451,7 +452,7 @@ const countContratTypes = (virtuals: Record<number, VirtualPositionEntry>): numb
         else if (item.quantity < 0) short_stock += 1;
         break;
       case SecType.OPT:
-        switch ((item.contract as StatementOptionEntry).callOrPut) {
+        switch ((item.contract as StatementUnderlyingOption).callOrPut) {
           case OptionType.Call:
             if (item.quantity > 0) long_call += 1;
             else if (item.quantity < 0) short_call += 1;
@@ -495,9 +496,9 @@ const computeTradeStrategy = (thisTrade: Trade, virtuals: Record<number, Virtual
         .filter(
           (item) =>
             item.contract.secType == SecType.OPT &&
-            (item.contract as StatementOptionEntry).callOrPut == OptionType.Call,
+            (item.contract as StatementUnderlyingOption).callOrPut == OptionType.Call,
         )
-        .reduce((p, v) => Math.min(p, (v.contract as StatementOptionEntry).strike), Infinity);
+        .reduce((p, v) => Math.min(p, (v.contract as StatementUnderlyingOption).strike), Infinity);
       if (strike < stocks_cost / stocks_quantity) strategy = TradeStrategy["buy write"];
       else strategy = TradeStrategy["covered short call"];
     } else strategy = TradeStrategy["long stock"];
