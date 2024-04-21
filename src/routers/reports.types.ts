@@ -58,7 +58,7 @@ export type ReportEntry = {
   dividendsSummary: DididendSummary[];
   dividendsDetails: (DividendStatementEntry | TaxStatementEntry)[];
   interestsSummary: InterestsSummary[];
-  interestsDetails: (InterestStatementEntry | WithHoldingStatementEntry | BondStatementEntry)[];
+  interestsDetails: (InterestStatementEntry | WithHoldingStatementEntry)[];
   feesSummary: FeesSummary;
   feesDetails: FeeStatementEntry[];
   tradesSummary: TradesSummary;

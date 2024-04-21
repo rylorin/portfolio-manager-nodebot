@@ -15,14 +15,14 @@ const BondStatementProps = ({ statement, ..._rest }: Props): React.ReactNode => 
           {statement.country}
         </Text>
       </Flex>
-      <Flex justifyContent="center" gap="2">
+      {/*<Flex justifyContent="center" gap="2">
         <Text w="110px" as="b" textAlign="right">
           Accrued int.:
         </Text>
-        <Text w="200px" textAlign="right">
+         <Text w="200px" textAlign="right">
           {statement.accruedInterests}
-        </Text>
-      </Flex>
+        </Text> 
+      </Flex>*/}
       <Flex justifyContent="center" gap="2">
         <Text w="110px" as="b" textAlign="right">
           Quantity:

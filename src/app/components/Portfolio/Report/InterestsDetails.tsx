@@ -4,12 +4,7 @@ import { createColumnHelper } from "@tanstack/react-table";
 import { default as React } from "react";
 import { Link as RouterLink, useParams } from "react-router-dom";
 import { StatementTypes } from "../../../../models/types";
-import {
-  BondStatementEntry,
-  InterestStatementEntry,
-  ReportEntry,
-  WithHoldingStatementEntry,
-} from "../../../../routers/types";
+import { InterestStatementEntry, ReportEntry, WithHoldingStatementEntry } from "../../../../routers/types";
 import Number from "../../Number/Number";
 import { StatementLink } from "../Statement/links";
 import { DataTable } from "./DataTable";
@@ -42,7 +37,7 @@ const InterestsDetails = ({ theReports, ..._rest }: Props): React.ReactNode => {
   const data: InterestDetails[] = theReports
     .reduce(
       (p, report) => p.concat(report.interestsDetails),
-      [] as (InterestStatementEntry | WithHoldingStatementEntry | BondStatementEntry)[],
+      [] as (InterestStatementEntry | WithHoldingStatementEntry)[],
     )
     .map((statement) => {
       let result: InterestDetails;
@@ -69,17 +64,17 @@ const InterestsDetails = ({ theReports, ..._rest }: Props): React.ReactNode => {
             description: statement.description,
           };
           break;
-        case StatementTypes.BondStatement:
-          result = {
-            id: statement.id,
-            date: new Date(statement.date),
-            country: statement.country,
-            credit: statement.accruedInterests > 0 ? statement.accruedInterests * statement.fxRateToBase : 0,
-            debit: statement.accruedInterests < 0 ? statement.accruedInterests * statement.fxRateToBase : 0,
-            withHolding: 0,
-            description: statement.description,
-          };
-          break;
+        // case StatementTypes.BondStatement:
+        //   result = {
+        //     id: statement.id,
+        //     date: new Date(statement.date),
+        //     country: statement.country,
+        //     credit: statement.accruedInterests > 0 ? statement.accruedInterests * statement.fxRateToBase : 0,
+        //     debit: statement.accruedInterests < 0 ? statement.accruedInterests * statement.fxRateToBase : 0,
+        //     withHolding: 0,
+        //     description: statement.description,
+        //   };
+        //   break;
       }
       totalCredit += result.credit;
       totalDebit += result.debit;
