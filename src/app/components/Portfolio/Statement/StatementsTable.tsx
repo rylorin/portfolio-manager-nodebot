@@ -22,6 +22,7 @@ import {
 } from "@chakra-ui/react";
 import { FunctionComponent, default as React } from "react";
 import { Form, Link as RouterLink, useLoaderData, useParams } from "react-router-dom";
+import { StatementTypes } from "../../../../models/types";
 import { StatementEntry } from "../../../../routers/statements.types";
 import Number from "../../Number/Number";
 import { ContractLink } from "../Contract/links";
@@ -39,9 +40,20 @@ const StatementsTable: FunctionComponent<Props> = ({ content, currency, title, .
   const { portfolioId } = useParams();
   const theStatements = content || (useLoaderData() as StatementEntry[]);
   let previousId: number;
+  let totalFees = 0;
 
-  const savePrevious = (value: number): undefined => {
-    if (value) previousId = value;
+  const savePrevious = (item: StatementEntry): undefined => {
+    if (item.trade_id) previousId = item.trade_id;
+    switch (item.statementType) {
+      case StatementTypes.FeeStatement:
+        totalFees += item.amount * item.fxRateToBase;
+        break;
+      case StatementTypes.EquityStatement:
+      case StatementTypes.OptionStatement:
+      case StatementTypes.BondStatement:
+        totalFees += item.fees * item.fxRateToBase;
+        break;
+    }
     return undefined;
   };
 
@@ -88,11 +100,9 @@ const StatementsTable: FunctionComponent<Props> = ({ content, currency, title, .
                   <Td isNumeric>
                     <Number value={"pnl" in item ? item.pnl : 0} decimals={2} />
                   </Td>
-                  <Td isNumeric>
-                    <Number value={item.fees} decimals={2} />
-                  </Td>
+                  <Td isNumeric>{"fees" in item && <Number value={item.fees} decimals={2} />}</Td>
                   <Td>
-                    {item.underlying && (
+                    {"underlying" in item && (
                       <Link to={ContractLink.toItem(portfolioId, item.underlying.id)} as={RouterLink}>
                         {item.underlying.symbol}
                       </Link>
@@ -115,7 +125,7 @@ const StatementsTable: FunctionComponent<Props> = ({ content, currency, title, .
                         </Form>
                       </>
                     )}
-                    {item.underlying && !item.trade_id && (
+                    {"underlying" in item && !item.trade_id && (
                       <>
                         <Form method="post" action={`StatementCreateTrade/${item.id}`} className="inline">
                           <IconButton
@@ -171,7 +181,7 @@ const StatementsTable: FunctionComponent<Props> = ({ content, currency, title, .
                       />
                     </Form>
                   </Td>
-                  {savePrevious(item.trade_id)}
+                  {savePrevious(item)}
                 </Tr>
               ))}
           </Tbody>
@@ -200,13 +210,7 @@ const StatementsTable: FunctionComponent<Props> = ({ content, currency, title, .
                 />
               </Td>
               <Td isNumeric>
-                <Number
-                  value={theStatements.reduce(
-                    (p: number, item) =>
-                      (p += (item.fees || 0) * (currency ? (currency == item.currency ? 1 : 0) : item.fxRateToBase)),
-                    0,
-                  )}
-                />
+                <Number value={totalFees} />
               </Td>
               <Td></Td>
               <Td></Td>

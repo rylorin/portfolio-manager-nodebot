@@ -26,7 +26,6 @@ export * from "./portfolio.model";
 export * from "./position.model";
 export * from "./setting.model";
 export * from "./statement.model";
-export * from "./statement.types";
 export * from "./stock_contract.model";
 export * from "./tax_statement.model";
 export * from "./trade.model";

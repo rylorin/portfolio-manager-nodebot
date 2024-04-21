@@ -96,7 +96,7 @@ const StatementEdit: FunctionComponent<Props> = ({ ..._rest }): React.ReactNode 
                   {theStatement.fxRateToBase}
                 </Text>
               </Flex>
-              {theStatement.underlying && (
+              {"underlying" in theStatement && (
                 <Flex justifyContent="center" gap="2">
                   <Text w="90px" as="b" textAlign="right">
                     Underlying:
