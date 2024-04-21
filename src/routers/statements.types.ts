@@ -52,7 +52,7 @@ export type BondStatementEntry = BaseStatement & {
   statementType: "Bond";
   country: string;
   underlying: StatementUnderlyingEntry | undefined;
-  accruedInterests: number;
+  // accruedInterests: number;
   quantity: number;
   pnl: number;
   fees: number;

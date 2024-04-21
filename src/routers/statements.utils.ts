@@ -134,7 +134,7 @@ export const statementModelToStatementEntry = (item: Statement): Promise<Stateme
           ...baseStatement,
           country,
           underlying: item.stock,
-          accruedInterests: thisStatement.accruedInterests,
+          // accruedInterests: thisStatement.accruedInterests,
           quantity: thisStatement.quantity,
           pnl: thisStatement.realizedPnL,
           fees: thisStatement.fees,
@@ -193,26 +193,30 @@ export const prepareReport = (portfolio: Portfolio): Promise<ReportEntry[]> => {
       }
       switch (statement.statementType) {
         case StatementTypes.DividendStatement:
-          dividendEntry = report.dividendsSummary.find((item) => item.country == statement.country);
-          if (!dividendEntry) {
-            dividendEntry = { country: statement.country, grossAmountInBase: 0, taxes: 0, netAmountInBase: 0 };
-            report.dividendsSummary.push(dividendEntry);
-          }
-          dividendEntry.grossAmountInBase += statement.amount * statement.fxRateToBase;
-          dividendEntry.netAmountInBase += statement.amount * statement.fxRateToBase;
-          report.dividendsDetails.push(statement);
-          break;
-
         case StatementTypes.TaxStatement:
           dividendEntry = report.dividendsSummary.find((item) => item.country == statement.country);
           if (!dividendEntry) {
             dividendEntry = { country: statement.country, grossAmountInBase: 0, taxes: 0, netAmountInBase: 0 };
             report.dividendsSummary.push(dividendEntry);
           }
-          dividendEntry.taxes += statement.amount * statement.fxRateToBase;
+          if (statement.statementType == StatementTypes.DividendStatement)
+            dividendEntry.grossAmountInBase += statement.amount * statement.fxRateToBase;
+          else if (statement.statementType == StatementTypes.TaxStatement)
+            dividendEntry.taxes += statement.amount * statement.fxRateToBase;
           dividendEntry.netAmountInBase += statement.amount * statement.fxRateToBase;
           report.dividendsDetails.push(statement);
           break;
+
+        // case StatementTypes.TaxStatement:
+        //   dividendEntry = report.dividendsSummary.find((item) => item.country == statement.country);
+        //   if (!dividendEntry) {
+        //     dividendEntry = { country: statement.country, grossAmountInBase: 0, taxes: 0, netAmountInBase: 0 };
+        //     report.dividendsSummary.push(dividendEntry);
+        //   }
+        //   dividendEntry.taxes += statement.amount * statement.fxRateToBase;
+        //   dividendEntry.netAmountInBase += statement.amount * statement.fxRateToBase;
+        //   report.dividendsDetails.push(statement);
+        //   break;
 
         case StatementTypes.InterestStatement:
           interestEntry = report.interestsSummary.find(
@@ -270,24 +274,24 @@ export const prepareReport = (portfolio: Portfolio): Promise<ReportEntry[]> => {
 
         case StatementTypes.BondStatement:
           // interest part
-          interestEntry = report.interestsSummary.find(
-            (item) => item.country == (statement.country || portfolio.country),
-          );
-          if (!interestEntry) {
-            interestEntry = {
-              country: statement.country || portfolio.country,
-              grossCredit: 0,
-              netDebit: 0,
-              withHolding: 0,
-              netTotal: 0,
-            };
-            report.interestsSummary.push(interestEntry);
-          }
-          if (statement.accruedInterests > 0)
-            interestEntry.grossCredit += statement.accruedInterests * statement.fxRateToBase;
-          else interestEntry.netDebit += statement.accruedInterests * statement.fxRateToBase;
-          interestEntry.netTotal += statement.accruedInterests * statement.fxRateToBase;
-          report.interestsDetails.push(statement);
+          // interestEntry = report.interestsSummary.find(
+          //   (item) => item.country == (statement.country || portfolio.country),
+          // );
+          // if (!interestEntry) {
+          //   interestEntry = {
+          //     country: statement.country || portfolio.country,
+          //     grossCredit: 0,
+          //     netDebit: 0,
+          //     withHolding: 0,
+          //     netTotal: 0,
+          //   };
+          //   report.interestsSummary.push(interestEntry);
+          // }
+          // if (statement.accruedInterests > 0)
+          //   interestEntry.grossCredit += statement.accruedInterests * statement.fxRateToBase;
+          // else interestEntry.netDebit += statement.accruedInterests * statement.fxRateToBase;
+          // interestEntry.netTotal += statement.accruedInterests * statement.fxRateToBase;
+          // report.interestsDetails.push(statement);
           // PnL part
           report.tradesSummary.bondPnLInBase += statement.pnl * statement.fxRateToBase;
           report.tradesSummary.totalPnL += statement.pnl * statement.fxRateToBase;

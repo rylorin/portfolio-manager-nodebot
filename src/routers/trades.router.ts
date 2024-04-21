@@ -2,9 +2,9 @@ import { OptionType, SecType } from "@stoqey/ib";
 import express from "express";
 import { Op } from "sequelize";
 import logger, { LogLevel } from "../logger";
-import { Contract, Currency, Portfolio, Position, Statement, StatementTypes, Trade } from "../models";
+import { Contract, Currency, Portfolio, Position, Statement, Trade } from "../models";
 import { expirationToDate } from "../models/date_utils";
-import { ContractType, TradeStatus, TradeStrategy } from "../models/types";
+import { ContractType, StatementTypes, TradeStatus, TradeStrategy } from "../models/types";
 import { preparePositions } from "./positions.router";
 import { prepareStatements } from "./statements.utils";
 import {

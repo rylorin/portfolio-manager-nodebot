@@ -42,7 +42,7 @@ const DividendsDetails = ({ theReports, ..._rest }: Props): React.ReactNode => {
             id: statement.id,
             date: new Date(statement.date),
             country: statement.country,
-            amount: statement.amount > 0 ? statement.amount * statement.fxRateToBase : 0,
+            amount: statement.amount * statement.fxRateToBase,
             tax: 0,
             description: statement.description,
           };

@@ -90,8 +90,9 @@ const makeSynthesys = (statements: Statement[]): Promise<StatementsSynthesysEntr
             return Promise.resolve(value);
           case StatementTypes.BondStatement:
             return BondStatement.findByPk(item.id).then((statement) => {
-              value[idx].interests += statement ? statement.accruedInterests * item.fxRateToBase : 0;
-              value[idx].total += statement ? statement.accruedInterests * item.fxRateToBase : 0;
+              // value[idx].interests += statement ? statement.accruedInterests * item.fxRateToBase : 0;
+              // value[idx].total += statement ? statement.accruedInterests * item.fxRateToBase : 0;
+              value[idx].total += statement ? statement.realizedPnL * item.fxRateToBase : 0;
               return value;
             });
           case StatementTypes.TaxStatement:

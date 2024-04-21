@@ -21,8 +21,9 @@ export class BondStatement extends Model<
   @Column({ type: DataType.STRING(2), field: "country" })
   declare country: string;
 
-  @Column({ type: DataType.FLOAT, field: "accruedInt" })
-  declare accruedInterests: number;
+  // accruedInterests are part of PnL
+  // @Column({ type: DataType.FLOAT, field: "accruedInt" })
+  // declare accruedInterests: number;
 
   /** proceeds */
   @Column({ type: DataType.FLOAT(8, 2), defaultValue: 0 })
