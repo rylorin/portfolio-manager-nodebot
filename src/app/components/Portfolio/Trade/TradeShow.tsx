@@ -2,6 +2,7 @@ import { ArrowBackIcon, DeleteIcon, EditIcon } from "@chakra-ui/icons";
 import { Flex, IconButton, Link, Text, VStack } from "@chakra-ui/react";
 import React, { FunctionComponent } from "react";
 import { Form, Link as RouterLink, useLoaderData, useNavigate, useParams } from "react-router-dom";
+import { TradeStatus } from "../../../../models/trade.types";
 import { PositionEntry } from "../../../../routers/positions.types";
 import { TradeEntry } from "../../../../routers/trades.types";
 import { formatNumber } from "../../../utils";
@@ -138,14 +139,18 @@ const TradeShow: FunctionComponent<Props> = ({ ..._rest }): React.ReactNode => {
             <Number value={item.pnlInBase} />
           </Text>
         </Flex>
-        <Flex justifyContent="center" gap="2">
-          <Text w="90px" as="b" textAlign="right">
-            Exp. P&L:
-          </Text>
-          <Text w="200px" textAlign="right">
-            <Number value={item.unrlzdPnl} />
-          </Text>
-        </Flex>
+        {item.status != TradeStatus.closed && (
+          <>
+            <Flex justifyContent="center" gap="2">
+              <Text w="90px" as="b" textAlign="right">
+                Exp. P&L:
+              </Text>
+              <Text w="200px" textAlign="right">
+                <Number value={item.unrlzdPnl} />
+              </Text>
+            </Flex>
+          </>
+        )}
         <Flex justifyContent="center" gap="2">
           <Text w="90px" as="b" textAlign="right">
             APY:

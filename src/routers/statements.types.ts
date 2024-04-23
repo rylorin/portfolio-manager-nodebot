@@ -1,5 +1,4 @@
-import { OptionType } from "@stoqey/ib";
-import { ContractType } from "../models/contract.types";
+import { ContractType, OptionType } from "../models/contract.types";
 
 export type SynthesysEntry = { stocks: number; options: number; dividends: number; interests: number; total: number };
 export type StatementsSynthesysEntries = Record<"string", SynthesysEntry>;

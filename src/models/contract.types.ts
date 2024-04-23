@@ -12,6 +12,12 @@ export const ContractType = {
 } as const;
 export type ContractType = (typeof ContractType)[keyof typeof ContractType];
 
+export const OptionType = {
+  Call: "C",
+  Put: "P",
+} as const;
+export type OptionType = (typeof OptionType)[keyof typeof OptionType];
+
 export type ContractAttributes = {
   id: number;
   updatedAt: Date;

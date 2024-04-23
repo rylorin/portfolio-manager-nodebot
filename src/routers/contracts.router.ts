@@ -8,8 +8,8 @@ import { preparePositions } from "./positions.router";
 import { OptionPositionEntry, PositionEntry } from "./positions.types";
 import { StatementEntry } from "./statements.types";
 import { statementModelToStatementEntry } from "./statements.utils";
-import { tradeModelToTradeEntry } from "./trades.router";
 import { TradeEntry } from "./trades.types";
+import { tradeModelToTradeEntry } from "./trades.utils";
 
 const MODULE = "ContractsRouter";
 

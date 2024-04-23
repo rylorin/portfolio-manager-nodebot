@@ -84,6 +84,7 @@ export const statementModelToStatementEntry = (item: Statement): Promise<Stateme
           statementType: StatementTypes.TaxStatement,
           ...baseStatement,
           country: thisStatement!.country || "YY",
+          underlying: item.stock,
         };
       });
 
@@ -92,6 +93,7 @@ export const statementModelToStatementEntry = (item: Statement): Promise<Stateme
         return {
           statementType: StatementTypes.InterestStatement,
           ...baseStatement,
+          pnl: item.netCash,
           country: thisStatement!.country || "",
           underlying: item.stock,
         };

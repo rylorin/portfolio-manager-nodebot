@@ -74,6 +74,7 @@ const PositionsTable: FunctionComponent<Props> = ({
     let result: number;
     switch (a.contract.secType) {
       case ContractType.Stock:
+      case ContractType.Bond:
         result = a.contract.id;
         break;
       case ContractType.Option:

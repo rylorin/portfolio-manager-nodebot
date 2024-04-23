@@ -102,7 +102,7 @@ const StatementsTable: FunctionComponent<Props> = ({ content, currency, title, .
                   </Td>
                   <Td isNumeric>{"fees" in item && <Number value={item.fees} decimals={2} />}</Td>
                   <Td>
-                    {"underlying" in item && (
+                    {"underlying" in item && item.underlying && (
                       <Link to={ContractLink.toItem(portfolioId, item.underlying.id)} as={RouterLink}>
                         {item.underlying.symbol}
                       </Link>

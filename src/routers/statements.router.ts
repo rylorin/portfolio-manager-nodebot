@@ -18,7 +18,7 @@ import { StatementTypes } from "../models/statement.types";
 import { TradeStatus, TradeStrategy } from "../models/trade.types";
 import { StatementEntry, StatementsSynthesysEntries } from "./statements.types";
 import { statementModelToStatementEntry } from "./statements.utils";
-import { updateTradeDetails } from "./trades.router";
+import { updateTradeDetails } from "./trades.utils";
 
 const MODULE = "StatementsRouter";
 
