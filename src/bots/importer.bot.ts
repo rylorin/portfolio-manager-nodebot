@@ -17,9 +17,13 @@ import {
   TaxStatement,
 } from "../models";
 import { BondStatement } from "../models/bond_statement.model";
+import { CorporateStatement } from "../models/corpo_statement.model";
 import { StatementTypes } from "../models/statement.types";
 
 const MODULE = "ImporterBot";
+
+// eslint-disable-next-line @typescript-eslint/no-unsafe-argument,@typescript-eslint/no-unused-vars
+const sequelize_logging = (...args: any[]): void => logger.trace(MODULE + ".squelize", ...args);
 
 const ibContractFromElement = (element: any): IbContract => {
   const ibContract: IbContract = {
@@ -684,18 +688,45 @@ export class ImporterBot extends ITradingBot {
   }
 
   // eslint-disable-next-line @typescript-eslint/explicit-module-boundary-types
-  protected processCorporateAction(element: any): void {
-    console.warn("processCorporateAction", element);
+  protected processCorporateAction(element: any): Promise<Statement> {
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
+    logger.log(LogLevel.Trace, "processCorporateAction", element.symbol, element);
+    return (element.assetCategory ? this.findOrCreateContract(ibContractFromElement(element)) : Promise.resolve(null))
+      .then((contract: Contract | null | undefined) => {
+        return Statement.findOrCreate({
+          where: { transactionId: element.transactionID },
+          defaults: {
+            portfolio_id: this.portfolio.id,
+            statementType: StatementTypes.CorporateStatement,
+            date: element.dateTime,
+            currency: element.currency,
+            netCash: element.amount,
+            description: element.description,
+            transactionId: element.transactionID,
+            fxRateToBase: element.fxRateToBase,
+            stock_id: contract?.id,
+          },
+        });
+      })
+      .then(([statement, _created]) =>
+        CorporateStatement.findOrCreate({
+          where: { id: statement.id },
+          defaults: { id: statement.id, quantity: element.quantity },
+        }).then(([_subStatement, _created]) => statement),
+      );
   }
 
-  private processAllCorporateActions(element: any): Promise<void> {
+  private processAllCorporateActions(element: any): Promise<Statement> {
     if (element.CorporateActions.CorporateAction instanceof Array) {
-      // eslint-disable-next-line @typescript-eslint/no-unsafe-call
-      element.CorporateActions.CorporateAction.forEach((element) => this.processCorporateAction(element));
+      // eslint-disable-next-line @typescript-eslint/no-unsafe-return,@typescript-eslint/no-unsafe-call
+      return element.CorporateActions.CorporateAction.reduce(
+        (p: Promise<any>, element: any) => p.then(() => this.processCorporateAction(element)),
+        Promise.resolve(),
+      );
     } else if (element.CorporateActions.CorporateAction) {
-      this.processCorporateAction(element.CorporateActions.CorporateAction);
+      return this.processCorporateAction(element.CorporateActions.CorporateAction);
     }
-    return Promise.resolve();
+    return Promise.resolve(null as unknown as Statement);
   }
 
   // eslint-disable-next-line @typescript-eslint/explicit-module-boundary-types

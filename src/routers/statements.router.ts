@@ -22,7 +22,7 @@ import { updateTradeDetails } from "./trades.utils";
 
 const MODULE = "StatementsRouter";
 
-// eslint-disable-next-line @typescript-eslint/no-unsafe-argument
+// eslint-disable-next-line @typescript-eslint/no-unsafe-argument,@typescript-eslint/no-unused-vars
 const sequelize_logging = (...args: any[]): void => logger.trace(MODULE + ".squelize", ...args);
 
 const router = express.Router({ mergeParams: true });
@@ -282,6 +282,7 @@ router.get("/:statementId(\\d+)/GuessTrade", (req, res): void => {
           case StatementTypes.DividendStatement:
           case StatementTypes.TaxStatement:
           case StatementTypes.InterestStatement:
+          case StatementTypes.CorporateStatement:
             logger.log(LogLevel.Info, MODULE + ".GuessTrade", undefined, "equity statement", statement);
             return Statement.findOne({
               where: {

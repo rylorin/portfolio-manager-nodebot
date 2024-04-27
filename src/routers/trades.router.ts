@@ -16,8 +16,8 @@ import { PositionEntry } from "./types";
 
 const MODULE = "TradesRouter";
 
-// eslint-disable-next-line @typescript-eslint/no-unsafe-argument
-const _sequelize_logging = (...args: any[]): void => logger.trace(MODULE + ".squelize", ...args);
+// eslint-disable-next-line @typescript-eslint/no-unsafe-argument,@typescript-eslint/no-unused-vars
+const sequelize_logging = (...args: any[]): void => logger.trace(MODULE + ".squelize", ...args);
 
 const router = express.Router({ mergeParams: true });
 

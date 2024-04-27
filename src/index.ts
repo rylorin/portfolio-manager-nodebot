@@ -41,6 +41,7 @@ import {
   Trade,
 } from "./models";
 import { BondStatement } from "./models/bond_statement.model";
+import { CorporateStatement } from "./models/corpo_statement.model";
 import { Statement } from "./models/statement.model";
 import StartServer from "./server";
 
@@ -109,6 +110,7 @@ export class MyTradingBotApp extends IBApiNextApp {
         Setting,
         BondContract,
         BondStatement,
+        CorporateStatement,
       ],
       modelMatch: (filename, member) => {
         return filename.substring(0, filename.indexOf(".model")) === member.toLowerCase();

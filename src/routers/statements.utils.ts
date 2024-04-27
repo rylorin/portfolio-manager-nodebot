@@ -116,6 +116,7 @@ export const statementModelToStatementEntry = (item: Statement): Promise<Stateme
       return Promise.resolve({
         statementType: StatementTypes.CorporateStatement,
         ...baseStatement,
+        underlying: item.stock,
       });
 
     case StatementTypes.CashStatement:
