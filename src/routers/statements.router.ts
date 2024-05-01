@@ -14,6 +14,7 @@ import {
   Trade,
 } from "../models";
 import { BondStatement } from "../models/bond_statement.model";
+import { CorporateStatement } from "../models/corpo_statement.model";
 import { StatementTypes } from "../models/statement.types";
 import { TradeStatus, TradeStrategy } from "../models/trade.types";
 import { StatementEntry, StatementsSynthesysEntries } from "./statements.types";
@@ -74,32 +75,47 @@ const makeSynthesys = (statements: Statement[]): Promise<StatementsSynthesysEntr
               value[idx].total += statement ? statement.realizedPnL * item.fxRateToBase : 0;
               return value;
             });
+
           case StatementTypes.OptionStatement:
             return OptionStatement.findByPk(item.id).then((statement) => {
               value[idx].options += statement ? statement.realizedPnL * item.fxRateToBase : 0;
               value[idx].total += statement ? statement.realizedPnL * item.fxRateToBase : 0;
               return value;
             });
+
           case StatementTypes.DividendStatement:
+          case StatementTypes.TaxStatement:
             value[idx].dividends += item.netCash * item.fxRateToBase;
             value[idx].total += item.netCash * item.fxRateToBase;
             return Promise.resolve(value);
+
           case StatementTypes.InterestStatement:
             value[idx].interests += item.netCash * item.fxRateToBase;
             value[idx].total += item.netCash * item.fxRateToBase;
             return Promise.resolve(value);
+
           case StatementTypes.BondStatement:
             return BondStatement.findByPk(item.id).then((statement) => {
-              // value[idx].interests += statement ? statement.accruedInterests * item.fxRateToBase : 0;
-              // value[idx].total += statement ? statement.accruedInterests * item.fxRateToBase : 0;
               value[idx].total += statement ? statement.realizedPnL * item.fxRateToBase : 0;
               return value;
             });
-          case StatementTypes.TaxStatement:
-          case StatementTypes.CashStatement:
+
           case StatementTypes.FeeStatement:
+            return FeeStatement.findByPk(item.id).then((_statement) => {
+              value[idx].total += item.netCash * item.fxRateToBase;
+              return value;
+            });
+
+          case StatementTypes.CorporateStatement:
+            return CorporateStatement.findByPk(item.id).then((_statement) => {
+              value[idx].total += item.netCash * item.fxRateToBase;
+              return value;
+            });
+
+          case StatementTypes.CashStatement:
             // Not included in synthesys
             return Promise.resolve(value);
+
           default: // Fallback
             logger.log(
               LogLevel.Warning,

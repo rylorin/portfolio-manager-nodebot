@@ -880,6 +880,10 @@ export class ITradingBot extends EventEmitter {
         // canonize ibContract
         let details: ContractDetails | undefined = undefined;
         if (ibContract.secType != IbSecType.BAG) {
+          if (ibContract.secType == IbSecType.STK && ibContract.currency == "USD") {
+            // Workaround because sometimes NASDAQ (for example) as exchange doesn't get contract
+            ibContract.exchange = "SMART";
+          }
           logger.log(
             LogLevel.Trace,
             MODULE + ".findOrCreateContract",

@@ -33,7 +33,7 @@ const ReportsIndex: FunctionComponent<Props> = ({ ..._rest }): React.ReactNode =
   const Cell = ({ year, month }: { year: number; month: number }): React.ReactNode => {
     const report = theReports.find((item) => item.year == year && item.month == month);
     const value = report
-      ? report.dividendsSummary.reduce((p, v) => p + v.grossAmountInBase, 0) +
+      ? report.dividendsSummary.reduce((p, v) => p + v.netAmountInBase, 0) +
         report.interestsSummary.reduce((p, v) => p + v.netTotal, 0) +
         report.feesSummary.totalAmountInBase +
         report.tradesSummary.totalPnL

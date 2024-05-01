@@ -75,6 +75,7 @@ export const statementModelToStatementEntry = (item: Statement): Promise<Stateme
           ...baseStatement,
           country: thisStatement!.country || "XY",
           underlying: item.stock,
+          pnl: item.netCash,
         };
       });
 
@@ -85,6 +86,7 @@ export const statementModelToStatementEntry = (item: Statement): Promise<Stateme
           ...baseStatement,
           country: thisStatement!.country || "YY",
           underlying: item.stock,
+          pnl: item.netCash,
         };
       });
 
@@ -110,6 +112,7 @@ export const statementModelToStatementEntry = (item: Statement): Promise<Stateme
       return Promise.resolve({
         statementType: StatementTypes.FeeStatement,
         ...baseStatement,
+        pnl: item.netCash,
       });
 
     case StatementTypes.CorporateStatement:
@@ -209,17 +212,6 @@ export const prepareReport = (portfolio: Portfolio): Promise<ReportEntry[]> => {
           dividendEntry.netAmountInBase += statement.amount * statement.fxRateToBase;
           report.dividendsDetails.push(statement);
           break;
-
-        // case StatementTypes.TaxStatement:
-        //   dividendEntry = report.dividendsSummary.find((item) => item.country == statement.country);
-        //   if (!dividendEntry) {
-        //     dividendEntry = { country: statement.country, grossAmountInBase: 0, taxes: 0, netAmountInBase: 0 };
-        //     report.dividendsSummary.push(dividendEntry);
-        //   }
-        //   dividendEntry.taxes += statement.amount * statement.fxRateToBase;
-        //   dividendEntry.netAmountInBase += statement.amount * statement.fxRateToBase;
-        //   report.dividendsDetails.push(statement);
-        //   break;
 
         case StatementTypes.InterestStatement:
           interestEntry = report.interestsSummary.find(
