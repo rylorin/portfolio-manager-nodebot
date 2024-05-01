@@ -52,7 +52,7 @@ const OtherDetails = ({ theReports, ..._rest }: Props): React.ReactNode => {
           };
           break;
         default:
-          throw Error(`Unimplemented statement type: #${statement.id}`);
+          throw Error(`Unimplemented statement type: #${(statement as StatementEntry).id}`);
       }
       totalAmount += result.amount;
       return result;
