@@ -55,7 +55,7 @@ const ReportsIndex: FunctionComponent<Props> = ({ ..._rest }): React.ReactNode =
       .reduce(
         (p, report) =>
           p +
-          report.dividendsSummary.reduce((p, v) => p + v.grossAmountInBase, 0) +
+          report.dividendsSummary.reduce((p, v) => p + v.netAmountInBase, 0) +
           report.interestsSummary.reduce((p, v) => p + v.netTotal, 0) +
           report.feesSummary.totalAmountInBase +
           report.tradesSummary.totalPnL,
