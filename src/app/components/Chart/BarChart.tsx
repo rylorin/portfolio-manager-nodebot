@@ -2,52 +2,58 @@ import { BarElement, CategoryScale, Chart as ChartJS, Legend, LinearScale, Title
 import React, { FunctionComponent } from "react";
 import { Bar } from "react-chartjs-2";
 
+export type DataSet = {
+  label: string;
+  data: number[];
+};
+
 ChartJS.register(CategoryScale, LinearScale, BarElement, Title, Tooltip, Legend);
 
 type BarChartProps = {
   title: string;
   labels: string[];
-  pnl: number[];
-  dividends: number[];
-  fees: number[];
+  datasets: DataSet[];
 };
 
-const BarChart: FunctionComponent<BarChartProps> = ({
-  title,
-  labels,
-  pnl,
-  dividends,
-  fees,
-  ...rest
-}): React.ReactNode => {
+const SetParameters: {
+  backgroundColor: string;
+  borderColor: string;
+}[] = [
+  {
+    backgroundColor: "rgba(54, 162, 235, 0.2)",
+    borderColor: "rgb(54, 162, 235)",
+  },
+  {
+    backgroundColor: "rgba(75, 192, 192, 0.2)",
+    borderColor: "rgb(75, 192, 192)",
+  },
+  {
+    backgroundColor: "rgba(252, 186, 3, 0.2)",
+    borderColor: "rgb(252, 186, 3)",
+  },
+  {
+    backgroundColor: "rgba(148, 3, 252, 0.2)",
+    borderColor: "rgb(148, 3, 252)",
+  },
+  {
+    backgroundColor: "rgba(255, 118, 64, 0.2)",
+    borderColor: "rgb(255, 118, 64)",
+  },
+  {
+    backgroundColor: "rgba(252, 3, 57, 0.2)",
+    borderColor: "rgb(252, 3, 57)",
+  },
+];
+
+const BarChart: FunctionComponent<BarChartProps> = ({ title, labels, datasets, ...rest }): React.ReactNode => {
   const chartData = {
     labels: labels,
-    datasets: [
-      {
-        id: 1,
-        label: "P/L",
-        backgroundColor: "rgba(54, 162, 235, 0.2)",
-        borderColor: "rgb(54, 162, 235)",
-        borderWidth: 1,
-        data: pnl,
-      },
-      {
-        id: 2,
-        label: "Div+Int",
-        backgroundColor: "rgba(75, 192, 192, 0.2)",
-        borderColor: "rgb(75, 192, 192)",
-        borderWidth: 1,
-        data: dividends,
-      },
-      {
-        id: 3,
-        label: "Fees",
-        backgroundColor: "rgba(255, 159, 64, 0.2)",
-        borderColor: "rgb(255, 159, 64)",
-        borderWidth: 1,
-        data: fees,
-      },
-    ],
+    datasets: datasets.map((item, id) => ({
+      id,
+      borderWidth: 1,
+      ...SetParameters[id],
+      ...item,
+    })),
   };
   const chartOptions = {
     title: {

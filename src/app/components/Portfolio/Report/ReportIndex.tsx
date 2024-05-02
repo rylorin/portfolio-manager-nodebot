@@ -2,7 +2,7 @@ import { Box, Link, Spacer, Table, TableCaption, TableContainer, Tbody, Td, Thea
 import { FunctionComponent, default as React } from "react";
 import { Link as RouterLink, useLoaderData, useParams } from "react-router-dom";
 import { ReportEntry } from "../../../../routers/reports.types";
-import BarChart from "../../Chart/BarChart";
+import BarChart, { DataSet } from "../../Chart/BarChart";
 import Number from "../../Number/Number";
 import { StatementLink } from "../Statement/links";
 import { ReportLink } from "./links";
@@ -70,6 +70,30 @@ const ReportsIndex: FunctionComponent<Props> = ({ ..._rest }): React.ReactNode =
     );
   };
 
+  const datasets: DataSet[] = [
+    {
+      label: "Stocks",
+      data: theReports.map((item) => item.tradesSummary.stocksPnLInBase),
+    },
+    {
+      label: "Options",
+      data: theReports.map((item) => item.tradesSummary.optionsPnLInBase),
+    },
+    {
+      label: "Bonds",
+      data: theReports.map((item) => item.tradesSummary.bondPnLInBase),
+    },
+    {
+      label: "Dividends",
+      data: theReports.map((item) => item.dividendsSummary.reduce((p, v) => (p += v.grossAmountInBase), 0)),
+    },
+    {
+      label: "Interests",
+      data: theReports.map((item) => item.interestsSummary.reduce((p, v) => p + v.netTotal, 0)),
+    },
+    { label: "Fees", data: theReports.map((item) => item.feesSummary.totalAmountInBase) },
+  ];
+
   return (
     <>
       <Box>
@@ -95,13 +119,7 @@ const ReportsIndex: FunctionComponent<Props> = ({ ..._rest }): React.ReactNode =
       <BarChart
         title="Realized Performance"
         labels={theReports.map((item) => `${item.year}-${item.month}`)}
-        pnl={theReports.map((item) => item.tradesSummary.totalPnL)}
-        dividends={theReports.map(
-          (item) =>
-            item.dividendsSummary.reduce((p, v) => (p += v.grossAmountInBase), 0) +
-            item.interestsSummary.reduce((p, v) => p + v.netTotal, 0),
-        )}
-        fees={theReports.map((item) => item.feesSummary.totalAmountInBase)}
+        datasets={datasets}
       />
       <TableContainer>
         <Table variant="simple" size="sm" className="table-tiny">

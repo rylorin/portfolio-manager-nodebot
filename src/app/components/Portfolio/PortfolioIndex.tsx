@@ -4,7 +4,7 @@ import React from "react";
 import { Link as RouterLink, useLoaderData } from "react-router-dom";
 import { Portfolio as PortfolioModel } from "../../../models/portfolio.model";
 import { obfuscate } from "../../utils";
-import { StatementLink } from "./Statement/links";
+import { ReportLink } from "./Report/links";
 
 const PortfolioIndex = (): React.ReactNode => {
   const portfolios = useLoaderData() as PortfolioModel[];
@@ -30,7 +30,7 @@ const PortfolioIndex = (): React.ReactNode => {
               <Td>{obfuscate(item.account)}</Td>
               <Td>{item.baseCurrency}</Td>
               <Td>
-                <Link to={StatementLink.toIndex(item.id)} as={RouterLink}>
+                <Link to={ReportLink.toIndex(item.id)} as={RouterLink}>
                   <IconButton aria-label="Show detail" icon={<SearchIcon />} size="xs" variant="ghost" />{" "}
                 </Link>
               </Td>

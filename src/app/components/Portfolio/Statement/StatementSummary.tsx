@@ -2,13 +2,25 @@ import { Box, Link, Spacer, Table, TableCaption, TableContainer, Tbody, Td, Tfoo
 import React, { FunctionComponent } from "react";
 import { Link as RouterLink, useLoaderData } from "react-router-dom";
 import { StatementsSynthesysEntries, SynthesysEntry } from "../../../../routers/statements.types";
-import BarChart from "../../Chart/BarChart";
+import BarChart, { DataSet } from "../../Chart/BarChart";
 import Number from "../../Number/Number";
 
 type StatementSummaryProps = Record<string, never>;
 
 const StatementSummary: FunctionComponent<StatementSummaryProps> = ({ ..._rest }): React.ReactNode => {
   const theSynthesys = useLoaderData() as StatementsSynthesysEntries;
+
+  const datasets: DataSet[] = [
+    {
+      label: "Options",
+      data: Object.values(theSynthesys).map((item) => Math.round(item.options)),
+    },
+    { label: "Stocks", data: Object.values(theSynthesys).map((item) => Math.round(item.stocks)) },
+    {
+      label: "Div+Int",
+      data: Object.values(theSynthesys).map((item) => Math.round(item.dividends + item.interests)),
+    },
+  ];
 
   return (
     <>
@@ -32,13 +44,7 @@ const StatementSummary: FunctionComponent<StatementSummaryProps> = ({ ..._rest }
         </Routes> */}
         <Spacer />
       </Box>
-      <BarChart
-        title="Realized Performance"
-        labels={Object.keys(theSynthesys)}
-        pnl={Object.values(theSynthesys).map((item) => Math.round(item.options))}
-        dividends={Object.values(theSynthesys).map((item) => Math.round(item.dividends + item.interests))}
-        fees={Object.values(theSynthesys).map((item) => Math.round(item.stocks))}
-      />
+      <BarChart title="Realized Performance" labels={Object.keys(theSynthesys)} datasets={datasets} />
       <TableContainer>
         <Table variant="simple" size="sm">
           <TableCaption>Realized Performance ({Object.keys(theSynthesys).length})</TableCaption>
