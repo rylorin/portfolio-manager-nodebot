@@ -1,5 +1,6 @@
 import {
   BondStatementEntry,
+  CorporateStatementEntry,
   DividendStatementEntry,
   EquityStatementEntry,
   FeeStatementEntry,
@@ -62,6 +63,6 @@ export type ReportEntry = {
   feesSummary: FeesSummary;
   feesDetails: FeeStatementEntry[];
   tradesSummary: TradesSummary;
-  tradesDetails: (EquityStatementEntry | OptionStatementEntry | BondStatementEntry)[];
+  tradesDetails: (EquityStatementEntry | OptionStatementEntry | BondStatementEntry | CorporateStatementEntry)[];
   otherDetails: StatementEntry[];
 };

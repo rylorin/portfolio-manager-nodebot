@@ -62,6 +62,7 @@ export type DividendStatementEntry = BaseStatement & {
   country: string;
   underlying: StatementUnderlyingEntry | undefined;
 };
+
 export type TaxStatementEntry = BaseStatement & { statementType: "Tax"; country: string };
 
 export type InterestStatementEntry = BaseStatement & {
@@ -72,8 +73,16 @@ export type InterestStatementEntry = BaseStatement & {
 export type WithHoldingStatementEntry = BaseStatement & { statementType: "WithHolding" };
 
 export type FeeStatementEntry = BaseStatement & { statementType: "OtherFee" };
-export type CorporateStatementEntry = BaseStatement & { statementType: "CorporateStatement" };
+
+export type CorporateStatementEntry = BaseStatement & {
+  statementType: "CorporateStatement";
+  underlying: StatementUnderlyingEntry;
+  quantity: number;
+  pnl: number;
+};
+
 export type CashStatementEntry = BaseStatement & { statementType: "Cash" };
+
 export type StatementEntry =
   | EquityStatementEntry
   | OptionStatementEntry

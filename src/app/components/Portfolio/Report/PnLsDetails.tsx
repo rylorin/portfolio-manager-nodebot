@@ -6,6 +6,7 @@ import { Link as RouterLink, useParams } from "react-router-dom";
 import { ContractType, StatementTypes } from "../../../../models/types";
 import {
   BondStatementEntry,
+  CorporateStatementEntry,
   EquityStatementEntry,
   OptionStatementEntry,
   ReportEntry,
@@ -49,21 +50,11 @@ const PnLsDetails = ({ theReports, ..._rest }: Props): React.ReactNode => {
   const data: PnLDetails[] = theReports
     .reduce(
       (p, report) => p.concat(report.tradesDetails),
-      [] as (EquityStatementEntry | OptionStatementEntry | BondStatementEntry)[],
+      [] as (EquityStatementEntry | OptionStatementEntry | BondStatementEntry | CorporateStatementEntry)[],
     )
     .map((statement) => {
       let result: PnLDetails;
       switch (statement.statementType) {
-        case StatementTypes.EquityStatement:
-          result = {
-            id: statement.id,
-            date: new Date(statement.date),
-            pnl: statement.pnl * statement.fxRateToBase,
-            underlying: statement.underlying,
-            description: statement.description,
-          };
-          break;
-
         case StatementTypes.OptionStatement:
           result = {
             id: statement.id,
@@ -74,7 +65,9 @@ const PnLsDetails = ({ theReports, ..._rest }: Props): React.ReactNode => {
           };
           break;
 
+        case StatementTypes.EquityStatement:
         case StatementTypes.BondStatement:
+        case StatementTypes.CorporateStatement:
           result = {
             id: statement.id,
             date: new Date(statement.date),
@@ -83,6 +76,9 @@ const PnLsDetails = ({ theReports, ..._rest }: Props): React.ReactNode => {
             description: statement.description,
           };
           break;
+
+        default:
+          console.error("PnLDetails: statement type not implemented!");
       }
       totalPnl += result.pnl;
       return result;

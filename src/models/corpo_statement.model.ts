@@ -19,6 +19,10 @@ export class CorporateStatement extends Model<
   public statement: Statement;
 
   /** quantity */
-  @Column({ type: DataType.FLOAT(8, 2), defaultValue: 0 })
+  @Column({ type: DataType.FLOAT(10, 2), defaultValue: 0 })
   declare quantity: number;
+
+  /** PnL */
+  @Column({ type: DataType.FLOAT(10, 2), defaultValue: 0 })
+  declare pnl: number;
 }

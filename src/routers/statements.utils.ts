@@ -10,6 +10,7 @@ import {
   Statement,
   TaxStatement,
 } from "../models";
+import { CorporateStatement } from "../models/corpo_statement.model";
 import { ContractType, StatementTypes } from "../models/types";
 import { DididendSummary, InterestsSummary, ReportEntry } from "./reports.types";
 import { BaseStatement, StatementEntry, StatementUnderlyingOption } from "./statements.types";
@@ -116,10 +117,15 @@ export const statementModelToStatementEntry = (item: Statement): Promise<Stateme
       });
 
     case StatementTypes.CorporateStatement:
-      return Promise.resolve({
-        statementType: StatementTypes.CorporateStatement,
-        ...baseStatement,
-        underlying: item.stock,
+      return CorporateStatement.findByPk(item.id).then((thisStatement) => {
+        if (!thisStatement) throw Error(`CorporateStatement ${item.id} not found!`);
+        return {
+          statementType: StatementTypes.CorporateStatement,
+          ...baseStatement,
+          underlying: item.stock,
+          quantity: thisStatement?.quantity || 0,
+          pnl: thisStatement?.pnl || 0,
+        };
       });
 
     case StatementTypes.CashStatement:
@@ -268,29 +274,20 @@ export const prepareReport = (portfolio: Portfolio): Promise<ReportEntry[]> => {
           break;
 
         case StatementTypes.BondStatement:
-          // interest part
-          // interestEntry = report.interestsSummary.find(
-          //   (item) => item.country == (statement.country || portfolio.country),
-          // );
-          // if (!interestEntry) {
-          //   interestEntry = {
-          //     country: statement.country || portfolio.country,
-          //     grossCredit: 0,
-          //     netDebit: 0,
-          //     withHolding: 0,
-          //     netTotal: 0,
-          //   };
-          //   report.interestsSummary.push(interestEntry);
-          // }
-          // if (statement.accruedInterests > 0)
-          //   interestEntry.grossCredit += statement.accruedInterests * statement.fxRateToBase;
-          // else interestEntry.netDebit += statement.accruedInterests * statement.fxRateToBase;
-          // interestEntry.netTotal += statement.accruedInterests * statement.fxRateToBase;
-          // report.interestsDetails.push(statement);
-          // PnL part
           report.tradesSummary.bondPnLInBase += statement.pnl * statement.fxRateToBase;
           report.tradesSummary.totalPnL += statement.pnl * statement.fxRateToBase;
           report.tradesDetails.push(statement);
+          break;
+
+        case StatementTypes.CorporateStatement:
+          if (statement.pnl) {
+            switch (statement.underlying.secType) {
+              case ContractType.Bond:
+                report.tradesSummary.bondPnLInBase += statement.pnl * statement.fxRateToBase;
+                report.tradesDetails.push(statement);
+            }
+            report.tradesSummary.totalPnL += statement.pnl * statement.fxRateToBase;
+          } else report.otherDetails.push(statement);
           break;
 
         default:

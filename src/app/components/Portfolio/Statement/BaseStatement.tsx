@@ -39,6 +39,14 @@ const BaseStatement = ({ portfolioId, statement }: Props): React.ReactNode => {
       </Flex>
       <Flex justifyContent="center" gap="2">
         <Text w="110px" as="b" textAlign="right">
+          Net cash:
+        </Text>
+        <Text w="200px" textAlign="right">
+          {statement.amount}
+        </Text>
+      </Flex>
+      <Flex justifyContent="center" gap="2">
+        <Text w="110px" as="b" textAlign="right">
           Currency:
         </Text>
         <Text w="200px" textAlign="right">

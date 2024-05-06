@@ -690,7 +690,7 @@ export class ImporterBot extends ITradingBot {
   // eslint-disable-next-line @typescript-eslint/explicit-module-boundary-types
   protected processCorporateAction(element: any): Promise<Statement> {
     // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
-    logger.log(LogLevel.Trace, "processCorporateAction", element.symbol, element);
+    logger.log(LogLevel.Trace, MODULE + ".processCorporateAction", element.symbol, element);
     return (element.assetCategory ? this.findOrCreateContract(ibContractFromElement(element)) : Promise.resolve(null))
       .then((contract: Contract | null | undefined) => {
         return Statement.findOrCreate({
@@ -700,7 +700,7 @@ export class ImporterBot extends ITradingBot {
             statementType: StatementTypes.CorporateStatement,
             date: element.dateTime,
             currency: element.currency,
-            netCash: element.amount,
+            netCash: element.proceeds,
             description: element.description,
             transactionId: element.transactionID,
             fxRateToBase: element.fxRateToBase,
@@ -711,7 +711,7 @@ export class ImporterBot extends ITradingBot {
       .then(([statement, _created]) =>
         CorporateStatement.findOrCreate({
           where: { id: statement.id },
-          defaults: { id: statement.id, quantity: element.quantity },
+          defaults: { id: statement.id, quantity: element.quantity, pnl: element.fifoPnlRealized },
         }).then(([_subStatement, _created]) => statement),
       );
   }
