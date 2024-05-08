@@ -44,7 +44,9 @@ export type FeesSummary = {
  */
 export type TradesSummary = {
   stocksPnLInBase: number;
+  futuresPnLInBase: number;
   optionsPnLInBase: number;
+  fopPnlInBase: number;
   bondPnLInBase: number;
   totalPnL: number;
 };

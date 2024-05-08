@@ -13,6 +13,7 @@ export type StatementUnderlyingEntry = {
 };
 
 export type StatementUnderlyingOption = StatementUnderlyingEntry & {
+  // underlying: StatementUnderlyingEntry;
   lastTradeDate: string;
   strike: number;
   callOrPut: OptionType;
@@ -26,7 +27,7 @@ export type BaseStatement = {
   currency: string;
   fxRateToBase: number;
   amount: number;
-  // underlying: StatementUnderlyingEntry | undefined;
+  underlying: StatementUnderlyingEntry | undefined;
   trade_id: number | null;
   description: string;
 };

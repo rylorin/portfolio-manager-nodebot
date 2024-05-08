@@ -6,7 +6,7 @@ export const ContractType = {
   Bag: "BAG",
   Cash: "CASH",
   Future: "FUT",
-  FutureOption: "FOP", // maybe OPT
+  FutureOption: "FOP",
   Index: "IND",
   Bond: "BOND",
 } as const;

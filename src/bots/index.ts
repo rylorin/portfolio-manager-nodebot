@@ -799,7 +799,7 @@ export class ITradingBot extends EventEmitter {
     const contract_values = {
       // Contract part of the option
       conId: ibContract.conId!, // eslint-disable-line @typescript-eslint/no-unnecessary-type-assertion
-      secType: ContractType.Option,
+      secType: ibContract.secType! as ContractType,
       symbol: ibContract.localSymbol!, // eslint-disable-line @typescript-eslint/no-unnecessary-type-assertion
       currency: ibContract.currency!, // eslint-disable-line @typescript-eslint/no-unnecessary-type-assertion
       // eslint-disable-next-line @typescript-eslint/no-unnecessary-type-assertion

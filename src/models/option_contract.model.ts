@@ -19,6 +19,7 @@ export class OptionContract extends Model<
   // updatedAt can be undefined during creation
   declare updatedAt: CreationOptional<Date>;
 
+  /** Base contract part of this option */
   @BelongsTo(() => Contract, "id")
   declare contract: Contract;
 

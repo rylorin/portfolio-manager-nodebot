@@ -43,10 +43,11 @@ export class OptionStatement extends Model<
   @Column({ type: DataType.SMALLINT, defaultValue: 0 })
   declare status: number;
 
-  /** related Contract */
+  /** Base contract part of the option */
   declare contract_id: ForeignKey<Contract["id"]>;
   @BelongsTo(() => Contract, "contract_id")
   declare contract: Contract;
+  /** Option part of the option */
   @BelongsTo(() => OptionContract, "contract_id")
   declare option: OptionContract;
 }

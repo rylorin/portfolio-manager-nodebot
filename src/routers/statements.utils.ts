@@ -25,6 +25,7 @@ export const statementModelToStatementEntry = (item: Statement): Promise<Stateme
     fxRateToBase: item.fxRateToBase,
     description: item.description,
     trade_id: item.trade_unit_id,
+    underlying: item.stock,
   };
   switch (item.statementType) {
     case StatementTypes.EquityStatement:
@@ -43,20 +44,36 @@ export const statementModelToStatementEntry = (item: Statement): Promise<Stateme
       return OptionStatement.findByPk(item.id, {
         include: [
           { model: Contract, as: "contract" },
-          { model: OptionContract, as: "option" },
+          { model: OptionContract, as: "option" /*, include: [{ model: Contract, as: "underlying" }] */ },
         ],
       }).then((thisStatement) => {
         const option: StatementUnderlyingOption = {
-          id: thisStatement!.contract_id,
-          secType: ContractType.Option,
+          id: thisStatement!.option.id,
+          secType: thisStatement!.contract.secType,
           symbol: thisStatement!.contract.symbol,
+          currency: item.currency,
+          name: thisStatement!.contract.name,
+          price: thisStatement!.contract.price,
+          // underlying: {
+          //     id: thisStatement!.option.stock.id,
+          //     secType: thisStatement!.option.stock.secType,
+          //     symbol: thisStatement!.option.stock.symbol,
+          //     currency: thisStatement!.option.stock.currency,
+          //     name: thisStatement!.option.stock.name,
+          //     price: thisStatement!.option.stock.price,
+          //   },
+          // underlying: {
+          //   id: item.stock.id,
+          //   secType: item.stock.secType,
+          //   symbol: item.stock.symbol,
+          //   currency: item.stock.currency,
+          //   name: item.stock.name,
+          //   price: item.stock.price,
+          // },
           strike: thisStatement!.option.strike,
           lastTradeDate: thisStatement!.option.lastTradeDate,
           callOrPut: thisStatement!.option.callOrPut,
           multiplier: thisStatement!.option.multiplier,
-          currency: item.currency,
-          name: thisStatement!.contract.name,
-          price: thisStatement!.contract.price,
         };
         return {
           statementType: StatementTypes.OptionStatement,
@@ -197,7 +214,14 @@ export const prepareReport = (portfolio: Portfolio): Promise<ReportEntry[]> => {
           interestsDetails: [],
           feesSummary: { totalAmountInBase: 0 },
           feesDetails: [],
-          tradesSummary: { stocksPnLInBase: 0, optionsPnLInBase: 0, bondPnLInBase: 0, totalPnL: 0 },
+          tradesSummary: {
+            stocksPnLInBase: 0,
+            optionsPnLInBase: 0,
+            futuresPnLInBase: 0,
+            fopPnlInBase: 0,
+            bondPnLInBase: 0,
+            totalPnL: 0,
+          },
           tradesDetails: [],
           otherDetails: [],
         };
@@ -262,14 +286,26 @@ export const prepareReport = (portfolio: Portfolio): Promise<ReportEntry[]> => {
           break;
 
         case StatementTypes.EquityStatement:
-          report.tradesSummary.stocksPnLInBase += statement.pnl * statement.fxRateToBase;
+          switch (statement.underlying.secType) {
+            case ContractType.Stock:
+              report.tradesSummary.stocksPnLInBase += statement.pnl * statement.fxRateToBase;
+              break;
+            case ContractType.Future:
+              report.tradesSummary.futuresPnLInBase += statement.pnl * statement.fxRateToBase;
+              break;
+          }
           report.tradesSummary.totalPnL += statement.pnl * statement.fxRateToBase;
           report.tradesDetails.push(statement);
           break;
 
         case StatementTypes.OptionStatement:
+          if (
+            statement.option.secType == ContractType.FutureOption ||
+            statement.underlying?.secType == ContractType.Future
+          )
+            report.tradesSummary.fopPnlInBase += statement.pnl * statement.fxRateToBase;
+          else report.tradesSummary.optionsPnLInBase += statement.pnl * statement.fxRateToBase;
           report.tradesSummary.totalPnL += statement.pnl * statement.fxRateToBase;
-          report.tradesSummary.optionsPnLInBase += statement.pnl * statement.fxRateToBase;
           report.tradesDetails.push(statement);
           break;
 

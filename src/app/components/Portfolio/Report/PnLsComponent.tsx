@@ -8,8 +8,10 @@ type Props = { theReports: ReportEntry[] };
 type PnlCallback = (ReportEntry) => number;
 
 const PnLs: Record<string, PnlCallback> = {
-  ["Equity"]: (tradesSummary: TradesSummary) => tradesSummary.stocksPnLInBase,
-  ["Options"]: (tradesSummary: TradesSummary) => tradesSummary.optionsPnLInBase,
+  ["Stocks"]: (tradesSummary: TradesSummary) => tradesSummary.stocksPnLInBase,
+  ["Equity Options"]: (tradesSummary: TradesSummary) => tradesSummary.optionsPnLInBase,
+  ["Futures"]: (tradesSummary: TradesSummary) => tradesSummary.futuresPnLInBase,
+  ["Futures Options"]: (tradesSummary: TradesSummary) => tradesSummary.fopPnlInBase,
   ["Bonds"]: (tradesSummary: TradesSummary) => tradesSummary.bondPnLInBase,
 };
 

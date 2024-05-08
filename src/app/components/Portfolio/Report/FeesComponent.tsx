@@ -33,6 +33,7 @@ const Fees = ({ theReports, ..._rest }: Props): React.ReactNode => {
               {report.year}-{report.month}
             </Text>
             <Number value={report.feesSummary.totalAmountInBase} width="120px" />
+            <Spacer />
           </HStack>
         ))}
         <HStack borderTop="1px" borderColor="gray.200">
