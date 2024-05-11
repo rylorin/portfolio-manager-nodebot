@@ -90,7 +90,7 @@ export class SellCoveredCallsBot extends ITradingBot {
             option["yield"] = (option.contract.bid! / option.strike / diffDays) * 360;
             // option.stock.contract = await Contract.findByPk(option.stock.id);
           }
-          // eslint-disable-next-line @typescript-eslint/no-unnecessary-type-assertion,@typescript-eslint/no-non-null-assertion
+
           options.sort((a: OptionEx, b: OptionEx) => b.yield! - a.yield!);
           // for (const option of options) {
           //     console.log("yield of contract", option["yield"]);

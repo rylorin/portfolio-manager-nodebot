@@ -23,7 +23,7 @@ import { updateTradeDetails } from "./trades.utils";
 
 const MODULE = "StatementsRouter";
 
-// eslint-disable-next-line @typescript-eslint/no-unsafe-argument,@typescript-eslint/no-unused-vars
+// eslint-disable-next-line @typescript-eslint/no-unsafe-argument
 const sequelize_logging = (...args: any[]): void => logger.trace(MODULE + ".squelize", ...args);
 
 const router = express.Router({ mergeParams: true });

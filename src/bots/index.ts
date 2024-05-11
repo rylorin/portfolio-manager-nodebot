@@ -959,7 +959,7 @@ export class ITradingBot extends EventEmitter {
           throw { name: "ITradingBotNotImplemented", message } as Error;
         }
       }
-      // eslint-disable-next-line @typescript-eslint/no-unnecessary-type-assertion,@typescript-eslint/no-non-null-assertion
+
       if (!transaction_) await transaction!.commit();
     } catch (err: any) {
       if (err.name == "IBApiNextError") {
@@ -976,7 +976,7 @@ export class ITradingBot extends EventEmitter {
         if (err.name == "SequelizeTimeoutError") this.app.stop();
       }
       // rollback changes
-      // eslint-disable-next-line @typescript-eslint/no-unnecessary-type-assertion,@typescript-eslint/no-non-null-assertion
+
       if (!transaction_) await transaction!.rollback();
       // and propagate exception
       throw err;

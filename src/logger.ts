@@ -2,14 +2,12 @@
  * Logging facility
  * @author Guerrilla Team
  */
-/* eslint-disable no-console */
-/* eslint-disable @typescript-eslint/no-explicit-any */
 import stringify from "json-stringify-safe";
 import { exit } from "process";
 import winston, { Logger as WinstonLogger, createLogger, format, transports } from "winston";
 
 import dotenv from "dotenv";
-dotenv.config(); // eslint-disable-line @typescript-eslint/no-var-requires,@typescript-eslint/no-unsafe-call
+dotenv.config();
 
 export const LogLevel = {
   Fatal: 0,
@@ -132,7 +130,7 @@ class Logger {
     else if (value === null) return "null";
     else if (typeof value === "string") return value.replaceAll("\n", "\\n");
     else if (typeof value === "number") return String(value);
-    else return stringify(value as any) as string; // eslint-disable-line @typescript-eslint/no-unsafe-call
+    else return stringify(value as any) as string;
     // Object.entries(value).
   }
 

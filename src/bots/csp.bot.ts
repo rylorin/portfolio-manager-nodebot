@@ -165,7 +165,6 @@ export class SellCashSecuredPutBot extends ITradingBot {
       // RULE 6: check overall margin space
       const stock = await StockContract.findByPk(option.stock.id);
       if (option.strike * option.multiplier * this.base_rates[option.contract.currency] < max_for_all_symbols) {
-        // eslint-disable-next-line @typescript-eslint/no-unnecessary-type-assertion,@typescript-eslint/no-non-null-assertion
         if (option.impliedVolatility! > stock!.historicalVolatility!) {
           // RULE 1: implied volatility > historical volatility
           // const expiry: Date = new Date(option.lastTradeDate);
@@ -177,7 +176,7 @@ export class SellCashSecuredPutBot extends ITradingBot {
       }
     }
     // order by yield
-    // eslint-disable-next-line @typescript-eslint/no-unnecessary-type-assertion,@typescript-eslint/no-non-null-assertion
+
     filtered_options.sort((a: OptionEx, b: OptionEx) => b.yield! - a.yield!);
     if (filtered_options.length > 0) {
       console.log("filtered_options:", filtered_options.length);
