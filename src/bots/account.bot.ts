@@ -84,7 +84,6 @@ export class AccountUpdateBot extends ITradingBot {
 
   private createAndUpdateLegs(order: IbOpenOrder, transaction: Transaction): Promise<IbOpenOrder> {
     if (order.contract.secType == SecType.BAG) {
-      // eslint-disable-next-line @typescript-eslint/no-unnecessary-type-assertion
       return order.contract.comboLegs!.reduce(
         (p, leg) =>
           p.then(() =>
@@ -100,17 +99,14 @@ export class AccountUpdateBot extends ITradingBot {
                 // portfolioId: this.portfolio.id,
                 // contract_id: contract.id,
                 actionType: order.order.action == leg.action ? OrderAction.BUY : OrderAction.SELL,
-                // eslint-disable-next-line @typescript-eslint/no-unnecessary-type-assertion
                 totalQty: order.order.totalQuantity! * leg.ratio!,
-                // eslint-disable-next-line @typescript-eslint/no-unnecessary-type-assertion
                 cashQty: order.order.cashQty ? order.order.cashQty * leg.ratio! : undefined,
                 lmtPrice: undefined,
                 auxPrice: undefined,
                 status: order.orderState.status!,
                 remainingQty: order.orderStatus
-                  ? order.orderStatus.remaining! * leg.ratio! // eslint-disable-line @typescript-eslint/no-unnecessary-type-assertion
-                  : order.order.totalQuantity! * leg.ratio!, // eslint-disable-line @typescript-eslint/no-unnecessary-type-assertion
-
+                  ? order.orderStatus.remaining! * leg.ratio!
+                  : order.order.totalQuantity! * leg.ratio!,
                 orderId: order.orderId,
                 clientId: order.order.clientId!,
               };
@@ -228,7 +224,7 @@ export class AccountUpdateBot extends ITradingBot {
     const defaults = {
       portfolio_id: this.portfolio.id,
       quantity: pos.pos,
-      cost: pos.avgCost! * pos.pos, // eslint-disable-line @typescript-eslint/no-unnecessary-type-assertion
+      cost: pos.avgCost! * pos.pos,
     };
     return this.findOrCreateContract(pos.contract).then((contract): Promise<Position | undefined> => {
       if (defaults.quantity) {

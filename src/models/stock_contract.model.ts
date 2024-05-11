@@ -2,7 +2,7 @@ import { CreationOptional, InferAttributes, InferCreationAttributes } from "sequ
 import { BelongsTo, Column, DataType, Model, Table } from "sequelize-typescript";
 import { Contract } from ".";
 
-@Table({ tableName: "stock_contract", timestamps: false, createdAt: false, updatedAt: false })
+@Table({ tableName: "stock_contract" })
 export class StockContract extends Model<
   InferAttributes<StockContract>,
   InferCreationAttributes<StockContract, { omit: "contract" }>
@@ -39,6 +39,7 @@ export class StockContract extends Model<
   @Column({ type: DataType.STRING })
   declare subcategory: string;
 
-  @Column({ type: DataType.STRING })
-  declare description: string;
+  // Unused
+  // @Column({ type: DataType.STRING })
+  // declare description: string;
 }

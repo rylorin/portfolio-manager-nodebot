@@ -43,7 +43,7 @@ export class SellCoveredCallsBot extends ITradingBot {
         parameter !== null &&
         parameter.ccStrategy > 0 &&
         // RULE : stock price is higher than previous close
-        parameter.underlying.livePrice > parameter.underlying.previousClosePrice
+        parameter.underlying.livePrice > parameter.underlying.previousClosePrice!
       ) {
         this.printObject(parameter);
         // RULE defensive : strike > cours (OTM) & strike > position avg price
@@ -61,7 +61,7 @@ export class SellCoveredCallsBot extends ITradingBot {
             lastTradeDate: { [Op.gt]: new Date() },
             callOrPut: "C",
             delta: {
-              [Op.lt]: 1 - this.portfolio.ccWinRatio, // RULE : delta < 0.25
+              [Op.lt]: 1 - this.portfolio.ccWinRatio!, // RULE : delta < 0.25
             },
           },
           include: [
@@ -87,7 +87,7 @@ export class SellCoveredCallsBot extends ITradingBot {
           for (const option of options) {
             // const expiry: Date = new Date(option.lastTradeDate);
             const diffDays = Math.ceil((option.expiryDate.getTime() - Date.now()) / (1000 * 3600 * 24));
-            option["yield"] = (option.contract.bid / option.strike / diffDays) * 360;
+            option["yield"] = (option.contract.bid! / option.strike / diffDays) * 360;
             // option.stock.contract = await Contract.findByPk(option.stock.id);
           }
           // eslint-disable-next-line @typescript-eslint/no-unnecessary-type-assertion,@typescript-eslint/no-non-null-assertion
@@ -104,7 +104,7 @@ export class SellCoveredCallsBot extends ITradingBot {
               ITradingBot.CcOrder(
                 OrderAction.SELL,
                 Math.floor(free_for_this_symbol / option.multiplier),
-                option.contract.ask,
+                option.contract.ask!,
               ),
             )
             .then((orderId: number) => {

@@ -561,39 +561,49 @@ export class ITradingBot extends EventEmitter {
     details: ContractDetails,
     transaction?: Transaction,
   ): Promise<Contract> {
-    const defaults = {
-      conId: ibContract.conId!, // eslint-disable-line @typescript-eslint/no-unnecessary-type-assertion
+    const contract_defaults = {
+      conId: ibContract.conId!,
       secType: ibContract.secType as ContractType,
-      symbol: ibContract.symbol!, // eslint-disable-line @typescript-eslint/no-unnecessary-type-assertion
-      currency: ibContract.currency!, // eslint-disable-line @typescript-eslint/no-unnecessary-type-assertion
-      exchange: ibContract.primaryExch || ibContract.exchange!, // eslint-disable-line @typescript-eslint/no-unnecessary-type-assertion
+      symbol: ibContract.symbol!,
+      currency: ibContract.currency!,
+      exchange: ibContract.primaryExch || ibContract.exchange!,
       name: details.longName,
       isin: ibContract.secIdType == "ISIN" ? ibContract.secId : undefined,
     };
+    if (!contract_defaults.isin) {
+      details.secIdList?.forEach((item) => {
+        if (item.tag == "ISIN") contract_defaults.isin = item.value;
+      });
+    }
     return Contract.findOrCreate({
       where: {
-        secType: defaults.secType,
-        symbol: defaults.symbol,
-        currency: defaults.currency,
+        secType: contract_defaults.secType,
+        symbol: contract_defaults.symbol,
+        currency: contract_defaults.currency,
       },
-      defaults: defaults,
+      defaults: contract_defaults,
       transaction: transaction,
-      // logging: console.log,
     }).then(([contract, created]) => {
-      if (created) {
-        return StockContract.create(
-          {
-            id: contract.id,
-            industry: details.industry as string,
-            category: details.category as string,
-            subcategory: details.subcategory as string,
-            description: details.marketName as string,
-          },
-          { transaction: transaction },
-        ).then(() => Promise.resolve(contract));
-      } else {
-        return contract.update(defaults, { transaction: transaction });
-      }
+      const stock_defaults = {
+        id: contract.id,
+        industry: details.industry as string,
+        category: details.category as string,
+        subcategory: details.subcategory as string,
+        // description: details.marketName as string,
+      };
+      return StockContract.findOrCreate({
+        where: { id: contract.id },
+        defaults: stock_defaults,
+        transaction: transaction,
+      })
+        .then(([stock, created]) => {
+          if (created) return stock;
+          else return stock.update(stock_defaults, { transaction: transaction });
+        })
+        .then((_stock) => {
+          if (created) return contract;
+          else return contract.update(contract_defaults, { transaction: transaction });
+        });
     });
   }
 
@@ -603,11 +613,11 @@ export class ITradingBot extends EventEmitter {
     transaction?: Transaction,
   ): Promise<Contract> {
     const defaults = {
-      conId: ibContract.conId!, // eslint-disable-line @typescript-eslint/no-unnecessary-type-assertion
+      conId: ibContract.conId!,
       secType: ibContract.secType as ContractType,
-      symbol: ibContract.symbol!, // eslint-disable-line @typescript-eslint/no-unnecessary-type-assertion
-      currency: ibContract.currency!, // eslint-disable-line @typescript-eslint/no-unnecessary-type-assertion
-      exchange: ibContract.primaryExch || ibContract.exchange!, // eslint-disable-line @typescript-eslint/no-unnecessary-type-assertion
+      symbol: ibContract.symbol!,
+      currency: ibContract.currency!,
+      exchange: ibContract.primaryExch || ibContract.exchange!,
       name: details.longName,
     };
     return Contract.findOrCreate({
@@ -634,11 +644,11 @@ export class ITradingBot extends EventEmitter {
     transaction?: Transaction,
   ): Promise<Contract> {
     const defaults = {
-      conId: ibContract.conId!, // eslint-disable-line @typescript-eslint/no-unnecessary-type-assertion
+      conId: ibContract.conId!,
       secType: ibContract.secType as ContractType,
-      symbol: ibContract.localSymbol!, // eslint-disable-line @typescript-eslint/no-unnecessary-type-assertion
-      currency: ibContract.currency!, // eslint-disable-line @typescript-eslint/no-unnecessary-type-assertion
-      exchange: ibContract.exchange!, // eslint-disable-line @typescript-eslint/no-unnecessary-type-assertion
+      symbol: ibContract.localSymbol!,
+      currency: ibContract.currency!,
+      exchange: ibContract.exchange!,
       name: ibContract.localSymbol,
     };
     return Contract.findOrCreate({
@@ -667,11 +677,11 @@ export class ITradingBot extends EventEmitter {
     transaction?: Transaction,
   ): Promise<Contract> {
     const defaults = {
-      conId: ibContract.conId!, // eslint-disable-line @typescript-eslint/no-unnecessary-type-assertion
+      conId: ibContract.conId!,
       secType: ibContract.secType as ContractType,
       symbol: `${ibContract.tradingClass}-${ibContract.localSymbol}`,
-      currency: ibContract.currency!, // eslint-disable-line @typescript-eslint/no-unnecessary-type-assertion
-      exchange: ibContract.exchange!, // eslint-disable-line @typescript-eslint/no-unnecessary-type-assertion
+      currency: ibContract.currency!,
+      exchange: ibContract.exchange!,
       name: `${ibContract.tradingClass}-${ibContract.localSymbol}`,
     };
     return Contract.findOrCreate({
@@ -798,11 +808,10 @@ export class ITradingBot extends EventEmitter {
     logger.log(LogLevel.Trace, MODULE + ".createOptionContract", undefined, ibContract, details);
     const contract_values = {
       // Contract part of the option
-      conId: ibContract.conId!, // eslint-disable-line @typescript-eslint/no-unnecessary-type-assertion
+      conId: ibContract.conId!,
       secType: ibContract.secType! as ContractType,
-      symbol: ibContract.localSymbol!, // eslint-disable-line @typescript-eslint/no-unnecessary-type-assertion
-      currency: ibContract.currency!, // eslint-disable-line @typescript-eslint/no-unnecessary-type-assertion
-      // eslint-disable-next-line @typescript-eslint/no-unnecessary-type-assertion
+      symbol: ibContract.localSymbol!,
+      currency: ibContract.currency!,
       exchange: ibContract.primaryExch || ibContract.exchange!,
       name: ITradingBot.formatOptionName(ibContract),
     };
@@ -810,12 +819,10 @@ export class ITradingBot extends EventEmitter {
       // option specific fields
       id: undefined as unknown as number,
       stock_id: undefined as unknown as number,
-      // eslint-disable-next-line @typescript-eslint/no-unnecessary-type-assertion
       lastTradeDate: expirationToDateString(ibContract.lastTradeDateOrContractMonth!),
-      // eslint-disable-next-line @typescript-eslint/no-unnecessary-type-assertion
       strike: ibContract.currency == "GBP" ? ibContract.strike! / 100 : ibContract.strike!,
-      callOrPut: ibContract.right!, // eslint-disable-line @typescript-eslint/no-unnecessary-type-assertion
-      multiplier: ibContract.multiplier!, // eslint-disable-line @typescript-eslint/no-unnecessary-type-assertion
+      callOrPut: ibContract.right!,
+      multiplier: ibContract.multiplier!,
       delta: ibContract.right == OptionType.Call ? 0.5 : -0.5,
     };
     const underlying = {

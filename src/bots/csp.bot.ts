@@ -101,7 +101,7 @@ export class SellCashSecuredPutBot extends ITradingBot {
     );
     // RULE 7: stock price is lower than previous close
     const options =
-      parameter.underlying.livePrice > parameter.underlying.previousClosePrice
+      parameter.underlying.livePrice > parameter.underlying.previousClosePrice!
         ? []
         : await OptionContract.findAll({
             where: {
@@ -112,7 +112,7 @@ export class SellCashSecuredPutBot extends ITradingBot {
               lastTradeDate: { [Op.gt]: new Date() },
               callOrPut: OptionType.Put,
               delta: {
-                [Op.gt]: this.portfolio.cspWinRatio - 1, // RULE 3: delta >= -0.2
+                [Op.gt]: this.portfolio.cspWinRatio! - 1, // RULE 3: delta >= -0.2
               },
             },
             include: [
@@ -149,7 +149,7 @@ export class SellCashSecuredPutBot extends ITradingBot {
       (await this.getTotalBalanceInBase()) +
       (await this.getContractPositionValueInBase(this.portfolio.benchmark)) +
       (await this.getOptionShortPositionsValueInBase(this.portfolio.benchmark.id, OptionType.Call));
-    const max_for_all_symbols = invest_base * this.portfolio.putRatio - total_engaged;
+    const max_for_all_symbols = invest_base * this.portfolio.putRatio! - total_engaged;
     console.log(
       "max_for_all_symbols:",
       max_for_all_symbols,
@@ -166,11 +166,11 @@ export class SellCashSecuredPutBot extends ITradingBot {
       const stock = await StockContract.findByPk(option.stock.id);
       if (option.strike * option.multiplier * this.base_rates[option.contract.currency] < max_for_all_symbols) {
         // eslint-disable-next-line @typescript-eslint/no-unnecessary-type-assertion,@typescript-eslint/no-non-null-assertion
-        if (option.impliedVolatility > stock!.historicalVolatility) {
+        if (option.impliedVolatility! > stock!.historicalVolatility!) {
           // RULE 1: implied volatility > historical volatility
           // const expiry: Date = new Date(option.lastTradeDate);
           const diffDays = Math.ceil((option.expiryDate.getTime() - Date.now()) / (1000 * 3600 * 24));
-          option["yield"] = (option.contract.bid / option.strike / diffDays) * 360;
+          option["yield"] = (option.contract.bid! / option.strike / diffDays) * 360;
           // option.stock.contract = await Contract.findByPk(option.stock.id);
           filtered_options.push(option);
         }

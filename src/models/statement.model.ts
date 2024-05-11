@@ -64,6 +64,7 @@ export class Statement extends Model<
   @Column({ type: DataType.STRING(3), field: "currency" })
   declare currency: string;
 
+  // netCash = proceeds + ibCommission
   @Column({ type: DataType.FLOAT, defaultValue: 0 })
   declare netCash: number;
 
