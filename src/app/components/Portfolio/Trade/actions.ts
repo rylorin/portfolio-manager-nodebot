@@ -7,11 +7,11 @@ import { TradeLink } from "./links";
  * @param params
  * @returns
  */
-export const tradeSave = ({ request, params }: ActionFunctionArgs): Promise<Response> => {
+export const tradeSave = async ({ request, params }: ActionFunctionArgs): Promise<Response> => {
   const { portfolioId, tradeId } = params;
   return request
     .formData()
-    .then((formData: Iterable<readonly [PropertyKey, any]>) => {
+    .then(async (formData: Iterable<readonly [PropertyKey, any]>) => {
       const data = Object.fromEntries(formData);
       // console.log("trade save ", data);
       return fetch(`/api/portfolio/${portfolioId}/trades/id/${tradeId}/SaveTrade`, {
@@ -23,7 +23,7 @@ export const tradeSave = ({ request, params }: ActionFunctionArgs): Promise<Resp
         body: JSON.stringify({ ...data, strategy: parseInt(data.strategy as string) }),
       });
     })
-    .then((response: Response) => response.json())
+    .then(async (response: Response) => response.json())
     .then((_data) => redirect("../"));
 };
 
@@ -33,18 +33,18 @@ export const tradeSave = ({ request, params }: ActionFunctionArgs): Promise<Resp
  * @param params
  * @returns
  */
-export const tradeDelete = ({ request, params }: ActionFunctionArgs): Promise<Response> => {
+export const tradeDelete = async ({ request, params }: ActionFunctionArgs): Promise<Response> => {
   const { portfolioId, tradeId } = params;
   // console.log("tradeDelete:", portfolioId, tradeId);
   return (
     request
       .formData()
-      .then((_formData: Iterable<readonly [PropertyKey, any]>) => {
+      .then(async (_formData: Iterable<readonly [PropertyKey, any]>) => {
         return fetch(`/api/portfolio/${portfolioId}/trades/id/${tradeId}/DeleteTrade`, {
           method: "DELETE",
         });
       })
-      .then((response: Response) => response.text())
+      .then(async (response: Response) => response.text())
       // .then((data) => console.log("tradeDelete done:", data))
       .then(() => redirect(TradeLink.toIndex(portfolioId)))
   );

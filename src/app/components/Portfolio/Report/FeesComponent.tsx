@@ -1,15 +1,12 @@
-import { Box, HStack, Spacer, Text, VStack } from "@chakra-ui/react";
+import { Box, HStack, Link, Spacer, Text, VStack } from "@chakra-ui/react";
 import { default as React } from "react";
+import { Link as RouterLink, useParams } from "react-router-dom";
 import { ReportEntry } from "../../../../routers/reports.types";
 import Number from "../../Number/Number";
+import { StatementLink } from "../Statement/links";
+import { formatMonth } from "./utils";
 
 type Props = { theReports: ReportEntry[] };
-
-const _compareReports = (a: ReportEntry, b: ReportEntry): number => {
-  let result = a.year - b.year;
-  if (!result) result = a.month - b.month;
-  return result;
-};
 
 /**
  * Fees table component
@@ -17,6 +14,8 @@ const _compareReports = (a: ReportEntry, b: ReportEntry): number => {
  * @returns
  */
 const Fees = ({ theReports, ..._rest }: Props): React.ReactNode => {
+  const { portfolioId } = useParams();
+
   return (
     <>
       <VStack align="left">
@@ -29,9 +28,9 @@ const Fees = ({ theReports, ..._rest }: Props): React.ReactNode => {
         </HStack>
         {theReports.map((report) => (
           <HStack alignContent="left" key={`${report.year}-${report.month}`}>
-            <Text width="120px">
-              {report.year}-{report.month}
-            </Text>
+            <Link to={StatementLink.toMonth(portfolioId, report.year, report.month)} as={RouterLink}>
+              <Text width="120px">{formatMonth(report.year, report.month)}</Text>
+            </Link>
             <Number value={report.feesSummary.totalAmountInBase} width="120px" />
             <Spacer />
           </HStack>

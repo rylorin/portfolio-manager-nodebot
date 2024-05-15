@@ -170,19 +170,19 @@ export class ImporterBot extends ITradingBot {
  }
   */
   // eslint-disable-next-line @typescript-eslint/explicit-module-boundary-types
-  protected processSecurityInfoUnderlying(element: any): Promise<Contract> | Promise<undefined> {
+  protected async processSecurityInfoUnderlying(element: any): Promise<Contract> | Promise<undefined> {
     if (element.underlyingConid) {
       return this.findOrCreateContract(ibUnderlyingContractFromElement(element));
     } else return Promise.resolve(undefined);
   }
 
   // eslint-disable-next-line @typescript-eslint/explicit-module-boundary-types
-  protected processSecurityInfo(element: any): Promise<Contract | undefined> {
+  protected async processSecurityInfo(element: any): Promise<Contract | undefined> {
     logger.log(LogLevel.Trace, MODULE + ".processSecurityInfo", element.securityID as string, element);
     // I don't understand where the next lint error comes from...
     // eslint-disable-next-line @typescript-eslint/no-unsafe-return
     return this.processSecurityInfoUnderlying(element)
-      .then((underlying) => {
+      .then(async (underlying) => {
         const ibContract = ibContractFromElement(element);
         logger.log(
           LogLevel.Trace,
@@ -193,7 +193,7 @@ export class ImporterBot extends ITradingBot {
           "contract",
           ibContract,
         );
-        return this.findOrCreateContract(ibContract).then((contract) => {
+        return this.findOrCreateContract(ibContract).then(async (contract) => {
           if (contract.secType == SecType.STK) {
             const contract_data = {
               symbol: element.symbol,
@@ -221,7 +221,7 @@ export class ImporterBot extends ITradingBot {
             return BondContract.findOrCreate({
               where: { id: contract.id },
               defaults: bond_data,
-            }).then(([bond, _created]) => {
+            }).then(async ([bond, _created]) => {
               // Don't update bond's country prop with 'XS'
               const bond_update = {
                 ...bond_data,
@@ -229,7 +229,7 @@ export class ImporterBot extends ITradingBot {
                   ? undefined
                   : (element.isin as string).substring(0, 2),
               };
-              return bond.update(bond_update).then((_) => contract.update(contract_data));
+              return bond.update(bond_update).then(async (_) => contract.update(contract_data));
               // .then((contract) => {
               //   console.log(element, contract_data, contract);
               //   return contract;
@@ -246,13 +246,13 @@ export class ImporterBot extends ITradingBot {
       });
   }
 
-  private processAllSecuritiesInfo(element: any): Promise<Contract | undefined> {
+  private async processAllSecuritiesInfo(element: any): Promise<Contract | undefined> {
     logger.trace(MODULE + ".processAllSecuritiesInfo", undefined, element);
     if (element instanceof Array) {
       return element.reduce(
-        (p: Promise<Contract | undefined>, element: any): Promise<Contract | undefined> =>
-          p.then(() =>
-            this.processSecurityInfo(element).catch((error) => {
+        async (p: Promise<Contract | undefined>, element: any): Promise<Contract | undefined> =>
+          p.then(async () =>
+            this.processSecurityInfo(element).catch(async (error) => {
               logger.error(MODULE + ".processAllSecuritiesInfo", undefined, error, element);
               return Promise.resolve(undefined as undefined);
             }),
@@ -266,9 +266,9 @@ export class ImporterBot extends ITradingBot {
   }
 
   // eslint-disable-next-line @typescript-eslint/explicit-module-boundary-types
-  protected processStockTrade(element: any): Promise<void> {
+  protected async processStockTrade(element: any): Promise<void> {
     logger.log(LogLevel.Trace, MODULE + ".processStockTrade", element.symbol as string, element);
-    return this.findOrCreateContract(ibContractFromElement(element)).then((contract) =>
+    return this.findOrCreateContract(ibContractFromElement(element)).then(async (contract) =>
       Statement.findOrCreate({
         where: { transactionId: element.transactionID },
         defaults: {
@@ -283,7 +283,7 @@ export class ImporterBot extends ITradingBot {
           stock_id: contract?.id,
         },
       })
-        .then(([statement, _created]) =>
+        .then(async ([statement, _created]) =>
           EquityStatement.findOrCreate({
             where: { id: statement.id },
             defaults: {
@@ -366,9 +366,9 @@ export class ImporterBot extends ITradingBot {
  }
   */
   // eslint-disable-next-line @typescript-eslint/explicit-module-boundary-types
-  protected processOptionTrade(element: any): Promise<Statement> {
+  protected async processOptionTrade(element: any): Promise<Statement> {
     logger.log(LogLevel.Trace, MODULE + ".processOptionTrade", element.underlyingSymbol as string, element);
-    return this.processSecurityInfoUnderlying(element).then((underlying) =>
+    return this.processSecurityInfoUnderlying(element).then(async (underlying) =>
       Statement.findOrCreate({
         where: { transactionId: element.transactionID },
         defaults: {
@@ -382,8 +382,8 @@ export class ImporterBot extends ITradingBot {
           fxRateToBase: element.fxRateToBase,
           stock_id: underlying?.id,
         },
-      }).then(([statement, _created]) =>
-        this.processSecurityInfo(element).then((contract) =>
+      }).then(async ([statement, _created]) =>
+        this.processSecurityInfo(element).then(async (contract) =>
           OptionStatement.findOrCreate({
             where: { id: statement.id },
             defaults: {
@@ -466,10 +466,10 @@ export class ImporterBot extends ITradingBot {
   }
   */
   // eslint-disable-next-line @typescript-eslint/explicit-module-boundary-types
-  protected processBondTrade(element: any): Promise<BondStatement | null> {
+  protected async processBondTrade(element: any): Promise<BondStatement | null> {
     logger.log(LogLevel.Trace, MODULE + ".processBondTrade", element.securityID as string, element);
     // this.printObject(element);
-    return this.findOrCreateContract(ibContractFromElement(element)).then((contract) =>
+    return this.findOrCreateContract(ibContractFromElement(element)).then(async (contract) =>
       Statement.findOrCreate({
         where: { transactionId: element.transactionID },
         defaults: {
@@ -483,7 +483,7 @@ export class ImporterBot extends ITradingBot {
           fxRateToBase: element.fxRateToBase,
           stock_id: contract?.id,
         },
-      }).then(([statement, _created]) => {
+      }).then(async ([statement, _created]) => {
         const defaults = {
           quantity: element.quantity,
           price: element.tradePrice,
@@ -496,13 +496,13 @@ export class ImporterBot extends ITradingBot {
         return BondStatement.findOrCreate({
           where: { id: statement.id },
           defaults,
-        }).then(([bondstatement, _created]) => bondstatement.update(defaults));
+        }).then(async ([bondstatement, _created]) => bondstatement.update(defaults));
       }),
     );
   }
 
   // eslint-disable-next-line @typescript-eslint/explicit-module-boundary-types
-  protected processOneTrade(element: any): Promise<void> {
+  protected async processOneTrade(element: any): Promise<void> {
     logger.log(LogLevel.Trace, MODULE + ".processOneTrade", element.securityID as string, element);
     switch (element.assetCategory) {
       case SecType.STK:
@@ -521,13 +521,13 @@ export class ImporterBot extends ITradingBot {
     }
   }
 
-  private processAllTrades(element: any): Promise<void> {
+  private async processAllTrades(element: any): Promise<void> {
     logger.trace(MODULE + ".processAllTrades", undefined, element);
     if (element instanceof Array) {
       return element.reduce(
-        (p: Promise<void>, element: any) =>
+        async (p: Promise<void>, element: any) =>
           p
-            .then(() => this.processOneTrade(element))
+            .then(async () => this.processOneTrade(element))
             .catch((error) => logger.error(MODULE + ".processAllTrades", undefined, error, element)),
         Promise.resolve(),
       );
@@ -578,7 +578,7 @@ export class ImporterBot extends ITradingBot {
  }
   */
   // eslint-disable-next-line @typescript-eslint/explicit-module-boundary-types
-  protected processCashTransaction(element: any): Promise<Statement | null> {
+  protected async processCashTransaction(element: any): Promise<Statement | null> {
     logger.log(LogLevel.Trace, MODULE + ".processCashTransaction", element.securityID as string, element);
     // if (element.assetCategory == "BOND") console.log("processCashTransaction", element);
     let statementType: StatementTypes;
@@ -615,7 +615,7 @@ export class ImporterBot extends ITradingBot {
         throw Error("undefined cash trasaction type: " + element.type);
     }
     return (element.assetCategory ? this.findOrCreateContract(ibContractFromElement(element)) : Promise.resolve(null))
-      .then((contract: Contract | null | undefined) => {
+      .then(async (contract: Contract | null | undefined) => {
         return Statement.findOrCreate({
           where: { transactionId: element.transactionID },
           defaults: {
@@ -631,7 +631,7 @@ export class ImporterBot extends ITradingBot {
           },
         });
       })
-      .then(([statement, _created]) => {
+      .then(async ([statement, _created]) => {
         switch (statementType) {
           case StatementTypes.TaxStatement:
             {
@@ -676,10 +676,10 @@ export class ImporterBot extends ITradingBot {
       });
   }
 
-  private processAllCashTransactions(element: any): Promise<any> {
+  private async processAllCashTransactions(element: any): Promise<any> {
     if (element instanceof Array) {
       return element.reduce(
-        (p: Promise<any>, element: any) => p.then(() => this.processCashTransaction(element)),
+        async (p: Promise<any>, element: any) => p.then(async () => this.processCashTransaction(element)),
         Promise.resolve(),
       );
     } else if (element) {
@@ -688,11 +688,11 @@ export class ImporterBot extends ITradingBot {
   }
 
   // eslint-disable-next-line @typescript-eslint/explicit-module-boundary-types
-  protected processCorporateAction(element: any): Promise<Statement> {
+  protected async processCorporateAction(element: any): Promise<Statement> {
     // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
     logger.log(LogLevel.Trace, MODULE + ".processCorporateAction", element.symbol, element);
     return (element.assetCategory ? this.findOrCreateContract(ibContractFromElement(element)) : Promise.resolve(null))
-      .then((contract: Contract | null | undefined) => {
+      .then(async (contract: Contract | null | undefined) => {
         return Statement.findOrCreate({
           where: { transactionId: element.transactionID },
           defaults: {
@@ -708,7 +708,7 @@ export class ImporterBot extends ITradingBot {
           },
         });
       })
-      .then(([statement, _created]) =>
+      .then(async ([statement, _created]) =>
         CorporateStatement.findOrCreate({
           where: { id: statement.id },
           defaults: { id: statement.id, quantity: element.quantity, pnl: element.fifoPnlRealized },
@@ -716,11 +716,11 @@ export class ImporterBot extends ITradingBot {
       );
   }
 
-  private processAllCorporateActions(element: any): Promise<Statement> {
+  private async processAllCorporateActions(element: any): Promise<Statement> {
     if (element.CorporateActions.CorporateAction instanceof Array) {
       // eslint-disable-next-line @typescript-eslint/no-unsafe-return,@typescript-eslint/no-unsafe-call
       return element.CorporateActions.CorporateAction.reduce(
-        (p: Promise<any>, element: any) => p.then(() => this.processCorporateAction(element)),
+        async (p: Promise<any>, element: any) => p.then(async () => this.processCorporateAction(element)),
         Promise.resolve(),
       );
     } else if (element.CorporateActions.CorporateAction) {
@@ -730,7 +730,7 @@ export class ImporterBot extends ITradingBot {
   }
 
   // eslint-disable-next-line @typescript-eslint/explicit-module-boundary-types
-  protected processReport(element: any): Promise<void> {
+  protected async processReport(element: any): Promise<void> {
     logger.log(LogLevel.Info, MODULE + ".processReport", undefined, element.AccountInformation);
     return Portfolio.findOrCreate({
       where: {
@@ -744,23 +744,23 @@ export class ImporterBot extends ITradingBot {
         country: (element.AccountInformation.ibEntity as string).substring(3),
       },
     })
-      .then(([_portfolio, _created]) => this.processAllSecuritiesInfo(element.SecuritiesInfo.SecurityInfo))
-      .then(() => this.processAllTrades(element.Trades.Trade))
-      .then(() => this.processAllCashTransactions(element.CashTransactions.CashTransaction))
-      .then(() => this.processAllCorporateActions(element))
+      .then(async ([_portfolio, _created]) => this.processAllSecuritiesInfo(element.SecuritiesInfo.SecurityInfo))
+      .then(async () => this.processAllTrades(element.Trades.Trade))
+      .then(async () => this.processAllCashTransactions(element.CashTransactions.CashTransaction))
+      .then(async () => this.processAllCorporateActions(element))
       .then(() => logger.log(LogLevel.Info, MODULE + ".processReport", undefined, "Report loaded"))
-      .then(() => Promise.resolve())
+      .then(async () => Promise.resolve())
       .catch((error) => logger.error(MODULE + ".processReport", undefined, "importer bot process report:", error));
   }
 
-  protected fetchReport(url: string): Promise<any> {
+  protected async fetchReport(url: string): Promise<any> {
     const parser = new XMLParser({
       ignoreAttributes: false,
       attributeNamePrefix: "",
     });
     logger.info(MODULE + ".fetchReport", "Fetching report at " + url);
     return fetch(url)
-      .then((response) => response.text())
+      .then(async (response) => response.text())
       .then((XMLdata) => {
         const jObj = parser.parse(XMLdata);
         if (jObj["FlexQueryResponse"]) {
@@ -768,8 +768,8 @@ export class ImporterBot extends ITradingBot {
             // disable the following eslint test because I was unable to fix it
             // eslint-disable-next-line @typescript-eslint/no-unsafe-return,@typescript-eslint/no-unsafe-call
             return jObj["FlexQueryResponse"].FlexStatements.FlexStatement.reduce(
-              (p: Promise<void>, element: any): Promise<void> =>
-                p.then((): Promise<void> => this.processReport(element)),
+              async (p: Promise<void>, element: any): Promise<void> =>
+                p.then(async (): Promise<void> => this.processReport(element)),
               Promise.resolve(),
             );
           } else {
@@ -777,7 +777,7 @@ export class ImporterBot extends ITradingBot {
           }
         } else if (jObj["FlexStatementResponse"]?.Status == "Warn" && jObj["FlexStatementResponse"].ErrorCode == 1019) {
           // Retry
-          return awaitTimeout(1).then(() => this.fetchReport(url));
+          return awaitTimeout(1).then(async () => this.fetchReport(url));
         } else if (jObj["FlexStatementResponse"]?.ErrorMessage) {
           throw Error("Can t fetch data" + jObj["FlexStatementResponse"].ErrorMessage);
         } else {
@@ -788,13 +788,13 @@ export class ImporterBot extends ITradingBot {
       .catch((error) => console.error("importer bot fetch report:", error));
   }
 
-  protected process(): Promise<any> {
+  protected async process(): Promise<any> {
     return (
       fetch(
         `https://gdcdyn.interactivebrokers.com/Universal/servlet/FlexStatementService.SendRequest?t=${this.token}&q=${this.query}&v=3`,
       )
-        .then((response) => response.text())
-        .then((XMLdata) => {
+        .then(async (response) => response.text())
+        .then(async (XMLdata) => {
           const parser = new XMLParser();
           const jObj = parser.parse(XMLdata);
           if (jObj["FlexStatementResponse"]?.Status == "Success") {
@@ -815,11 +815,11 @@ export class ImporterBot extends ITradingBot {
 
   public start(): void {
     this.init()
-      .then(() => {
+      .then(async () => {
         setInterval((): void => {
           this.process().catch((error) => logger.error(MODULE + ".start", error));
         }, 3600 * 1000); // On every hour
-        return awaitTimeout(3).then(() => this.process());
+        return awaitTimeout(3).then(async () => this.process());
       })
       .catch((error) => console.error("start importer bot:", error));
   }

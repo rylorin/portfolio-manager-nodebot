@@ -124,7 +124,7 @@ export class MyTradingBotApp extends IBApiNextApp {
     this.sequelize = new Sequelize(sequelize_settings);
     this.sequelize
       .authenticate()
-      .then(() => this.sequelize.sync())
+      .then(async () => this.sequelize.sync())
       .then(() => {
         let accountId: string;
         if (this.cmdLineArgs.accountId) accountId = this.cmdLineArgs.accountId as string;

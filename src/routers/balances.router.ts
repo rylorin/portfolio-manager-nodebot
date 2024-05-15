@@ -43,7 +43,7 @@ router.delete("/id/:balanceId(\\d+)/DeleteBalance", (req, res): void => {
   const { balanceId } = req.params as typeof req.params & parentParams;
 
   Balance.findByPk(balanceId)
-    .then((balance) => {
+    .then(async (balance) => {
       if (balance) return balance.destroy();
       else throw Error("balance entry not found");
     })
@@ -95,7 +95,7 @@ router.post("/id/:balanceId(\\d+)/SaveBalance", (req, res): void => {
   const data = req.body as BalanceEntry;
 
   Balance.findByPk(balanceId)
-    .then((balance) => {
+    .then(async (balance) => {
       // console.log(JSON.stringify(position));
       if (balance)
         return balance.update({

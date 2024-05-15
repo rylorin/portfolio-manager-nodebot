@@ -10,7 +10,7 @@
     "isolatedModules": true,
     "jsx": "react",
     "lib": ["ESNext", "DOM", "DOM.Iterable", "ES2021.String"],
-    "module": "ESNext",
+    "module": "CommonJS", // Was ESNext
     "moduleResolution": "Node",
     "noImplicitAny": false, // TODO set to true once all data hava a type
     "noImplicitReturns": true,

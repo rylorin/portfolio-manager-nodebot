@@ -37,7 +37,7 @@ router.get("/year/:year(\\d+)", (req, res): void => {
       },
     ],
   })
-    .then((portfolio) => prepareReport(portfolio!))
+    .then(async (portfolio) => prepareReport(portfolio!))
     .then((reports) => {
       res.status(200).json({ reports });
     })
@@ -69,7 +69,7 @@ router.get("/summary/all", (req, res): void => {
       },
     ],
   })
-    .then((portfolio) => prepareReport(portfolio!))
+    .then(async (portfolio) => prepareReport(portfolio!))
     .then((reports) => {
       res.status(200).json({ reports });
     })
@@ -101,7 +101,7 @@ router.get("/summary/ytd", (req, res): void => {
       },
     ],
   })
-    .then((portfolio) => prepareReport(portfolio!))
+    .then(async (portfolio) => prepareReport(portfolio!))
     .then((reports) => {
       res.status(200).json({ reports });
     })
@@ -134,7 +134,7 @@ router.get("/summary/12m", (req, res): void => {
       },
     ],
   })
-    .then((portfolio) => prepareReport(portfolio!))
+    .then(async (portfolio) => prepareReport(portfolio!))
     .then((reports) => {
       res.status(200).json({ reports });
     })

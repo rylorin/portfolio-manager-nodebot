@@ -17,7 +17,7 @@ const router = express.Router({ mergeParams: true });
 
 type parentParams = { portfolioId: number };
 
-const getAllPositionsRelatedToContract = (
+const getAllPositionsRelatedToContract = async (
   portfolioId: number,
   contractId: number,
 ): Promise<(PositionEntry | OptionPositionEntry)[]> => {
@@ -26,7 +26,7 @@ const getAllPositionsRelatedToContract = (
       { model: Position, as: "positions", include: [{ model: Contract, as: "contract" }] },
       { model: Currency, as: "baseRates" },
     ],
-  }).then((portfolio) => {
+  }).then(async (portfolio) => {
     if (!portfolio) throw Error("portfolio not found: " + portfolioId);
     else if (portfolio.positions)
       return preparePositions(portfolio).then((positions) =>
@@ -73,25 +73,25 @@ router.get("/id/:contractId(\\d+)", (req, res): void => {
         fiftyTwoWeekHigh: contract.fiftyTwoWeekHigh,
       } as ContractEntry;
     })
-    .then((contract) => {
+    .then(async (contract) => {
       // Add positions
       return getAllPositionsRelatedToContract(portfolioId, parseInt(contractId)).then((positions) => {
         contract.positions = positions;
         return contract;
       });
     })
-    .then((contract) => {
+    .then(async (contract) => {
       // Add trades
       return Trade.findAll({
         where: { portfolio_id: portfolioId, symbol_id: contractId },
         include: [{ model: Contract, as: "underlying" }],
       })
-        .then((trades) => {
+        .then(async (trades) => {
           logger.log(LogLevel.Trace, MODULE + ".GetContract", undefined, "trades", trades);
           return trades.reduce(
-            (p: Promise<TradeEntry[]>, item: Trade): Promise<TradeEntry[]> => {
+            async (p: Promise<TradeEntry[]>, item: Trade): Promise<TradeEntry[]> => {
               logger.log(LogLevel.Trace, MODULE + ".GetContract", undefined, "item", item);
-              return p.then((entries) => {
+              return p.then(async (entries) => {
                 return tradeModelToTradeEntry(item).then((entry) => {
                   entries.push(entry);
                   return entries;
@@ -106,16 +106,16 @@ router.get("/id/:contractId(\\d+)", (req, res): void => {
           return contract;
         });
     })
-    .then((contract) => {
+    .then(async (contract) => {
       // Add statements
       return Statement.findAll({
         where: { portfolio_id: portfolioId, stock_id: contractId },
         include: [{ model: Contract, as: "stock" }],
       })
-        .then((statements) => {
+        .then(async (statements) => {
           return statements.reduce(
-            (p, statement) => {
-              return p.then((entries) => {
+            async (p, statement) => {
+              return p.then(async (entries) => {
                 return statementModelToStatementEntry(statement).then((entry) => {
                   entries.push(entry);
                   return entries;

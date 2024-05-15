@@ -1,7 +1,10 @@
-import { Box, HStack, Spacer, Text, VStack } from "@chakra-ui/react";
+import { Box, HStack, Link, Spacer, Text, VStack } from "@chakra-ui/react";
 import { default as React } from "react";
+import { Link as RouterLink, useParams } from "react-router-dom";
 import { InterestsSummary, ReportEntry } from "../../../../routers/reports.types";
 import Number from "../../Number/Number";
+import { StatementLink } from "../Statement/links";
+import { formatMonth } from "./utils";
 
 type Props = { theReports: ReportEntry[] };
 
@@ -12,10 +15,12 @@ const _compareReports = (a: ReportEntry, b: ReportEntry): number => {
 };
 
 const OneCountryTable = ({
+  portfolioId,
   theReports,
   country,
   ..._rest
 }: {
+  portfolioId: string;
   theReports: ReportEntry[];
   country: string;
 }): React.ReactNode => {
@@ -40,9 +45,9 @@ const OneCountryTable = ({
             .filter((summary: InterestsSummary) => summary.country == country)
             .map((item) => (
               <HStack key={`${report.year}-${report.month}-${item.country}`}>
-                <Text width="120px">
-                  {report.year}-{report.month}
-                </Text>
+                <Link to={StatementLink.toMonth(portfolioId, report.year, report.month)} as={RouterLink}>
+                  <Text width="120px">{formatMonth(report.year, report.month)}</Text>
+                </Link>
                 <Number value={item.grossCredit} width="120px" />
                 <Number value={item.netDebit} width="120px" />
                 <Number value={item.withHolding} width="120px" />
@@ -69,6 +74,8 @@ const OneCountryTable = ({
  * @returns
  */
 const Interests = ({ theReports, ..._rest }: Props): React.ReactNode => {
+  const { portfolioId } = useParams();
+
   let creditTotal = 0;
   let debitTotal = 0;
   let withHoldingTotal = 0;
@@ -107,7 +114,7 @@ const Interests = ({ theReports, ..._rest }: Props): React.ReactNode => {
         {countries.map((country) => (
           <HStack alignContent="left" key={country} borderBottom="1px" borderColor="gray.200">
             <Box width="120px">{country}</Box>
-            <OneCountryTable theReports={theReports} country={country} />
+            <OneCountryTable portfolioId={portfolioId} theReports={theReports} country={country} />
           </HStack>
         ))}
         <HStack>

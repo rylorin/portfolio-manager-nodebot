@@ -1,7 +1,10 @@
-import { Box, HStack, Spacer, Text, VStack } from "@chakra-ui/react";
+import { Box, HStack, Link, Spacer, Text, VStack } from "@chakra-ui/react";
 import { default as React } from "react";
+import { Link as RouterLink, useParams } from "react-router-dom";
 import { ReportEntry, TradesSummary } from "../../../../routers/reports.types";
 import Number from "../../Number/Number";
+import { StatementLink } from "../Statement/links";
+import { formatMonth } from "./utils";
 
 type Props = { theReports: ReportEntry[] };
 
@@ -22,10 +25,12 @@ const _compareReports = (a: ReportEntry, b: ReportEntry): number => {
 };
 
 const OneAssetTable = ({
+  portfolioId,
   theReports,
   assetType,
   ..._rest
 }: {
+  portfolioId: string;
   theReports: ReportEntry[];
   assetType: string;
 }): React.ReactNode => {
@@ -42,9 +47,9 @@ const OneAssetTable = ({
           .filter((report) => PnLs[assetType](report.tradesSummary))
           .map((report) => (
             <HStack key={`${report.year}-${report.month}-${assetType}`}>
-              <Text width="120px">
-                {report.year}-{report.month}
-              </Text>
+              <Link to={StatementLink.toMonth(portfolioId, report.year, report.month)} as={RouterLink}>
+                <Text width="120px">{formatMonth(report.year, report.month)}</Text>
+              </Link>
               <Number value={PnLs[assetType](report.tradesSummary)} width="120px" />
               {addToTotal(PnLs[assetType](report.tradesSummary))}
             </HStack>
@@ -64,6 +69,8 @@ const OneAssetTable = ({
  * @returns
  */
 const PnL = ({ theReports, ..._rest }: Props): React.ReactNode => {
+  const { portfolioId } = useParams();
+
   return (
     <>
       <VStack align="left">
@@ -78,7 +85,7 @@ const PnL = ({ theReports, ..._rest }: Props): React.ReactNode => {
         {Object.keys(PnLs).map((assetType) => (
           <HStack alignContent="left" key={assetType} borderBottom="1px" borderColor="gray.200">
             <Box width="120px">{assetType}</Box>
-            <OneAssetTable theReports={theReports} assetType={assetType} />
+            <OneAssetTable portfolioId={portfolioId} theReports={theReports} assetType={assetType} />
           </HStack>
         ))}
         <HStack>

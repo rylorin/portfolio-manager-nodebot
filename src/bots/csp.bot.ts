@@ -194,7 +194,7 @@ export class SellCashSecuredPutBot extends ITradingBot {
     }
   }
 
-  private listParameters(): Promise<Setting[]> {
+  private async listParameters(): Promise<Setting[]> {
     return Setting.findAll({
       where: {
         cspStrategy: {
@@ -212,7 +212,7 @@ export class SellCashSecuredPutBot extends ITradingBot {
   private process(): void {
     console.log("SellCashSecuredPutBot process begin");
     this.listParameters()
-      .then((result) => this.iterateParameters(result))
+      .then(async (result) => this.iterateParameters(result))
       .then(() => setTimeout(() => this.emit("process"), CSP_FREQ * 60 * 1000))
       .catch((error) => console.error("csp bot process:", error));
   }

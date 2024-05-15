@@ -6,10 +6,12 @@ import { StatementEntry, StatementsSynthesysEntries } from "../../../../routers/
  * @param params
  * @returns
  */
-export const statementSummaryLoaderYTD = ({ params }: LoaderFunctionArgs): Promise<StatementsSynthesysEntries> => {
+export const statementSummaryLoaderYTD = async ({
+  params,
+}: LoaderFunctionArgs): Promise<StatementsSynthesysEntries> => {
   const { portfolioId } = params;
   return fetch(`/api/portfolio/${portfolioId}/statements/summary/ytd`)
-    .then((response) => response.json())
+    .then(async (response) => response.json())
     .then((data) => data.synthesysentries as StatementsSynthesysEntries);
 };
 
@@ -18,10 +20,12 @@ export const statementSummaryLoaderYTD = ({ params }: LoaderFunctionArgs): Promi
  * @param params
  * @returns
  */
-export const statementSummaryLoader12M = ({ params }: LoaderFunctionArgs): Promise<StatementsSynthesysEntries> => {
+export const statementSummaryLoader12M = async ({
+  params,
+}: LoaderFunctionArgs): Promise<StatementsSynthesysEntries> => {
   const { portfolioId } = params;
   return fetch(`/api/portfolio/${portfolioId}/statements/summary/12m`)
-    .then((response) => response.json())
+    .then(async (response) => response.json())
     .then((data) => data.synthesysentries as StatementsSynthesysEntries);
 };
 
@@ -30,10 +34,12 @@ export const statementSummaryLoader12M = ({ params }: LoaderFunctionArgs): Promi
  * @param params
  * @returns
  */
-export const statementSummaryLoaderAll = ({ params }: LoaderFunctionArgs): Promise<StatementsSynthesysEntries> => {
+export const statementSummaryLoaderAll = async ({
+  params,
+}: LoaderFunctionArgs): Promise<StatementsSynthesysEntries> => {
   const { portfolioId } = params;
   return fetch(`/api/portfolio/${portfolioId}/statements/summary/all`)
-    .then((response) => response.json())
+    .then(async (response) => response.json())
     .then((data) => data.synthesysentries as StatementsSynthesysEntries);
 };
 
@@ -42,10 +48,10 @@ export const statementSummaryLoaderAll = ({ params }: LoaderFunctionArgs): Promi
  * @param params
  * @returns
  */
-export const statementShowLoader = ({ params }: LoaderFunctionArgs): Promise<StatementEntry> => {
+export const statementShowLoader = async ({ params }: LoaderFunctionArgs): Promise<StatementEntry> => {
   const { portfolioId, statementId } = params;
   return fetch(`/api/portfolio/${portfolioId}/statements/id/${statementId}`)
-    .then((response) => response.json())
+    .then(async (response) => response.json())
     .then((data) => data.statement as StatementEntry);
 };
 
@@ -54,9 +60,9 @@ export const statementShowLoader = ({ params }: LoaderFunctionArgs): Promise<Sta
  * @param params
  * @returns
  */
-export const statementMonthLoader = ({ params }: LoaderFunctionArgs): Promise<StatementEntry[]> => {
+export const statementMonthLoader = async ({ params }: LoaderFunctionArgs): Promise<StatementEntry[]> => {
   const { portfolioId, year, month } = params;
   return fetch(`/api/portfolio/${portfolioId}/statements/month/${year}/${month}`)
-    .then((response) => response.json())
+    .then(async (response) => response.json())
     .then((data) => data.statemententries as StatementEntry[]);
 };

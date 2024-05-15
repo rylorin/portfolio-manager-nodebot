@@ -44,7 +44,7 @@ export class OptionsCreateBot extends ITradingBot {
             .catch(() => {
               /* silently ignore any error */
             })
-            .then(() =>
+            .then(async () =>
               this.findOrCreateContract({
                 ...ibContract,
                 ...{ right: OptionType.Call },
@@ -70,7 +70,10 @@ export class OptionsCreateBot extends ITradingBot {
     // return Promise.resolve();
   }
 
-  private iterateSecDefOptParams(stock: Contract, details: SecurityDefinitionOptionParameterType[]): Promise<void> {
+  private async iterateSecDefOptParams(
+    stock: Contract,
+    details: SecurityDefinitionOptionParameterType[],
+  ): Promise<void> {
     // console.log(`iterateSecDefOptParams: ${stock.symbol} ${details.length} details`)
     // use details associated to SMART exchange or first one if SMART not present
     let idx = 0;
@@ -85,7 +88,7 @@ export class OptionsCreateBot extends ITradingBot {
     return this.iterateSecDefOptParamsForExpStrikes(stock, details[idx].expirations, details[idx].strikes);
   }
 
-  private requestSecDefOptParams(stock: Contract): Promise<SecurityDefinitionOptionParameterType[]> {
+  private async requestSecDefOptParams(stock: Contract): Promise<SecurityDefinitionOptionParameterType[]> {
     console.log(`requestSecDefOptParams: ${stock.symbol} ${stock.conId}`);
     return this.api
       .getSecDefOptParams(
@@ -100,17 +103,17 @@ export class OptionsCreateBot extends ITradingBot {
       });
   }
 
-  private iterateToBuildOptionList(contracts: Contract[]): Promise<void> {
+  private async iterateToBuildOptionList(contracts: Contract[]): Promise<void> {
     console.log(`iterateToBuildOptionList ${contracts.length} items`);
-    return contracts.reduce((p, stock) => {
-      return p.then(() => {
+    return contracts.reduce(async (p, stock) => {
+      return p.then(async () => {
         console.log(
           `iterateToBuildOptionList ${stock.symbol} ${stock["options_age"] * 24} vs ${OPTIONS_LIST_BUILD_FREQ}`,
         );
         if (stock["options_age"] * 24 > OPTIONS_LIST_BUILD_FREQ) {
           console.log("iterateToBuildOptionList: option contracts list need refreshing");
-          return this.findOrCreateContract(stock as IbContract).then((contract) =>
-            this.requestSecDefOptParams(contract).then((params) => this.iterateSecDefOptParams(contract, params)),
+          return this.findOrCreateContract(stock as IbContract).then(async (contract) =>
+            this.requestSecDefOptParams(contract).then(async (params) => this.iterateSecDefOptParams(contract, params)),
           );
         }
         return Promise.resolve();
@@ -118,7 +121,7 @@ export class OptionsCreateBot extends ITradingBot {
     }, Promise.resolve()); // initial
   }
 
-  private findStocksToListOptions(): Promise<Contract[]> {
+  private async findStocksToListOptions(): Promise<Contract[]> {
     return this.app.sequelize.query(
       `
         SELECT
@@ -144,7 +147,7 @@ export class OptionsCreateBot extends ITradingBot {
   private buildOptionsList(): void {
     console.log("buildOptionsList");
     this.findStocksToListOptions()
-      .then((stocks) => this.iterateToBuildOptionList(stocks))
+      .then(async (stocks) => this.iterateToBuildOptionList(stocks))
       .then(() => setTimeout(() => this.emit("buildOptionsList"), 4 * 3600 * 1000))
       .catch((error) => console.log("option bot:", error));
   }

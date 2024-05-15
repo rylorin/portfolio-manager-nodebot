@@ -63,8 +63,8 @@ export class CashManagementBot extends ITradingBot {
           contract_id: this.portfolio.benchmark.id,
           orderId: { [Op.ne]: 0 },
         },
-      }).then((orders) =>
-        orders.reduce((p, order) => {
+      }).then(async (orders) =>
+        orders.reduce(async (p, order) => {
           return p.then(() => this.api.cancelOrder(order.orderId));
         }, Promise.resolve()),
       );

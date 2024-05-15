@@ -6,10 +6,10 @@ import { OptionEntry } from "../../../../routers/repository.types";
  * @param params
  * @returns
  */
-export const optionShowLoader = ({ params }: LoaderFunctionArgs): Promise<OptionEntry> => {
+export const optionShowLoader = async ({ params }: LoaderFunctionArgs): Promise<OptionEntry> => {
   const { optionId } = params;
   // console.log("tradesShowLoader", portfolioId, tradeId);
   return fetch(`/api/repository/options/${optionId}`)
-    .then((response) => response.json())
+    .then(async (response) => response.json())
     .then((data) => data.option as OptionEntry);
 };

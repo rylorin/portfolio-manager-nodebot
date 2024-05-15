@@ -15,7 +15,7 @@ import { ContractType, StatementTypes } from "../models/types";
 import { DididendSummary, InterestsSummary, ReportEntry } from "./reports.types";
 import { BaseStatement, StatementEntry, StatementUnderlyingOption } from "./statements.types";
 
-export const statementModelToStatementEntry = (item: Statement): Promise<StatementEntry> => {
+export const statementModelToStatementEntry = async (item: Statement): Promise<StatementEntry> => {
   const baseStatement: BaseStatement = {
     id: item.id,
     transactionId: item.transactionId,
@@ -180,12 +180,12 @@ export const statementModelToStatementEntry = (item: Statement): Promise<Stateme
  * @param statements
  * @returns
  */
-export const prepareStatements = (statements: Statement[]): Promise<StatementEntry[]> => {
+export const prepareStatements = async (statements: Statement[]): Promise<StatementEntry[]> => {
   return statements
     .sort((a, b) => a.date.getTime() - b.date.getTime())
     .reduce(
-      (p, item) =>
-        p.then((statements) => {
+      async (p, item) =>
+        p.then(async (statements) => {
           return statementModelToStatementEntry(item).then((statement_entry) => {
             statements.push(statement_entry);
             return statements;
@@ -195,7 +195,7 @@ export const prepareStatements = (statements: Statement[]): Promise<StatementEnt
     );
 };
 
-export const prepareReport = (portfolio: Portfolio): Promise<ReportEntry[]> => {
+export const prepareReport = async (portfolio: Portfolio): Promise<ReportEntry[]> => {
   return prepareStatements(portfolio.statements).then((statements) => {
     const result: ReportEntry[] = [];
     statements.forEach((statement) => {

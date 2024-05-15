@@ -6,11 +6,11 @@ import { ActionFunctionArgs, redirect } from "react-router-dom";
  * @param params
  * @returns
  */
-export const balanceSave = ({ request, params }: ActionFunctionArgs): Promise<Response> => {
+export const balanceSave = async ({ request, params }: ActionFunctionArgs): Promise<Response> => {
   const { portfolioId, balanceId } = params;
   return request
     .formData()
-    .then((formData: Iterable<readonly [PropertyKey, any]>) => {
+    .then(async (formData: Iterable<readonly [PropertyKey, any]>) => {
       const data = Object.fromEntries(formData);
       // console.log("balance save ", data);
       return fetch(`/api/portfolio/${portfolioId}/balances/id/${balanceId}/SaveBalance`, {
@@ -22,7 +22,7 @@ export const balanceSave = ({ request, params }: ActionFunctionArgs): Promise<Re
         body: JSON.stringify({ ...data, strategy: parseInt(data.strategy as string) }),
       });
     })
-    .then((response: Response) => response.json())
+    .then(async (response: Response) => response.json())
     .then((_data) => redirect("../"));
 };
 
@@ -31,15 +31,15 @@ export const balanceSave = ({ request, params }: ActionFunctionArgs): Promise<Re
  * @param params
  * @returns
  */
-export const balanceDelete = ({ request, params }: ActionFunctionArgs): Promise<Response> => {
+export const balanceDelete = async ({ request, params }: ActionFunctionArgs): Promise<Response> => {
   const { portfolioId, balanceId } = params;
   return request
     .formData()
-    .then((_formData: Iterable<readonly [PropertyKey, any]>) => {
+    .then(async (_formData: Iterable<readonly [PropertyKey, any]>) => {
       return fetch(`/api/portfolio/${portfolioId}/balances/id/${balanceId}/DeleteBalance`, {
         method: "DELETE",
       });
     })
-    .then((response: Response) => response.text())
+    .then(async (response: Response) => response.text())
     .then((_data) => redirect("../"));
 };

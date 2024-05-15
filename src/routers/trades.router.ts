@@ -41,7 +41,7 @@ router.get("/summary/all", (req, res): void => {
     },
     include: [{ model: Contract, as: "underlying" }],
   })
-    .then((trades: Trade[]) => makeSynthesys(trades))
+    .then(async (trades: Trade[]) => makeSynthesys(trades))
     .then((tradessynthesys) => res.status(200).json({ tradessynthesys }))
     .catch((error) => {
       console.error(error);
@@ -71,7 +71,7 @@ router.get("/summary/12m", (req, res): void => {
     include: [{ model: Contract, as: "underlying" }],
     // limit: 500,
   })
-    .then((trades: Trade[]) => makeSynthesys(trades))
+    .then(async (trades: Trade[]) => makeSynthesys(trades))
     .then((tradessynthesys) => res.status(200).json({ tradessynthesys }))
     .catch((error) => res.status(500).json({ error }));
 });
@@ -94,7 +94,7 @@ router.get("/summary/ytd", (req, res): void => {
     },
     include: [{ model: Contract, as: "underlying" }],
   })
-    .then((trades: Trade[]) => makeSynthesys(trades))
+    .then(async (trades: Trade[]) => makeSynthesys(trades))
     .then((tradessynthesys) => res.status(200).json({ tradessynthesys }))
     .catch((error) => {
       console.error(error);
@@ -122,7 +122,7 @@ router.get("/month/:year(\\d+)/:month(\\d+)", (req, res): void => {
     },
     include: [{ model: Contract, as: "underlying" }, { association: "statements" }],
   })
-    .then((trades: Trade[]) => prepareTrades(trades))
+    .then(async (trades: Trade[]) => prepareTrades(trades))
     .then((trades) => res.status(200).json({ trades }))
     .catch((error) => {
       console.error(error);
@@ -150,8 +150,8 @@ router.get("/summary/open", (req, res): void => {
       { association: "statements", include: [{ association: "stock" }] },
     ],
   })
-    .then((trades: Trade[]) => prepareTrades(trades))
-    .then((trades) => {
+    .then(async (trades: Trade[]) => prepareTrades(trades))
+    .then(async (trades) => {
       return Portfolio.findByPk(portfolioId, {
         include: [
           {
@@ -163,7 +163,7 @@ router.get("/summary/open", (req, res): void => {
         ],
         // logging: console.log,
       })
-        .then((portfolio) => {
+        .then(async (portfolio) => {
           if (portfolio) {
             return preparePositions(portfolio);
           } else throw Error("Portfolio not found");
@@ -200,7 +200,7 @@ router.get("/id/:tradeId(\\d+)", (req, res): void => {
     ],
     // logging: console.log,
   })
-    .then((trade) => {
+    .then(async (trade) => {
       if (trade) {
         return tradeModelToTradeEntry(trade, { with_statements: true, with_positions: true, with_virtuals: true });
       } else {
@@ -243,8 +243,8 @@ router.post("/id/:tradeId(\\d+)/SaveTrade", (req, res): void => {
         return trade;
       } else throw Error(`trade id ${tradeId} not found!`);
     })
-    .then((trade) => updateTradeDetails(trade))
-    .then((trade) => trade.save())
+    .then(async (trade) => updateTradeDetails(trade))
+    .then(async (trade) => trade.save())
     .then((trade) => res.status(200).json({ trade }))
     .catch((error) => {
       console.error(error);
@@ -261,15 +261,15 @@ router.delete("/id/:tradeId(\\d+)/DeleteTrade", (req, res): void => {
   logger.log(LogLevel.Debug, MODULE + ".DeleteTrade", undefined, portfolioId, tradeId);
 
   Position.update({ trade_unit_id: null }, { where: { portfolio_id: portfolioId, trade_unit_id: tradeId } })
-    .then(() =>
+    .then(async () =>
       Statement.update({ trade_unit_id: null }, { where: { portfolio_id: portfolioId, trade_unit_id: tradeId } }),
     )
-    .then(() =>
+    .then(async () =>
       Trade.findByPk(tradeId, {
         include: [{ model: Statement, as: "statements", required: false, include: [{ model: Contract, as: "stock" }] }],
       }),
     )
-    .then((trade) => {
+    .then(async (trade) => {
       if (trade) return trade.destroy();
       else throw Error("trade not found");
     })

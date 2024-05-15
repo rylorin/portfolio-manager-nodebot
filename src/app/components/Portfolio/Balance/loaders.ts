@@ -6,10 +6,10 @@ import { BalanceEntry } from "../../../../routers/balances.types";
  * @param params
  * @returns
  */
-export const balancesIndexLoader = ({ params }: LoaderFunctionArgs): Promise<BalanceEntry[]> => {
+export const balancesIndexLoader = async ({ params }: LoaderFunctionArgs): Promise<BalanceEntry[]> => {
   const { portfolioId } = params;
   return fetch(`/api/portfolio/${portfolioId}/balances/index`)
-    .then((response) => response.json())
+    .then(async (response) => response.json())
     .then((data) => data.balances as BalanceEntry[]);
 };
 
@@ -18,10 +18,10 @@ export const balancesIndexLoader = ({ params }: LoaderFunctionArgs): Promise<Bal
  * @param params
  * @returns
  */
-export const balancesShowLoader = ({ params }: LoaderFunctionArgs): Promise<BalanceEntry> => {
+export const balancesShowLoader = async ({ params }: LoaderFunctionArgs): Promise<BalanceEntry> => {
   const { portfolioId, balanceId } = params;
   // console.log("balancesShowLoader", portfolioId, balanceId);
   return fetch(`/api/portfolio/${portfolioId}/balances/id/${balanceId}`)
-    .then((response) => response.json())
+    .then(async (response) => response.json())
     .then((data) => data.balance as BalanceEntry);
 };

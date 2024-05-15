@@ -125,7 +125,7 @@ const updateTradeExpiry = (thisTrade: Trade, virtuals: Record<number, VirtualPos
  * @param thisTrade
  * @returns
  */
-export const updateTradeDetails = (thisTrade: Trade): Promise<Trade> => {
+export const updateTradeDetails = async (thisTrade: Trade): Promise<Trade> => {
   // logger.log(LogLevel.Trace, MODULE + ".updateTradeDetails", thisTrade.underlying?.symbol, "thisTrade", thisTrade);
   if (thisTrade && thisTrade.statements?.length) {
     // sort statements by date
@@ -149,7 +149,7 @@ export const updateTradeDetails = (thisTrade: Trade): Promise<Trade> => {
     thisTrade.PnL = 0;
     thisTrade.pnlInBase = 0;
     return prepareStatements(statements) // Convert Statement[] to StatementEntry[]
-      .then((statement_entries) => {
+      .then(async (statement_entries) => {
         // TODO: computeRisk_Generic could compute and return virtuals
         computeRisk_Generic(thisTrade, statement_entries);
         const virtuals = makeVirtualPositions(statement_entries);
@@ -166,7 +166,7 @@ export const updateTradeDetails = (thisTrade: Trade): Promise<Trade> => {
  * @param _options
  * @returns
  */
-export const tradeModelToTradeEntry = (
+export const tradeModelToTradeEntry = async (
   thisTrade: Trade,
   _options: { with_statements: boolean; with_positions: boolean; with_virtuals: boolean } = {
     with_statements: false,
@@ -200,7 +200,7 @@ export const tradeModelToTradeEntry = (
     positions: undefined,
     virtuals: undefined,
   } as TradeEntry)
-    .then((trade_entry) => {
+    .then(async (trade_entry) => {
       // Add statements
       if (thisTrade.statements) {
         return prepareStatements(thisTrade.statements).then((statements) => {
@@ -209,7 +209,7 @@ export const tradeModelToTradeEntry = (
         });
       } else return trade_entry;
     })
-    .then((trade_entry) => {
+    .then(async (trade_entry) => {
       // Add positions
       return Portfolio.findByPk(thisTrade.portfolio_id, {
         include: [
@@ -222,7 +222,7 @@ export const tradeModelToTradeEntry = (
           },
           { model: Currency, as: "baseRates" },
         ],
-      }).then((portfolio) => {
+      }).then(async (portfolio) => {
         if (!portfolio) throw Error("portfolio not found: " + thisTrade.portfolio_id);
         return preparePositions(portfolio).then((positions) => {
           trade_entry.positions = positions;
@@ -566,10 +566,10 @@ const computeRisk_Generic = (thisTrade: Trade, statements: StatementEntry[]): Re
   return virtuals;
 };
 
-export const makeSynthesys = (trades: Trade[]): Promise<TradeSynthesys> => {
+export const makeSynthesys = async (trades: Trade[]): Promise<TradeSynthesys> => {
   return trades.reduce(
-    (p, item) =>
-      p.then((theSynthesys) => {
+    async (p, item) =>
+      p.then(async (theSynthesys) => {
         if (item.closingDate) {
           const idx = formatDate(item.openingDate);
           if (theSynthesys.byMonth[idx] === undefined) {
@@ -609,10 +609,10 @@ export const makeSynthesys = (trades: Trade[]): Promise<TradeSynthesys> => {
   );
 };
 
-export const prepareTrades = (trades: Trade[]): Promise<TradeEntry[]> => {
+export const prepareTrades = async (trades: Trade[]): Promise<TradeEntry[]> => {
   return trades.reduce(
-    (p, item) =>
-      p.then((trades) =>
+    async (p, item) =>
+      p.then(async (trades) =>
         tradeModelToTradeEntry(item).then((trade) => {
           trades.push(trade);
           return trades;

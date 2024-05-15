@@ -119,13 +119,13 @@ export class SellCoveredCallsBot extends ITradingBot {
     }
   }
 
-  private iteratePositions(positions: Position[]): Promise<void> {
-    return positions.reduce((p, position) => {
-      return p.then(() => this.processOnePosition(position));
+  private async iteratePositions(positions: Position[]): Promise<void> {
+    return positions.reduce(async (p, position) => {
+      return p.then(async () => this.processOnePosition(position));
     }, Promise.resolve()); // initial
   }
 
-  private listStockPostitions(): Promise<Position[]> {
+  private async listStockPostitions(): Promise<Position[]> {
     return Position.findAll({
       include: {
         model: Contract,
@@ -140,7 +140,7 @@ export class SellCoveredCallsBot extends ITradingBot {
   private process(): void {
     console.log("SellCoveredCallsBot process begin");
     this.listStockPostitions()
-      .then((result) => this.iteratePositions(result))
+      .then(async (result) => this.iteratePositions(result))
       .then(() => setTimeout(() => this.emit("process"), 3600 * 1000))
       .catch((error) => console.error("cc bot process:", error));
   }

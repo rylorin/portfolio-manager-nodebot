@@ -133,7 +133,7 @@ export class YahooUpdateBot extends ITradingBot {
     return name;
   }
 
-  private iterateResults(q: MappedQuote[]): Promise<void[]> {
+  private async iterateResults(q: MappedQuote[]): Promise<void[]> {
     const promises: Promise<void>[] = [];
     for (const r of q) {
       if (r.quote !== undefined) {
@@ -170,7 +170,7 @@ export class YahooUpdateBot extends ITradingBot {
             OptionContract.findByPk(r.contract.id, {
               include: { as: "stock", model: Contract, required: true },
             })
-              .then((option) =>
+              .then(async (option) =>
                 Contract.findByPk(option.stock.id, {}).then(async (stock) => {
                   let iv_: number | undefined = undefined;
                   if (r.quote?.regularMarketPrice > 0) {
@@ -272,7 +272,7 @@ export class YahooUpdateBot extends ITradingBot {
     return q;
   }
 
-  private findCurrencies(limit: number): Promise<MappedQuote[]> {
+  private async findCurrencies(limit: number): Promise<MappedQuote[]> {
     const now: number = Date.now();
     return Contract.findAll({
       where: {
@@ -296,7 +296,7 @@ export class YahooUpdateBot extends ITradingBot {
     });
   }
 
-  private findStocks(limit: number): Promise<MappedQuote[]> {
+  private async findStocks(limit: number): Promise<MappedQuote[]> {
     const now: number = Date.now();
     return StockContract.findAll({
       include: {
@@ -330,7 +330,7 @@ export class YahooUpdateBot extends ITradingBot {
     });
   }
 
-  private findOptions(limit: number): Promise<MappedQuote[]> {
+  private async findOptions(limit: number): Promise<MappedQuote[]> {
     const now: number = Date.now();
     return OptionContract.findAll({
       where: {
@@ -382,12 +382,12 @@ export class YahooUpdateBot extends ITradingBot {
     });
   }
 
-  public processQ(): Promise<void> {
+  public async processQ(): Promise<void> {
     if (Date.now() - this.lastFetch < YAHOO_PRICE_FREQ * 1000) return Promise.resolve();
     console.log("YahooUpdateBot processQ begin");
     const contracts: MappedQuote[] = this.requestsQ.splice(0, BATCH_SIZE_YAHOO_PRICE);
     return this.fetchQuotes(contracts)
-      .then((q) => this.iterateResults(q))
+      .then(async (q) => this.iterateResults(q))
       .then(() => console.log("YahooUpdateBot processQ end"));
   }
 
@@ -412,7 +412,7 @@ export class YahooUpdateBot extends ITradingBot {
         console.log(c.length, "option contract(s)");
         contracts = contracts.concat(c);
       }
-      await this.fetchQuotes(contracts).then((q) => this.iterateResults(q));
+      await this.fetchQuotes(contracts).then(async (q) => this.iterateResults(q));
     }
     setTimeout(() => this.emit("process"), (YAHOO_PRICE_FREQ * 1000) / 2);
     console.log("YahooUpdateBot process end");

@@ -219,13 +219,13 @@ export class RollOptionPositionsBot extends ITradingBot {
     }
   }
 
-  private iteratePositions(positions: Position[]): Promise<void> {
-    return positions.reduce((p, position) => {
-      return p.then(() => this.processOnePosition(position));
+  private async iteratePositions(positions: Position[]): Promise<void> {
+    return positions.reduce(async (p, position) => {
+      return p.then(async () => this.processOnePosition(position));
     }, Promise.resolve()); // initial
   }
 
-  private listItmOptionPostitions(): Promise<Position[]> {
+  private async listItmOptionPostitions(): Promise<Position[]> {
     return Position.findAll({ include: Contract }).then(async (positions) => {
       const result: Position[] = [];
       for (const position of positions) {
@@ -254,7 +254,7 @@ export class RollOptionPositionsBot extends ITradingBot {
   public process(): void {
     console.log("RollOptionPositionsBot process begin");
     this.listItmOptionPostitions()
-      .then((result) => this.iteratePositions(result))
+      .then(async (result) => this.iteratePositions(result))
       .then(() => setTimeout(() => this.emit("process"), ROLL_FREQ * 60000))
       .catch((error) => console.error("roll bot:", error));
   }

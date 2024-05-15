@@ -3,6 +3,7 @@ import eslint from "@eslint/js";
 import prettier from "eslint-plugin-prettier/recommended";
 import rxjs from "eslint-plugin-rxjs";
 // import storybook from "eslint-plugin-storybook";
+// import react from "eslint-plugin-react";
 import tseslint from "typescript-eslint";
 
 export default tseslint.config(
@@ -49,6 +50,7 @@ export default tseslint.config(
       "@typescript-eslint/restrict-plus-operands": "error",
       "@typescript-eslint/restrict-template-expressions": "error",
       "@typescript-eslint/unbound-method": "error",
+      "@typescript-eslint/promise-function-async": "warn",
       "rxjs/no-async-subscribe": "warn",
       "rxjs/no-ignored-observable": "warn",
       "rxjs/no-ignored-subscription": "warn",
@@ -56,5 +58,10 @@ export default tseslint.config(
       "rxjs/throw-error": "warn",
     },
   },
-  { ignores: ["node_modules/*", "build/*", "dist/*", "**/*.spec.ts", "*.config.mjs"] },
+  // {
+  //   files: ["**/*.{js,mjs,cjs,jsx,mjsx,ts,tsx,mtsx}"],
+  //   plugins: { react: fixupPluginRules(react) },
+  //   ...react.configs.recommended,
+  // },
+  { ignores: ["node_modules/*", ".storybook/", "build/*", "dist/*", "**/*.spec.ts", "*.config.mjs"] },
 );

@@ -30,7 +30,7 @@ const router = express.Router({ mergeParams: true });
 
 type parentParams = { portfolioId: number };
 
-const updateStatementTrade = (statement: Statement): Promise<Statement> => {
+const updateStatementTrade = async (statement: Statement): Promise<Statement> => {
   logger.trace(MODULE + ".updateStatementTrade", "statement", statement);
   if (statement.trade_unit_id) {
     logger.trace(MODULE + ".updateStatementTrade", "trade_unit_id", statement.trade_unit_id);
@@ -43,12 +43,12 @@ const updateStatementTrade = (statement: Statement): Promise<Statement> => {
       ],
       logging: sequelize_logging,
     })
-      .then((thisTrade): Promise<Statement> => {
+      .then(async (thisTrade): Promise<Statement> => {
         logger.trace(MODULE + ".updateStatementTrade", "thisTrade", thisTrade);
         if (thisTrade) return updateTradeDetails(thisTrade).then(() => statement);
         return Promise.resolve(statement);
       })
-      .then((statement) => {
+      .then(async (statement) => {
         return Promise.resolve(statement);
       });
   } else return Promise.resolve(statement);
@@ -59,10 +59,10 @@ const formatDate = (when: Date): string => {
   return datestr;
 };
 
-const makeSynthesys = (statements: Statement[]): Promise<StatementsSynthesysEntries> => {
+const makeSynthesys = async (statements: Statement[]): Promise<StatementsSynthesysEntries> => {
   return statements.reduce(
-    (p: Promise<StatementsSynthesysEntries>, item: Statement) => {
-      return p.then((value: StatementsSynthesysEntries) => {
+    async (p: Promise<StatementsSynthesysEntries>, item: Statement) => {
+      return p.then(async (value: StatementsSynthesysEntries) => {
         // console.log('item:', JSON.stringify(item));
         const idx = formatDate(item.date);
         if (value[idx] === undefined) {
@@ -149,7 +149,7 @@ router.get("/summary/all", (req, res): void => {
     },
     // limit: 500,
   })
-    .then((statements: Statement[]): Promise<StatementsSynthesysEntries> => makeSynthesys(statements))
+    .then(async (statements: Statement[]): Promise<StatementsSynthesysEntries> => makeSynthesys(statements))
     .then((synthesysentries: StatementsSynthesysEntries) => res.status(200).json({ synthesysentries }))
     .catch((error) => {
       console.error(error);
@@ -173,7 +173,7 @@ router.get("/summary/ytd", (req, res): void => {
     },
     // limit: 500,
   })
-    .then((statements: Statement[]): Promise<StatementsSynthesysEntries> => makeSynthesys(statements))
+    .then(async (statements: Statement[]): Promise<StatementsSynthesysEntries> => makeSynthesys(statements))
     .then((synthesysentries: StatementsSynthesysEntries) => res.status(200).json({ synthesysentries }))
     .catch((error) => {
       console.error(error);
@@ -197,7 +197,7 @@ router.get("/summary/12m", (req, res): void => {
     },
     // limit: 500,
   })
-    .then((statements: Statement[]): Promise<StatementsSynthesysEntries> => makeSynthesys(statements))
+    .then(async (statements: Statement[]): Promise<StatementsSynthesysEntries> => makeSynthesys(statements))
     .then((synthesysentries: StatementsSynthesysEntries) => res.status(200).json({ synthesysentries }))
     .catch((error) => {
       console.error(error);
@@ -224,10 +224,10 @@ router.get("/month/:year(\\d+)/:month(\\d+)", (req, res): void => {
     // limit: 5,
     include: [{ model: Contract }, { model: Portfolio }, { model: Trade }],
   })
-    .then((statements: Statement[]): Promise<StatementEntry[]> => {
+    .then(async (statements: Statement[]): Promise<StatementEntry[]> => {
       return statements.reduce(
-        (p: Promise<StatementEntry[]>, item: Statement) => {
-          return p.then((value: StatementEntry[]) => {
+        async (p: Promise<StatementEntry[]>, item: Statement) => {
+          return p.then(async (value: StatementEntry[]) => {
             return statementModelToStatementEntry(item).then((statement) => {
               value.push(statement);
               return value;
@@ -254,7 +254,7 @@ router.get("/:statementId(\\d+)/CreateTrade", (req, res): void => {
   Statement.findByPk(statementId, {
     include: [{ model: Contract }, { model: Portfolio }],
   })
-    .then((statement) => {
+    .then(async (statement) => {
       if (statement) {
         const trade = {
           portfolio_id: portfolioId,
@@ -265,7 +265,7 @@ router.get("/:statementId(\\d+)/CreateTrade", (req, res): void => {
           strategy: TradeStrategy.undefined,
           comment: "",
         };
-        return Trade.create(trade, { logging: false }).then((trade) => {
+        return Trade.create(trade, { logging: false }).then(async (trade) => {
           statement.trade_unit_id = trade.id;
           return statement.save();
         });
@@ -273,7 +273,7 @@ router.get("/:statementId(\\d+)/CreateTrade", (req, res): void => {
         throw Error("statement doesn't exist");
       }
     })
-    .then((statement) => updateStatementTrade(statement))
+    .then(async (statement) => updateStatementTrade(statement))
     .then((statement) => res.status(200).json({ statement }))
     .catch((error) => {
       logger.error(MODULE + ".CreateTrade", error);
@@ -290,7 +290,7 @@ router.get("/:statementId(\\d+)/GuessTrade", (req, res): void => {
   Statement.findByPk(statementId, {
     include: [{ model: Contract }, { model: Portfolio }],
   })
-    .then((statement) => {
+    .then(async (statement) => {
       if (statement) {
         switch (statement.statementType) {
           case StatementTypes.EquityStatement:
@@ -320,13 +320,13 @@ router.get("/:statementId(\\d+)/GuessTrade", (req, res): void => {
               ],
               order: [["date", "DESC"]],
               logging: sequelize_logging,
-            }).then((ref) => {
+            }).then(async (ref) => {
               if (ref) statement.trade_unit_id = ref.trade_unit_id;
               return statement.save();
             });
             break;
           case StatementTypes.OptionStatement:
-            return OptionStatement.findByPk(statementId).then((optstatement) => {
+            return OptionStatement.findByPk(statementId).then(async (optstatement) => {
               logger.log(LogLevel.Info, MODULE + ".GuessTrade", undefined, "guessing for optstatement", optstatement);
               if (optstatement) {
                 return OptionStatement.findOne({
@@ -348,9 +348,9 @@ router.get("/:statementId(\\d+)/GuessTrade", (req, res): void => {
                   ],
                   order: [["statement", "date", "DESC"]],
                   // logging: console.log,
-                }).then((refopt) => {
+                }).then(async (refopt) => {
                   if (refopt)
-                    return Statement.findByPk(refopt.id).then((ref) => {
+                    return Statement.findByPk(refopt.id).then(async (ref) => {
                       if (ref) {
                         statement.trade_unit_id = ref?.trade_unit_id;
                       }
@@ -370,7 +370,7 @@ router.get("/:statementId(\\d+)/GuessTrade", (req, res): void => {
         throw Error("statement doesn't exist");
       }
     })
-    .then((statement) => updateStatementTrade(statement))
+    .then(async (statement) => updateStatementTrade(statement))
     .then((statement) => res.status(200).json({ statement }))
     .catch((error) => {
       logger.log(LogLevel.Error, MODULE + ".GuessTrade", undefined, error.message);
@@ -387,7 +387,7 @@ router.get("/:statementId(\\d+)/AddToTrade/:tradeId(\\d+)", (req, res): void => 
   Statement.findByPk(statementId, {
     include: [{ model: Contract }, { model: Portfolio }],
   })
-    .then((statement) => {
+    .then(async (statement) => {
       if (statement) {
         statement.trade_unit_id = parseInt(tradeId);
         return statement.save();
@@ -395,7 +395,7 @@ router.get("/:statementId(\\d+)/AddToTrade/:tradeId(\\d+)", (req, res): void => 
         throw Error("statement doesn't exist");
       }
     })
-    .then((statement) => updateStatementTrade(statement))
+    .then(async (statement) => updateStatementTrade(statement))
     .then((statement) => res.status(200).json({ statement }))
     .catch((error) => {
       console.error(error);
@@ -410,7 +410,7 @@ router.get("/:statementId(\\d+)/AddToTrade/:tradeId(\\d+)", (req, res): void => 
 router.get("/:statementId(\\d+)/UnlinkTrade", (req, res): void => {
   const { _portfolioId, statementId } = req.params as typeof req.params & parentParams;
   Statement.findByPk(statementId)
-    .then((statement) => {
+    .then(async (statement) => {
       if (statement) {
         return statement.update({ trade_unit_id: null });
       } else {
@@ -418,7 +418,7 @@ router.get("/:statementId(\\d+)/UnlinkTrade", (req, res): void => {
         throw Error("statement not found: " + statementId);
       }
     })
-    .then((statement) => updateStatementTrade(statement))
+    .then(async (statement) => updateStatementTrade(statement))
     .then((statement) => res.status(200).json({ statement }))
     .catch((error) => {
       console.error(error);
@@ -440,7 +440,7 @@ router.get("/id/:statementId(\\d+)", (req, res): void => {
       if (!statement) throw Error("statement doesn't exist");
       return statement;
     })
-    .then((statement) => statementModelToStatementEntry(statement))
+    .then(async (statement) => statementModelToStatementEntry(statement))
     // .then((statement) => {
     //   console.log("statement", statement);
     //   return statement;
@@ -460,7 +460,7 @@ router.delete("/:statementId(\\d+)/DeleteStatement", (req, res): void => {
   const { _portfolioId, statementId } = req.params as typeof req.params & parentParams;
 
   Statement.findByPk(statementId)
-    .then((statement) => {
+    .then(async (statement) => {
       if (statement) {
         // console.log(JSON.stringify(statement));
         switch (statement.statementType) {
@@ -489,7 +489,7 @@ router.delete("/:statementId(\\d+)/DeleteStatement", (req, res): void => {
         throw Error("statement not found: " + statementId);
       }
     })
-    .then((statement) => {
+    .then(async (statement) => {
       if (statement) {
         // console.log("deleteing statement", statement.id);
         return Statement.destroy({ where: { id: statementId } });
@@ -517,7 +517,7 @@ router.post("/id/:statementId(\\d+)/SaveStatement", (req, res): void => {
   const data = req.body as StatementEntry;
 
   Statement.findByPk(statementId)
-    .then((statement) => {
+    .then(async (statement) => {
       if (statement)
         return statement
           .update({
@@ -525,7 +525,7 @@ router.post("/id/:statementId(\\d+)/SaveStatement", (req, res): void => {
             statementType: data.statementType,
             description: data.description,
           })
-          .then((_statement) => {
+          .then(async (_statement) => {
             switch (data.statementType) {
               case StatementTypes.BondStatement:
                 return BondStatement.update({ country: data.country }, { where: { id: statementId } });

@@ -82,12 +82,12 @@ export class AccountUpdateBot extends ITradingBot {
       setTimeout(() => this.emit("processQueue"), 100);
   }
 
-  private createAndUpdateLegs(order: IbOpenOrder, transaction: Transaction): Promise<IbOpenOrder> {
+  private async createAndUpdateLegs(order: IbOpenOrder, transaction: Transaction): Promise<IbOpenOrder> {
     if (order.contract.secType == SecType.BAG) {
       return order.contract.comboLegs!.reduce(
-        (p, leg) =>
-          p.then(() =>
-            this.findOrCreateContract({ conId: leg.conId }, transaction).then((contract) => {
+        async (p, leg) =>
+          p.then(async () =>
+            this.findOrCreateContract({ conId: leg.conId }, transaction).then(async (contract) => {
               const where = {
                 permId: order.order.permId!,
                 portfolioId: this.portfolio.id,
@@ -115,7 +115,7 @@ export class AccountUpdateBot extends ITradingBot {
                 defaults: values,
                 transaction: transaction,
                 // logging: false,
-              }).then(([open_order, _created]) =>
+              }).then(async ([open_order, _created]) =>
                 open_order
                   .update(values, {
                     transaction: transaction,
@@ -134,7 +134,7 @@ export class AccountUpdateBot extends ITradingBot {
 
   protected async handleUpdateOpenOrder(order: IbOpenOrder, transaction: Transaction): Promise<void> {
     logger.log(LogLevel.Info, MODULE + ".handleUpdateOpenOrder", undefined, order.order.permId, order.contract.symbol);
-    await this.findOrCreateContract(order.contract, transaction).then((contract: Contract) => {
+    await this.findOrCreateContract(order.contract, transaction).then(async (contract: Contract) => {
       logger.log(LogLevel.Trace, MODULE + ".updateOpenOrder", contract.symbol, "contract found", contract.id);
       return OpenOrder.findOrCreate({
         where: {
@@ -158,7 +158,7 @@ export class AccountUpdateBot extends ITradingBot {
         transaction: transaction,
         // logging: console.log,
       })
-        .then(([open_order, created]) => {
+        .then(async ([open_order, created]) => {
           // console.log("OpenOrder.findOrCreate done");
           if (created) return Promise.resolve(open_order);
           else
@@ -178,7 +178,7 @@ export class AccountUpdateBot extends ITradingBot {
               { transaction: transaction },
             );
         })
-        .then(() => this.createAndUpdateLegs(order, transaction))
+        .then(async () => this.createAndUpdateLegs(order, transaction))
         .then(() =>
           logger.log(
             LogLevel.Trace,
@@ -193,7 +193,7 @@ export class AccountUpdateBot extends ITradingBot {
     });
   }
 
-  protected updateOpenOrder(order: IbOpenOrder): Promise<void> {
+  protected async updateOpenOrder(order: IbOpenOrder): Promise<void> {
     logger.log(LogLevel.Info, MODULE + ".updateOpenOrder", undefined, order.order.permId, order.contract.symbol);
     return this.app.sequelize.transaction(async (t) => this.handleUpdateOpenOrder(order, t));
 
@@ -219,26 +219,26 @@ export class AccountUpdateBot extends ITradingBot {
     }
   }
 
-  protected updatePosition(pos: IbPosition): Promise<Position | undefined> {
+  protected async updatePosition(pos: IbPosition): Promise<Position | undefined> {
     logger.log(LogLevel.Trace, MODULE + ".updatePosition", pos.contract.symbol, pos);
     const defaults = {
       portfolio_id: this.portfolio.id,
       quantity: pos.pos,
       cost: pos.avgCost! * pos.pos,
     };
-    return this.findOrCreateContract(pos.contract).then((contract): Promise<Position | undefined> => {
+    return this.findOrCreateContract(pos.contract).then(async (contract): Promise<Position | undefined> => {
       if (defaults.quantity) {
         return Position.findOrCreate({
           where: { contract_id: contract.id },
           defaults: { ...defaults, contract_id: contract.id },
         })
-          .then(([position, created]) => {
+          .then(async ([position, created]) => {
             if (created) return position;
             else {
               return position.update(defaults, { logging: console.log });
             }
           })
-          .then((position): Promise<Position | undefined> => {
+          .then(async (position): Promise<Position | undefined> => {
             // update contract price, then return position
             if (pos.marketValue) {
               contract.price = pos.marketValue / pos.pos / (pos.contract.multiplier || 1);
@@ -254,7 +254,7 @@ export class AccountUpdateBot extends ITradingBot {
     });
   }
 
-  protected updateCashPosition(pos: { currency: string; balance: number }): Promise<Balance> {
+  protected async updateCashPosition(pos: { currency: string; balance: number }): Promise<Balance> {
     logger.log(LogLevel.Info, MODULE + ".updateCashPosition", undefined, pos.currency, pos.balance);
     const where = {
       portfolio_id: this.portfolio.id,
@@ -263,10 +263,10 @@ export class AccountUpdateBot extends ITradingBot {
     return Balance.findOrCreate({
       where: where,
       defaults: { ...where, quantity: pos.balance },
-    }).then(([balance, _created]) => balance.update({ quantity: pos.balance }));
+    }).then(async ([balance, _created]) => balance.update({ quantity: pos.balance }));
   }
 
-  private cleanBalances(now: number): Promise<void> {
+  private async cleanBalances(now: number): Promise<void> {
     return Balance.update(
       {
         quantity: 0,
@@ -292,7 +292,7 @@ export class AccountUpdateBot extends ITradingBot {
     // console.log(Date.now(), now);
     await this.init();
 
-    await this.api.getAllOpenOrders().then((orders) => {
+    await this.api.getAllOpenOrders().then(async (orders) => {
       this.iterateOpenOrdersForUpdate(orders);
       return OpenOrder.destroy({
         where: {

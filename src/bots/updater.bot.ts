@@ -54,7 +54,7 @@ export class ContractsUpdaterBot extends ITradingBot {
     // setTimeout(() => this.emit("buildOptionsList"), 3600 * 1000);    // start after 1 hour
   }
 
-  private updateHistoricalVolatility(id: number, bars: Bar[]): Promise<void> {
+  private async updateHistoricalVolatility(id: number, bars: Bar[]): Promise<void> {
     const histVol: number = bars[bars.length - 1].close!;
     // console.log(`updateHistoricalVolatility got ${histVol} for contract id ${id}`)
     return StockContract.update(
@@ -69,7 +69,7 @@ export class ContractsUpdaterBot extends ITradingBot {
     ).then();
   }
 
-  private requestHistoricalVolatility(contract: Contract): Promise<Bar[]> {
+  private async requestHistoricalVolatility(contract: Contract): Promise<Bar[]> {
     // console.log(`requestHistoricalVolatility for contract ${contract.symbol}`)
     return this.api
       .getHistoricalData(
@@ -93,11 +93,11 @@ export class ContractsUpdaterBot extends ITradingBot {
       });
   }
 
-  private iterateContractsForHistoricalVolatility(contracts: Contract[]): Promise<void> {
-    return contracts.reduce((p, contract) => {
-      return p.then(() =>
+  private async iterateContractsForHistoricalVolatility(contracts: Contract[]): Promise<void> {
+    return contracts.reduce(async (p, contract) => {
+      return p.then(async () =>
         this.requestHistoricalVolatility(contract)
-          .then((bars) => this.updateHistoricalVolatility(contract.id, bars))
+          .then(async (bars) => this.updateHistoricalVolatility(contract.id, bars))
           .catch(() => {
             // this.app.error(`getHistoricalData failed with '${err.error.message}'`);
           }),
@@ -105,7 +105,7 @@ export class ContractsUpdaterBot extends ITradingBot {
     }, Promise.resolve()); // initial
   }
 
-  private findStocksNeedingHistoricalData(): Promise<Contract[]> {
+  private async findStocksNeedingHistoricalData(): Promise<Contract[]> {
     // stock.historical_volatility is not needed below be we like to eventually display it in debug logs
     return this.app.sequelize.query(
       `
@@ -130,16 +130,19 @@ export class ContractsUpdaterBot extends ITradingBot {
   private updateHistoricalData(): void {
     console.log("updateHistoricalData");
     this.findStocksNeedingHistoricalData()
-      .then((contracts) => this.iterateContractsForHistoricalVolatility(contracts))
+      .then(async (contracts) => this.iterateContractsForHistoricalVolatility(contracts))
       .then(() => setTimeout(() => this.emit("updateHistoricalData"), HISTORICAL_DATA_REFRESH_FREQ * 60000))
       .catch((error) => console.error("updater bot update historical data:", error));
   }
 
-  private requestContractPrice(ibContract: IbContract): Promise<MutableMarketData> {
+  private async requestContractPrice(ibContract: IbContract): Promise<MutableMarketData> {
     return this.api.getMarketDataSnapshot(ibContract, "", false);
   }
 
-  private updateContratPrice(contract: Contract, marketData: MutableMarketData): Promise<number | undefined | null> {
+  private async updateContratPrice(
+    contract: Contract,
+    marketData: MutableMarketData,
+  ): Promise<number | undefined | null> {
     // Clear values, we can't keep old invalid values
     const dataset: {
       bid: number | null;
@@ -300,7 +303,7 @@ export class ContractsUpdaterBot extends ITradingBot {
       where: {
         id: contract.id,
       },
-    }).then(() => {
+    }).then(async () => {
       if (contract.secType == "OPT") {
         return OptionContract.update(optdataset, { where: { id: contract.id } }).then(() => price);
       } else if (contract.secType == "CASH") {
@@ -320,7 +323,7 @@ export class ContractsUpdaterBot extends ITradingBot {
     });
   }
 
-  private findStockContractsToUpdatePrice(limit: number): Promise<Contract[]> {
+  private async findStockContractsToUpdatePrice(limit: number): Promise<Contract[]> {
     const now: number = Date.now() - STOCKS_PRICES_REFRESH_FREQ * 60 * 1000;
     return Contract.findAll({
       where: {
@@ -339,7 +342,7 @@ export class ContractsUpdaterBot extends ITradingBot {
     });
   }
 
-  private findPortfolioContractsNeedingPriceUpdate(limit: number): Promise<AnyContract[]> {
+  private async findPortfolioContractsNeedingPriceUpdate(limit: number): Promise<AnyContract[]> {
     // console.log("findOptionsToUpdatePrice", dte, age/1400, limit);
     const now: number = Date.now() - STOCKS_PRICES_REFRESH_FREQ * 60 * 1000;
     return Position.findAll({
@@ -365,9 +368,9 @@ export class ContractsUpdaterBot extends ITradingBot {
       order: [["contract", "updatedAt", "ASC"]],
       limit: limit,
       // logging: console.log,
-    }).then((positions: Position[]) =>
+    }).then(async (positions: Position[]) =>
       Promise.all(
-        positions.map((position: Position) => {
+        positions.map(async (position: Position) => {
           // console.log("position", position);
           if (position.contract.secType == SecType.STK) {
             return StockContract.findByPk(position.contract.id, {
@@ -445,7 +448,10 @@ export class ContractsUpdaterBot extends ITradingBot {
     return Promise.resolve();
   }
 
-  private iterateSecDefOptParams(stock: Contract, details: SecurityDefinitionOptionParameterType[]): Promise<void> {
+  private async iterateSecDefOptParams(
+    stock: Contract,
+    details: SecurityDefinitionOptionParameterType[],
+  ): Promise<void> {
     // console.log(`iterateSecDefOptParams: ${stock.symbol} ${details.length} details`)
     // use details associated to SMART exchange or first one if SMART not present
     let idx = 0;
@@ -458,7 +464,7 @@ export class ContractsUpdaterBot extends ITradingBot {
     return this.iterateSecDefOptParamsForExpStrikes(stock, details[idx].expirations, details[idx].strikes);
   }
 
-  private requestSecDefOptParams(stock: Contract): Promise<SecurityDefinitionOptionParameterType[]> {
+  private async requestSecDefOptParams(stock: Contract): Promise<SecurityDefinitionOptionParameterType[]> {
     console.log(`requestSecDefOptParams: ${stock.symbol}`);
     return this.api
       .getSecDefOptParams(
@@ -473,23 +479,23 @@ export class ContractsUpdaterBot extends ITradingBot {
       });
   }
 
-  private iterateToBuildOptionList(contracts: Contract[]): Promise<void> {
+  private async iterateToBuildOptionList(contracts: Contract[]): Promise<void> {
     console.log(`iterateToBuildOptionList ${contracts.length} items`);
-    return contracts.reduce((p, stock) => {
-      return p.then(() => {
+    return contracts.reduce(async (p, stock) => {
+      return p.then(async () => {
         console.log(
           `iterateToBuildOptionList ${stock.symbol} ${stock["options_age"] * 24} vs ${OPTIONS_LIST_BUILD_FREQ}`,
         );
         if (stock["options_age"] * 24 > OPTIONS_LIST_BUILD_FREQ) {
           console.log("iterateToBuildOptionList: option contracts list need refreshing");
-          return this.requestSecDefOptParams(stock).then((params) => this.iterateSecDefOptParams(stock, params));
+          return this.requestSecDefOptParams(stock).then(async (params) => this.iterateSecDefOptParams(stock, params));
         }
         return Promise.resolve();
       });
     }, Promise.resolve()); // initial
   }
 
-  private findStocksToListOptions(): Promise<Contract[]> {
+  private async findStocksToListOptions(): Promise<Contract[]> {
     return this.app.sequelize.query(
       `
     SELECT
@@ -514,12 +520,12 @@ export class ContractsUpdaterBot extends ITradingBot {
   private buildOptionsList(): void {
     console.log("buildOptionsList");
     this.findStocksToListOptions()
-      .then((stocks) => this.iterateToBuildOptionList(stocks))
+      .then(async (stocks) => this.iterateToBuildOptionList(stocks))
       .then(() => setTimeout(() => this.emit("buildOptionsList"), 3600 * 1000))
       .catch((error) => console.error("updater bot build options list:", error));
   }
 
-  private findOptionsToUpdatePrice(dte: number, age: number, limit: number): Promise<OptionContract[]> {
+  private async findOptionsToUpdatePrice(dte: number, age: number, limit: number): Promise<OptionContract[]> {
     // console.log("findOptionsToUpdatePrice", dte, age/1400, limit);
     const now: number = Date.now();
     return OptionContract.findAll({
@@ -577,7 +583,7 @@ export class ContractsUpdaterBot extends ITradingBot {
     return contract;
   }
 
-  private fetchContractsPrices(contracts: AnyContract[]): Promise<void> {
+  private async fetchContractsPrices(contracts: AnyContract[]): Promise<void> {
     // fetch all contracts in parallel
     const promises: Promise<void>[] = [];
     for (const aContract of contracts) {
@@ -602,13 +608,13 @@ export class ContractsUpdaterBot extends ITradingBot {
       // mark contract as updated
       contract.changed("price", true);
       promises.push(
-        contract.save().then((contract) =>
+        contract.save().then(async (contract) =>
           this.requestContractPrice(ibContract)
-            .then((marketData) => this.updateContratPrice(contract, marketData))
+            .then(async (marketData) => this.updateContratPrice(contract, marketData))
             .then((_price) => {
               /* void */
             })
-            .catch((err: { code: number; error: { message: string } }) => {
+            .catch(async (err: { code: number; error: { message: string } }) => {
               // err.code == 200 || // 'No security definition has been found for the request'
               // err.code == 354 || // 'Requested market data is not subscribed.Delayed market data is not available.WBD NASDAQ.NMS/TOP/ALL'
               // err.code == 10090 || // 'Part of requested market data is not subscribed. Subscription-independent ticks are still active.Delayed market data is not available.XLV ARCA/TOP/ALL'
@@ -628,10 +634,10 @@ export class ContractsUpdaterBot extends ITradingBot {
         ),
       );
     }
-    return Promise.all(promises).then(() => this.yahooBot?.processQ());
+    return Promise.all(promises).then(async () => this.yahooBot?.processQ());
   }
 
-  private findCashContractsToUpdatePrice(limit: number): Promise<Contract[]> {
+  private async findCashContractsToUpdatePrice(limit: number): Promise<Contract[]> {
     const now: number = Date.now() - FX_RATES_REFRESH_FREQ * 60 * 1000;
     return Contract.findAll({
       where: {
@@ -646,9 +652,9 @@ export class ContractsUpdaterBot extends ITradingBot {
 
   private createCashContracts(): void {
     Currency.findAll()
-      .then((currencies) =>
-        currencies.reduce((p, currency) => {
-          return p.then(() => {
+      .then(async (currencies) =>
+        currencies.reduce(async (p, currency) => {
+          return p.then(async () => {
             const ibContract: IbContract = {
               symbol: currency.base,
               localSymbol: `${currency.base}.${currency.currency}`,
@@ -661,7 +667,7 @@ export class ContractsUpdaterBot extends ITradingBot {
               .catch((error: Error) => {
                 throw Error(`createCashContracts failed for ${ibContract.localSymbol}: '${error.message}'`);
               })
-              .then(() => Promise.resolve());
+              .then(async () => Promise.resolve());
           });
         }, Promise.resolve()),
       )

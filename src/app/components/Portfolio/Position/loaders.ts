@@ -7,10 +7,10 @@ import { PositionEntry } from "../../../../routers/positions.types";
  * @param param0
  * @returns
  */
-export const positionsIndexLoader = ({ params }: LoaderFunctionArgs): Promise<PositionEntry[]> => {
+export const positionsIndexLoader = async ({ params }: LoaderFunctionArgs): Promise<PositionEntry[]> => {
   const { portfolioId } = params;
   return fetch(`/api/portfolio/${portfolioId}/positions/index`)
-    .then((response) => response.json())
+    .then(async (response) => response.json())
     .then((data) => data.positions as PositionEntry[]);
 };
 
@@ -19,10 +19,10 @@ export const positionsIndexLoader = ({ params }: LoaderFunctionArgs): Promise<Po
  * @param param0
  * @returns
  */
-export const positionsOptionsLoader = ({ params }: LoaderFunctionArgs): Promise<PositionEntry[]> => {
+export const positionsOptionsLoader = async ({ params }: LoaderFunctionArgs): Promise<PositionEntry[]> => {
   const { portfolioId } = params;
   return fetch(`/api/portfolio/${portfolioId}/positions/index`)
-    .then((response) => response.json())
+    .then(async (response) => response.json())
     .then((data: { positions: PositionEntry[] }) => data.positions.filter((item) => item.contract.secType == "OPT"));
 };
 
@@ -31,9 +31,9 @@ export const positionsOptionsLoader = ({ params }: LoaderFunctionArgs): Promise<
  * @param param0
  * @returns
  */
-export const positionShowLoader = ({ params }: LoaderFunctionArgs): Promise<Position> => {
+export const positionShowLoader = async ({ params }: LoaderFunctionArgs): Promise<Position> => {
   const { portfolioId, positionId } = params;
   return fetch(`/api/portfolio/${portfolioId}/positions/id/${positionId}`)
-    .then((response) => response.json())
+    .then(async (response) => response.json())
     .then((data) => data.position as Position);
 };

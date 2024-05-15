@@ -6,9 +6,12 @@ import { Portfolio as PortfolioModel } from "../../../models/portfolio.model";
  * @param params
  * @returns
  */
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
-export const portfolioIndexLoader: LoaderFunction = ({ params }: LoaderFunctionArgs): Promise<PortfolioModel[]> => {
+
+export const portfolioIndexLoader: LoaderFunction = async ({
+  params,
+}: LoaderFunctionArgs): Promise<PortfolioModel[]> => {
+  const { portfolioId } = params; // eslint-disable-line @typescript-eslint/no-unused-vars
   return fetch("/api/portfolio")
-    .then((response) => response.json())
+    .then(async (response) => response.json())
     .then((data) => data.portfolios as PortfolioModel[]);
 };

@@ -27,11 +27,11 @@ const getPrice = (item: Contract): number | null => {
   return item.ask && item.bid ? (item.ask + item.bid) / 2 : item.price ? item.price : item.previousClosePrice;
 };
 
-export const preparePositions = (portfolio: Portfolio): Promise<(PositionEntry | OptionPositionEntry)[]> => {
+export const preparePositions = async (portfolio: Portfolio): Promise<(PositionEntry | OptionPositionEntry)[]> => {
   // logger.trace(MODULE + ".preparePositions", portfolio);
   return portfolio.positions.reduce(
-    (p, item: Position) => {
-      return p.then((positions) => {
+    async (p, item: Position) => {
+      return p.then(async (positions) => {
         switch (item.contract?.secType) {
           case SecType.STK: {
             const price = getPrice(item.contract);
@@ -229,7 +229,7 @@ router.get("/index", (req, res): void => {
     ],
     // logging: console.log,
   })
-    .then((portfolio) => {
+    .then(async (portfolio) => {
       if (portfolio) {
         return preparePositions(portfolio);
       } else throw Error("Portfolio not found");
@@ -251,7 +251,7 @@ router.post("/id/:positionId(\\d+)/SavePosition", (req, res): void => {
   // console.log("SavePosition", portfolioId, positionId, data, req.body);
 
   Position.findByPk(positionId)
-    .then((position) => {
+    .then(async (position) => {
       // console.log(JSON.stringify(position));
       if (position)
         return position.update({
@@ -277,7 +277,7 @@ router.get("/id/:positionId(\\d+)/DeletePosition", (req, res): void => {
   const { positionId } = req.params as typeof req.params & parentParams;
 
   Position.findByPk(positionId)
-    .then((position) => {
+    .then(async (position) => {
       if (position) return position.destroy();
       else throw Error("position not found");
     })
@@ -302,7 +302,7 @@ router.get("/id/:positionId(\\d+)", (req, res): void => {
     ],
     // logging: console.log,
   })
-    .then((portfolio) => {
+    .then(async (portfolio) => {
       if (portfolio) {
         return preparePositions(portfolio);
       } else throw Error("Portfolio not found");
@@ -329,7 +329,7 @@ router.get("/:positionId(\\d+)/GuessTrade", (req, res): void => {
     ],
     // logging: console.log,
   })
-    .then((portfolio) => {
+    .then(async (portfolio) => {
       if (portfolio) {
         const position = portfolio.positions[0];
         switch (position.contract.secType) {
@@ -341,7 +341,7 @@ router.get("/:positionId(\\d+)/GuessTrade", (req, res): void => {
                 stock_id: position.contract.id,
               },
               order: [["date", "DESC"]],
-            }).then((ref) => position.update({ trade_unit_id: ref?.trade_unit_id }));
+            }).then(async (ref) => position.update({ trade_unit_id: ref?.trade_unit_id }));
 
           case ContractType.Option:
           case ContractType.FutureOption:
@@ -353,11 +353,11 @@ router.get("/:positionId(\\d+)/GuessTrade", (req, res): void => {
               // logging: console.log,
               include: [{ model: Statement, as: "statement", where: { portfolio_id: portfolioId }, required: true }],
             })
-              .then((statement) => {
+              .then(async (statement) => {
                 if (statement) return Statement.findByPk(statement.id);
                 else return null;
               })
-              .then((ref) => position.update({ trade_unit_id: ref?.trade_unit_id }));
+              .then(async (ref) => position.update({ trade_unit_id: ref?.trade_unit_id }));
 
           default:
             logger.log(
@@ -396,7 +396,7 @@ router.get("/:positionId(\\d+)/AddToTrade/:tradeId(\\d+)", (req, res): void => {
     ],
     // logging: console.log,
   })
-    .then((portfolio) => {
+    .then(async (portfolio) => {
       if (portfolio) {
         const position = portfolio.positions[0];
         if (position) {
@@ -415,7 +415,7 @@ router.get("/:positionId(\\d+)/UnlinkTrade", (req, res): void => {
   const { _portfolioId, positionId } = req.params as typeof req.params & parentParams;
   logger.log(LogLevel.Debug, MODULE + ".UnlinkTrade", undefined, req.params);
   Position.findByPk(positionId)
-    .then((position) => {
+    .then(async (position) => {
       if (position) {
         return position.update({ trade_unit_id: null });
       } else {

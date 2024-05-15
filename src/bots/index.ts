@@ -165,7 +165,7 @@ export class ITradingBot extends EventEmitter {
     return order;
   }
 
-  protected init(): Promise<void> {
+  protected async init(): Promise<void> {
     return Portfolio.findOne({
       where: {
         account: this.accountNumber,
@@ -178,7 +178,7 @@ export class ITradingBot extends EventEmitter {
       ],
       // logging: console.log,
     })
-      .then((portfolio) => {
+      .then(async (portfolio) => {
         if (portfolio) {
           this.portfolio = portfolio;
           return Currency.findAll({
@@ -192,7 +192,7 @@ export class ITradingBot extends EventEmitter {
       });
   }
 
-  protected getContractPosition(contract: Contract): Promise<number> {
+  protected async getContractPosition(contract: Contract): Promise<number> {
     if (this.portfolio !== null && contract !== null) {
       console.log("getContractPosition", contract.id);
       return Position.findOne({
@@ -210,9 +210,9 @@ export class ITradingBot extends EventEmitter {
     }
   }
 
-  protected getContractPositionValueInBase(contract: Contract): Promise<number> {
+  protected async getContractPositionValueInBase(contract: Contract): Promise<number> {
     // console.log("getContractPositionValueInBase", contract);
-    return this.getContractPosition(contract).then((position) => {
+    return this.getContractPosition(contract).then(async (position) => {
       return this.findOrCreateCurrency(contract.currency).then((currency) => {
         console.log("getContractPositionValueInBase", position, contract.livePrice, currency.rate);
         return (position * contract.livePrice) / currency.rate;
@@ -228,7 +228,7 @@ export class ITradingBot extends EventEmitter {
         secId: SecType.CASH,
         currency: symbol,
         symbol: symbol + "." + this.portfolio.baseCurrency,
-      }).then((contract) => {
+      }).then(async (contract) => {
         return Currency.create({
           base: this.portfolio.baseCurrency,
           currency: symbol,
@@ -239,7 +239,7 @@ export class ITradingBot extends EventEmitter {
     return Promise.resolve(currency);
   }
 
-  protected getContractOrdersQuantity(benchmark: Contract, actionType?: OrderAction): Promise<number> {
+  protected async getContractOrdersQuantity(benchmark: Contract, actionType?: OrderAction): Promise<number> {
     const where: {
       portfolio_id: number;
       status: string[];
@@ -264,7 +264,7 @@ export class ITradingBot extends EventEmitter {
     }
   }
 
-  protected getContractOrderValueInBase(benchmark: Contract, actionType?: OrderAction): Promise<number> {
+  protected async getContractOrderValueInBase(benchmark: Contract, actionType?: OrderAction): Promise<number> {
     if (this.portfolio !== null && benchmark !== null) {
       const where: {
         portfolio_id: number;
@@ -283,7 +283,7 @@ export class ITradingBot extends EventEmitter {
             id: benchmark.id,
           },
         },
-      }).then((orders: OpenOrder[]) =>
+      }).then(async (orders: OpenOrder[]) =>
         Currency.findOne({
           where: {
             base: this.portfolio.baseCurrency,
@@ -341,7 +341,7 @@ export class ITradingBot extends EventEmitter {
     return result;
   }
 
-  protected getOptionsPositionsSynthesisInBase(
+  protected async getOptionsPositionsSynthesisInBase(
     underlying?: number,
     right?: OptionType,
     short?: boolean,
@@ -361,7 +361,7 @@ export class ITradingBot extends EventEmitter {
             secType: IbSecType.OPT,
           },
         },
-      }).then((positions: Position[]) => this.sumOptionsPositionsSynthesisInBase(positions, underlying, right));
+      }).then(async (positions: Position[]) => this.sumOptionsPositionsSynthesisInBase(positions, underlying, right));
     } else {
       return Promise.resolve({
         engaged: 0,
@@ -373,29 +373,29 @@ export class ITradingBot extends EventEmitter {
     }
   }
 
-  protected getOptionsPositionsQuantity(underlying: Contract, right: OptionType): Promise<number> {
+  protected async getOptionsPositionsQuantity(underlying: Contract, right: OptionType): Promise<number> {
     return this.getOptionsPositionsSynthesisInBase(underlying.id, right).then((r) => r.quantity);
   }
 
-  protected getOptionPositionsValueInBase(
+  protected async getOptionPositionsValueInBase(
     underlying: number | undefined,
     right: OptionType | undefined,
   ): Promise<number> {
     return this.getOptionsPositionsSynthesisInBase(underlying, right).then((r) => r.value);
   }
 
-  protected getOptionsPositionsEngagedInBase(underlying: number, right: OptionType): Promise<number> {
+  protected async getOptionsPositionsEngagedInBase(underlying: number, right: OptionType): Promise<number> {
     return this.getOptionsPositionsSynthesisInBase(underlying, right).then((r) => r.engaged);
   }
 
-  protected getOptionsPositionsRiskInBase(
+  protected async getOptionsPositionsRiskInBase(
     underlying: number | undefined,
     right: OptionType | undefined,
   ): Promise<number> {
     return this.getOptionsPositionsSynthesisInBase(underlying, right).then((r) => r.risk);
   }
 
-  protected getOptionShortPositionsValueInBase(underlying: number, right: OptionType): Promise<number> {
+  protected async getOptionShortPositionsValueInBase(underlying: number, right: OptionType): Promise<number> {
     return this.getOptionsPositionsSynthesisInBase(underlying, right, true).then((r) => r.quantity);
   }
 
@@ -414,7 +414,7 @@ export class ITradingBot extends EventEmitter {
       await OptionContract.findOne({
         where: where,
         include: { as: "contract", model: Contract, required: true },
-      }).then((opt) =>
+      }).then(async (opt) =>
         Currency.findOne({
           where: {
             base: this.portfolio.baseCurrency,
@@ -447,7 +447,7 @@ export class ITradingBot extends EventEmitter {
     return result;
   }
 
-  protected getOptionsOrdersSynthesisInBase(
+  protected async getOptionsOrdersSynthesisInBase(
     underlying: number,
     right?: OptionType,
     actionType?: OrderAction,
@@ -470,7 +470,7 @@ export class ITradingBot extends EventEmitter {
             secType: IbSecType.OPT,
           },
         },
-      }).then((orders: OpenOrder[]) => this.sumOptionsOrdersInBase(orders, underlying, right));
+      }).then(async (orders: OpenOrder[]) => this.sumOptionsOrdersInBase(orders, underlying, right));
     } else {
       return Promise.resolve({
         engaged: 0,
@@ -482,7 +482,7 @@ export class ITradingBot extends EventEmitter {
     }
   }
 
-  protected getOptionsOrdersValueInBase(
+  protected async getOptionsOrdersValueInBase(
     underlying: number,
     right: OptionType,
     actionType?: OrderAction,
@@ -490,7 +490,7 @@ export class ITradingBot extends EventEmitter {
     return this.getOptionsOrdersSynthesisInBase(underlying, right, actionType).then((r) => r.value);
   }
 
-  protected getOptionsOrdersEngagedInBase(
+  protected async getOptionsOrdersEngagedInBase(
     underlying: number,
     right: OptionType,
     actionType?: OrderAction,
@@ -498,7 +498,7 @@ export class ITradingBot extends EventEmitter {
     return this.getOptionsOrdersSynthesisInBase(underlying, right, actionType).then((r) => r.engaged);
   }
 
-  protected getOptionsOrdersRiskInBase(
+  protected async getOptionsOrdersRiskInBase(
     underlying: number,
     right?: OptionType,
     actionType?: OrderAction,
@@ -506,7 +506,7 @@ export class ITradingBot extends EventEmitter {
     return this.getOptionsOrdersSynthesisInBase(underlying, right, actionType).then((r) => r.risk);
   }
 
-  protected getOptionsOrdersQuantity(
+  protected async getOptionsOrdersQuantity(
     underlying: Contract,
     right: OptionType,
     actionType: OrderAction,
@@ -514,7 +514,7 @@ export class ITradingBot extends EventEmitter {
     return this.getOptionsOrdersSynthesisInBase(underlying.id, right, actionType).then((r) => r.quantity);
   }
 
-  protected getBalanceInBase(currency: string): Promise<number> {
+  protected async getBalanceInBase(currency: string): Promise<number> {
     return Balance.findOne({
       where: {
         portfolio_id: this.portfolio.id,
@@ -526,7 +526,7 @@ export class ITradingBot extends EventEmitter {
     });
   }
 
-  protected getTotalBalanceInBase(): Promise<number> {
+  protected async getTotalBalanceInBase(): Promise<number> {
     return Balance.findAll({ where: { portfolio_id: this.portfolio.id } }).then((balances) => {
       return balances.reduce(
         (p, b) => {
@@ -556,7 +556,7 @@ export class ITradingBot extends EventEmitter {
     );
   }
 
-  protected createStockContract(
+  protected async createStockContract(
     ibContract: IbContract,
     details: ContractDetails,
     transaction?: Transaction,
@@ -583,7 +583,7 @@ export class ITradingBot extends EventEmitter {
       },
       defaults: contract_defaults,
       transaction: transaction,
-    }).then(([contract, created]) => {
+    }).then(async ([contract, created]) => {
       const stock_defaults = {
         id: contract.id,
         industry: details.industry as string,
@@ -596,18 +596,18 @@ export class ITradingBot extends EventEmitter {
         defaults: stock_defaults,
         transaction: transaction,
       })
-        .then(([stock, created]) => {
+        .then(async ([stock, created]) => {
           if (created) return stock;
           else return stock.update(stock_defaults, { transaction: transaction });
         })
-        .then((_stock) => {
+        .then(async (_stock) => {
           if (created) return contract;
           else return contract.update(contract_defaults, { transaction: transaction });
         });
     });
   }
 
-  protected createIndexContract(
+  protected async createIndexContract(
     ibContract: IbContract,
     details: ContractDetails,
     transaction?: Transaction,
@@ -629,16 +629,18 @@ export class ITradingBot extends EventEmitter {
       defaults: defaults,
       transaction: transaction,
       // logging: console.log,
-    }).then(([contract, created]) => {
+    }).then(async ([contract, created]) => {
       if (created) {
-        return Index.create({ id: contract.id }, { transaction: transaction }).then(() => Promise.resolve(contract));
+        return Index.create({ id: contract.id }, { transaction: transaction }).then(async () =>
+          Promise.resolve(contract),
+        );
       } else {
         return contract.update(defaults, { transaction: transaction });
       }
     });
   }
 
-  protected createCashContract(
+  protected async createCashContract(
     ibContract: IbContract,
     _details: ContractDetails,
     transaction?: Transaction,
@@ -660,18 +662,18 @@ export class ITradingBot extends EventEmitter {
       defaults: defaults,
       transaction: transaction,
       // logging: console.log,
-    }).then(([contract, created]) => {
+    }).then(async ([contract, created]) => {
       if (created) {
-        return CashContract.create({ id: contract.id }, { transaction: transaction }).then(() =>
+        return CashContract.create({ id: contract.id }, { transaction: transaction }).then(async () =>
           Promise.resolve(contract),
         );
       } else {
-        return contract.update(defaults, { transaction: transaction }).then(() => Promise.resolve(contract));
+        return contract.update(defaults, { transaction: transaction }).then(async () => Promise.resolve(contract));
       }
     });
   }
 
-  protected createBagContract(
+  protected async createBagContract(
     ibContract: IbContract,
     _details: undefined,
     transaction?: Transaction,
@@ -693,22 +695,24 @@ export class ITradingBot extends EventEmitter {
       defaults: defaults,
       transaction: transaction,
       // logging: console.log,
-    }).then(([contract, created]) => {
+    }).then(async ([contract, created]) => {
       if (created) {
-        return BagContract.create({ id: contract.id }, { transaction: transaction }).then(() =>
+        return BagContract.create({ id: contract.id }, { transaction: transaction }).then(async () =>
           ibContract.comboLegs!.reduce(
-            (p, leg) =>
-              p.then((contract) => this.findOrCreateContract({ conId: leg.conId }, transaction).then(() => contract)),
+            async (p, leg) =>
+              p.then(async (contract) =>
+                this.findOrCreateContract({ conId: leg.conId }, transaction).then(() => contract),
+              ),
             Promise.resolve(contract),
           ),
         );
       } else {
-        return contract.update(defaults, { transaction: transaction }).then(() => Promise.resolve(contract));
+        return contract.update(defaults, { transaction: transaction }).then(async () => Promise.resolve(contract));
       }
     });
   }
 
-  protected createFutureContract(
+  protected async createFutureContract(
     ibContract: IbContract,
     details: ContractDetails,
     transaction?: Transaction,
@@ -736,7 +740,7 @@ export class ITradingBot extends EventEmitter {
       symbol: details.underSymbol,
       currency: ibContract.currency,
     };
-    return this.findOrCreateContract(underlying, transaction).then((future) => {
+    return this.findOrCreateContract(underlying, transaction).then(async (future) => {
       future_values.underlying_id = future.id;
       return FutureContract.findOne({
         where: {
@@ -744,29 +748,31 @@ export class ITradingBot extends EventEmitter {
           lastTradeDate: future_values.lastTradeDate,
         },
         transaction: transaction,
-      }).then((option) => {
+      }).then(async (option) => {
         if (option) {
           // update
           future_values.id = option.id;
           return Contract.update(contract_values, { where: { id: option.id }, transaction: transaction })
-            .then(() => FutureContract.update(future_values, { where: { id: option.id }, transaction: transaction }))
-            .then(() => Contract.findByPk(option.id, { transaction: transaction }))
+            .then(async () =>
+              FutureContract.update(future_values, { where: { id: option.id }, transaction: transaction }),
+            )
+            .then(async () => Contract.findByPk(option.id, { transaction: transaction }))
             .then((contract) => contract!);
         } else {
           return Contract.create(contract_values, {
             transaction: transaction /* logging: console.log, */,
-          }).then((contract) => {
+          }).then(async (contract) => {
             future_values.id = contract.id;
             return FutureContract.create(future_values, {
               transaction: transaction /* logging: false, */,
-            }).then(() => Promise.resolve(contract));
+            }).then(async () => Promise.resolve(contract));
           });
         }
       });
     });
   }
 
-  protected createBondContract(
+  protected async createBondContract(
     ibContract: IbContract,
     _details: ContractDetails,
     transaction?: Transaction,
@@ -791,16 +797,16 @@ export class ITradingBot extends EventEmitter {
     };
     return Contract.create(contract_values, {
       transaction: transaction /* logging: console.log, */,
-    }).then((contract) => {
+    }).then(async (contract) => {
       extended_values.id = contract.id;
       // console.log(contract_values, extended_values);
       return BondContract.create(extended_values, {
         transaction: transaction /* logging: false, */,
-      }).then(() => Promise.resolve(contract));
+      }).then(async () => Promise.resolve(contract));
     });
   }
 
-  protected createOptionContract(
+  protected async createOptionContract(
     ibContract: IbContract,
     details: ContractDetails,
     transaction?: Transaction,
@@ -832,7 +838,7 @@ export class ITradingBot extends EventEmitter {
       symbol: details.underSymbol,
       currency: ibContract.currency,
     };
-    return this.findOrCreateContract(underlying, transaction).then((stock) => {
+    return this.findOrCreateContract(underlying, transaction).then(async (stock) => {
       opt_values.stock_id = stock.id;
       return OptionContract.findOne({
         where: {
@@ -842,22 +848,22 @@ export class ITradingBot extends EventEmitter {
           callOrPut: opt_values.callOrPut,
         },
         transaction: transaction,
-      }).then((option) => {
+      }).then(async (option) => {
         if (option) {
           // update
           opt_values.id = option.id;
           return Contract.update(contract_values, { where: { id: option.id }, transaction: transaction })
-            .then(() => OptionContract.update(opt_values, { where: { id: option.id }, transaction: transaction }))
-            .then(() => Contract.findByPk(option.id, { transaction: transaction }))
+            .then(async () => OptionContract.update(opt_values, { where: { id: option.id }, transaction: transaction }))
+            .then(async () => Contract.findByPk(option.id, { transaction: transaction }))
             .then((contract) => contract!);
         } else {
           return Contract.create(contract_values, {
             transaction: transaction /* logging: console.log, */,
-          }).then((contract) => {
+          }).then(async (contract) => {
             opt_values.id = contract.id;
             return OptionContract.create(opt_values, {
               transaction: transaction /* logging: false, */,
-            }).then(() => Promise.resolve(contract));
+            }).then(async () => Promise.resolve(contract));
           });
         }
       });
@@ -994,5 +1000,5 @@ export { RollOptionPositionsBot } from "./roll.bot";
 export { ContractsUpdaterBot } from "./updater.bot";
 export { YahooUpdateBot } from "./yahoo.bot";
 
-export const awaitTimeout = (delay: number): Promise<unknown> =>
+export const awaitTimeout = async (delay: number): Promise<unknown> =>
   new Promise((resolve): NodeJS.Timeout => setTimeout(resolve, delay * 1000));

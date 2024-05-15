@@ -6,10 +6,10 @@ import { TradeEntry, TradeSynthesys } from "../../../../routers/trades.types";
  * @param param0
  * @returns
  */
-export const tradeSummaryLoaderYTD = ({ params }: LoaderFunctionArgs): Promise<TradeSynthesys> => {
+export const tradeSummaryLoaderYTD = async ({ params }: LoaderFunctionArgs): Promise<TradeSynthesys> => {
   const { portfolioId } = params;
   return fetch(`/api/portfolio/${portfolioId}/trades/summary/ytd`)
-    .then((response) => response.json())
+    .then(async (response) => response.json())
     .then((data) => data.tradessynthesys as TradeSynthesys);
 };
 
@@ -18,10 +18,10 @@ export const tradeSummaryLoaderYTD = ({ params }: LoaderFunctionArgs): Promise<T
  * @param param0
  * @returns
  */
-export const tradeSummaryLoader12M = ({ params }: LoaderFunctionArgs): Promise<TradeSynthesys> => {
+export const tradeSummaryLoader12M = async ({ params }: LoaderFunctionArgs): Promise<TradeSynthesys> => {
   const { portfolioId } = params;
   return fetch(`/api/portfolio/${portfolioId}/trades/summary/12m`)
-    .then((response) => response.json())
+    .then(async (response) => response.json())
     .then((data) => data.tradessynthesys as TradeSynthesys);
 };
 
@@ -30,10 +30,10 @@ export const tradeSummaryLoader12M = ({ params }: LoaderFunctionArgs): Promise<T
  * @param param0
  * @returns
  */
-export const tradeSummaryLoaderAll = ({ params }: LoaderFunctionArgs): Promise<TradeSynthesys> => {
+export const tradeSummaryLoaderAll = async ({ params }: LoaderFunctionArgs): Promise<TradeSynthesys> => {
   const { portfolioId } = params;
   return fetch(`/api/portfolio/${portfolioId}/trades/summary/all`)
-    .then((response) => response.json())
+    .then(async (response) => response.json())
     .then((data) => data.tradessynthesys as TradeSynthesys);
 };
 
@@ -42,10 +42,10 @@ export const tradeSummaryLoaderAll = ({ params }: LoaderFunctionArgs): Promise<T
  * @param param
  * @returns
  */
-export const tradesOpenLoader = ({ params }: LoaderFunctionArgs): Promise<TradeEntry[]> => {
+export const tradesOpenLoader = async ({ params }: LoaderFunctionArgs): Promise<TradeEntry[]> => {
   const { portfolioId } = params;
   return fetch(`/api/portfolio/${portfolioId}/trades/summary/open`)
-    .then((response) => response.json())
+    .then(async (response) => response.json())
     .then((data) => data.trades as TradeEntry[]);
 };
 
@@ -54,11 +54,11 @@ export const tradesOpenLoader = ({ params }: LoaderFunctionArgs): Promise<TradeE
  * @param params
  * @returns
  */
-export const tradesShowLoader = ({ params }: LoaderFunctionArgs): Promise<TradeEntry> => {
+export const tradesShowLoader = async ({ params }: LoaderFunctionArgs): Promise<TradeEntry> => {
   const { portfolioId, tradeId } = params;
   // console.log("tradesShowLoader", portfolioId, tradeId);
   return fetch(`/api/portfolio/${portfolioId}/trades/id/${tradeId}`)
-    .then((response) => response.json())
+    .then(async (response) => response.json())
     .then((data) => data.trade as TradeEntry);
 };
 
@@ -67,9 +67,9 @@ export const tradesShowLoader = ({ params }: LoaderFunctionArgs): Promise<TradeE
  * @param param0
  * @returns
  */
-export const tradesMonthLoader = ({ params }: LoaderFunctionArgs): Promise<TradeEntry[]> => {
+export const tradesMonthLoader = async ({ params }: LoaderFunctionArgs): Promise<TradeEntry[]> => {
   const { portfolioId, year, month } = params;
   return fetch(`/api/portfolio/${portfolioId}/trades/month/${year}/${month}`)
-    .then((response) => response.json())
+    .then(async (response) => response.json())
     .then((data) => data.trades as TradeEntry[]);
 };

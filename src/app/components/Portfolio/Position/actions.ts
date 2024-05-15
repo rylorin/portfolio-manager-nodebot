@@ -5,11 +5,11 @@ import { ActionFunctionArgs, redirect } from "react-router-dom";
  * @param params
  * @returns
  */
-export const positionSave = ({ request, params }: ActionFunctionArgs): Promise<Response> => {
+export const positionSave = async ({ request, params }: ActionFunctionArgs): Promise<Response> => {
   const { portfolioId, positionId } = params;
   return request
     .formData()
-    .then((formData: Iterable<readonly [PropertyKey, any]>) => {
+    .then(async (formData: Iterable<readonly [PropertyKey, any]>) => {
       const data = Object.fromEntries(formData);
       // console.log("data:", data);
       return fetch(`/api/portfolio/${portfolioId}/positions/id/${positionId}/SavePosition`, {
@@ -21,7 +21,7 @@ export const positionSave = ({ request, params }: ActionFunctionArgs): Promise<R
         body: JSON.stringify(data),
       });
     })
-    .then((response: Response) => response.json())
+    .then(async (response: Response) => response.json())
     .then((_data) => redirect("../"));
 };
 
@@ -30,14 +30,14 @@ export const positionSave = ({ request, params }: ActionFunctionArgs): Promise<R
  * @param params
  * @returns
  */
-export const positionDelete = ({ request, params }: ActionFunctionArgs): Promise<Response> => {
+export const positionDelete = async ({ request, params }: ActionFunctionArgs): Promise<Response> => {
   const { portfolioId, positionId } = params;
   return request
     .formData()
-    .then((_formData: Iterable<readonly [PropertyKey, any]>) => {
+    .then(async (_formData: Iterable<readonly [PropertyKey, any]>) => {
       return fetch(`/api/portfolio/${portfolioId}/positions/id/${positionId}/DeletePosition`);
     })
-    .then((response: Response) => response.text())
+    .then(async (response: Response) => response.text())
     .then((_data) => redirect("../"));
 };
 
@@ -46,15 +46,15 @@ export const positionDelete = ({ request, params }: ActionFunctionArgs): Promise
  * @param params
  * @returns
  */
-export const positionGuessTrade = ({ request, params }: ActionFunctionArgs): Promise<Response> => {
+export const positionGuessTrade = async ({ request, params }: ActionFunctionArgs): Promise<Response> => {
   const { portfolioId, positionId } = params;
   return request
     .formData()
-    .then((formData: Iterable<readonly [PropertyKey, any]>) => {
+    .then(async (formData: Iterable<readonly [PropertyKey, any]>) => {
       const _data = Object.fromEntries(formData);
       return fetch(`/api/portfolio/${portfolioId}/positions/${positionId}/GuessTrade`);
     })
-    .then((response: Response) => response.json())
+    .then(async (response: Response) => response.json())
     .then((_data) => redirect("../"));
 };
 
@@ -64,15 +64,15 @@ export const positionGuessTrade = ({ request, params }: ActionFunctionArgs): Pro
  * @param request
  * @returns
  */
-export const positionAddToTrade = ({ request, params }: ActionFunctionArgs): Promise<Response> => {
+export const positionAddToTrade = async ({ request, params }: ActionFunctionArgs): Promise<Response> => {
   const { portfolioId, positionId, tradeId } = params;
   return request
     .formData()
-    .then((formData: Iterable<readonly [PropertyKey, any]>) => {
+    .then(async (formData: Iterable<readonly [PropertyKey, any]>) => {
       const _data = Object.fromEntries(formData);
       return fetch(`/api/portfolio/${portfolioId}/positions/${positionId}/AddToTrade/${tradeId}`);
     })
-    .then((response: Response) => response.json())
+    .then(async (response: Response) => response.json())
     .then((_data) => redirect("../"));
 };
 
@@ -82,15 +82,15 @@ export const positionAddToTrade = ({ request, params }: ActionFunctionArgs): Pro
  * @param request
  * @returns
  */
-export const positionUnlinkTrade = ({ request, params }: ActionFunctionArgs): Promise<Response> => {
+export const positionUnlinkTrade = async ({ request, params }: ActionFunctionArgs): Promise<Response> => {
   const { portfolioId, positionId } = params;
   // console.log("positionUnlinkTrade", portfolioId, positionId);
   return request
     .formData()
-    .then((formData: Iterable<readonly [PropertyKey, any]>) => {
+    .then(async (formData: Iterable<readonly [PropertyKey, any]>) => {
       const _data = Object.fromEntries(formData);
       return fetch(`/api/portfolio/${portfolioId}/positions/${positionId}/UnlinkTrade`);
     })
-    .then((response: Response) => response.json())
+    .then(async (response: Response) => response.json())
     .then((_data) => redirect("../"));
 };
