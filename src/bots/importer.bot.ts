@@ -170,10 +170,10 @@ export class ImporterBot extends ITradingBot {
  }
   */
   // eslint-disable-next-line @typescript-eslint/explicit-module-boundary-types
-  protected async processSecurityInfoUnderlying(element: any): Promise<Contract> | Promise<undefined> {
+  protected async processSecurityInfoUnderlying(element: any): Promise<Contract | undefined> {
     if (element.underlyingConid) {
       return this.findOrCreateContract(ibUnderlyingContractFromElement(element));
-    } else return Promise.resolve(undefined);
+    } else return Promise.resolve(undefined as undefined);
   }
 
   // eslint-disable-next-line @typescript-eslint/explicit-module-boundary-types
