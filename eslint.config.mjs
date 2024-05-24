@@ -50,7 +50,7 @@ export default tseslint.config(
       "@typescript-eslint/restrict-plus-operands": "error",
       "@typescript-eslint/restrict-template-expressions": "error",
       "@typescript-eslint/unbound-method": "error",
-      "@typescript-eslint/promise-function-async": "warn",
+      "@typescript-eslint/promise-function-async": "error",
       "rxjs/no-async-subscribe": "warn",
       "rxjs/no-ignored-observable": "warn",
       "rxjs/no-ignored-subscription": "warn",

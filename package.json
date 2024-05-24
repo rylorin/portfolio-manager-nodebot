@@ -29,7 +29,7 @@
     "server:build": "tsc --project tsconfig.server.json",
     "server:dev": "ts-node-dev --project tsconfig.server.json src/index -watch -server -account -import",
     "start": "node dist/index.js -server",
-    "start:dev": "concurrently \"yarn run server:dev\" \"yarn run client:dev\"",
+    "start:dev": "concurrently \"yarn server:dev\" \"yarn client:dev\"",
     "storybook": "storybook dev -p 6006",
     "storybook:build": "storybook build -o dist/storybook"
   },
