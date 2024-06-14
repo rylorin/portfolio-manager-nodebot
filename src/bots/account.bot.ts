@@ -84,6 +84,10 @@ export class AccountUpdateBot extends ITradingBot {
 
   private async createAndUpdateLegs(order: IbOpenOrder, transaction: Transaction): Promise<IbOpenOrder> {
     if (order.contract.secType == SecType.BAG) {
+      if (!order.contract.comboLegs) {
+        logger.error(MODULE + ".createAndUpdateLegs", "BAG comboLegs are missing!", order);
+        return Promise.resolve(order);
+      }
       return order.contract.comboLegs!.reduce(
         async (p, leg) =>
           p.then(async () =>

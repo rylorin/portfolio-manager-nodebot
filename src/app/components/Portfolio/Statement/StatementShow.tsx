@@ -9,6 +9,7 @@ import BondStatementProps from "./BondStatementProps";
 import CorpoStatementProps from "./CorpoStatementProps";
 import DividendStatementProps from "./DividendStatementProps";
 import InterestStatementProps from "./InterestStatementProps";
+import OptionStatementProps from "./OptionStatementProps";
 
 type Props = Record<string, never>;
 
@@ -26,6 +27,7 @@ const StatementShow: FunctionComponent<Props> = ({ ..._rest }): React.ReactNode 
     <>
       <VStack>
         <BaseStatement portfolioId={parseInt(portfolioId)} statement={theStatement} />
+
         {theStatement.statementType == StatementTypes.InterestStatement && (
           <InterestStatementProps portfolioId={parseInt(portfolioId)} statement={theStatement} />
         )}
@@ -38,6 +40,10 @@ const StatementShow: FunctionComponent<Props> = ({ ..._rest }): React.ReactNode 
         {theStatement.statementType == StatementTypes.CorporateStatement && (
           <CorpoStatementProps portfolioId={parseInt(portfolioId)} statement={theStatement} />
         )}
+        {theStatement.statementType == StatementTypes.OptionStatement && (
+          <OptionStatementProps portfolioId={parseInt(portfolioId)} statement={theStatement} />
+        )}
+
         <Flex justifyContent="center" gap="2" mt="1">
           <IconButton aria-label="Back" icon={<ArrowBackIcon />} variant="ghost" onClick={(): void => navigate(-1)} />
           <IconButton aria-label="Edit" icon={<EditIcon />} variant="ghost" as={RouterLink} to="edit" />

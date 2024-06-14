@@ -193,8 +193,10 @@ const PositionsTable: FunctionComponent<Props> = ({
           </Tbody>
           <Tfoot>
             <Tr fontWeight="bold">
+              <Td isNumeric>
+                <Number value={thePositions.reduce((p, v) => (p += v.quantity), 0)} />
+              </Td>
               <Td>Total</Td>
-              <Td></Td>
               <Td></Td>
               <Td></Td>
               <Td>{currency ?? "Base"}</Td>

@@ -67,6 +67,8 @@ const transactionStatusFromElement = (element: any): StatementStatus => {
   if (element.notes == "A") return StatementStatus.ASSIGNED_STATUS;
   else if (element.notes == "Ep") return StatementStatus.EXPIRED_STATUS;
   else if (element.notes == "Ex") return StatementStatus.EXERCISED_STATUS;
+  else if (element.notes == "Ca")
+    return StatementStatus.CANCELLED_STATUS; // Cancelled
   else if (element.openCloseIndicator == "O") return StatementStatus.OPEN_STATUS;
   else if (element.openCloseIndicator == "C") return StatementStatus.CLOSE_STATUS;
   else if (element.assetCategory == "CASH") return StatementStatus.UNDEFINED_STATUS;
@@ -106,6 +108,9 @@ const transactionDescriptionFromElement = (element: any): string => {
       break;
     case StatementStatus.CLOSE_STATUS:
       description += "Closed";
+      break;
+    case StatementStatus.CANCELLED_STATUS:
+      description += "Cancelled";
       break;
     default:
       description += element.notes;

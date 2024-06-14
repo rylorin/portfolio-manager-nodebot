@@ -182,6 +182,16 @@ const StatementEdit: FunctionComponent<Props> = ({ ..._rest }): React.ReactNode 
                 </Flex>
               )}
 
+              {/* Option properties */}
+              {theStatement.statementType == StatementTypes.OptionStatement && (
+                <Flex justifyContent="center" gap="2">
+                  <Text w="90px" as="b" textAlign="right">
+                    Quantity:
+                  </Text>
+                  <Field name="quantity" w="200px" />
+                </Flex>
+              )}
+
               <Flex justifyContent="center" gap="2" mt="1">
                 <IconButton
                   aria-label="Back"

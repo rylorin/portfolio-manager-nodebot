@@ -533,6 +533,8 @@ router.post("/id/:statementId(\\d+)/SaveStatement", (req, res): void => {
                 return InterestStatement.update({ country: data.country! }, { where: { id: statementId } });
               case StatementTypes.TaxStatement:
                 return TaxStatement.update({ country: data.country }, { where: { id: statementId } });
+              case StatementTypes.OptionStatement:
+                return OptionStatement.update({ quantity: data.quantity }, { where: { id: statementId } });
               default:
                 return [0];
             }

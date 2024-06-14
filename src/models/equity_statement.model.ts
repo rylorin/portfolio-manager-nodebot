@@ -9,6 +9,7 @@ export const StatementStatus = {
   EXPIRED_STATUS: 3,
   ASSIGNED_STATUS: 4,
   EXERCISED_STATUS: 5,
+  CANCELLED_STATUS: 6,
 } as const;
 export type StatementStatus = (typeof StatementStatus)[keyof typeof StatementStatus];
 
