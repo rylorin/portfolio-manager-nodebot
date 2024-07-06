@@ -71,7 +71,7 @@ const BaseStatement = ({ portfolioId, statement }: Props): React.ReactNode => {
           {statement.fxRateToBase}
         </Text>
       </Flex>
-      {"underlying" in statement && (
+      {"underlying" in statement && statement.underlying && (
         <Flex justifyContent="center" gap="2">
           <Text w="110px" as="b" textAlign="right">
             Underlying:
