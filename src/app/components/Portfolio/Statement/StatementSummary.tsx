@@ -11,11 +11,11 @@ const StatementSummary: FunctionComponent<StatementSummaryProps> = ({ ..._rest }
   const theSynthesys = useLoaderData() as StatementsSynthesysEntries;
 
   const datasets: DataSet[] = [
+    { label: "Stocks", data: Object.values(theSynthesys).map((item) => Math.round(item.stocks)) },
     {
       label: "Options",
       data: Object.values(theSynthesys).map((item) => Math.round(item.options)),
     },
-    { label: "Stocks", data: Object.values(theSynthesys).map((item) => Math.round(item.stocks)) },
     {
       label: "Div+Int",
       data: Object.values(theSynthesys).map((item) => Math.round(item.dividends + item.interests)),
