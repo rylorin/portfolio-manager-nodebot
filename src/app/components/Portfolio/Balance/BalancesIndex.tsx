@@ -35,7 +35,7 @@ const BalancesIndex: FunctionComponent<BalancesIndexProps> = ({ ..._rest }): Rea
               .map((item) => (
                 <Tr key={item.id}>
                   <Td>{item.currency}</Td>
-                  <Td>
+                  <Td isNumeric={true}>
                     <Number value={item.quantity} decimals={2} />
                   </Td>
                   <Td>
@@ -59,7 +59,7 @@ const BalancesIndex: FunctionComponent<BalancesIndexProps> = ({ ..._rest }): Rea
           <Tfoot>
             <Tr>
               <Td fontWeight="bold">Total</Td>
-              <Td>
+              <Td isNumeric={true}>
                 <Number
                   value={theBalances.reduce((p, item) => (p += (item.quantity || 0) * item.baseRate), 0)}
                   fontWeight="bold"
