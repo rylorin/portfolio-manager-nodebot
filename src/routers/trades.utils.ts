@@ -341,6 +341,7 @@ const computeComboRisk = (thisTrade: Trade, virtuals: Record<number, VirtualPosi
         stocks[item.contract.id] = { contract: item.contract, cost: item.cost, quantity: item.quantity };
         break;
       case ContractType.Option:
+      case ContractType.FutureOption:
         if (item.quantity && !((item.contract as StatementUnderlyingOption).strike in limits))
           limits.push((item.contract as StatementUnderlyingOption).strike);
         switch ((item.contract as StatementUnderlyingOption).callOrPut) {
@@ -375,7 +376,12 @@ const computeComboRisk = (thisTrade: Trade, virtuals: Record<number, VirtualPosi
         }
         break;
       default:
-        logger.log(LogLevel.Error, MODULE + ".computeComboRisk", undefined, "unimplemented secType");
+        logger.log(
+          LogLevel.Error,
+          MODULE + ".computeComboRisk",
+          undefined,
+          "Unimplemented SecType: " + item.contract.secType,
+        );
     }
   });
   limits.sort((a, b) => a - b);
@@ -443,6 +449,7 @@ const countContratTypes = (virtuals: Record<number, VirtualPositionEntry>): numb
         else if (item.quantity < 0) short_stock += 1;
         break;
       case ContractType.Option:
+      case ContractType.FutureOption:
         switch ((item.contract as StatementUnderlyingOption).callOrPut) {
           case OptionType.Call:
             if (item.quantity > 0) long_call += 1;
@@ -455,7 +462,12 @@ const countContratTypes = (virtuals: Record<number, VirtualPositionEntry>): numb
         }
         break;
       default:
-        logger.log(LogLevel.Error, ".computeTradeStrategy", undefined, "unimplemented sec type");
+        logger.log(
+          LogLevel.Error,
+          MODULE + ".computeTradeStrategy",
+          undefined,
+          "Unimplemented SecType: " + item.contract.secType,
+        );
     }
   });
   return [long_stock, short_stock, long_call, short_call, long_put, short_put];
