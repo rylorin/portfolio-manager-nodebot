@@ -129,6 +129,23 @@ const transactionDescriptionFromElement = (element: any): string => {
   );
 };
 
+type FlexStatement = {
+  AccountInformation?: any;
+  EquitySummaryInBase?: any;
+  Trades?: any;
+  TransactionTaxes?: any;
+  OptionEAE?: any;
+  CorporateActions?: any;
+  CashTransactions?: any;
+  SalesTaxes?: any;
+  SecuritiesInfo?: any;
+  accountId?: string;
+  fromDate?: string;
+  toDate?: string;
+  period?: string;
+  whenGenerated?: string;
+};
+
 export class ImporterBot extends ITradingBot {
   private token: string;
   private query: string;
@@ -251,10 +268,22 @@ export class ImporterBot extends ITradingBot {
       });
   }
 
-  private async processAllSecuritiesInfo(element: any): Promise<Contract | undefined> {
-    logger.trace(MODULE + ".processAllSecuritiesInfo", undefined, element);
-    if (element instanceof Array) {
-      return element.reduce(
+  private async processAllSecuritiesInfo(flexReport: FlexStatement): Promise<FlexStatement> {
+    logger.trace(MODULE + ".processAllSecuritiesInfo", undefined, flexReport);
+    let elements: any[];
+    if (
+      !flexReport.SecuritiesInfo ||
+      !flexReport.SecuritiesInfo.SecurityInfo ||
+      flexReport.SecuritiesInfo.SecurityInfo == ""
+    ) {
+      elements = [];
+    } else if (flexReport.SecuritiesInfo.SecurityInfo instanceof Array) {
+      elements = flexReport.SecuritiesInfo.SecurityInfo;
+    } else {
+      elements = [flexReport.SecuritiesInfo.SecurityInfo];
+    }
+    return elements
+      .reduce(
         async (p: Promise<Contract | undefined>, element: any): Promise<Contract | undefined> =>
           p.then(async () =>
             this.processSecurityInfo(element).catch(async (error) => {
@@ -263,11 +292,11 @@ export class ImporterBot extends ITradingBot {
             }),
           ),
         Promise.resolve(undefined as undefined),
-      );
-    } else {
-      if (element) return this.processSecurityInfo(element);
-    }
-    return Promise.resolve(undefined as undefined);
+      )
+      .then(() => {
+        delete flexReport.SecuritiesInfo;
+        return flexReport;
+      });
   }
 
   // eslint-disable-next-line @typescript-eslint/explicit-module-boundary-types
@@ -526,19 +555,28 @@ export class ImporterBot extends ITradingBot {
     }
   }
 
-  private async processAllTrades(element: any): Promise<void> {
-    logger.trace(MODULE + ".processAllTrades", undefined, element);
-    if (element instanceof Array) {
-      return element.reduce(
+  private async processAllTrades(flexReport: FlexStatement): Promise<FlexStatement> {
+    logger.trace(MODULE + ".processAllTrades", undefined, flexReport);
+    let elements: any[];
+    if (!flexReport.Trades || !flexReport.Trades.Trade || flexReport.Trades.Trade == "") {
+      elements = [];
+    } else if (flexReport.Trades.Trade instanceof Array) {
+      elements = flexReport.Trades.Trade;
+    } else {
+      elements = [flexReport.Trades.Trade];
+    }
+    return elements
+      .reduce(
         async (p: Promise<void>, element: any) =>
           p
             .then(async () => this.processOneTrade(element))
             .catch((error) => logger.error(MODULE + ".processAllTrades", undefined, error, element)),
         Promise.resolve(),
-      );
-    } else if (element) {
-      return this.processOneTrade(element).then((): void => undefined);
-    } else return Promise.resolve();
+      )
+      .then(() => {
+        delete flexReport.Trades;
+        return flexReport;
+      });
   }
 
   /*
@@ -681,15 +719,28 @@ export class ImporterBot extends ITradingBot {
       });
   }
 
-  private async processAllCashTransactions(element: any): Promise<any> {
-    if (element instanceof Array) {
-      return element.reduce(
+  private async processAllCashTransactions(flexReport: FlexStatement): Promise<FlexStatement> {
+    let elements: any[];
+    if (
+      !flexReport.CashTransactions ||
+      !flexReport.CashTransactions.CashTransaction ||
+      flexReport.CashTransactions.CashTransaction == ""
+    ) {
+      elements = [];
+    } else if (flexReport.CashTransactions.CashTransaction instanceof Array) {
+      elements = flexReport.CashTransactions.CashTransaction;
+    } else {
+      elements = [flexReport.CashTransactions.CashTransaction];
+    }
+    return elements
+      .reduce(
         async (p: Promise<any>, element: any) => p.then(async () => this.processCashTransaction(element)),
         Promise.resolve(),
-      );
-    } else if (element) {
-      return this.processCashTransaction(element);
-    } else return Promise.resolve();
+      )
+      .then(() => {
+        delete flexReport.CashTransactions;
+        return flexReport;
+      });
   }
 
   // eslint-disable-next-line @typescript-eslint/explicit-module-boundary-types
@@ -721,40 +772,76 @@ export class ImporterBot extends ITradingBot {
       );
   }
 
-  private async processAllCorporateActions(element: any): Promise<Statement> {
-    if (element.CorporateActions.CorporateAction instanceof Array) {
-      // eslint-disable-next-line @typescript-eslint/no-unsafe-return,@typescript-eslint/no-unsafe-call
-      return element.CorporateActions.CorporateAction.reduce(
+  private async processAllCorporateActions(flexReport: FlexStatement): Promise<FlexStatement> {
+    let elements: any[];
+    if (
+      !flexReport.CorporateActions ||
+      !flexReport.CorporateActions.CorporateAction ||
+      flexReport.CorporateActions.CorporateAction == ""
+    ) {
+      elements = [];
+    } else if (flexReport.CorporateActions.CorporateAction instanceof Array) {
+      elements = flexReport.CorporateActions.CorporateAction;
+    } else {
+      elements = [flexReport.CorporateActions.CorporateAction];
+    }
+    return elements
+      .reduce(
         async (p: Promise<any>, element: any) => p.then(async () => this.processCorporateAction(element)),
         Promise.resolve(),
-      );
-    } else if (element.CorporateActions.CorporateAction) {
-      return this.processCorporateAction(element.CorporateActions.CorporateAction);
-    }
-    return Promise.resolve(null as unknown as Statement);
+      )
+      .then(() => {
+        delete flexReport.CorporateActions;
+        return flexReport;
+      });
   }
 
-  // eslint-disable-next-line @typescript-eslint/explicit-module-boundary-types
-  protected async processReport(element: any): Promise<void> {
-    logger.log(LogLevel.Info, MODULE + ".processReport", undefined, element.AccountInformation);
+  private async processAccountInfo(flexReport: FlexStatement): Promise<FlexStatement> {
     return Portfolio.findOrCreate({
       where: {
-        account: element.AccountInformation.accountId,
-        baseCurrency: element.AccountInformation.currency,
+        account: flexReport.AccountInformation.accountId,
+        baseCurrency: flexReport.AccountInformation.currency,
       },
       defaults: {
-        account: element.AccountInformation.accountId,
-        baseCurrency: element.AccountInformation.currency,
-        name: element.AccountInformation.name,
-        country: (element.AccountInformation.ibEntity as string).substring(3),
+        account: flexReport.AccountInformation.accountId,
+        baseCurrency: flexReport.AccountInformation.currency,
+        name: flexReport.AccountInformation.name,
+        country: (flexReport.AccountInformation.ibEntity as string).substring(3),
       },
-    })
-      .then(async ([_portfolio, _created]) => this.processAllSecuritiesInfo(element.SecuritiesInfo.SecurityInfo))
-      .then(async () => this.processAllTrades(element.Trades.Trade))
-      .then(async () => this.processAllCashTransactions(element.CashTransactions.CashTransaction))
-      .then(async () => this.processAllCorporateActions(element))
+    }).then(() => {
+      delete flexReport.AccountInformation;
+      return flexReport;
+    });
+  }
+
+  private processOtherStatements(flexReport: FlexStatement): FlexStatement {
+    // Ignore the following FlexStatement entries
+    delete flexReport.accountId;
+    delete flexReport.fromDate;
+    delete flexReport.period;
+    delete flexReport.toDate;
+    delete flexReport.whenGenerated;
+    delete flexReport.EquitySummaryInBase; // Ignore NAV history
+    delete flexReport.OptionEAE; // Ignore Options expirations assigments excersizes
+    // Warning message if any entries left
+    const keys = Object.keys(flexReport);
+    if (keys.length > 0) logger.warn(MODULE + ".processOtherStatements", "Unimplemented keys:", keys.join(","));
+    keys.forEach((key) => {
+      console.error(`Unimplemented key: '${key}'`, flexReport[key]);
+    });
+    console.log(flexReport.SalesTaxes.SalesTax[0]);
+    return flexReport;
+  }
+
+  protected async processReport(flexReport: FlexStatement): Promise<void> {
+    logger.log(LogLevel.Info, MODULE + ".processReport", undefined, flexReport.AccountInformation);
+    return this.processAccountInfo(flexReport)
+      .then(async (flexReport) => this.processAllSecuritiesInfo(flexReport))
+      .then(async (flexReport) => this.processAllTrades(flexReport))
+      .then(async (flexReport) => this.processAllCashTransactions(flexReport))
+      .then(async (flexReport) => this.processAllCorporateActions(flexReport))
+      .then((flexReport) => this.processOtherStatements(flexReport))
       .then(() => logger.log(LogLevel.Info, MODULE + ".processReport", undefined, "Report loaded"))
-      .then(async () => Promise.resolve())
       .catch((error) => logger.error(MODULE + ".processReport", undefined, "importer bot process report:", error));
   }
 
@@ -774,11 +861,11 @@ export class ImporterBot extends ITradingBot {
             // eslint-disable-next-line @typescript-eslint/no-unsafe-return,@typescript-eslint/no-unsafe-call
             return jObj["FlexQueryResponse"].FlexStatements.FlexStatement.reduce(
               async (p: Promise<void>, element: any): Promise<void> =>
-                p.then(async (): Promise<void> => this.processReport(element)),
+                p.then(async (): Promise<void> => this.processReport(element as FlexStatement)),
               Promise.resolve(),
             );
           } else {
-            return this.processReport(jObj["FlexQueryResponse"].FlexStatements.FlexStatement);
+            return this.processReport(jObj["FlexQueryResponse"].FlexStatements.FlexStatement as FlexStatement);
           }
         } else if (jObj["FlexStatementResponse"]?.Status == "Warn" && jObj["FlexStatementResponse"].ErrorCode == 1019) {
           // Retry
