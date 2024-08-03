@@ -42,6 +42,7 @@ export class ContractsUpdaterBot extends ITradingBot {
   public updateOptionsPriceWrapper(): void {
     this.updateOptionsPrice().catch((error) => console.error(error));
   }
+
   public start(): void {
     this.on("updateHistoricalData", () => this.updateHistoricalData());
     this.on("updateOptionsPrice", () => this.updateOptionsPriceWrapper());
@@ -318,7 +319,7 @@ export class ContractsUpdaterBot extends ITradingBot {
           },
         ).then(() => price);
       } else {
-        return price;
+        return price ? (contract.currency == "GBP" ? price / 100 : price) : price;
       }
     });
   }

@@ -66,6 +66,7 @@ export const preparePositions = async (portfolio: Portfolio): Promise<(PositionE
           }
 
           case SecType.OPT:
+          case SecType.FOP:
             return OptionContract.findByPk(item.contract.id, {
               include: [
                 { model: Contract, as: "contract" },

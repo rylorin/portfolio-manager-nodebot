@@ -796,6 +796,34 @@ export class ImporterBot extends ITradingBot {
       });
   }
 
+  // eslint-disable-next-line @typescript-eslint/explicit-module-boundary-types
+  protected async processSalesTaxes(element: any): Promise<void> {
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
+    logger.log(LogLevel.Trace, MODULE + ".processSalesTaxes", element.symbol, element);
+    return Promise.resolve();
+  }
+
+  private async processAllSalesTaxes(flexReport: FlexStatement): Promise<FlexStatement> {
+    console.log("processAllSalesTaxes", flexReport.SalesTaxes);
+    let elements: any[];
+    if (!flexReport.SalesTaxes || !flexReport.SalesTaxes.SalesTaxes) {
+      elements = [];
+    } else if (flexReport.SalesTaxes.CorporateAction instanceof Array) {
+      elements = flexReport.SalesTaxes.CorporateAction;
+    } else {
+      elements = [flexReport.SalesTaxes.CorporateAction];
+    }
+    return elements
+      .reduce(
+        async (p: Promise<any>, element: any) => p.then(async () => this.processSalesTaxes(element)),
+        Promise.resolve(),
+      )
+      .then(() => {
+        delete flexReport.SalesTaxes;
+        return flexReport;
+      });
+  }
+
   private async processAccountInfo(flexReport: FlexStatement): Promise<FlexStatement> {
     return Portfolio.findOrCreate({
       where: {
@@ -840,6 +868,7 @@ export class ImporterBot extends ITradingBot {
       .then(async (flexReport) => this.processAllTrades(flexReport))
       .then(async (flexReport) => this.processAllCashTransactions(flexReport))
       .then(async (flexReport) => this.processAllCorporateActions(flexReport))
+      .then(async (flexReport) => this.processAllSalesTaxes(flexReport))
       .then((flexReport) => this.processOtherStatements(flexReport))
       .then(() => logger.log(LogLevel.Info, MODULE + ".processReport", undefined, "Report loaded"))
       .catch((error) => logger.error(MODULE + ".processReport", undefined, "importer bot process report:", error));
@@ -871,10 +900,10 @@ export class ImporterBot extends ITradingBot {
           // Retry
           return awaitTimeout(1).then(async () => this.fetchReport(url));
         } else if (jObj["FlexStatementResponse"]?.ErrorMessage) {
-          throw Error("Can t fetch data" + jObj["FlexStatementResponse"].ErrorMessage);
+          throw Error("Can't fetch data" + jObj["FlexStatementResponse"].ErrorMessage);
         } else {
           console.error(jObj);
-          throw Error("Can t fetch data");
+          throw Error("Can't fetch data");
         }
       })
       .catch((error) => console.error("importer bot fetch report:", error));
