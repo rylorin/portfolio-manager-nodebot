@@ -8,6 +8,7 @@ import { formatNumber } from "../../../utils";
 import Number from "../../Number/Number";
 import { ContractLink } from "../Contract/links";
 import { PositionLink } from "./links";
+import { comparePositions } from "./utils";
 
 type Props = {
   title?: string;
@@ -50,7 +51,10 @@ const PositionsTable: FunctionComponent<Props> = ({
     }
   };
 
-  const comparePositions = (a: PositionEntry | OptionPositionEntry, b: PositionEntry | OptionPositionEntry): number => {
+  const _comparePositions = (
+    a: PositionEntry | OptionPositionEntry,
+    b: PositionEntry | OptionPositionEntry,
+  ): number => {
     const aSymbol = underlyingSymbol(a);
     const bSymbol = underlyingSymbol(b);
     let result: number = aSymbol.localeCompare(bSymbol);

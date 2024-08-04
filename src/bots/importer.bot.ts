@@ -797,29 +797,59 @@ export class ImporterBot extends ITradingBot {
   }
 
   // eslint-disable-next-line @typescript-eslint/explicit-module-boundary-types
-  protected async processSalesTaxes(element: any): Promise<void> {
+  protected async processSalesTax(element: any): Promise<void> {
     // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
     logger.log(LogLevel.Trace, MODULE + ".processSalesTaxes", element.symbol, element);
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
+    logger.log(LogLevel.Warning, MODULE + ".processSalesTaxes", element.symbol, "not implemented", element);
     return Promise.resolve();
   }
 
   private async processAllSalesTaxes(flexReport: FlexStatement): Promise<FlexStatement> {
-    console.log("processAllSalesTaxes", flexReport.SalesTaxes);
     let elements: any[];
-    if (!flexReport.SalesTaxes || !flexReport.SalesTaxes.SalesTaxes) {
+    if (!flexReport.SalesTaxes || !flexReport.SalesTaxes.SalesTax) {
       elements = [];
-    } else if (flexReport.SalesTaxes.CorporateAction instanceof Array) {
-      elements = flexReport.SalesTaxes.CorporateAction;
+    } else if (flexReport.SalesTaxes.SalesTax instanceof Array) {
+      elements = flexReport.SalesTaxes.SalesTax;
     } else {
-      elements = [flexReport.SalesTaxes.CorporateAction];
+      elements = [flexReport.SalesTaxes.SalesTax];
     }
     return elements
       .reduce(
-        async (p: Promise<any>, element: any) => p.then(async () => this.processSalesTaxes(element)),
+        async (p: Promise<any>, element: any) => p.then(async () => this.processSalesTax(element)),
         Promise.resolve(),
       )
       .then(() => {
         delete flexReport.SalesTaxes;
+        return flexReport;
+      });
+  }
+
+  // eslint-disable-next-line @typescript-eslint/explicit-module-boundary-types
+  protected async processTransactionTaxes(element: any): Promise<void> {
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
+    logger.log(LogLevel.Trace, MODULE + ".processTransactionTaxes", element.symbol, element);
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
+    logger.log(LogLevel.Warning, MODULE + ".processTransactionTaxes", element.symbol, "not implemented", element);
+    return Promise.resolve();
+  }
+
+  private async processAllTransactionTaxes(flexReport: FlexStatement): Promise<FlexStatement> {
+    let elements: any[];
+    if (!flexReport.TransactionTaxes || !flexReport.TransactionTaxes.SalesTax) {
+      elements = [];
+    } else if (flexReport.TransactionTaxes.SalesTax instanceof Array) {
+      elements = flexReport.TransactionTaxes.SalesTax;
+    } else {
+      elements = [flexReport.TransactionTaxes.SalesTax];
+    }
+    return elements
+      .reduce(
+        async (p: Promise<any>, element: any) => p.then(async () => this.processTransactionTaxes(element)),
+        Promise.resolve(),
+      )
+      .then(() => {
+        delete flexReport.TransactionTaxes;
         return flexReport;
       });
   }
@@ -857,7 +887,6 @@ export class ImporterBot extends ITradingBot {
     keys.forEach((key) => {
       console.error(`Unimplemented key: '${key}'`, flexReport[key]);
     });
-    console.log(flexReport.SalesTaxes.SalesTax[0]);
     return flexReport;
   }
 
@@ -869,6 +898,7 @@ export class ImporterBot extends ITradingBot {
       .then(async (flexReport) => this.processAllCashTransactions(flexReport))
       .then(async (flexReport) => this.processAllCorporateActions(flexReport))
       .then(async (flexReport) => this.processAllSalesTaxes(flexReport))
+      .then(async (flexReport) => this.processAllTransactionTaxes(flexReport))
       .then((flexReport) => this.processOtherStatements(flexReport))
       .then(() => logger.log(LogLevel.Info, MODULE + ".processReport", undefined, "Report loaded"))
       .catch((error) => logger.error(MODULE + ".processReport", undefined, "importer bot process report:", error));
