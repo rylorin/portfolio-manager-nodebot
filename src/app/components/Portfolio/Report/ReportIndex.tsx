@@ -77,7 +77,7 @@ const ReportsIndex: FunctionComponent<Props> = ({ ..._rest }): React.ReactNode =
     },
     {
       label: "Options",
-      data: theReports.map((item) => item.tradesSummary.optionsPnLInBase),
+      data: theReports.map((item) => item.tradesSummary.optionsPnLInBase + item.tradesSummary.fopPnlInBase),
     },
     {
       label: "Bonds",

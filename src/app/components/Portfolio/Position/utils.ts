@@ -25,7 +25,9 @@ const getSymbol = (item: PositionEntry | OptionPositionEntry): string | undefine
       return item.contract.symbol;
     case ContractType.Option:
     case ContractType.FutureOption: // Not implemented yet
-      return (item as OptionPositionEntry).underlying.symbol;
+      return (item as OptionPositionEntry).underlying
+        ? (item as OptionPositionEntry).underlying.symbol
+        : item.contract.symbol;
     case ContractType.Bond:
       return item.contract.name.substring(0, item.contract.name.indexOf(" "));
     default:

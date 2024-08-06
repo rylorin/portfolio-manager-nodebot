@@ -36,7 +36,7 @@ const PositionsTable: FunctionComponent<Props> = ({
     return undefined;
   };
 
-  const underlyingSymbol = (pos: PositionEntry | OptionPositionEntry): string => {
+  const _underlyingSymbol = (pos: PositionEntry | OptionPositionEntry): string => {
     switch (pos.contract.secType) {
       case ContractType.Stock:
         return pos.contract.symbol;
@@ -55,8 +55,8 @@ const PositionsTable: FunctionComponent<Props> = ({
     a: PositionEntry | OptionPositionEntry,
     b: PositionEntry | OptionPositionEntry,
   ): number => {
-    const aSymbol = underlyingSymbol(a);
-    const bSymbol = underlyingSymbol(b);
+    const aSymbol = _underlyingSymbol(a);
+    const bSymbol = _underlyingSymbol(b);
     let result: number = aSymbol.localeCompare(bSymbol);
     if (result == 0) {
       // Same underlying symbol, Options displayed after Stocks and Futures

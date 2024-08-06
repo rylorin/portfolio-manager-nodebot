@@ -806,6 +806,7 @@ export class ImporterBot extends ITradingBot {
   }
 
   private async processAllSalesTaxes(flexReport: FlexStatement): Promise<FlexStatement> {
+    console.debug("processAllSalesTaxes", flexReport);
     let elements: any[];
     if (!flexReport.SalesTaxes || !flexReport.SalesTaxes.SalesTax) {
       elements = [];
@@ -836,12 +837,12 @@ export class ImporterBot extends ITradingBot {
 
   private async processAllTransactionTaxes(flexReport: FlexStatement): Promise<FlexStatement> {
     let elements: any[];
-    if (!flexReport.TransactionTaxes || !flexReport.TransactionTaxes.SalesTax) {
+    if (!flexReport.TransactionTaxes || !flexReport.TransactionTaxes.TransactionTax) {
       elements = [];
-    } else if (flexReport.TransactionTaxes.SalesTax instanceof Array) {
-      elements = flexReport.TransactionTaxes.SalesTax;
+    } else if (flexReport.TransactionTaxes.TransactionTax instanceof Array) {
+      elements = flexReport.TransactionTaxes.TransactionTax;
     } else {
-      elements = [flexReport.TransactionTaxes.SalesTax];
+      elements = [flexReport.TransactionTaxes.TransactionTax];
     }
     return elements
       .reduce(
