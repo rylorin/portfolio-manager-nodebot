@@ -156,9 +156,8 @@ export const updateTradeDetails = async (thisTrade: Trade): Promise<Trade> => {
     thisTrade.pnlInBase = 0;
     return prepareStatements(statements) // Convert Statement[] to StatementEntry[]
       .then(async (statement_entries) => {
-        // TODO: computeRisk_Generic could compute and return virtuals
-        computeRisk_Generic(thisTrade, statement_entries);
-        const virtuals = makeVirtualPositions(statement_entries);
+        const virtuals = computeRisk_Generic(thisTrade, statement_entries);
+        // const virtuals = makeVirtualPositions(statement_entries);
         updateTradeExpiry(thisTrade, virtuals);
         return thisTrade.save();
       });
@@ -578,7 +577,7 @@ const computeRisk_Generic = (thisTrade: Trade, statements: StatementEntry[]): Re
   }
 
   // Sum costs of open positions to compute expiry P&L
-  thisTrade.expiryPnl = Object.values(virtuals).reduce((p, item) => (item.quantity ? p + item.cost : p), 0);
+  thisTrade.expiryPnl = Object.values(virtuals).reduce((p, item) => (item.quantity ? p - item.cost : p), 0);
 
   // All done
   return virtuals;
