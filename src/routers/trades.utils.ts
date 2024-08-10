@@ -111,7 +111,10 @@ const makeVirtualPositions = (statements: StatementEntry[] | undefined): Record<
 const updateTradeExpiry = (thisTrade: Trade, virtuals: Record<number, VirtualPositionEntry>): void => {
   thisTrade.expectedExpiry = null;
   Object.values(virtuals).forEach((item) => {
-    if (item.contract.secType == ContractType.Option && item.quantity) {
+    if (
+      item.quantity &&
+      (item.contract.secType == ContractType.Option || item.contract.secType == ContractType.FutureOption)
+    ) {
       if (!thisTrade.expectedExpiry)
         thisTrade.expectedExpiry = (item.contract as StatementUnderlyingOption).lastTradeDate;
       else if (thisTrade.expectedExpiry < (item.contract as StatementUnderlyingOption).lastTradeDate)
