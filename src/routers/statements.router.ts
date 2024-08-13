@@ -107,8 +107,8 @@ const makeSynthesys = async (statements: Statement[]): Promise<StatementsSynthes
             });
 
           case StatementTypes.CorporateStatement:
-            return CorporateStatement.findByPk(item.id).then((_statement) => {
-              value[idx].total += item.netCash * item.fxRateToBase;
+            return CorporateStatement.findByPk(item.id).then((statement) => {
+              value[idx].total += statement!.pnl * item.fxRateToBase;
               return value;
             });
 
