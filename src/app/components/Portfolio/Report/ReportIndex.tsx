@@ -73,7 +73,7 @@ const ReportsIndex: FunctionComponent<Props> = ({ ..._rest }): React.ReactNode =
   const datasets: DataSet[] = [
     {
       label: "Stocks",
-      data: theReports.map((item) => item.tradesSummary.stocksPnLInBase),
+      data: theReports.map((item) => item.tradesSummary.stocksPnLInBase + item.tradesSummary.futuresPnLInBase),
     },
     {
       label: "Options",
