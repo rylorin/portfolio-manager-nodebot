@@ -108,7 +108,11 @@ const makeVirtualPositions = (statements: StatementEntry[] | undefined): Record<
  * @param thisTrade
  * @param virtuals
  */
-const updateTradeExpiry = (thisTrade: Trade, virtuals: Record<number, VirtualPositionEntry>): void => {
+const updateTradeExpiry = (
+  thisTrade: Trade,
+  virtuals: Record<number, VirtualPositionEntry>,
+  statements: StatementEntry[],
+): void => {
   let totalQty = 0;
   thisTrade.expectedExpiry = null;
   Object.values(virtuals).forEach((item) => {
@@ -124,6 +128,23 @@ const updateTradeExpiry = (thisTrade: Trade, virtuals: Record<number, VirtualPos
     totalQty += item.quantity;
   });
   if (thisTrade.status == TradeStatus.undefined) thisTrade.status = totalQty ? TradeStatus.open : TradeStatus.closed;
+  thisTrade.openingDate = new Date(statements[0].date);
+  if (thisTrade.status == TradeStatus.closed && !thisTrade.closingDate) {
+    // closing date is last trade (or trade option) statement date
+    let closingDate = statements[0].date;
+    for (let i = statements.length - 1; i > 0; --i) {
+      if (
+        statements[i].statementType == StatementTypes.EquityStatement ||
+        statements[i].statementType == StatementTypes.OptionStatement ||
+        statements[i].statementType == StatementTypes.BondStatement
+      ) {
+        // console.log(items[i]);
+        if (statements[i].date > closingDate) closingDate = statements[i].date;
+        break;
+      }
+    }
+    thisTrade.closingDate = new Date(closingDate);
+  } else if (thisTrade.status != TradeStatus.closed) thisTrade.closingDate = null;
 };
 
 /**
@@ -132,33 +153,13 @@ const updateTradeExpiry = (thisTrade: Trade, virtuals: Record<number, VirtualPos
  * @returns
  */
 export const updateTradeDetails = async (thisTrade: Trade): Promise<Trade> => {
-  // logger.log(LogLevel.Trace, MODULE + ".updateTradeDetails", thisTrade.underlying?.symbol, "thisTrade", thisTrade);
-  if (thisTrade && thisTrade.statements?.length) {
+  if (thisTrade.statements) {
     // sort statements by date
     const statements = thisTrade.statements.sort((a, b) => a.date.getTime() - b.date.getTime());
-    thisTrade.openingDate = statements[0].date;
-    if (thisTrade.status == TradeStatus.closed && !thisTrade.closingDate) {
-      // closing date is last trade (or trade option) statement date
-      thisTrade.closingDate = thisTrade.openingDate;
-      for (let i = statements.length - 1; i > 0; --i) {
-        if (
-          statements[i].statementType == StatementTypes.EquityStatement ||
-          statements[i].statementType == StatementTypes.OptionStatement ||
-          statements[i].statementType == StatementTypes.BondStatement
-        ) {
-          // console.log(items[i]);
-          if (statements[i].date > thisTrade.closingDate) thisTrade.closingDate = statements[i].date;
-          break;
-        }
-      }
-    } else if (thisTrade.status != TradeStatus.closed) thisTrade.closingDate = null;
-    thisTrade.PnL = 0;
-    thisTrade.pnlInBase = 0;
     return prepareStatements(statements) // Convert Statement[] to StatementEntry[]
       .then(async (statement_entries) => {
         const virtuals = computeRisk_Generic(thisTrade, statement_entries);
-        // const virtuals = makeVirtualPositions(statement_entries);
-        updateTradeExpiry(thisTrade, virtuals);
+        updateTradeExpiry(thisTrade, virtuals, statement_entries);
         return thisTrade.save();
       });
   }
@@ -479,58 +480,61 @@ const countContratTypes = (virtuals: Record<number, VirtualPositionEntry>): numb
 };
 
 const computeTradeStrategy = (thisTrade: Trade, virtuals: Record<number, VirtualPositionEntry>): void => {
-  let strategy: TradeStrategy = TradeStrategy.undefined;
-  const [long_stock, short_stock, long_call, short_call, long_put, short_put] = countContratTypes(virtuals);
-  // console.log(
-  //   thisTrade.id,
-  //   "computeTradeStrategy",
-  //   long_stock,
-  //   short_stock,
-  //   long_put,
-  //   short_put,
-  //   long_call,
-  //   short_call,
-  // );
-  if (long_stock > 0) {
-    // Longs stock strategies
-    if (short_call > 0) {
-      const stocks_cost = Object.values(virtuals)
-        .filter((item) => item.contract.secType == ContractType.Stock && item.quantity)
-        .reduce((p, v) => p + v.cost, 0);
-      const stocks_quantity = Object.values(virtuals)
-        .filter((item) => item.contract.secType == ContractType.Stock)
-        .reduce((p, v) => p + v.quantity, 0);
-      const strike = Object.values(virtuals)
-        .filter(
-          (item) =>
-            item.contract.secType == ContractType.Option &&
-            (item.contract as StatementUnderlyingOption).callOrPut == OptionType.Call,
-        )
-        .reduce((p, v) => Math.min(p, (v.contract as StatementUnderlyingOption).strike), Infinity);
-      if (strike < stocks_cost / stocks_quantity) strategy = TradeStrategy["buy write"];
-      else strategy = TradeStrategy["covered short call"];
-    } else strategy = TradeStrategy["long stock"];
-  } else if (short_stock > 0) {
-    // Shorts stock strategies
-    strategy = TradeStrategy["short stock"];
-  } else {
-    // Strategies without any stock leg
-    if (short_put > 0 && long_put > 0 && short_put > long_put && short_call == 0 && !long_call)
-      strategy = TradeStrategy["front ratio spread"];
-    else if (long_call > 0 && short_call > long_call && !short_put && !long_put)
-      strategy = TradeStrategy["front ratio spread"];
-    else if (short_put > 0 && long_put == 0 && short_call == 0 && !long_call) strategy = TradeStrategy["short put"];
-    else if (short_put == 0 && long_put > 0 && short_call == 0 && !long_call) strategy = TradeStrategy["long put"];
-    else if (short_call > 0 && !long_call && !short_put && !long_put) strategy = TradeStrategy["naked short call"];
-    else if (!short_call && long_call > 0 && !short_put && !long_put) strategy = TradeStrategy["long call"];
-    else if (!short_call && long_call > 0 && short_put > 0 && !long_put) strategy = TradeStrategy["risk reversal"];
-    else if (short_call && !long_call && short_put && !long_put)
-      strategy = TradeStrategy["short strangle"]; // Could be short straddle also
-    else if (short_call && short_call == long_call && short_put == long_put && long_call == long_put)
-      strategy = TradeStrategy["iron condor"]; // could be reverse iron condor also
+  if (!thisTrade.strategy) {
+    let strategy: TradeStrategy = TradeStrategy.undefined;
+    const [long_stock, short_stock, long_call, short_call, long_put, short_put] = countContratTypes(virtuals);
+    if (long_stock > 0) {
+      // Longs stock strategies
+      if (short_call > 0) {
+        const stocks_cost = Object.values(virtuals)
+          .filter((item) => item.contract.secType == ContractType.Stock && item.quantity)
+          .reduce((p, v) => p + v.cost, 0);
+        const stocks_quantity = Object.values(virtuals)
+          .filter((item) => item.contract.secType == ContractType.Stock)
+          .reduce((p, v) => p + v.quantity, 0);
+        const strike = Object.values(virtuals)
+          .filter(
+            (item) =>
+              item.contract.secType == ContractType.Option &&
+              (item.contract as StatementUnderlyingOption).callOrPut == OptionType.Call,
+          )
+          .reduce((p, v) => Math.min(p, (v.contract as StatementUnderlyingOption).strike), Infinity);
+        if (strike < stocks_cost / stocks_quantity) strategy = TradeStrategy["buy write"];
+        else strategy = TradeStrategy["covered short call"];
+      } else strategy = TradeStrategy["long stock"];
+    } else if (short_stock > 0) {
+      // Shorts stock strategies
+      strategy = TradeStrategy["short stock"];
+    } else {
+      // Strategies without any stock leg
+      if (short_put > 0 && long_put > 0 && short_put > long_put && short_call == 0 && !long_call)
+        strategy = TradeStrategy["front ratio spread"];
+      else if (long_call > 0 && short_call > long_call && !short_put && !long_put)
+        strategy = TradeStrategy["front ratio spread"];
+      else if (short_put > 0 && long_put == 0 && short_call == 0 && !long_call) strategy = TradeStrategy["short put"];
+      else if (short_put == 0 && long_put > 0 && short_call == 0 && !long_call) strategy = TradeStrategy["long put"];
+      else if (short_call > 0 && !long_call && !short_put && !long_put) strategy = TradeStrategy["naked short call"];
+      else if (!short_call && long_call > 0 && !short_put && !long_put) strategy = TradeStrategy["long call"];
+      else if (!short_call && long_call > 0 && short_put > 0 && !long_put) strategy = TradeStrategy["risk reversal"];
+      else if (short_call && !long_call && short_put && !long_put)
+        strategy = TradeStrategy["short strangle"]; // Could be short straddle also
+      else if (short_call && short_call == long_call && short_put == long_put && long_call == long_put)
+        strategy = TradeStrategy["iron condor"]; // could be reverse iron condor also
+      else if (short_call == long_call && short_put == 0 && long_put == 0) {
+        const long_strikes = Object.values(virtuals)
+          .filter((item) => item.quantity > 0)
+          .map((v) => (v.contract as StatementUnderlyingOption).strike)
+          .sort((a, b) => a - b);
+        const short_strikes = Object.values(virtuals)
+          .filter((item) => item.quantity < 0)
+          .map((v) => (v.contract as StatementUnderlyingOption).strike)
+          .sort((a, b) => a - b);
+        console.log("long_strikes", long_strikes, "short_strikes", short_strikes);
+        if (short_strikes[0] < long_strikes[0]) strategy = TradeStrategy["bear spread"];
+      }
+    }
+    thisTrade.strategy = strategy;
   }
-  // console.log(thisTrade.id, "strategy", thisTrade.strategy, strategy);
-  if (!thisTrade.strategy) thisTrade.strategy = strategy;
 };
 
 const updateTradeStrategy = (thisTrade: Trade, virtuals: Record<number, VirtualPositionEntry>): void => {
@@ -576,8 +580,9 @@ const computeRisk_Generic = (thisTrade: Trade, statements: StatementEntry[]): Re
     }
   }
 
-  // Sum costs of open positions to compute expiry P&L
-  thisTrade.expiryPnl = Object.values(virtuals).reduce((p, item) => (item.quantity ? p - item.cost : p), 0);
+  // Sum costs of open positions to compute expiry P&L + already realized PnL
+  thisTrade.expiryPnl =
+    Object.values(virtuals).reduce((p, item) => (item.quantity ? p - item.cost : p), 0) + thisTrade.PnL;
 
   // All done
   return virtuals;
@@ -588,7 +593,7 @@ export const makeSynthesys = async (trades: Trade[]): Promise<TradeSynthesys> =>
     async (p, item) =>
       p.then(async (theSynthesys) => {
         if (item.closingDate) {
-          const idx = formatDate(item.openingDate);
+          const idx = formatDate(item.closingDate);
           if (theSynthesys.byMonth[idx] === undefined) {
             theSynthesys.byMonth[idx] = { count: 0, success: 0, duration: 0, min: undefined, max: undefined, total: 0 };
           }

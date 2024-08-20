@@ -1,7 +1,7 @@
-import { SecType } from "@stoqey/ib";
 import { default as express } from "express";
 import logger, { LogLevel } from "../logger";
 import { Balance, Contract, Currency, Portfolio, Position, Statement, Trade } from "../models";
+import { ContractType } from "../models/types";
 import { BalanceEntry } from "./balances.types";
 import { ContractEntry } from "./contracts.types";
 import { preparePositions } from "./positions.router";
@@ -32,11 +32,12 @@ const getAllPositionsRelatedToContract = async (
       return preparePositions(portfolio).then((positions) =>
         positions.filter((item) => {
           switch (item.contract.secType) {
-            case SecType.STK:
-            case SecType.FUT:
-            case SecType.BOND:
+            case ContractType.Stock:
+            case ContractType.Future:
+            case ContractType.Bond:
               return item.contract.id == contractId;
-            case SecType.OPT:
+            case ContractType.Option:
+            case ContractType.FutureOption:
               return item.contract.id == contractId || (item as OptionPositionEntry).underlying.id == contractId;
             default:
               throw Error("getAllPositionsRelatedToContract not implemented for type: " + item.contract.secType);

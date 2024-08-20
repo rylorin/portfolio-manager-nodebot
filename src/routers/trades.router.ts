@@ -114,7 +114,7 @@ router.get("/month/:year(\\d+)/:month(\\d+)", (req, res): void => {
   Trade.findAll({
     where: {
       portfolio_id: portfolioId,
-      openingDate: {
+      closingDate: {
         [Op.gte]: new Date(yearval, monthval - 1, 1),
         [Op.lt]: new Date(monthval < 12 ? yearval : yearval + 1, monthval < 12 ? monthval : 0, 1),
       },

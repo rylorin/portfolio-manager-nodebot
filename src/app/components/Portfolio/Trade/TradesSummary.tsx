@@ -30,7 +30,7 @@ const TradeSummary: FunctionComponent<TradeSummaryProps> = ({ ..._rest }): React
         </Link>
         <Spacer />
       </Box>
-      <Text>Closed trades by month of opening</Text>
+      <Text>Closed trades by month</Text>
       <TradesMonthlyTable content={theSynthesys.byMonth} title="Closed trades" />
     </>
   );

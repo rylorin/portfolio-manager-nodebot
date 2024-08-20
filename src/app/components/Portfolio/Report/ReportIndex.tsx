@@ -25,10 +25,12 @@ const compareReports = (a: ReportEntry, b: ReportEntry): number => {
 const ReportsIndex: FunctionComponent<Props> = ({ ..._rest }): React.ReactNode => {
   const { portfolioId } = useParams();
   const theReports: ReportEntry[] = (useLoaderData() as ReportEntry[]).sort(compareReports);
-  const years = theReports.reduce((p, v) => {
-    if (!p.includes(v.year)) p.push(v.year);
-    return p;
-  }, [] as number[]);
+  const years = theReports
+    .reduce((p, v) => {
+      if (!p.includes(v.year)) p.push(v.year);
+      return p;
+    }, [] as number[])
+    .sort((a, b) => b - a);
 
   const Cell = ({ year, month }: { year: number; month: number }): React.ReactNode => {
     const report = theReports.find((item) => item.year == year && item.month == month);
@@ -123,7 +125,7 @@ const ReportsIndex: FunctionComponent<Props> = ({ ..._rest }): React.ReactNode =
       />
       <TableContainer>
         <Table variant="simple" size="sm" className="table-tiny">
-          <TableCaption>Available reports ({months.length})</TableCaption>
+          <TableCaption>Available reports ({theReports.length})</TableCaption>
           <Thead>
             <Tr>
               <Td>Year</Td>
