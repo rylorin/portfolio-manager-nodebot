@@ -95,7 +95,7 @@ const router = createBrowserRouter([
         path: "/portfolio",
         action: PortfolioAction,
         children: [
-          { index: true, Component: PortfolioIndex, loader: portfolioIndexLoader },
+          { index: true, element: <PortfolioIndex />, loader: portfolioIndexLoader },
           {
             path: ":portfolioId",
             element: (
@@ -108,8 +108,8 @@ const router = createBrowserRouter([
               {
                 path: "parameters",
                 children: [
-                  { index: true, Component: PortfolioShow, loader: portfolioLoader },
-                  { path: "edit", Component: PortfolioEdit, loader: portfolioLoader },
+                  { index: true, element: <PortfolioShow />, loader: portfolioLoader },
+                  { path: "edit", element: <PortfolioEdit />, loader: portfolioLoader },
                 ],
               },
 
@@ -122,16 +122,16 @@ const router = createBrowserRouter([
                     path: "summary",
                     action: PortfolioAction,
                     children: [
-                      { path: "ytd", Component: StatementSummary, loader: statementSummaryLoaderYTD },
-                      { path: "12m", Component: StatementSummary, loader: statementSummaryLoader12M },
-                      { path: "all", Component: StatementSummary, loader: statementSummaryLoaderAll },
+                      { path: "ytd", element: <StatementSummary />, loader: statementSummaryLoaderYTD },
+                      { path: "12m", element: <StatementSummary />, loader: statementSummaryLoader12M },
+                      { path: "all", element: <StatementSummary />, loader: statementSummaryLoaderAll },
                     ],
                   },
                   {
                     path: "month/:year/:month",
                     action: PortfolioAction,
                     children: [
-                      { index: true, Component: StatementIndex, loader: statementMonthLoader },
+                      { index: true, element: <StatementIndex />, loader: statementMonthLoader },
                       { path: "StatementCreateTrade/:statementId", action: statementCreateTrade },
                       { path: "StatementGuessTrade/:statementId", action: statementGuessTrade },
                       { path: "StatementAddToTrade/:statementId/:tradeId", action: statementAddToTrade },
@@ -143,8 +143,8 @@ const router = createBrowserRouter([
                     path: "id/:statementId",
                     action: PortfolioAction,
                     children: [
-                      { index: true, Component: StatementShow, loader: statementShowLoader },
-                      { path: "edit", Component: StatementEdit, loader: statementShowLoader, action: statementSave },
+                      { index: true, element: <StatementShow />, loader: statementShowLoader },
+                      { path: "edit", element: <StatementEdit />, loader: statementShowLoader, action: statementSave },
                       { path: "CreateTrade", action: statementCreateTrade },
                       { path: "GuessTrade", action: statementGuessTrade },
                       { path: "AddToTrade/:tradeId", action: statementAddToTrade },
@@ -161,7 +161,7 @@ const router = createBrowserRouter([
                   {
                     path: "all",
                     children: [
-                      { index: true, Component: PositionsIndex, loader: positionsIndexLoader },
+                      { index: true, element: <PositionsIndex />, loader: positionsIndexLoader },
                       { path: "DeletePosition/:positionId", action: positionDelete },
                       { path: "PositionGuessTrade/:positionId", action: positionGuessTrade },
                       { path: "PositionAddToTrade/:positionId/:tradeId", action: positionAddToTrade },
@@ -171,15 +171,15 @@ const router = createBrowserRouter([
                   {
                     path: "options",
                     children: [
-                      { index: true, Component: OptionsPositions, loader: positionsOptionsLoader },
+                      { index: true, element: <OptionsPositions />, loader: positionsOptionsLoader },
                       { path: "DeletePosition/:positionId", action: positionDelete },
                     ],
                   },
                   {
                     path: "id/:positionId",
                     children: [
-                      { index: true, Component: PositionShow, loader: positionShowLoader },
-                      { path: "edit", Component: PositionEdit, loader: positionShowLoader, action: positionSave },
+                      { index: true, element: <PositionShow />, loader: positionShowLoader },
+                      { path: "edit", element: <PositionEdit />, loader: positionShowLoader, action: positionSave },
                     ],
                   },
                 ],
@@ -190,13 +190,13 @@ const router = createBrowserRouter([
                 path: "balances",
                 action: PortfolioAction,
                 children: [
-                  { index: true, Component: BalancesIndex, loader: balancesIndexLoader },
+                  { index: true, element: <BalancesIndex />, loader: balancesIndexLoader },
                   { path: "DeleteBalance/:balanceId", action: balanceDelete },
                   {
                     path: "id/:balanceId",
                     children: [
-                      { index: true, Component: BalanceShow, loader: balancesShowLoader },
-                      { path: "edit", Component: BalanceEdit, loader: balancesShowLoader, action: balanceSave },
+                      { index: true, element: <BalanceShow />, loader: balancesShowLoader },
+                      { path: "edit", element: <BalanceEdit />, loader: balancesShowLoader, action: balanceSave },
                     ],
                   },
                 ],
@@ -213,24 +213,24 @@ const router = createBrowserRouter([
                     children: [
                       {
                         path: "open",
-                        Component: TradesOpen,
+                        element: <TradesOpen />,
                         loader: tradesOpenLoader,
                         children: [
-                          { index: true, Component: TradesOpen, loader: tradesOpenLoader },
+                          { index: true, element: <TradesOpen />, loader: tradesOpenLoader },
                           { path: ":positionId/PositionUnlinkTrade", action: positionUnlinkTrade },
                         ],
                       },
-                      { path: "ytd", Component: TradesSummary, loader: tradeSummaryLoaderYTD },
-                      { path: "12m", Component: TradesSummary, loader: tradeSummaryLoader12M },
-                      { path: "all", Component: TradesSummary, loader: tradeSummaryLoaderAll },
+                      { path: "ytd", element: <TradesSummary />, loader: tradeSummaryLoaderYTD },
+                      { path: "12m", element: <TradesSummary />, loader: tradeSummaryLoader12M },
+                      { path: "all", element: <TradesSummary />, loader: tradeSummaryLoaderAll },
                     ],
                   },
                   {
                     path: "id/:tradeId",
                     action: PortfolioAction,
                     children: [
-                      { index: true, Component: TradeShow, loader: tradesShowLoader },
-                      { path: "edit", Component: TradeEdit, loader: tradesShowLoader, action: tradeSave },
+                      { index: true, element: <TradeShow />, loader: tradesShowLoader },
+                      { path: "edit", element: <TradeEdit />, loader: tradesShowLoader, action: tradeSave },
                       { path: "delete", action: tradeDelete },
 
                       { path: "StatementCreateTrade/:statementId", action: statementCreateTrade },
@@ -246,7 +246,7 @@ const router = createBrowserRouter([
                   },
                   {
                     path: "month/:year/:month",
-                    Component: TradesTable,
+                    element: <TradesTable />,
                     loader: tradesMonthLoader,
                   },
                 ],
@@ -260,7 +260,7 @@ const router = createBrowserRouter([
                   { index: true },
                   {
                     path: "id/:contractId",
-                    Component: ContractShow,
+                    element: <ContractShow />,
                     loader: contractShowLoader,
                     children: [
                       { path: "PositionGuessTrade/:positionId", action: positionGuessTrade },
@@ -281,11 +281,11 @@ const router = createBrowserRouter([
               {
                 path: "reports",
                 children: [
-                  { path: "index", Component: ReportsIndex, loader: reportsIndexLoader },
-                  { path: "ytd", Component: ReportsIndex, loader: reportsIndexLoaderYtd },
-                  { path: "12m", Component: ReportsIndex, loader: reportsIndexLoader12m },
-                  { path: "year/:year", Component: ReportSummary, loader: reportSummaryLoader },
-                  { path: "year/:year/details", Component: ReportDetails, loader: reportSummaryLoader },
+                  { path: "index", element: <ReportsIndex />, loader: reportsIndexLoader },
+                  { path: "ytd", element: <ReportsIndex />, loader: reportsIndexLoaderYtd },
+                  { path: "12m", element: <ReportsIndex />, loader: reportsIndexLoader12m },
+                  { path: "year/:year", element: <ReportSummary />, loader: reportSummaryLoader },
+                  { path: "year/:year/details", element: <ReportDetails />, loader: reportSummaryLoader },
                 ],
               },
             ],
