@@ -22,7 +22,6 @@ import {
 } from "@chakra-ui/react";
 import { FunctionComponent, default as React } from "react";
 import { Form, Link as RouterLink, useLoaderData, useParams } from "react-router-dom";
-import { StatementTypes } from "../../../../models/types";
 import { StatementEntry } from "../../../../routers/statements.types";
 import Number from "../../Number/Number";
 import { ContractLink } from "../Contract/links";
@@ -44,16 +43,17 @@ const StatementsTable: FunctionComponent<Props> = ({ content, currency, title, .
 
   const savePrevious = (item: StatementEntry): undefined => {
     if (item.trade_id) previousId = item.trade_id;
-    switch (item.statementType) {
-      case StatementTypes.FeeStatement:
-        totalFees += item.amount * item.fxRateToBase;
-        break;
-      case StatementTypes.EquityStatement:
-      case StatementTypes.OptionStatement:
-      case StatementTypes.BondStatement:
-        totalFees += item.fees * item.fxRateToBase;
-        break;
-    }
+    // switch (item.statementType) {
+    //   case StatementTypes.FeeStatement:
+    //     totalFees += item.amount * item.fxRateToBase;
+    //     break;
+    //   case StatementTypes.EquityStatement:
+    //   case StatementTypes.OptionStatement:
+    //   case StatementTypes.BondStatement:
+    //     totalFees += item.fees * item.fxRateToBase;
+    //     break;
+    // }
+    totalFees += "fees" in item ? item.fees * item.fxRateToBase : 0;
     return undefined;
   };
 

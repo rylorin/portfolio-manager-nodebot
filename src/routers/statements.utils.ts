@@ -131,6 +131,7 @@ export const statementModelToStatementEntry = async (item: Statement): Promise<S
         statementType: StatementTypes.FeeStatement,
         ...baseStatement,
         pnl: item.netCash,
+        fees: item.netCash,
       });
 
     case StatementTypes.CorporateStatement:

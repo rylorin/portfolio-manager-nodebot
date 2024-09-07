@@ -128,10 +128,10 @@ const updateTradeExpiry = (
     totalQty += item.quantity;
   });
   if (thisTrade.status == TradeStatus.undefined) thisTrade.status = totalQty ? TradeStatus.open : TradeStatus.closed;
-  thisTrade.openingDate = new Date(statements[0].date);
+  thisTrade.openingDate = new Date(statements[0]?.date);
   if (thisTrade.status == TradeStatus.closed && !thisTrade.closingDate) {
     // closing date is last trade (or trade option) statement date
-    let closingDate = statements[0].date;
+    let closingDate = statements[0]?.date;
     for (let i = statements.length - 1; i > 0; --i) {
       if (
         statements[i].statementType == StatementTypes.EquityStatement ||
