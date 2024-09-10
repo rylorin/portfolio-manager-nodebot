@@ -2,7 +2,7 @@ import { Image } from "@chakra-ui/react";
 import React, { FunctionComponent } from "react";
 import styles from "./SpinningLogo.module.css";
 
-interface SpinningLogoProps {
+export interface SpinningLogoProps {
   /**
    * Source URL
    */
