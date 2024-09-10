@@ -9,7 +9,7 @@ import { TradeEntry, TradeSynthesys } from "../../../../routers/trades.types";
 export const tradeSummaryLoaderYTD = async ({ params }: LoaderFunctionArgs): Promise<TradeSynthesys> => {
   const { portfolioId } = params;
   return fetch(`/api/portfolio/${portfolioId}/trades/summary/ytd`)
-    .then(async (response) => response.json())
+    .then(async (response) => response.json()) // eslint-disable-line @typescript-eslint/no-unsafe-return
     .then((data) => data.tradessynthesys as TradeSynthesys);
 };
 
@@ -21,7 +21,7 @@ export const tradeSummaryLoaderYTD = async ({ params }: LoaderFunctionArgs): Pro
 export const tradeSummaryLoader12M = async ({ params }: LoaderFunctionArgs): Promise<TradeSynthesys> => {
   const { portfolioId } = params;
   return fetch(`/api/portfolio/${portfolioId}/trades/summary/12m`)
-    .then(async (response) => response.json())
+    .then(async (response) => response.json()) // eslint-disable-line @typescript-eslint/no-unsafe-return
     .then((data) => data.tradessynthesys as TradeSynthesys);
 };
 
@@ -33,7 +33,7 @@ export const tradeSummaryLoader12M = async ({ params }: LoaderFunctionArgs): Pro
 export const tradeSummaryLoaderAll = async ({ params }: LoaderFunctionArgs): Promise<TradeSynthesys> => {
   const { portfolioId } = params;
   return fetch(`/api/portfolio/${portfolioId}/trades/summary/all`)
-    .then(async (response) => response.json())
+    .then(async (response) => response.json()) // eslint-disable-line @typescript-eslint/no-unsafe-return
     .then((data) => data.tradessynthesys as TradeSynthesys);
 };
 
@@ -45,7 +45,7 @@ export const tradeSummaryLoaderAll = async ({ params }: LoaderFunctionArgs): Pro
 export const tradesOpenLoader = async ({ params }: LoaderFunctionArgs): Promise<TradeEntry[]> => {
   const { portfolioId } = params;
   return fetch(`/api/portfolio/${portfolioId}/trades/summary/open`)
-    .then(async (response) => response.json())
+    .then(async (response) => response.json()) // eslint-disable-line @typescript-eslint/no-unsafe-return
     .then((data) => data.trades as TradeEntry[]);
 };
 
@@ -58,7 +58,7 @@ export const tradesShowLoader = async ({ params }: LoaderFunctionArgs): Promise<
   const { portfolioId, tradeId } = params;
   // console.log("tradesShowLoader", portfolioId, tradeId);
   return fetch(`/api/portfolio/${portfolioId}/trades/id/${tradeId}`)
-    .then(async (response) => response.json())
+    .then(async (response) => response.json()) // eslint-disable-line @typescript-eslint/no-unsafe-return
     .then((data) => data.trade as TradeEntry);
 };
 
@@ -70,6 +70,6 @@ export const tradesShowLoader = async ({ params }: LoaderFunctionArgs): Promise<
 export const tradesMonthLoader = async ({ params }: LoaderFunctionArgs): Promise<TradeEntry[]> => {
   const { portfolioId, year, month } = params;
   return fetch(`/api/portfolio/${portfolioId}/trades/month/${year}/${month}`)
-    .then(async (response) => response.json())
+    .then(async (response) => response.json()) // eslint-disable-line @typescript-eslint/no-unsafe-return
     .then((data) => data.trades as TradeEntry[]);
 };

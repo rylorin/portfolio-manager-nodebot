@@ -206,7 +206,7 @@ export class OptionsCreateBot extends ITradingBot {
                 (option.dte + 1) / 365,
                 option.contract.livePrice,
               );
-            } catch (e: unknown) {
+            } catch (_e: unknown) {
               iv_ = stock.historicalVolatility;
             }
           }

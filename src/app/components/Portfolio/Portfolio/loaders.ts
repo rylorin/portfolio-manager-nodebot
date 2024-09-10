@@ -9,6 +9,6 @@ import { Portfolio as PortfolioModel } from "../../../../models/portfolio.model"
 export const portfolioLoader = async ({ params }: LoaderFunctionArgs): Promise<PortfolioModel> => {
   const { portfolioId } = params;
   return fetch(`/api/portfolio/${portfolioId}`)
-    .then(async (response) => response.json())
+    .then(async (response) => response.json()) // eslint-disable-line @typescript-eslint/no-unsafe-return
     .then((data) => data.portfolio as PortfolioModel);
 };

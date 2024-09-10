@@ -905,13 +905,13 @@ export class ImporterBot extends ITradingBot {
       .catch((error) => logger.error(MODULE + ".processReport", undefined, "importer bot process report:", error));
   }
 
-  protected async fetchReport(url: string): Promise<any> {
+  protected async fetchReport(url: string): Promise<void> {
     const parser = new XMLParser({
       ignoreAttributes: false,
       attributeNamePrefix: "",
     });
     logger.info(MODULE + ".fetchReport", "Fetching report at " + url);
-    return fetch(url)
+    return fetch(url) // eslint-disable-line @typescript-eslint/no-unsafe-return
       .then(async (response) => response.text())
       .then((XMLdata) => {
         const jObj = parser.parse(XMLdata);
@@ -922,7 +922,7 @@ export class ImporterBot extends ITradingBot {
             return jObj["FlexQueryResponse"].FlexStatements.FlexStatement.reduce(
               async (p: Promise<void>, element: any): Promise<void> =>
                 p.then(async (): Promise<void> => this.processReport(element as FlexStatement)),
-              Promise.resolve(),
+              Promise.resolve() as Promise<void>,
             );
           } else {
             return this.processReport(jObj["FlexQueryResponse"].FlexStatements.FlexStatement as FlexStatement);
@@ -940,7 +940,7 @@ export class ImporterBot extends ITradingBot {
       .catch((error) => console.error("importer bot fetch report:", error));
   }
 
-  protected async process(): Promise<any> {
+  protected async process(): Promise<void> {
     return (
       fetch(
         `https://gdcdyn.interactivebrokers.com/Universal/servlet/FlexStatementService.SendRequest?t=${this.token}&q=${this.query}&v=3`,

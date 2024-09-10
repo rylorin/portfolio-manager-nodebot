@@ -9,7 +9,7 @@ import { BalanceEntry } from "../../../../routers/balances.types";
 export const balancesIndexLoader = async ({ params }: LoaderFunctionArgs): Promise<BalanceEntry[]> => {
   const { portfolioId } = params;
   return fetch(`/api/portfolio/${portfolioId}/balances/index`)
-    .then(async (response) => response.json())
+    .then(async (response) => response.json()) // eslint-disable-line @typescript-eslint/no-unsafe-return
     .then((data) => data.balances as BalanceEntry[]);
 };
 
@@ -22,6 +22,6 @@ export const balancesShowLoader = async ({ params }: LoaderFunctionArgs): Promis
   const { portfolioId, balanceId } = params;
   // console.log("balancesShowLoader", portfolioId, balanceId);
   return fetch(`/api/portfolio/${portfolioId}/balances/id/${balanceId}`)
-    .then(async (response) => response.json())
+    .then(async (response) => response.json()) // eslint-disable-line @typescript-eslint/no-unsafe-return
     .then((data) => data.balance as BalanceEntry);
 };

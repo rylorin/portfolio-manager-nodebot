@@ -16,7 +16,7 @@ const PortfolioLayout: FunctionComponent<PortfolioLayoutProps> = ({ children, ..
 
   useEffect(() => {
     fetch(`/api/portfolio/${portfolioId}`)
-      .then(async (response) => response.json())
+      .then(async (response) => response.json()) // eslint-disable-line @typescript-eslint/no-unsafe-return
       .then((data) => setPortfolio(data.portfolio as PortfolioModel))
       .catch((error) => console.error("error fetching portfolio:", error));
   }, []);

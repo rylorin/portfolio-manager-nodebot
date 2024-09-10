@@ -9,6 +9,6 @@ import { ContractEntry } from "../../../../routers/repository.types";
 export const contractShowLoader = async ({ params }: LoaderFunctionArgs): Promise<ContractEntry> => {
   const { portfolioId, contractId } = params;
   return fetch(`/api/portfolio/${portfolioId}/contracts/id/${contractId}`)
-    .then(async (response) => response.json())
+    .then(async (response) => response.json()) // eslint-disable-line @typescript-eslint/no-unsafe-return
     .then((data) => data.contract as ContractEntry);
 };

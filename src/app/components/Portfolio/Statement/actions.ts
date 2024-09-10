@@ -13,7 +13,7 @@ export const statementCreateTrade = async ({ request, params }: ActionFunctionAr
       const _data = Object.fromEntries(formData);
       return fetch(`/api/portfolio/${portfolioId}/statements/${statementId}/CreateTrade`);
     })
-    .then(async (response: Response) => response.json())
+    .then(async (response: Response) => response.json()) // eslint-disable-line @typescript-eslint/no-unsafe-return
     .then((_data) => redirect("../"));
 };
 
@@ -30,7 +30,7 @@ export const statementGuessTrade = async ({ request, params }: ActionFunctionArg
       const _data = Object.fromEntries(formData);
       return fetch(`/api/portfolio/${portfolioId}/statements/${statementId}/GuessTrade`);
     })
-    .then(async (response: Response) => response.json())
+    .then(async (response: Response) => response.json()) // eslint-disable-line @typescript-eslint/no-unsafe-return
     .then((_data) => redirect("../"));
 };
 
@@ -48,7 +48,7 @@ export const statementUnlinkTrade = async ({ request, params }: ActionFunctionAr
       const _data = Object.fromEntries(formData);
       return fetch(`/api/portfolio/${portfolioId}/statements/${statementId}/UnlinkTrade`);
     })
-    .then(async (response: Response) => response.json())
+    .then(async (response: Response) => response.json()) // eslint-disable-line @typescript-eslint/no-unsafe-return
     .then((_data) => redirect("../"));
 };
 
@@ -65,7 +65,7 @@ export const statementAddToTrade = async ({ request, params }: ActionFunctionArg
       const _data = Object.fromEntries(formData);
       return fetch(`/api/portfolio/${portfolioId}/statements/${statementId}/AddToTrade/${tradeId}`);
     })
-    .then(async (response: Response) => response.json())
+    .then(async (response: Response) => response.json()) // eslint-disable-line @typescript-eslint/no-unsafe-return
     .then((_data) => redirect("../"));
 };
 
@@ -115,6 +115,6 @@ export const statementSave = async ({ request, params }: ActionFunctionArgs): Pr
         body: JSON.stringify(data),
       });
     })
-    .then(async (response: Response) => response.json())
+    .then(async (response: Response) => response.json()) // eslint-disable-line @typescript-eslint/no-unsafe-return
     .then((_data) => redirect("../"));
 };

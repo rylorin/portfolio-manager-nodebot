@@ -12,6 +12,6 @@ export const portfolioIndexLoader: LoaderFunction = async ({
 }: LoaderFunctionArgs): Promise<PortfolioModel[]> => {
   const { portfolioId } = params; // eslint-disable-line @typescript-eslint/no-unused-vars
   return fetch("/api/portfolio")
-    .then(async (response) => response.json())
+    .then(async (response) => response.json()) // eslint-disable-line @typescript-eslint/no-unsafe-return
     .then((data) => data.portfolios as PortfolioModel[]);
 };

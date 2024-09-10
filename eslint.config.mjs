@@ -31,7 +31,12 @@ export default tseslint.config(
           varsIgnorePattern: "^_",
         },
       ],
-      "@typescript-eslint/ban-types": "error",
+
+      // "@typescript-eslint/ban-types": "error",
+      "@typescript-eslint/no-empty-object-type": "error",
+      "@typescript-eslint/no-unsafe-function-type": "error",
+      "@typescript-eslint/no-wrapper-object-types": "error",
+
       "@typescript-eslint/explicit-function-return-type": "error",
       "@typescript-eslint/explicit-module-boundary-types": "error",
       "@typescript-eslint/no-empty-function": "error",

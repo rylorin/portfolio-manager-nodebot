@@ -183,7 +183,7 @@ export class YahooUpdateBot extends ITradingBot {
                         (option.dte + 1) / 365,
                         r.quote?.regularMarketPrice,
                       );
-                    } catch (e: unknown) {
+                    } catch (_e: unknown) {
                       await StockContract.findByPk(option.stock.id).then((stock) => {
                         iv_ = stock.historicalVolatility;
                       });

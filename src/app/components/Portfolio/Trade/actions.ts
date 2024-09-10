@@ -23,7 +23,7 @@ export const tradeSave = async ({ request, params }: ActionFunctionArgs): Promis
         body: JSON.stringify({ ...data, strategy: parseInt(data.strategy as string) }),
       });
     })
-    .then(async (response: Response) => response.json())
+    .then(async (response: Response) => response.json()) // eslint-disable-line @typescript-eslint/no-unsafe-return
     .then((_data) => redirect("../"));
 };
 

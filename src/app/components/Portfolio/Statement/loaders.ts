@@ -11,7 +11,7 @@ export const statementSummaryLoaderYTD = async ({
 }: LoaderFunctionArgs): Promise<StatementsSynthesysEntries> => {
   const { portfolioId } = params;
   return fetch(`/api/portfolio/${portfolioId}/statements/summary/ytd`)
-    .then(async (response) => response.json())
+    .then(async (response) => response.json()) // eslint-disable-line @typescript-eslint/no-unsafe-return
     .then((data) => data.synthesysentries as StatementsSynthesysEntries);
 };
 
@@ -25,7 +25,7 @@ export const statementSummaryLoader12M = async ({
 }: LoaderFunctionArgs): Promise<StatementsSynthesysEntries> => {
   const { portfolioId } = params;
   return fetch(`/api/portfolio/${portfolioId}/statements/summary/12m`)
-    .then(async (response) => response.json())
+    .then(async (response) => response.json()) // eslint-disable-line @typescript-eslint/no-unsafe-return
     .then((data) => data.synthesysentries as StatementsSynthesysEntries);
 };
 
@@ -39,7 +39,7 @@ export const statementSummaryLoaderAll = async ({
 }: LoaderFunctionArgs): Promise<StatementsSynthesysEntries> => {
   const { portfolioId } = params;
   return fetch(`/api/portfolio/${portfolioId}/statements/summary/all`)
-    .then(async (response) => response.json())
+    .then(async (response) => response.json()) // eslint-disable-line @typescript-eslint/no-unsafe-return
     .then((data) => data.synthesysentries as StatementsSynthesysEntries);
 };
 
@@ -51,7 +51,7 @@ export const statementSummaryLoaderAll = async ({
 export const statementShowLoader = async ({ params }: LoaderFunctionArgs): Promise<StatementEntry> => {
   const { portfolioId, statementId } = params;
   return fetch(`/api/portfolio/${portfolioId}/statements/id/${statementId}`)
-    .then(async (response) => response.json())
+    .then(async (response) => response.json()) // eslint-disable-line @typescript-eslint/no-unsafe-return
     .then((data) => data.statement as StatementEntry);
 };
 
@@ -63,6 +63,6 @@ export const statementShowLoader = async ({ params }: LoaderFunctionArgs): Promi
 export const statementMonthLoader = async ({ params }: LoaderFunctionArgs): Promise<StatementEntry[]> => {
   const { portfolioId, year, month } = params;
   return fetch(`/api/portfolio/${portfolioId}/statements/month/${year}/${month}`)
-    .then(async (response) => response.json())
+    .then(async (response) => response.json()) // eslint-disable-line @typescript-eslint/no-unsafe-return
     .then((data) => data.statemententries as StatementEntry[]);
 };

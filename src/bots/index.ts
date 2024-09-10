@@ -88,7 +88,7 @@ export class ITradingBot extends EventEmitter {
       symbol: underlying.symbol,
       secType: "BAG" as IbSecType,
       currency: underlying.currency,
-      exchange: underlying.currency == "USD" ? "SMART" : underlying.exchange ?? "SMART",
+      exchange: underlying.currency == "USD" ? "SMART" : (underlying.exchange ?? "SMART"),
     };
     const leg1: ComboLeg = {
       conId: buyleg,
