@@ -639,11 +639,25 @@ export class ImporterBot extends ITradingBot {
         break;
       case "Bond Interest Paid":
       case "Bond Interest Received":
-        // Ignore Accrued interests as they are saved with purchase/sell transaction
-        if ((element.description as string).includes("ACCRUED")) {
-          logger.warn(MODULE + ".processCashTransaction", "accrued interests statement ignored", element);
-          return Promise.resolve(null as null);
-        }
+        // if ((element.description as string).includes("ACCRUED")) {
+        //   await Statement.findOne({
+        //     where: { transactionId: element.transactionID },
+        //   }).then((statement) => {
+        //     if (statement)
+        //       return BondStatement.findByPk(statement.id).then((bond_statement) => {
+        //         if (bond_statement)
+        //           return bond_statement.update("accruedInterests", element.amount).then(() => statement);
+        //         else {
+        //           this.warn(`Bond statement #${statement.id} not found!`);
+        //           return Promise.resolve(null as null);
+        //         }
+        //       });
+        //     else {
+        //       this.warn(`statement not found for transactionId: ${element.transactionID}`);
+        //       return Promise.resolve(null as null);
+        //     }
+        //   });
+        // }
         statementType = StatementTypes.InterestStatement;
         break;
       case "Deposits/Withdrawals":
