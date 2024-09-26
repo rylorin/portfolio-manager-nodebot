@@ -1,6 +1,6 @@
 import { OptionType, SecType } from "@stoqey/ib";
 import { Op } from "sequelize";
-import yahooFinance from "yahoo-finance2";
+import { ExtendedCookieJar, default as yahooFinance } from "yahoo-finance2";
 import { Quote } from "yahoo-finance2/dist/esm/src/modules/quote";
 import { ITradingBot } from ".";
 import { greeks, option_implied_volatility } from "../black_scholes";
@@ -425,7 +425,8 @@ export class YahooUpdateBot extends ITradingBot {
   public start(): void {
     this.on("process", () => this.processWrapper());
 
-    yahooFinance.setGlobalConfig({ validation: { logErrors: true } });
+    const cookieJar = new ExtendedCookieJar();
+    yahooFinance.setGlobalConfig({ validation: { logErrors: true }, cookieJar });
     // this.printObject(await yahooFinance.quote("EURUSD=X"));
 
     setTimeout(() => this.emit("process"), 1 * 60 * 1000); // start after 1 min
