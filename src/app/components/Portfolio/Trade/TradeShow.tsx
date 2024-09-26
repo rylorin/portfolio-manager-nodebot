@@ -156,7 +156,7 @@ const TradeShow: FunctionComponent<Props> = ({ ..._rest }): React.ReactNode => {
             APY:
           </Text>
           <Text w="200px" textAlign="right">
-            <Number value={item.apy} isPercent />
+            <Number value={item.apy} isPercent decimals={1} />
           </Text>
         </Flex>
         <Flex justifyContent="center" gap="2">

@@ -639,25 +639,27 @@ export class ImporterBot extends ITradingBot {
         break;
       case "Bond Interest Paid":
       case "Bond Interest Received":
-        // if ((element.description as string).includes("ACCRUED")) {
-        //   await Statement.findOne({
-        //     where: { transactionId: element.transactionID },
-        //   }).then((statement) => {
-        //     if (statement)
-        //       return BondStatement.findByPk(statement.id).then((bond_statement) => {
-        //         if (bond_statement)
-        //           return bond_statement.update("accruedInterests", element.amount).then(() => statement);
-        //         else {
-        //           this.warn(`Bond statement #${statement.id} not found!`);
-        //           return Promise.resolve(null as null);
-        //         }
-        //       });
-        //     else {
-        //       this.warn(`statement not found for transactionId: ${element.transactionID}`);
-        //       return Promise.resolve(null as null);
-        //     }
-        //   });
-        // }
+        if ((element.description as string).includes("ACCRUED")) {
+          return Statement.findOne({
+            where: { transactionId: element.transactionID },
+          }).then(async (statement) => {
+            if (statement)
+              return BondStatement.findByPk(statement.id).then(async (bond_statement) => {
+                if (bond_statement)
+                  return bond_statement.update({ accruedInterests: element.amount }).then(() => null as null);
+                // .catch((error) => console.error(error));
+                else {
+                  this.warn(`Bond statement #${statement.id} not found!`);
+                  return null as null;
+                }
+              });
+            else {
+              this.warn(`statement not found for transactionId: ${element.transactionID}`);
+              return null as null;
+            }
+          });
+          // .catch((error) => console.error(error));
+        }
         statementType = StatementTypes.InterestStatement;
         break;
       case "Deposits/Withdrawals":

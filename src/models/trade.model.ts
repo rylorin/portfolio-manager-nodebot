@@ -43,14 +43,15 @@ export class Trade extends Model<
   @Column({ type: DataType.DATEONLY, field: "expiryDate" })
   declare expectedExpiry: string | null; // YYYY-MM-DD
 
-  /** expected Pnl on expiration date */
+  /** Unrealized Pnl. Additional PnL that we will pocket on expiration */
   @Column({ type: DataType.FLOAT, defaultValue: 0 })
   declare expiryPnl?: number | null;
 
   @Column({ type: DataType.SMALLINT, defaultValue: 0 })
   declare strategy: TradeStrategy;
 
-  @Column({ type: DataType.FLOAT, field: "pn_l" })
+  /** Realized PnL */
+  @Column({ type: DataType.FLOAT })
   declare PnL?: number;
 
   @Column
