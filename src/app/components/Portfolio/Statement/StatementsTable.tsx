@@ -38,22 +38,30 @@ type Props = { content?: StatementEntry[]; currency?: string; title?: string };
 const StatementsTable: FunctionComponent<Props> = ({ content, currency, title, ..._rest }): React.ReactNode => {
   const { portfolioId } = useParams();
   const theStatements = content || (useLoaderData() as StatementEntry[]);
+
   let previousId: number;
+
+  let currencyMismatch = false;
   let totalFees = 0;
+  let totalFeesInCurrency = 0;
+  let totalAmount = 0;
+  let totalAmountInCurrency = 0;
+  let totalPnL = 0;
+  let totalPnLInCurrency = 0;
 
   const savePrevious = (item: StatementEntry): undefined => {
     if (item.trade_id) previousId = item.trade_id;
-    // switch (item.statementType) {
-    //   case StatementTypes.FeeStatement:
-    //     totalFees += item.amount * item.fxRateToBase;
-    //     break;
-    //   case StatementTypes.EquityStatement:
-    //   case StatementTypes.OptionStatement:
-    //   case StatementTypes.BondStatement:
-    //     totalFees += item.fees * item.fxRateToBase;
-    //     break;
-    // }
-    totalFees += "fees" in item ? item.fees * item.fxRateToBase : 0;
+    currencyMismatch = item.currency == currency ? currencyMismatch : true;
+    totalAmount += item.amount * item.fxRateToBase;
+    totalAmountInCurrency += item.amount;
+    if ("fees" in item) {
+      totalFees += item.fees * item.fxRateToBase;
+      totalFeesInCurrency += item.fees;
+    }
+    if ("pnl" in item) {
+      totalPnL += item.pnl * item.fxRateToBase;
+      totalPnLInCurrency += item.pnl;
+    }
     return undefined;
   };
 
@@ -188,29 +196,15 @@ const StatementsTable: FunctionComponent<Props> = ({ content, currency, title, .
           <Tfoot>
             <Tr fontWeight="bold">
               <Td>Total</Td>
-              <Td>{currency ?? "Base"}</Td>
+              <Td>{currencyMismatch ? "Base" : currency}</Td>
               <Td isNumeric>
-                <Number
-                  value={theStatements.reduce(
-                    (p: number, item) =>
-                      (p += (item.amount || 0) * (currency ? (currency == item.currency ? 1 : 0) : item.fxRateToBase)),
-                    0,
-                  )}
-                />
+                <Number value={currencyMismatch ? totalAmount : totalAmountInCurrency} />
               </Td>
               <Td isNumeric>
-                <Number
-                  value={theStatements.reduce(
-                    (p: number, item) =>
-                      (p +=
-                        ("pnl" in item ? item.pnl || 0 : 0) *
-                        (currency ? (currency == item.currency ? 1 : 0) : item.fxRateToBase)),
-                    0,
-                  )}
-                />
+                <Number value={currencyMismatch ? totalPnL : totalPnLInCurrency} />
               </Td>
               <Td isNumeric>
-                <Number value={totalFees} />
+                <Number value={currencyMismatch ? totalFees : totalFeesInCurrency} />
               </Td>
               <Td></Td>
               <Td></Td>

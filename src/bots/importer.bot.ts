@@ -95,6 +95,7 @@ const transactionDescriptionFromElement = (element: any): string => {
   let description = "";
   switch (transactionStatusFromElement(element)) {
     case StatementStatus.ASSIGNED_STATUS:
+      console.log(MODULE + ".transactionDescriptionFromElement", element);
       description += "Assigned";
       break;
     case StatementStatus.EXPIRED_STATUS:
@@ -294,6 +295,7 @@ export class ImporterBot extends ITradingBot {
         Promise.resolve(undefined as undefined),
       )
       .then(() => {
+        logger.info(MODULE + ".processAllSecuritiesInfo", undefined, "Securities info loaded");
         delete flexReport.SecuritiesInfo;
         return flexReport;
       });

@@ -62,8 +62,8 @@ const updateVirtuals = (
   virtuals: Record<number, VirtualPositionEntry>,
   statement_entry: StatementEntry,
 ): Record<number, VirtualPositionEntry> => {
-  let id;
-  let virtual;
+  let id: number;
+  let virtual: VirtualPositionEntry | undefined;
   switch (statement_entry.statementType) {
     case StatementTypes.EquityStatement:
     case StatementTypes.BondStatement:
@@ -75,7 +75,8 @@ const updateVirtuals = (
         virtual.pru = virtual.cost / virtual.quantity;
         virtual.price = statement_entry.underlying?.price;
         virtual.pnl = virtual.pnl ? virtual.pnl + statement_entry.pnl! : statement_entry.pnl!;
-        virtual.quantity += statement_entry.quantity!;
+        // IB quantities can have 4 digits, therefore round to 4 digits to avoid floating point computation mistakes
+        virtual.quantity = Math.round((virtual.quantity + statement_entry.quantity!) * 10000) / 10000;
       }
       break;
     case StatementTypes.OptionStatement:
@@ -194,7 +195,17 @@ export const tradeModelToTradeEntry = async (
     thisTrade.expectedDuration,
     thisTrade.expiryPnl,
   );
-  return Promise.resolve({
+  let apy: number | undefined = undefined;
+  switch (thisTrade.status) {
+    case TradeStatus.open:
+      if (thisTrade.expectedDuration && thisTrade.risk)
+        apy = ((thisTrade.PnL! + thisTrade.expiryPnl!) / -thisTrade.risk) * (360 / thisTrade.expectedDuration);
+      break;
+    case TradeStatus.closed:
+      apy = (thisTrade.PnL! / -thisTrade.risk!) * (360 / thisTrade.duration);
+      break;
+  }
+  const trade_entry: TradeEntry = {
     id: thisTrade.id,
     portfolioId: thisTrade.portfolio_id,
     underlying: thisTrade.underlying,
@@ -203,57 +214,37 @@ export const tradeModelToTradeEntry = async (
     closingDate: thisTrade.closingDate ? thisTrade.closingDate.getTime() : undefined,
     status: thisTrade.status,
     duration: thisTrade.duration,
-    expectedExpiry: thisTrade.expectedExpiry,
+    expectedExpiry: thisTrade.expectedExpiry || undefined,
     expectedDuration: thisTrade.expectedDuration,
     strategy: thisTrade.strategy,
     risk: thisTrade.risk,
     pnl: thisTrade.PnL,
-    unrlzdPnl: thisTrade.expiryPnl,
+    unrlzdPnl: thisTrade.expiryPnl || undefined,
     pnlInBase: thisTrade.pnlInBase,
-    apy:
-      thisTrade.risk && thisTrade.expectedDuration
-        ? ((thisTrade.PnL! + thisTrade.expiryPnl!) / -thisTrade.risk) * (360 / thisTrade.expectedDuration)
-        : undefined,
+    apy,
     comment: thisTrade.comment,
     statements: undefined,
     positions: undefined,
     virtuals: undefined,
-  } as TradeEntry)
-    .then(async (trade_entry) => {
-      // Add statements
-      if (thisTrade.statements) {
-        return prepareStatements(thisTrade.statements).then((statements) => {
-          trade_entry.statements = statements;
-          return trade_entry;
-        });
-      } else return trade_entry;
-    })
-    .then(async (trade_entry) => {
-      // Add positions
-      return Portfolio.findByPk(thisTrade.portfolio_id, {
-        include: [
-          {
-            model: Position,
-            as: "positions",
-            where: { trade_unit_id: thisTrade.id },
-            include: [{ model: Contract, as: "contract" }],
-            required: false,
-          },
-          { model: Currency, as: "baseRates" },
-        ],
-      }).then(async (portfolio) => {
-        if (!portfolio) throw Error("portfolio not found: " + thisTrade.portfolio_id);
-        return preparePositions(portfolio).then((positions) => {
-          trade_entry.positions = positions;
-          return trade_entry;
-        });
-      });
-    })
-    .then((trade_entry) => {
-      const virtuals = makeVirtualPositions(trade_entry.statements);
-      trade_entry.virtuals = Object.values(virtuals);
-      return trade_entry;
-    });
+  };
+  if (thisTrade.statements) {
+    trade_entry.statements = await prepareStatements(thisTrade.statements);
+  }
+  const portfolio = await Portfolio.findByPk(thisTrade.portfolio_id, {
+    include: [
+      {
+        model: Position,
+        as: "positions",
+        where: { trade_unit_id: thisTrade.id },
+        include: [{ model: Contract, as: "contract" }],
+        required: false,
+      },
+      { model: Currency, as: "baseRates" },
+    ],
+  });
+  if (portfolio) trade_entry.positions = await preparePositions(portfolio);
+  trade_entry.virtuals = Object.values(makeVirtualPositions(trade_entry.statements));
+  return trade_entry;
 };
 
 const formatDate = (when: Date): string => {
