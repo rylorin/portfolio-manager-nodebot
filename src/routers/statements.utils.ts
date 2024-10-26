@@ -20,6 +20,7 @@ export const statementModelToStatementEntry = async (item: Statement): Promise<S
     id: item.id,
     transactionId: item.transactionId,
     date: item.date.getTime(),
+    // statementType: item.statementType,
     currency: item.currency,
     amount: item.netCash,
     fxRateToBase: item.fxRateToBase,
@@ -147,10 +148,10 @@ export const statementModelToStatementEntry = async (item: Statement): Promise<S
       });
 
     case StatementTypes.CashStatement:
-      return Promise.resolve({
+      return {
         statementType: StatementTypes.CashStatement,
         ...baseStatement,
-      });
+      };
 
     case StatementTypes.BondStatement:
       return BondStatement.findByPk(item.id).then((thisStatement) => {
@@ -164,12 +165,17 @@ export const statementModelToStatementEntry = async (item: Statement): Promise<S
           ...baseStatement,
           country,
           underlying: item.stock,
-          // accruedInterests: thisStatement.accruedInterests,
           quantity: thisStatement.quantity,
           pnl: thisStatement.realizedPnL,
           fees: thisStatement.fees,
         };
       });
+
+    case StatementTypes.SalesTaxStatement:
+      return {
+        statementType: StatementTypes.SalesTaxStatement,
+        ...baseStatement,
+      };
 
     default:
       throw Error("Undefined statement type");

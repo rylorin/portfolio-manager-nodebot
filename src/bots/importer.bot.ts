@@ -12,6 +12,7 @@ import {
   InterestStatement,
   OptionStatement,
   Portfolio,
+  SalesTaxes,
   Statement,
   StatementStatus,
   TaxStatement,
@@ -70,8 +71,10 @@ const transactionStatusFromElement = (element: any): StatementStatus => {
   else if (element.notes == "Ca")
     return StatementStatus.CANCELLED_STATUS; // Cancelled
   else if (element.openCloseIndicator == "O") return StatementStatus.OPEN_STATUS;
+  else if (element.openCloseIndicator == "C;O") return StatementStatus.OPEN_STATUS;
   else if (element.openCloseIndicator == "C") return StatementStatus.CLOSE_STATUS;
   else if (element.assetCategory == "CASH") return StatementStatus.UNDEFINED_STATUS;
+  else if (element.openCloseIndicator === undefined) return StatementStatus.UNDEFINED_STATUS;
   else {
     logger.error(MODULE + ".transactionStatusFromElement", "unknown status: ", element);
     throw Error("undefined status");
@@ -95,7 +98,7 @@ const transactionDescriptionFromElement = (element: any): string => {
   let description = "";
   switch (transactionStatusFromElement(element)) {
     case StatementStatus.ASSIGNED_STATUS:
-      console.log(MODULE + ".transactionDescriptionFromElement", element);
+      // console.log(MODULE + ".transactionDescriptionFromElement", element);
       description += "Assigned";
       break;
     case StatementStatus.EXPIRED_STATUS:
@@ -304,6 +307,7 @@ export class ImporterBot extends ITradingBot {
   // eslint-disable-next-line @typescript-eslint/explicit-module-boundary-types
   protected async processStockTrade(element: any): Promise<void> {
     logger.log(LogLevel.Trace, MODULE + ".processStockTrade", element.symbol as string, element);
+    // if (element.symbol == "SHYL") console.log(element);
     return this.findOrCreateContract(ibContractFromElement(element)).then(async (contract) =>
       Statement.findOrCreate({
         where: { transactionId: element.transactionID },
@@ -814,17 +818,103 @@ export class ImporterBot extends ITradingBot {
       });
   }
 
+  /*
+{
+  "accountId": "***",
+  "acctAlias": "",
+  "model": "",
+  "currency": "EUR",
+  "fxRateToBase": "1",
+  "assetCategory": "",
+  "subCategory": "",
+  "symbol": "",
+  "description": "",
+  "conid": "",
+  "securityID": "",
+  "securityIDType": "",
+  "cusip": "",
+  "isin": "",
+  "figi": "",
+  "listingExchange": "",
+  "underlyingConid": "",
+  "underlyingSymbol": "",
+  "underlyingSecurityID": "",
+  "underlyingListingExchange": "",
+  "issuer": "",
+  "issuerCountryCode": "",
+  "multiplier": "",
+  "strike": "",
+  "expiry": "",
+  "putCall": "",
+  "principalAdjustFactor": "",
+  "date": "2024-08-02",
+  "country": "France",
+  "taxType": "VAT",
+  "payer": "U7802803",
+  "taxableDescription": "r******99:COMEX(Globex)(NP,L2)",
+  "taxableAmount": "-10.16",
+  "taxRate": "0.2",
+  "salesTax": "-2.032",
+  "taxableTransactionID": "2947603793",
+  "transactionID": "3220505865",
+  "code": "",
+  "serialNumber": "",
+  "deliveryType": "",
+  "commodityType": "",
+  "fineness": "",
+  "weight": ""
+}
+*/
   // eslint-disable-next-line @typescript-eslint/explicit-module-boundary-types
   protected async processSalesTax(element: any): Promise<void> {
     // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
     logger.log(LogLevel.Trace, MODULE + ".processSalesTaxes", element.symbol, element);
-    // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
-    logger.log(LogLevel.Warning, MODULE + ".processSalesTaxes", element.symbol, "not implemented", element);
+    const taxableTransaction = await Statement.findOne({
+      where: { transactionId: element.taxableTransactionID },
+    });
+    if (taxableTransaction) {
+      return Statement.findOrCreate({
+        where: { transactionId: element.transactionID },
+        defaults: {
+          portfolio_id: this.portfolio.id,
+          statementType: StatementTypes.SalesTaxStatement,
+          date: taxableTransaction.date,
+          currency: element.currency,
+          netCash: element.salesTax,
+          description: `${element.country} ${element.taxType} tax for ${element.taxableDescription}`,
+          transactionId: element.transactionID,
+          fxRateToBase: element.fxRateToBase,
+        },
+      })
+        .then(async ([statement, _created]) => {
+          return SalesTaxes.findOrCreate({
+            where: { id: statement.id },
+            defaults: {
+              id: statement.id,
+              taxableTransactionID: taxableTransaction.id,
+              country: element.country,
+              taxType: element.taxType,
+              taxableAmount: element.taxableAmount,
+              taxRate: element.taxRate,
+              salesTax: element.salesTax,
+            },
+          });
+        })
+        .then(([_taxStatement, _created]): void => undefined);
+    } else {
+      logger.log(
+        LogLevel.Error,
+        MODULE + ".processSalesTaxes",
+        element.symbol as string,
+        "taxableTransactionID not found",
+        element.taxableTransactionID,
+      );
+    }
+
     return Promise.resolve();
   }
 
   private async processAllSalesTaxes(flexReport: FlexStatement): Promise<FlexStatement> {
-    console.debug("processAllSalesTaxes", flexReport);
     let elements: any[];
     if (!flexReport.SalesTaxes || !flexReport.SalesTaxes.SalesTax) {
       elements = [];

@@ -31,7 +31,8 @@
     "start": "node dist/index.js -server",
     "start:dev": "concurrently \"yarn server:dev\" \"yarn client:dev\"",
     "storybook": "storybook dev -p 6006",
-    "storybook:build": "storybook build -o dist/storybook"
+    "storybook:build": "storybook build -o dist/storybook",
+    "updater": "node dist/index.js -watch -update"
   },
   "dependencies": {
     "@chakra-ui/icons": "^2.2.4",

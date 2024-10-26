@@ -23,6 +23,7 @@ export type StatementUnderlyingOption = StatementUnderlyingEntry & {
 export type BaseStatement = {
   id: number;
   transactionId: number;
+  // statementType: StatementTypes;
   date: number;
   currency: string;
   fxRateToBase: number;
@@ -84,6 +85,8 @@ export type CorporateStatementEntry = BaseStatement & {
 
 export type CashStatementEntry = BaseStatement & { statementType: "Cash" };
 
+export type SalesTaxStatementEntry = BaseStatement & { statementType: "SalesTax" };
+
 export type StatementEntry =
   | EquityStatementEntry
   | OptionStatementEntry
@@ -94,4 +97,5 @@ export type StatementEntry =
   | FeeStatementEntry
   | CorporateStatementEntry
   | CashStatementEntry
-  | BondStatementEntry;
+  | BondStatementEntry
+  | SalesTaxStatementEntry;

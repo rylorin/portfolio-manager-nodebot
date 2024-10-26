@@ -9,5 +9,6 @@ export const StatementTypes = {
   CorporateStatement: "CorporateStatement",
   CashStatement: "Cash",
   BondStatement: "Bond",
+  SalesTaxStatement: "SalesTax",
 } as const;
 export type StatementTypes = (typeof StatementTypes)[keyof typeof StatementTypes];
