@@ -55,7 +55,7 @@ export type TradeMonthlySynthesysEntry = {
   max: number;
   total: number;
 };
-export type TradeMonthlySynthesys = Record<"string", TradeMonthlySynthesysEntry>;
-
+export type TradeMonthlyRow = Record<"string", TradeMonthlySynthesysEntry>;
+export type TradeMonthlySynthesys = Record<"string", TradeMonthlyRow>;
 export type TradeSynthesys = { open: TradeEntry[]; byMonth: TradeMonthlySynthesys };
 export type OpenTradesWithPositions = { trades: TradeEntry[]; positions: (PositionEntry | OptionPositionEntry)[] };

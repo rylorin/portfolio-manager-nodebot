@@ -1,4 +1,11 @@
-import { CreationOptional, ForeignKey, InferAttributes, InferCreationAttributes, NonAttribute } from "sequelize";
+import {
+  CreationOptional,
+  ForeignKey,
+  HasManyGetAssociationsMixin,
+  InferAttributes,
+  InferCreationAttributes,
+  NonAttribute,
+} from "sequelize";
 import { BelongsTo, Column, DataType, HasMany, Model, Table } from "sequelize-typescript";
 import { Contract } from "./contract.model";
 import { expirationToDate } from "./date_utils";
@@ -69,6 +76,7 @@ export class Trade extends Model<
 
   @HasMany(() => Statement, { foreignKey: "trade_unit_id" })
   declare statements?: Statement[];
+  declare getStatements: HasManyGetAssociationsMixin<Statement>;
 
   /** Total duration if trade is closed or current duration is trade is open */
   get duration(): NonAttribute<number> {

@@ -15,7 +15,7 @@ const TradeSummary: FunctionComponent<TradeSummaryProps> = ({ ..._rest }): React
     {
       label: "PnL",
       data: labels.reduce((p, v) => {
-        p.push(theSynthesys.byMonth[v].total); // eslint-disable-line @typescript-eslint/no-unsafe-argument
+        p.push(theSynthesys.byMonth[v]["-"].total); // eslint-disable-line @typescript-eslint/no-unsafe-argument
         return p;
       }, [] as number[]),
     },
@@ -44,7 +44,7 @@ const TradeSummary: FunctionComponent<TradeSummaryProps> = ({ ..._rest }): React
       </Box>
       <Text>Closed trades by month</Text>
       <BarChart title="Realized Performance" labels={labels} datasets={datasets} />
-      <TradesMonthlyTable content={theSynthesys.byMonth} title="Closed trades" />
+      <TradesMonthlyTable content={theSynthesys.byMonth} />
     </>
   );
 };

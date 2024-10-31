@@ -187,14 +187,6 @@ export const tradeModelToTradeEntry = async (
   },
 ): Promise<TradeEntry> => {
   // Init TradeEntry
-  console.log(
-    "tradeModelToTradeEntry",
-    thisTrade.id,
-    thisTrade.risk,
-    thisTrade.PnL,
-    thisTrade.expectedDuration,
-    thisTrade.expiryPnl,
-  );
   let apy: number | undefined = undefined;
   switch (thisTrade.status) {
     case TradeStatus.open:
@@ -604,32 +596,67 @@ export const makeSynthesys = async (trades: Trade[]): Promise<TradeSynthesys> =>
   return trades.reduce(
     async (p, item) =>
       p.then(async (theSynthesys) => {
+        if (item.PnL && !item.pnlInBase) {
+          // Update missing data, should run only once
+          item.statements = await item.getStatements();
+          await updateTradeDetails(item);
+          await item.save();
+        }
         if (item.closingDate) {
           const idx = formatDate(item.closingDate);
+          const idy = formatDate(item.openingDate);
           if (theSynthesys.byMonth[idx] === undefined) {
-            theSynthesys.byMonth[idx] = { count: 0, success: 0, duration: 0, min: undefined, max: undefined, total: 0 };
+            theSynthesys.byMonth[idx] = {
+              "-": {
+                count: 0,
+                success: 0,
+                duration: 0,
+                min: undefined,
+                max: undefined,
+                total: 0,
+              },
+            };
           }
-          theSynthesys.byMonth[idx].count += 1;
-          theSynthesys.byMonth[idx].duration += item.duration;
+          if (theSynthesys.byMonth[idx][idy] === undefined) {
+            theSynthesys.byMonth[idx][idy] = {
+              count: 0,
+              success: 0,
+              duration: 0,
+              min: undefined,
+              max: undefined,
+              total: 0,
+            };
+          }
+          theSynthesys.byMonth[idx][idy].count += 1;
+          theSynthesys.byMonth[idx][idy].duration += item.duration;
           if (item.pnlInBase) {
-            if (item.pnlInBase > 0) theSynthesys.byMonth[idx].success += 1;
-            theSynthesys.byMonth[idx].total += item.pnlInBase;
-            theSynthesys.byMonth[idx].min = theSynthesys.byMonth[idx].min
-              ? Math.min(theSynthesys.byMonth[idx].min as number, item.pnlInBase)
+            if (item.pnlInBase > 0) theSynthesys.byMonth[idx][idy].success += 1;
+            theSynthesys.byMonth[idx][idy].total += item.pnlInBase;
+            theSynthesys.byMonth[idx][idy].min = theSynthesys.byMonth[idx][idy].min
+              ? Math.min(theSynthesys.byMonth[idx][idy].min as number, item.pnlInBase)
               : item.pnlInBase;
-            theSynthesys.byMonth[idx].max = theSynthesys.byMonth[idx].max
-              ? Math.max(theSynthesys.byMonth[idx].max as number, item.pnlInBase)
+            theSynthesys.byMonth[idx][idy].max = theSynthesys.byMonth[idx][idy].max
+              ? Math.max(theSynthesys.byMonth[idx][idy].max as number, item.pnlInBase)
               : item.pnlInBase;
           } else if (item.PnL) {
-            // TODO: multiply by baseRate
-            if (item.PnL > 0) theSynthesys.byMonth[idx].success += 1;
-            theSynthesys.byMonth[idx].total += item.PnL;
-            theSynthesys.byMonth[idx].min = theSynthesys.byMonth[idx].min
-              ? Math.min(theSynthesys.byMonth[idx].min as number, item.PnL)
-              : item.PnL;
-            theSynthesys.byMonth[idx].max = theSynthesys.byMonth[idx].max
-              ? Math.max(theSynthesys.byMonth[idx].max as number, item.PnL)
-              : item.PnL;
+            logger.log(
+              LogLevel.Error,
+              MODULE + ".makeSynthesys",
+              undefined,
+              `pnlInBase is missing for trade #${item.id}, incorrect data returned`,
+            );
+          }
+          theSynthesys.byMonth[idx]["-"].count += 1;
+          theSynthesys.byMonth[idx]["-"].duration += item.duration;
+          if (item.pnlInBase) {
+            if (item.pnlInBase > 0) theSynthesys.byMonth[idx]["-"].success += 1;
+            theSynthesys.byMonth[idx]["-"].total += item.pnlInBase;
+            theSynthesys.byMonth[idx]["-"].min = theSynthesys.byMonth[idx]["-"].min
+              ? Math.min(theSynthesys.byMonth[idx]["-"].min as number, item.pnlInBase)
+              : item.pnlInBase;
+            theSynthesys.byMonth[idx]["-"].max = theSynthesys.byMonth[idx]["-"].max
+              ? Math.max(theSynthesys.byMonth[idx]["-"].max as number, item.pnlInBase)
+              : item.pnlInBase;
           }
           return theSynthesys;
         } else {

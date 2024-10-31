@@ -1,5 +1,6 @@
 import { Text, TextProps } from "@chakra-ui/react";
 import React, { FunctionComponent } from "react";
+import { formatNumber } from "../../utils";
 
 type NumberProps = {
   /** Value to render */
@@ -15,19 +16,14 @@ type NumberProps = {
 const Number: FunctionComponent<NumberProps> = ({
   value,
   decimals = 0,
+  isPercent = false,
   color,
-  isPercent,
   ...rest
 }): React.ReactNode => {
-  const rounded = value
-    ? (isPercent ? value * 100 : value).toLocaleString(undefined, {
-        minimumFractionDigits: decimals,
-        maximumFractionDigits: decimals,
-      }) + (isPercent ? "%" : "")
-    : "-";
+  const rounded = formatNumber(value, decimals, isPercent);
   let style: { color: string };
   if (color) {
-    style = { color };
+    if (color !== "-") style = { color };
   } else if (value > 0) {
     style = { color: "green.500" };
   } else if (value < 0) {
