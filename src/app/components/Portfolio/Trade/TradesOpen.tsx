@@ -1,7 +1,7 @@
+import { Text, VStack } from "@chakra-ui/react";
 import { FunctionComponent, default as React } from "react";
 import { useLoaderData, useParams } from "react-router-dom";
 import { TradeEntry } from "../../../../routers/trades.types";
-import Nav from "./Nav";
 import TradesTable from "./OpenTradesTable";
 
 type Props = Record<string, never>;
@@ -35,10 +35,10 @@ const TradesOpen: FunctionComponent<Props> = ({ ..._rest }): React.ReactNode => 
   };
 
   return (
-    <>
-      <Nav />
+    <VStack align="left">
+      <Text as="h2">Open trades</Text>
       <TradesTable content={sortTrades(theTrades)} title="Open trades" />
-    </>
+    </VStack>
   );
 };
 

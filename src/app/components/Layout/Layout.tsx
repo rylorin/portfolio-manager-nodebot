@@ -28,7 +28,7 @@ const Layout: React.FunctionComponent<LayoutProps> = ({ children, ..._rest }): R
         {children}
       </Box>
       <Flex as="footer" justify="center" fontSize="xs" mt="21">
-        ©️2021-{new Date().getFullYear()}
+        &copy;2021-{new Date().getFullYear()}
         <Link href="https://github.com/rylorin" ml="1">
           rylorin
         </Link>
