@@ -63,13 +63,25 @@ export const tradesShowLoader = async ({ params }: LoaderFunctionArgs): Promise<
 };
 
 /**
- * Load statement list content
+ * Load trades closed on a given month
  * @param param0
  * @returns
  */
 export const tradesMonthLoader = async ({ params }: LoaderFunctionArgs): Promise<TradeEntry[]> => {
   const { portfolioId, year, month } = params;
   return fetch(`/api/portfolio/${portfolioId}/trades/month/${year}/${month}`)
+    .then(async (response) => response.json()) // eslint-disable-line @typescript-eslint/no-unsafe-return
+    .then((data) => data.trades as TradeEntry[]);
+};
+
+/**
+ * Load trades closed on a given month
+ * @param param0
+ * @returns
+ */
+export const tradesClosedOpenedLoader = async ({ params }: LoaderFunctionArgs): Promise<TradeEntry[]> => {
+  const { portfolioId, year, month, yearfrom, monthfrom } = params;
+  return fetch(`/api/portfolio/${portfolioId}/trades/closed/${year}/${month}/opened/${yearfrom}/${monthfrom}`)
     .then(async (response) => response.json()) // eslint-disable-line @typescript-eslint/no-unsafe-return
     .then((data) => data.trades as TradeEntry[]);
 };

@@ -1,10 +1,12 @@
 import { HStack, Link, Text, VStack } from "@chakra-ui/react";
 import React, { FunctionComponent } from "react";
-import { Link as RouterLink } from "react-router-dom";
+import { Link as RouterLink, useParams } from "react-router-dom";
 import { TradeMonthlyRow, TradeMonthlySynthesys, TradeMonthlySynthesysEntry } from "../../../../routers/trades.types";
 import Number from "../../Number/Number";
+import { TradeLink } from "./links";
 
 type TradesMonthlyTableProps = {
+  title?: string;
   content: TradeMonthlySynthesys;
 };
 
@@ -15,13 +17,14 @@ type minorRowProps = {
 };
 
 const MinorRow: FunctionComponent<minorRowProps> = ({ major, index, content, ..._rest }): React.ReactNode => {
-  console.log("MinorRow", index, content);
+  const { portfolioId } = useParams();
+
   return (
     <>
       <HStack>
         <Text width="100px"></Text>
         <Text width="100px">
-          <Link to={`../../month/${major.substring(0, 4)}/${major.substring(5)}`} as={RouterLink}>
+          <Link to={TradeLink.toClosedOpened(portfolioId, major, index)} as={RouterLink}>
             {index}
           </Link>
         </Text>
@@ -43,12 +46,13 @@ type majorRowProps = {
 };
 
 const MajorRow: FunctionComponent<majorRowProps> = ({ index, content, ..._rest }): React.ReactNode => {
-  console.log("MajorRow", index, content);
+  const { portfolioId } = useParams();
+
   return (
     <>
       <HStack>
         <Text width="100px">
-          <Link to={`../../month/${index.substring(0, 4)}/${index.substring(5)}`} as={RouterLink}>
+          <Link to={TradeLink.toClosedMonth(portfolioId, index)} as={RouterLink}>
             {index}
           </Link>
         </Text>
@@ -71,8 +75,11 @@ const MajorRow: FunctionComponent<majorRowProps> = ({ index, content, ..._rest }
   );
 };
 
-const TradesMonthlyTable: FunctionComponent<TradesMonthlyTableProps> = ({ content, ..._rest }): React.ReactNode => {
-  console.log("TradesMonthlyTable", content);
+const TradesMonthlyTable: FunctionComponent<TradesMonthlyTableProps> = ({
+  title = "Closed trades by month",
+  content,
+  ..._rest
+}): React.ReactNode => {
   return (
     <>
       <VStack>
@@ -110,6 +117,9 @@ const TradesMonthlyTable: FunctionComponent<TradesMonthlyTableProps> = ({ conten
           .map((index) => (
             <MajorRow key={index} index={index} content={content[index]} />
           ))}
+        <Text>
+          {title} ({Object.keys(content).length})
+        </Text>
       </VStack>
     </>
   );

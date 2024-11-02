@@ -1,7 +1,7 @@
-import { Box, Link, Spacer } from "@chakra-ui/react";
 import { FunctionComponent, default as React } from "react";
-import { Link as RouterLink, useLoaderData, useParams } from "react-router-dom";
+import { useLoaderData, useParams } from "react-router-dom";
 import { TradeEntry } from "../../../../routers/trades.types";
+import Nav from "./Nav";
 import TradesTable from "./OpenTradesTable";
 
 type Props = Record<string, never>;
@@ -36,25 +36,7 @@ const TradesOpen: FunctionComponent<Props> = ({ ..._rest }): React.ReactNode => 
 
   return (
     <>
-      <Box>
-        <Spacer />
-        <Link to={"../open"} as={RouterLink}>
-          Open
-        </Link>
-        {" | "}
-        <Link to={"../ytd"} as={RouterLink}>
-          YTD
-        </Link>
-        {" | "}
-        <Link to={"../12m"} as={RouterLink}>
-          12M
-        </Link>
-        {" | "}
-        <Link to={"../all"} as={RouterLink}>
-          All
-        </Link>
-        <Spacer />
-      </Box>
+      <Nav />
       <TradesTable content={sortTrades(theTrades)} title="Open trades" />
     </>
   );

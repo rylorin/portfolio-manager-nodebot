@@ -1,8 +1,9 @@
-import { Box, Link, Spacer, Text } from "@chakra-ui/react";
+import { Text } from "@chakra-ui/react";
 import React, { FunctionComponent } from "react";
-import { Link as RouterLink, useLoaderData } from "react-router-dom";
+import { useLoaderData } from "react-router-dom";
 import { TradeSynthesys } from "../../../../routers/trades.types";
 import BarChart, { DataSet } from "../../Chart/BarChart";
+import Nav from "./Nav";
 import TradesMonthlyTable from "./TradesMonthlyTable";
 
 type TradeSummaryProps = Record<string, never>;
@@ -23,25 +24,7 @@ const TradeSummary: FunctionComponent<TradeSummaryProps> = ({ ..._rest }): React
 
   return (
     <>
-      <Box>
-        <Spacer />
-        <Link to={"../open"} as={RouterLink}>
-          Open
-        </Link>
-        {" | "}
-        <Link to={"../ytd"} as={RouterLink}>
-          YTD
-        </Link>
-        {" | "}
-        <Link to={"../12m"} as={RouterLink}>
-          12M
-        </Link>
-        {" | "}
-        <Link to={"../all"} as={RouterLink}>
-          All
-        </Link>
-        <Spacer />
-      </Box>
+      <Nav />
       <Text>Closed trades by month</Text>
       <BarChart title="Realized Performance" labels={labels} datasets={datasets} />
       <TradesMonthlyTable content={theSynthesys.byMonth} />

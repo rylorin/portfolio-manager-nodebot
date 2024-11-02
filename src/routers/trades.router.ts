@@ -104,6 +104,40 @@ router.get("/summary/ytd", (req, res): void => {
 });
 
 /**
+ * Get trades opened and closed during given months
+ */
+router.get("/closed/:year(\\d+)/:month(\\d+)/opened/:fromyear(\\d+)/:frommonth(\\d+)", (req, res): void => {
+  const { portfolioId, year, month, fromyear, frommonth } = req.params as typeof req.params & parentParams;
+  const yearval = parseInt(year);
+  const monthval = parseInt(month);
+  const yearopen = parseInt(fromyear);
+  const monthopen = parseInt(frommonth);
+
+  Trade.findAll({
+    where: {
+      portfolio_id: portfolioId,
+      openingDate: {
+        [Op.gte]: new Date(yearopen, monthopen - 1, 1),
+        [Op.lt]: new Date(monthopen < 12 ? yearopen : yearopen + 1, monthopen < 12 ? monthopen : 0, 1),
+      },
+      closingDate: {
+        [Op.gte]: new Date(yearval, monthval - 1, 1),
+        [Op.lt]: new Date(monthval < 12 ? yearval : yearval + 1, monthval < 12 ? monthval : 0, 1),
+      },
+      status: TradeStatus.closed,
+    },
+    include: [{ model: Contract, as: "underlying" }, { association: "statements" }],
+  })
+    .then(async (trades: Trade[]) => prepareTrades(trades))
+    .then((trades) => res.status(200).json({ trades }))
+    .catch((error) => {
+      console.error(error);
+      logger.error(MODULE + ".MonthIndex", error);
+      res.status(500).json({ error });
+    });
+});
+
+/**
  * Get trades closed during a given month
  */
 router.get("/month/:year(\\d+)/:month(\\d+)", (req, res): void => {
