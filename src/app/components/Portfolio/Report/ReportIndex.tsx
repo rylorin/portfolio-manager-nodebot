@@ -1,4 +1,4 @@
-import { Box, Link, Spacer, Table, TableCaption, TableContainer, Tbody, Td, Thead, Tr } from "@chakra-ui/react";
+import { Link, Table, TableCaption, TableContainer, Tbody, Td, Thead, Tr } from "@chakra-ui/react";
 import { FunctionComponent, default as React } from "react";
 import { Link as RouterLink, useLoaderData, useParams } from "react-router-dom";
 import { ReportEntry } from "../../../../routers/reports.types";
@@ -98,26 +98,6 @@ const ReportsIndex: FunctionComponent<Props> = ({ ..._rest }): React.ReactNode =
 
   return (
     <>
-      <Box>
-        <Spacer />
-        <Link to={"../ytd"} as={RouterLink}>
-          YTD
-        </Link>
-        {" | "}
-        <Link to={"../12m"} as={RouterLink}>
-          12M
-        </Link>
-        {" | "}
-        <Link to={"../index"} as={RouterLink}>
-          All
-        </Link>
-        {/* <Routes>
-          <Route index element={"All"} /> |
-          <Route path="/YTD" element={"YTD"} /> |
-          <Route path="/12M" element={"12M"} />
-        </Routes> */}
-        <Spacer />
-      </Box>
       <BarChart
         title="Realized Performance"
         labels={theReports.map((item) => `${item.year}-${item.month}`)}

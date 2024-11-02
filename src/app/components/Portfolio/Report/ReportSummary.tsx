@@ -1,12 +1,10 @@
-import { Box, Link, Spacer } from "@chakra-ui/react";
 import { FunctionComponent, default as React } from "react";
-import { Link as RouterLink, useLoaderData, useParams } from "react-router-dom";
+import { useLoaderData } from "react-router-dom";
 import { ReportEntry } from "../../../../routers/reports.types";
 import Dividends from "./DividendsComponent";
 import Fees from "./FeesComponent";
 import Interests from "./InterestsComponent";
 import PnL from "./PnLsComponent";
-import { ReportLink } from "./links";
 
 type Props = Record<string, never>;
 
@@ -22,19 +20,10 @@ const compareReports = (a: ReportEntry, b: ReportEntry): number => {
  * @returns
  */
 const ReportSummary: FunctionComponent<Props> = ({ ..._rest }): React.ReactNode => {
-  const { portfolioId } = useParams();
   const theReports: ReportEntry[] = (useLoaderData() as ReportEntry[]).sort(compareReports);
 
   return (
     <>
-      <Box>
-        <Spacer />
-        <Link to={ReportLink.toIndex(portfolioId)} as={RouterLink}>
-          Index
-        </Link>
-        <Spacer />
-      </Box>
-
       <h2>Dividends</h2>
       <Dividends theReports={theReports} />
 

@@ -34,6 +34,7 @@ import {
 } from "./components/Portfolio/Position/loaders";
 import ReportDetails from "./components/Portfolio/Report/ReportDetails";
 import ReportsIndex from "./components/Portfolio/Report/ReportIndex";
+import ReportLayout from "./components/Portfolio/Report/ReportLayout";
 import ReportSummary from "./components/Portfolio/Report/ReportSummary";
 import {
   reportSummaryLoader,
@@ -291,6 +292,11 @@ const router = createBrowserRouter([
               /* Tax reports */
               {
                 path: "reports",
+                element: (
+                  <ReportLayout>
+                    <Outlet />
+                  </ReportLayout>
+                ),
                 children: [
                   { path: "index", element: <ReportsIndex />, loader: reportsIndexLoader },
                   { path: "ytd", element: <ReportsIndex />, loader: reportsIndexLoaderYtd },
