@@ -17,6 +17,9 @@
     "noUnusedLocals": false, // eslint rule in charge of this check
     "noUnusedParameters": false, // eslint rule in charge of this check
     "outDir": "./dist",
+    "paths": {
+      "@/*": ["./src/*"]
+    },
     "resolveJsonModule": true,
     "rootDir": "./src",
     "skipLibCheck": true,
@@ -25,11 +28,7 @@
     "strictNullChecks": false, // TODO set to true when fixed
     "target": "ESNext",
     "types": ["node"],
-    "typeRoots": [
-      "node_modules/@types",
-      // "node_modules/types",
-      "src/ts-types"
-    ],
+    "typeRoots": ["node_modules/@types", "src/ts-types"],
     "useUnknownInCatchVariables": false
   },
   "exclude": ["./node_modules"],

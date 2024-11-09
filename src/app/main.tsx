@@ -313,10 +313,10 @@ const router = createBrowserRouter([
   },
 ]);
 
-const App = (): React.ReactNode => (
-  <ChakraBaseProvider theme={theme}>
-    <RouterProvider router={router} />
-  </ChakraBaseProvider>
+createRoot(document.getElementById("root")).render(
+  <React.StrictMode>
+    <ChakraBaseProvider theme={theme}>
+      <RouterProvider router={router} />
+    </ChakraBaseProvider>
+  </React.StrictMode>,
 );
-
-createRoot(document.getElementById("root")).render(App());

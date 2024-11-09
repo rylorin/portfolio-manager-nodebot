@@ -1,6 +1,6 @@
 // import { SecType } from "@stoqey/ib";
 import { FunctionComponent, default as React } from "react";
-import { useLoaderData, useParams } from "react-router-dom";
+import { useLoaderData } from "react-router-dom";
 import { ContractType } from "../../../../models/contract.types";
 import { ContractEntry } from "../../../../routers/contracts.types";
 import StockShow from "./StockShow";
@@ -13,7 +13,6 @@ type Props = Record<string, never>;
  * @returns
  */
 const ContractShow: FunctionComponent<Props> = ({ ..._rest }): React.ReactNode => {
-  const { _portfolioId } = useParams();
   const thisContract = useLoaderData() as ContractEntry;
 
   switch (thisContract.secType) {
