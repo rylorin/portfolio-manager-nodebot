@@ -53,6 +53,7 @@ class Logger {
           format: format.combine(
             format.timestamp(),
             format.printf(({ timestamp, level, message, service, asset }) => {
+              // eslint-disable-next-line @typescript-eslint/restrict-template-expressions
               return `${timestamp};${level};${service};${asset};${message}`;
             }),
           ),
@@ -65,8 +66,9 @@ class Logger {
             format.colorize(),
             format.timestamp(),
             format.printf(({ timestamp, level, message, service, asset }) => {
-              const service_text = service ? ` [${service}]` : "";
-              const asset_text = asset ? ` (${asset})` : "";
+              const service_text = service ? ` [${service}]` : ""; // eslint-disable-line @typescript-eslint/restrict-template-expressions
+              const asset_text = asset ? ` (${asset})` : ""; // eslint-disable-line @typescript-eslint/restrict-template-expressions
+              // eslint-disable-next-line @typescript-eslint/restrict-template-expressions
               return `[${timestamp}] ${level}${service_text}${asset_text} ${message}`;
             }),
           ),
