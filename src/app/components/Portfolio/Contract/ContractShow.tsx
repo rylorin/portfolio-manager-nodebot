@@ -19,6 +19,7 @@ const ContractShow: FunctionComponent<Props> = ({ ..._rest }): React.ReactNode =
     case ContractType.Stock:
     case ContractType.Future:
     case ContractType.Bond:
+    case ContractType.Index:
       return <StockShow thisContract={thisContract} />;
     default:
       return <>Not implemented yet!</>;

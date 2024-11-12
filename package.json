@@ -50,7 +50,7 @@
     "express": "^4.21.1",
     "fast-xml-parser": "^4.5.0",
     "formik": "^2.4.6",
-    "framer-motion": "^11.11.11",
+    "framer-motion": "^11.11.13",
     "json-stringify-safe": "^5.0.1",
     "next-themes": "^0.4.3",
     "react": "^18.3.1",
@@ -61,7 +61,7 @@
     "sequelize": "^6.37.5",
     "sequelize-typescript": "^2.1.6",
     "sqlite3": "^5.1.7",
-    "winston": "^3.16.0",
+    "winston": "^3.17.0",
     "yahoo-finance2": "^2.13.2"
   },
   "devDependencies": {
@@ -104,8 +104,8 @@
     "stylelint-config-standard": "^36.0.1",
     "ts-node-dev": "^2.0.0",
     "typescript": "^5.6.3",
-    "typescript-eslint": "^8.13.0",
-    "vite": "^5.4.10",
+    "typescript-eslint": "^8.14.0",
+    "vite": "^5.4.11",
     "webpack": "^5.96.1"
   },
   "engines": {
