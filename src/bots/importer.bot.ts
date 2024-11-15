@@ -675,6 +675,9 @@ export class ImporterBot extends ITradingBot {
       case "Commission Adjustments":
         statementType = StatementTypes.FeeStatement;
         break;
+      case "Price Adjustments":
+        statementType = StatementTypes.PriceAdjustments;
+        break;
       default:
         console.error("undefined cash trasaction type:", element);
         throw Error("undefined cash trasaction type: " + element.type);
@@ -733,6 +736,9 @@ export class ImporterBot extends ITradingBot {
             return FeeStatement.findOrCreate({ where: { id: statement.id }, defaults: { id: statement.id } }).then(
               ([_interestStatement, _created]) => statement,
             );
+
+          case StatementTypes.PriceAdjustments:
+            return Promise.resolve(statement);
 
           default:
             console.error(element);

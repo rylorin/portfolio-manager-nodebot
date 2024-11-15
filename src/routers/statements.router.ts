@@ -9,6 +9,7 @@ import {
   InterestStatement,
   OptionStatement,
   Portfolio,
+  SalesTaxes,
   Statement,
   TaxStatement,
   Trade,
@@ -115,6 +116,12 @@ const makeSynthesys = async (statements: Statement[]): Promise<StatementsSynthes
           case StatementTypes.CashStatement:
             // Not included in synthesys
             return Promise.resolve(value);
+
+          case StatementTypes.SalesTaxStatement:
+            return SalesTaxes.findByPk(item.id).then((_statement) => {
+              // Ignored at the moment
+              return value;
+            });
 
           default: // Fallback
             logger.log(

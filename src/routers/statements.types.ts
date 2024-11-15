@@ -1,4 +1,4 @@
-import { ContractType, OptionType } from "../models/contract.types";
+import { ContractType, OptionType } from "../models";
 
 export type SynthesysEntry = { stocks: number; options: number; dividends: number; interests: number; total: number };
 export type StatementsSynthesysEntries = Record<"string", SynthesysEntry>;
@@ -87,6 +87,8 @@ export type CashStatementEntry = BaseStatement & { statementType: "Cash" };
 
 export type SalesTaxStatementEntry = BaseStatement & { statementType: "SalesTax" };
 
+export type PriceAjustmentsStatementEntry = BaseStatement & { statementType: "Price Adjustments" };
+
 export type StatementEntry =
   | EquityStatementEntry
   | OptionStatementEntry
@@ -98,4 +100,5 @@ export type StatementEntry =
   | CorporateStatementEntry
   | CashStatementEntry
   | BondStatementEntry
-  | SalesTaxStatementEntry;
+  | SalesTaxStatementEntry
+  | PriceAjustmentsStatementEntry;

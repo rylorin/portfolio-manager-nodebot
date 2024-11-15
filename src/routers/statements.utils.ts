@@ -177,6 +177,12 @@ export const statementModelToStatementEntry = async (item: Statement): Promise<S
         ...baseStatement,
       };
 
+    case StatementTypes.PriceAdjustments:
+      return {
+        statementType: StatementTypes.PriceAdjustments,
+        ...baseStatement,
+      };
+
     default:
       throw Error("Undefined statement type");
   }

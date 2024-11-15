@@ -10,5 +10,6 @@ export const StatementTypes = {
   CashStatement: "Cash",
   BondStatement: "Bond",
   SalesTaxStatement: "SalesTax",
+  PriceAdjustments: "Price Adjustments",
 } as const;
 export type StatementTypes = (typeof StatementTypes)[keyof typeof StatementTypes];
