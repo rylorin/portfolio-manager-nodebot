@@ -47,7 +47,9 @@ const PortfolioEdit: FunctionComponent<PortfolioShowProps> = ({ ..._rest }): Rea
       </Flex>
       <Flex justifyContent="center" gap="2" mt="1">
         <Center w="40px" h="40px">
-          <ArrowBackIcon onClick={(): void => navigate(-1)} />
+          <ArrowBackIcon
+            onClick={async () => navigate(-1)} // eslint-disable-line @typescript-eslint/no-misused-promises
+          />
         </Center>
         <RouterLink to={`../`}>
           <Center w="40px" h="40px">

@@ -127,7 +127,12 @@ const PositionShow: FunctionComponent<PositionShowProps> = ({ ..._rest }): React
         </Flex>
 
         <Flex justifyContent="center" gap="2" mt="1">
-          <IconButton aria-label="Back" icon={<ArrowBackIcon />} variant="ghost" onClick={(): void => navigate(-1)} />
+          <IconButton
+            aria-label="Back"
+            icon={<ArrowBackIcon />}
+            variant="ghost"
+            onClick={async () => navigate(-1)} // eslint-disable-line @typescript-eslint/no-misused-promises
+          />
           <RouterLink to={`${PositionLink.editItem(portfolioId, thisPosition.id)}`}>
             <IconButton aria-label="Edit position" icon={<EditIcon />} variant="ghost" type="submit" />
           </RouterLink>

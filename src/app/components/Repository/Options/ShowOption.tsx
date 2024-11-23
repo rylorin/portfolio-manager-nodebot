@@ -23,7 +23,12 @@ const ShowOption: FunctionComponent<Props> = ({ ..._rest }): React.ReactNode => 
         </Flex>
 
         <Flex justifyContent="center" gap="2" mt="1">
-          <IconButton aria-label="Back" icon={<ArrowBackIcon />} variant="ghost" onClick={(): void => navigate(-1)} />
+          <IconButton
+            aria-label="Back"
+            icon={<ArrowBackIcon />}
+            variant="ghost"
+            onClick={async () => navigate(-1)} // eslint-disable-line @typescript-eslint/no-misused-promises
+          />
           <RouterLink to="edit">
             <Center w="40px" h="40px">
               <EditIcon />
