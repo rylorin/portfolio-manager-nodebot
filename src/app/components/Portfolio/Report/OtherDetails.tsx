@@ -45,6 +45,7 @@ const OtherDetails = ({ theReports, ..._rest }: Props): React.ReactNode => {
         case StatementTypes.CashStatement:
         case StatementTypes.CorporateStatement:
         case StatementTypes.SalesTaxStatement:
+        case StatementTypes.PriceAdjustments:
           result = {
             id: statement.id,
             date: new Date(statement.date),

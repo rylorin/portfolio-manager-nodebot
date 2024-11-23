@@ -20,7 +20,7 @@ const PositionEdit: FunctionComponent<PositionEditProps> = ({ ..._rest }): React
       initialValues={thisPosition}
       onSubmit={(values, _actions): void => {
         // console.log(values);
-        submit(values, { method: "post" });
+        submit(values, { method: "POST" }).catch(() => console.error("Failed to submit data!"));
       }}
     >
       {(formik: FormikProps<PositionEntry>): React.ReactNode => {
@@ -135,7 +135,7 @@ const PositionEdit: FunctionComponent<PositionEditProps> = ({ ..._rest }): React
                   aria-label="Back"
                   icon={<ArrowBackIcon />}
                   variant="ghost"
-                  onClick={(): void => navigate(-1)}
+                  onClick={async () => navigate(-1)} // eslint-disable-line @typescript-eslint/no-misused-promises
                 />
                 <IconButton aria-label="Save" icon={<CheckIcon />} variant="ghost" type="submit" />
               </Flex>

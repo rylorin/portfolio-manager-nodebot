@@ -82,236 +82,252 @@ import ErrorPage from "./error-page";
 import "./globals.css";
 import theme from "./theme";
 
-const router = createBrowserRouter([
+const router = createBrowserRouter(
+  [
+    {
+      path: "/",
+      element: (
+        <Layout>
+          <Outlet />
+        </Layout>
+      ),
+      errorElement: <ErrorPage />,
+      children: [
+        { index: true, element: <>(Home)</> },
+        { path: "/blog", element: <>(Blog)</> },
+        {
+          path: "/portfolio",
+          action: PortfolioAction,
+          children: [
+            { index: true, element: <PortfolioIndex />, loader: portfolioIndexLoader },
+            {
+              path: ":portfolioId",
+              element: (
+                <PortfolioLayout>
+                  <Outlet />
+                </PortfolioLayout>
+              ),
+              children: [
+                /* Portfolio parameters */
+                {
+                  path: "parameters",
+                  children: [
+                    { index: true, element: <PortfolioShow />, loader: portfolioLoader },
+                    { path: "edit", element: <PortfolioEdit />, loader: portfolioLoader },
+                  ],
+                },
+
+                /* Statements */
+                {
+                  path: "statements",
+                  action: PortfolioAction,
+                  children: [
+                    {
+                      path: "summary",
+                      action: PortfolioAction,
+                      children: [
+                        { path: "ytd", element: <StatementSummary />, loader: statementSummaryLoaderYTD },
+                        { path: "12m", element: <StatementSummary />, loader: statementSummaryLoader12M },
+                        { path: "all", element: <StatementSummary />, loader: statementSummaryLoaderAll },
+                      ],
+                    },
+                    {
+                      path: "month/:year/:month",
+                      action: PortfolioAction,
+                      children: [
+                        { index: true, element: <StatementIndex />, loader: statementMonthLoader },
+                        { path: "StatementCreateTrade/:statementId", action: statementCreateTrade },
+                        { path: "StatementGuessTrade/:statementId", action: statementGuessTrade },
+                        { path: "StatementAddToTrade/:statementId/:tradeId", action: statementAddToTrade },
+                        { path: "StatementUnlinkTrade/:statementId", action: statementUnlinkTrade },
+                        { path: "DeleteStatement/:statementId", action: statementDelete },
+                      ],
+                    },
+                    {
+                      path: "id/:statementId",
+                      action: PortfolioAction,
+                      children: [
+                        { index: true, element: <StatementShow />, loader: statementShowLoader },
+                        {
+                          path: "edit",
+                          element: <StatementEdit />,
+                          loader: statementShowLoader,
+                          action: statementSave,
+                        },
+                        { path: "CreateTrade", action: statementCreateTrade },
+                        { path: "GuessTrade", action: statementGuessTrade },
+                        { path: "AddToTrade/:tradeId", action: statementAddToTrade },
+                        { path: "UnlinkTrade", action: statementUnlinkTrade },
+                      ],
+                    },
+                  ],
+                },
+
+                /* Positions */
+                {
+                  path: "positions",
+                  children: [
+                    {
+                      path: "all",
+                      children: [
+                        { index: true, element: <PositionsIndex />, loader: positionsIndexLoader },
+                        { path: "DeletePosition/:positionId", action: positionDelete },
+                        { path: "PositionGuessTrade/:positionId", action: positionGuessTrade },
+                        { path: "PositionAddToTrade/:positionId/:tradeId", action: positionAddToTrade },
+                        { path: ":positionId/PositionUnlinkTrade", action: positionUnlinkTrade },
+                      ],
+                    },
+                    {
+                      path: "options",
+                      children: [
+                        { index: true, element: <OptionsPositions />, loader: positionsOptionsLoader },
+                        { path: "DeletePosition/:positionId", action: positionDelete },
+                      ],
+                    },
+                    {
+                      path: "id/:positionId",
+                      children: [
+                        { index: true, element: <PositionShow />, loader: positionShowLoader },
+                        { path: "edit", element: <PositionEdit />, loader: positionShowLoader, action: positionSave },
+                      ],
+                    },
+                  ],
+                },
+
+                /* Balances */
+                {
+                  path: "balances",
+                  action: PortfolioAction,
+                  children: [
+                    { index: true, element: <BalancesIndex />, loader: balancesIndexLoader },
+                    { path: "DeleteBalance/:balanceId", action: balanceDelete },
+                    {
+                      path: "id/:balanceId",
+                      children: [
+                        { index: true, element: <BalanceShow />, loader: balancesShowLoader },
+                        { path: "edit", element: <BalanceEdit />, loader: balancesShowLoader, action: balanceSave },
+                      ],
+                    },
+                  ],
+                },
+
+                /* Trades */
+                {
+                  path: "trades",
+                  element: (
+                    <TradeLayout>
+                      <Outlet />
+                    </TradeLayout>
+                  ),
+                  children: [
+                    {
+                      path: "summary",
+                      action: PortfolioAction,
+                      children: [
+                        {
+                          path: "open",
+                          element: <TradesOpen />,
+                          loader: tradesOpenLoader,
+                          children: [
+                            { index: true, element: <TradesOpen />, loader: tradesOpenLoader },
+                            { path: ":positionId/PositionUnlinkTrade", action: positionUnlinkTrade },
+                          ],
+                        },
+                        { path: "ytd", element: <TradesSummary />, loader: tradeSummaryLoaderYTD },
+                        { path: "12m", element: <TradesSummary />, loader: tradeSummaryLoader12M },
+                        { path: "all", element: <TradesSummary />, loader: tradeSummaryLoaderAll },
+                      ],
+                    },
+                    {
+                      path: "id/:tradeId",
+                      action: PortfolioAction,
+                      children: [
+                        { index: true, element: <TradeShow />, loader: tradesShowLoader },
+                        { path: "edit", element: <TradeEdit />, loader: tradesShowLoader, action: tradeSave },
+                        { path: "delete", action: tradeDelete },
+
+                        { path: "StatementCreateTrade/:statementId", action: statementCreateTrade },
+                        { path: "StatementGuessTrade/:statementId", action: statementGuessTrade },
+                        { path: "StatementAddToTrade/:statementId/:tradeId", action: statementAddToTrade },
+                        { path: "StatementUnlinkTrade/:statementId", action: statementUnlinkTrade },
+                        { path: "DeleteStatement/:statementId", action: statementDelete },
+
+                        { path: "DeletePosition/:positionId", action: positionDelete },
+                        { path: ":positionId/PositionUnlinkTrade", action: positionUnlinkTrade },
+                        { path: "PositionGuessTrade/:positionId", action: positionGuessTrade },
+                      ],
+                    },
+                    {
+                      path: "month/:year/:month",
+                      element: <TradesTable />,
+                      loader: tradesMonthLoader,
+                    },
+                    {
+                      path: "closed/:year/:month/opened/:yearfrom/:monthfrom",
+                      element: <TradesTable />,
+                      loader: tradesClosedOpenedLoader,
+                    },
+                  ],
+                },
+
+                /* Contracts */
+                {
+                  path: "contracts",
+                  action: PortfolioAction,
+                  children: [
+                    { index: true },
+                    {
+                      path: "id/:contractId",
+                      element: <ContractShow />,
+                      loader: contractShowLoader,
+                      children: [
+                        { path: "PositionGuessTrade/:positionId", action: positionGuessTrade },
+                        { path: "PositionAddToTrade/:positionId/:tradeId", action: positionAddToTrade },
+                        { path: ":positionId/PositionUnlinkTrade", action: positionUnlinkTrade },
+
+                        { path: "StatementCreateTrade/:statementId", action: statementCreateTrade },
+                        { path: "StatementGuessTrade/:statementId", action: statementGuessTrade },
+                        { path: "StatementAddToTrade/:statementId/:tradeId", action: statementAddToTrade },
+                        { path: "StatementUnlinkTrade/:statementId", action: statementUnlinkTrade },
+                        { path: "DeleteStatement/:statementId", action: statementDelete },
+                      ],
+                    },
+                  ],
+                },
+
+                /* Tax reports */
+                {
+                  path: "reports",
+                  element: (
+                    <ReportLayout>
+                      <Outlet />
+                    </ReportLayout>
+                  ),
+                  children: [
+                    { path: "index", element: <ReportsIndex />, loader: reportsIndexLoader },
+                    { path: "ytd", element: <ReportsIndex />, loader: reportsIndexLoaderYtd },
+                    { path: "12m", element: <ReportsIndex />, loader: reportsIndexLoader12m },
+                    { path: "year/:year", element: <ReportSummary />, loader: reportSummaryLoader },
+                    { path: "year/:year/details", element: <ReportDetails />, loader: reportSummaryLoader },
+                  ],
+                },
+              ],
+            },
+          ],
+        },
+      ],
+    },
+  ],
   {
-    path: "/",
-    element: (
-      <Layout>
-        <Outlet />
-      </Layout>
-    ),
-    errorElement: <ErrorPage />,
-    children: [
-      { index: true, element: <>(Home)</> },
-      { path: "/blog", element: <>(Blog)</> },
-      {
-        path: "/portfolio",
-        action: PortfolioAction,
-        children: [
-          { index: true, element: <PortfolioIndex />, loader: portfolioIndexLoader },
-          {
-            path: ":portfolioId",
-            element: (
-              <PortfolioLayout>
-                <Outlet />
-              </PortfolioLayout>
-            ),
-            children: [
-              /* Portfolio parameters */
-              {
-                path: "parameters",
-                children: [
-                  { index: true, element: <PortfolioShow />, loader: portfolioLoader },
-                  { path: "edit", element: <PortfolioEdit />, loader: portfolioLoader },
-                ],
-              },
-
-              /* Statements */
-              {
-                path: "statements",
-                action: PortfolioAction,
-                children: [
-                  {
-                    path: "summary",
-                    action: PortfolioAction,
-                    children: [
-                      { path: "ytd", element: <StatementSummary />, loader: statementSummaryLoaderYTD },
-                      { path: "12m", element: <StatementSummary />, loader: statementSummaryLoader12M },
-                      { path: "all", element: <StatementSummary />, loader: statementSummaryLoaderAll },
-                    ],
-                  },
-                  {
-                    path: "month/:year/:month",
-                    action: PortfolioAction,
-                    children: [
-                      { index: true, element: <StatementIndex />, loader: statementMonthLoader },
-                      { path: "StatementCreateTrade/:statementId", action: statementCreateTrade },
-                      { path: "StatementGuessTrade/:statementId", action: statementGuessTrade },
-                      { path: "StatementAddToTrade/:statementId/:tradeId", action: statementAddToTrade },
-                      { path: "StatementUnlinkTrade/:statementId", action: statementUnlinkTrade },
-                      { path: "DeleteStatement/:statementId", action: statementDelete },
-                    ],
-                  },
-                  {
-                    path: "id/:statementId",
-                    action: PortfolioAction,
-                    children: [
-                      { index: true, element: <StatementShow />, loader: statementShowLoader },
-                      { path: "edit", element: <StatementEdit />, loader: statementShowLoader, action: statementSave },
-                      { path: "CreateTrade", action: statementCreateTrade },
-                      { path: "GuessTrade", action: statementGuessTrade },
-                      { path: "AddToTrade/:tradeId", action: statementAddToTrade },
-                      { path: "UnlinkTrade", action: statementUnlinkTrade },
-                    ],
-                  },
-                ],
-              },
-
-              /* Positions */
-              {
-                path: "positions",
-                children: [
-                  {
-                    path: "all",
-                    children: [
-                      { index: true, element: <PositionsIndex />, loader: positionsIndexLoader },
-                      { path: "DeletePosition/:positionId", action: positionDelete },
-                      { path: "PositionGuessTrade/:positionId", action: positionGuessTrade },
-                      { path: "PositionAddToTrade/:positionId/:tradeId", action: positionAddToTrade },
-                      { path: ":positionId/PositionUnlinkTrade", action: positionUnlinkTrade },
-                    ],
-                  },
-                  {
-                    path: "options",
-                    children: [
-                      { index: true, element: <OptionsPositions />, loader: positionsOptionsLoader },
-                      { path: "DeletePosition/:positionId", action: positionDelete },
-                    ],
-                  },
-                  {
-                    path: "id/:positionId",
-                    children: [
-                      { index: true, element: <PositionShow />, loader: positionShowLoader },
-                      { path: "edit", element: <PositionEdit />, loader: positionShowLoader, action: positionSave },
-                    ],
-                  },
-                ],
-              },
-
-              /* Balances */
-              {
-                path: "balances",
-                action: PortfolioAction,
-                children: [
-                  { index: true, element: <BalancesIndex />, loader: balancesIndexLoader },
-                  { path: "DeleteBalance/:balanceId", action: balanceDelete },
-                  {
-                    path: "id/:balanceId",
-                    children: [
-                      { index: true, element: <BalanceShow />, loader: balancesShowLoader },
-                      { path: "edit", element: <BalanceEdit />, loader: balancesShowLoader, action: balanceSave },
-                    ],
-                  },
-                ],
-              },
-
-              /* Trades */
-              {
-                path: "trades",
-                element: (
-                  <TradeLayout>
-                    <Outlet />
-                  </TradeLayout>
-                ),
-                children: [
-                  {
-                    path: "summary",
-                    action: PortfolioAction,
-                    children: [
-                      {
-                        path: "open",
-                        element: <TradesOpen />,
-                        loader: tradesOpenLoader,
-                        children: [
-                          { index: true, element: <TradesOpen />, loader: tradesOpenLoader },
-                          { path: ":positionId/PositionUnlinkTrade", action: positionUnlinkTrade },
-                        ],
-                      },
-                      { path: "ytd", element: <TradesSummary />, loader: tradeSummaryLoaderYTD },
-                      { path: "12m", element: <TradesSummary />, loader: tradeSummaryLoader12M },
-                      { path: "all", element: <TradesSummary />, loader: tradeSummaryLoaderAll },
-                    ],
-                  },
-                  {
-                    path: "id/:tradeId",
-                    action: PortfolioAction,
-                    children: [
-                      { index: true, element: <TradeShow />, loader: tradesShowLoader },
-                      { path: "edit", element: <TradeEdit />, loader: tradesShowLoader, action: tradeSave },
-                      { path: "delete", action: tradeDelete },
-
-                      { path: "StatementCreateTrade/:statementId", action: statementCreateTrade },
-                      { path: "StatementGuessTrade/:statementId", action: statementGuessTrade },
-                      { path: "StatementAddToTrade/:statementId/:tradeId", action: statementAddToTrade },
-                      { path: "StatementUnlinkTrade/:statementId", action: statementUnlinkTrade },
-                      { path: "DeleteStatement/:statementId", action: statementDelete },
-
-                      { path: "DeletePosition/:positionId", action: positionDelete },
-                      { path: ":positionId/PositionUnlinkTrade", action: positionUnlinkTrade },
-                      { path: "PositionGuessTrade/:positionId", action: positionGuessTrade },
-                    ],
-                  },
-                  {
-                    path: "month/:year/:month",
-                    element: <TradesTable />,
-                    loader: tradesMonthLoader,
-                  },
-                  {
-                    path: "closed/:year/:month/opened/:yearfrom/:monthfrom",
-                    element: <TradesTable />,
-                    loader: tradesClosedOpenedLoader,
-                  },
-                ],
-              },
-
-              /* Contracts */
-              {
-                path: "contracts",
-                action: PortfolioAction,
-                children: [
-                  { index: true },
-                  {
-                    path: "id/:contractId",
-                    element: <ContractShow />,
-                    loader: contractShowLoader,
-                    children: [
-                      { path: "PositionGuessTrade/:positionId", action: positionGuessTrade },
-                      { path: "PositionAddToTrade/:positionId/:tradeId", action: positionAddToTrade },
-                      { path: ":positionId/PositionUnlinkTrade", action: positionUnlinkTrade },
-
-                      { path: "StatementCreateTrade/:statementId", action: statementCreateTrade },
-                      { path: "StatementGuessTrade/:statementId", action: statementGuessTrade },
-                      { path: "StatementAddToTrade/:statementId/:tradeId", action: statementAddToTrade },
-                      { path: "StatementUnlinkTrade/:statementId", action: statementUnlinkTrade },
-                      { path: "DeleteStatement/:statementId", action: statementDelete },
-                    ],
-                  },
-                ],
-              },
-
-              /* Tax reports */
-              {
-                path: "reports",
-                element: (
-                  <ReportLayout>
-                    <Outlet />
-                  </ReportLayout>
-                ),
-                children: [
-                  { path: "index", element: <ReportsIndex />, loader: reportsIndexLoader },
-                  { path: "ytd", element: <ReportsIndex />, loader: reportsIndexLoaderYtd },
-                  { path: "12m", element: <ReportsIndex />, loader: reportsIndexLoader12m },
-                  { path: "year/:year", element: <ReportSummary />, loader: reportSummaryLoader },
-                  { path: "year/:year/details", element: <ReportDetails />, loader: reportSummaryLoader },
-                ],
-              },
-            ],
-          },
-        ],
-      },
-    ],
+    future: {
+      v7_relativeSplatPath: true,
+      v7_fetcherPersist: true,
+      v7_normalizeFormMethod: true,
+      v7_partialHydration: true,
+      v7_skipActionErrorRevalidation: true,
+    },
   },
-]);
+);
 
 createRoot(document.getElementById("root")).render(
   <React.StrictMode>

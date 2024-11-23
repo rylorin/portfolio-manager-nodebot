@@ -36,7 +36,7 @@ const BalanceShow: FunctionComponent<Props> = ({ ..._rest }): React.ReactNode =>
           <Text w="90px" as="b" textAlign="right">
             Balance:
           </Text>
-          <Number w="200px" textAlign="right" value={item.quantity} />
+          <Number w="200px" textAlign="right" value={item.quantity} decimals={2} />
         </Flex>
 
         <Flex justifyContent="center" gap="2" mt="1">

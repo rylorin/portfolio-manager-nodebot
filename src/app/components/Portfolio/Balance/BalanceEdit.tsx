@@ -25,8 +25,8 @@ const BalanceEdit: FunctionComponent<Props> = ({ ..._rest }): React.ReactNode =>
           //   status: parseInt(values.status as unknown as string),
           //   strategy: parseInt(values.strategy as unknown as string),
           // },
-          { method: "post" },
-        );
+          { method: "POST" },
+        ).catch(() => console.error("Failed to submit data!"));
       }}
     >
       {(formik: FormikProps<BalanceEntry>): React.ReactNode => {
@@ -55,7 +55,7 @@ const BalanceEdit: FunctionComponent<Props> = ({ ..._rest }): React.ReactNode =>
                   aria-label="Back"
                   icon={<ArrowBackIcon />}
                   variant="ghost"
-                  onClick={(): void => navigate(-1)}
+                  onClick={async () => navigate(-1)} // eslint-disable-line @typescript-eslint/no-misused-promises
                 />
                 <IconButton aria-label="Save" icon={<CheckIcon />} variant="ghost" type="submit" />
               </Flex>

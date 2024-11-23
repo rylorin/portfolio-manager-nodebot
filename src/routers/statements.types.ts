@@ -87,7 +87,7 @@ export type CashStatementEntry = BaseStatement & { statementType: "Cash" };
 
 export type SalesTaxStatementEntry = BaseStatement & { statementType: "SalesTax" };
 
-export type PriceAjustmentsStatementEntry = BaseStatement & { statementType: "Price Adjustments" };
+export type PriceAjustmentsStatementEntry = BaseStatement & { statementType: "PriceAdjustments" };
 
 export type StatementEntry =
   | EquityStatementEntry

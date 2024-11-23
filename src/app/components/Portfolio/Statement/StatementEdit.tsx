@@ -40,13 +40,13 @@ const StatementEdit: FunctionComponent<Props> = ({ ..._rest }): React.ReactNode 
           //   status: parseInt(values.status as unknown as string),
           //   strategy: parseInt(values.strategy as unknown as string),
           // },
-          { method: "post" },
-        );
+          { method: "POST" },
+        ).catch(() => console.error("Failed to submit data!"));
       }}
     >
       {(formik: FormikProps<StatementEntry>): React.ReactNode => {
         return (
-          <RouterForm method="post" onSubmit={formik.handleSubmit}>
+          <RouterForm method="POST" onSubmit={formik.handleSubmit}>
             <VStack>
               <Flex justifyContent="center" gap="2">
                 <Text w="90px" as="b" textAlign="right">
@@ -197,7 +197,7 @@ const StatementEdit: FunctionComponent<Props> = ({ ..._rest }): React.ReactNode 
                   aria-label="Back"
                   icon={<ArrowBackIcon />}
                   variant="ghost"
-                  onClick={(): void => navigate(-1)}
+                  onClick={async () => navigate(-1)} // eslint-disable-line @typescript-eslint/no-misused-promises
                 />
                 <IconButton aria-label="Save" icon={<CheckIcon />} variant="ghost" type="submit" />
               </Flex>
