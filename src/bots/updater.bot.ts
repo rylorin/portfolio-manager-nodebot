@@ -114,7 +114,7 @@ export class ContractsUpdaterBot extends ITradingBot {
           DISTINCT(contract.symbol),
           stock.historical_volatility,
           contract.*
-        FROM trading_parameters, contract, stock
+        FROM trading_parameters, contract, stock_contract stock
         WHERE trading_parameters.stock_id = contract.id
           AND trading_parameters.stock_id = stock.id
         GROUP BY contract.symbol

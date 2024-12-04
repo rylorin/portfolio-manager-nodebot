@@ -135,10 +135,10 @@ const OptionsPositions: FunctionComponent<PositionsIndexProps> = ({ ..._rest }):
           </Tbody>
           <Tfoot>
             <Tr fontWeight="bold">
+              <Td isNumeric>{formatNumber(thePositions.reduce((p, v) => p + Math.abs(v.quantity), 0))}</Td>
+              <Td></Td>
+              <Td></Td>
               <Td>Total</Td>
-              <Td></Td>
-              <Td></Td>
-              <Td></Td>
               <Td></Td>
               <Td>Base</Td>
               <Td></Td>

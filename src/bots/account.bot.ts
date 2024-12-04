@@ -239,7 +239,7 @@ export class AccountUpdateBot extends ITradingBot {
           .then(async ([position, created]) => {
             if (created) return position;
             else {
-              return position.update(defaults, { logging: console.log });
+              return position.update(defaults);
             }
           })
           .then(async (position): Promise<Position | undefined> => {

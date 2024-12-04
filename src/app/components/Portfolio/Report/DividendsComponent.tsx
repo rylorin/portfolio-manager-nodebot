@@ -52,7 +52,7 @@ const OneCountryTable = ({
               </HStack>
             )),
         )}
-        <HStack>
+        <HStack fontWeight="bold">
           <Text width="120px">Subtotal</Text>
           <Number value={grossTotal} width="120px" />
           <Number value={taxesTotal} width="120px" />
@@ -107,7 +107,7 @@ const Dividends = ({ theReports, ..._rest }: Props): React.ReactNode => {
             <OneCountryTable portfolioId={portfolioId} theReports={theReports} country={country} />
           </HStack>
         ))}
-        <HStack>
+        <HStack fontWeight="bold">
           <Text width="120px">Total</Text>
           <Box width="120px"></Box>
           <Number value={grossTotal} width="120px" />
