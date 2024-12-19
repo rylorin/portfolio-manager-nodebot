@@ -48,7 +48,7 @@ const PortfolioShow: FunctionComponent<PortfolioShowProps> = ({ ..._rest }): Rea
       {thisPortfolio.benchmark && (
         <Flex justifyContent="center" gap="2">
           <Text w="90px" as="b" textAlign="right">
-            Benchmark:
+            Cash:
           </Text>
           <Text w="120px" textAlign="left">
             {thisPortfolio.benchmark.symbol}

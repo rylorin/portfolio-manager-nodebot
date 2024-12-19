@@ -1,5 +1,6 @@
 import express from "express";
 import { Op } from "sequelize";
+import { PositionEntry } from ".";
 import logger, { LogLevel } from "../logger";
 import { Contract, Currency, Portfolio, Position, Statement, Trade } from "../models";
 import { TradeStatus } from "../models/types";
@@ -12,7 +13,6 @@ import {
   tradeModelToTradeEntry,
   updateTradeDetails,
 } from "./trades.utils";
-import { PositionEntry } from "./types";
 
 const MODULE = "TradesRouter";
 

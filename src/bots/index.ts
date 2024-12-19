@@ -50,7 +50,10 @@ export class ITradingBot extends EventEmitter {
   protected app: MyTradingBotApp;
   protected api: IBApiNext;
   protected accountNumber: string;
-  protected portfolio: Portfolio;
+  private _portfolio: Portfolio;
+  public get portfolio(): Portfolio {
+    return this._portfolio;
+  }
   protected base_rates: number[] = [];
 
   constructor(app: MyTradingBotApp, api: IBApiNext, account: string) {
@@ -68,6 +71,14 @@ export class ITradingBot extends EventEmitter {
   }
 
   /**
+   * Print an info message to console
+   */
+  info(...message: any[]): void {
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
+    logger.info(undefined, ...message);
+  }
+
+  /**
    * Print a warning message to console
    */
   warn(message: string): void {
@@ -81,6 +92,14 @@ export class ITradingBot extends EventEmitter {
   error(message: string): void {
     // console.error(colors.bold.red(`[${new Date().toLocaleTimeString()}] Error: ${message}`));
     logger.error(undefined, message);
+  }
+
+  public cancelOrder(orderId: number): void {
+    this.api.cancelOrder(orderId);
+  }
+
+  public async placeNewOrder(contract: IbContract, order: IbOrder): Promise<number> {
+    return this.api.placeNewOrder(contract, order);
   }
 
   protected static OptionComboContract(underlying: Contract, buyleg: number, sellleg: number): IbContract {
@@ -154,17 +173,6 @@ export class ITradingBot extends EventEmitter {
     return order;
   }
 
-  protected static BenchmarkOrder(action: OrderAction, quantity: number): IbOrder {
-    const order: IbOrder = {
-      action: action,
-      orderType: OrderType.MOC,
-      // orderType: OrderType.MIDPRICE,
-      totalQuantity: quantity,
-      transmit: false,
-    };
-    return order;
-  }
-
   protected async init(): Promise<void> {
     return Portfolio.findOne({
       where: {
@@ -175,12 +183,13 @@ export class ITradingBot extends EventEmitter {
           model: Contract,
         },
         { model: Currency, as: "baseRates" },
+        { association: "settings", include: [{ association: "underlying" }] },
       ],
       // logging: console.log,
     })
       .then(async (portfolio) => {
         if (portfolio) {
-          this.portfolio = portfolio;
+          this._portfolio = portfolio;
           return Currency.findAll({
             where: { base: portfolio.baseCurrency },
           });
@@ -192,9 +201,8 @@ export class ITradingBot extends EventEmitter {
       });
   }
 
-  protected async getContractPosition(contract: Contract): Promise<number> {
+  public async getContractPosition(contract: Contract): Promise<number> {
     if (this.portfolio !== null && contract !== null) {
-      console.log("getContractPosition", contract.id);
       return Position.findOne({
         where: {
           portfolio_id: this.portfolio.id,
@@ -202,7 +210,6 @@ export class ITradingBot extends EventEmitter {
         },
         // logging: sequelize_logging,
       }).then((position) => {
-        console.log("getContractPosition", position);
         return position ? position.quantity : 0;
       });
     } else {
@@ -210,11 +217,10 @@ export class ITradingBot extends EventEmitter {
     }
   }
 
-  protected async getContractPositionValueInBase(contract: Contract): Promise<number> {
-    // console.log("getContractPositionValueInBase", contract);
+  public async getContractPositionValueInBase(contract: Contract): Promise<number> {
     return this.getContractPosition(contract).then(async (position) => {
       return this.findOrCreateCurrency(contract.currency).then((currency) => {
-        console.log("getContractPositionValueInBase", position, contract.livePrice, currency.rate);
+        // console.log("getContractPositionValueInBase", position, contract.livePrice, currency.rate);
         return (position * contract.livePrice) / currency.rate;
       });
     });
@@ -222,7 +228,6 @@ export class ITradingBot extends EventEmitter {
 
   private async findOrCreateCurrency(symbol: string): Promise<Currency> {
     const currency = this.portfolio.baseRates.find((currency) => currency.currency == symbol);
-    console.log("findOrCreateCurrency", symbol, currency);
     if (!currency) {
       return this.findOrCreateContract({
         secId: SecType.CASH,
@@ -239,7 +244,7 @@ export class ITradingBot extends EventEmitter {
     return Promise.resolve(currency);
   }
 
-  protected async getContractOrdersQuantity(benchmark: Contract, actionType?: OrderAction): Promise<number> {
+  public async getContractOrdersQuantity(benchmark: Contract, actionType?: OrderAction): Promise<number> {
     const where: {
       portfolio_id: number;
       status: string[];
@@ -377,7 +382,7 @@ export class ITradingBot extends EventEmitter {
     return this.getOptionsPositionsSynthesisInBase(underlying.id, right).then((r) => r.quantity);
   }
 
-  protected async getOptionPositionsValueInBase(
+  public async getOptionPositionsValueInBase(
     underlying: number | undefined,
     right: OptionType | undefined,
   ): Promise<number> {
@@ -388,7 +393,7 @@ export class ITradingBot extends EventEmitter {
     return this.getOptionsPositionsSynthesisInBase(underlying, right).then((r) => r.engaged);
   }
 
-  protected async getOptionsPositionsRiskInBase(
+  public async getOptionsPositionsRiskInBase(
     underlying: number | undefined,
     right: OptionType | undefined,
   ): Promise<number> {
@@ -506,7 +511,7 @@ export class ITradingBot extends EventEmitter {
     return this.getOptionsOrdersSynthesisInBase(underlying, right, actionType).then((r) => r.risk);
   }
 
-  protected async getOptionsOrdersQuantity(
+  public async getOptionsOrdersQuantity(
     underlying: Contract,
     right: OptionType,
     actionType: OrderAction,
@@ -514,7 +519,7 @@ export class ITradingBot extends EventEmitter {
     return this.getOptionsOrdersSynthesisInBase(underlying.id, right, actionType).then((r) => r.quantity);
   }
 
-  protected async getBalanceInBase(currency: string): Promise<number> {
+  public async getBalanceInBase(currency: string): Promise<number> {
     return Balance.findOne({
       where: {
         portfolio_id: this.portfolio.id,
@@ -526,7 +531,7 @@ export class ITradingBot extends EventEmitter {
     });
   }
 
-  protected async getTotalBalanceInBase(): Promise<number> {
+  public async getTotalBalanceInBase(): Promise<number> {
     return Balance.findAll({ where: { portfolio_id: this.portfolio.id } }).then((balances) => {
       return balances.reduce(
         (p, b) => {

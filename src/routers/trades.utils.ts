@@ -1,3 +1,10 @@
+import {
+  OptionPositionEntry,
+  PositionEntry,
+  StatementEntry,
+  StatementUnderlyingEntry,
+  StatementUnderlyingOption,
+} from ".";
 import logger, { LogLevel } from "../logger";
 import { Contract, Currency, Portfolio, Position, Trade } from "../models";
 import { expirationToDate } from "../models/date_utils";
@@ -11,13 +18,6 @@ import {
   TradeSynthesys,
   VirtualPositionEntry,
 } from "./trades.types";
-import {
-  OptionPositionEntry,
-  PositionEntry,
-  StatementEntry,
-  StatementUnderlyingEntry,
-  StatementUnderlyingOption,
-} from "./types";
 
 const MODULE = "TradesUtils";
 

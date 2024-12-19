@@ -5,6 +5,7 @@ import balances from "./balances.router";
 import contracts from "./contracts.router";
 import positions from "./positions.router";
 import reports from "./reports.router";
+import settings from "./settings.router";
 import statements from "./statements.router";
 import trades from "./trades.router";
 
@@ -79,6 +80,11 @@ router.use("/:portfolioId(\\d+)/contracts", contracts);
  * Reports subrouter
  */
 router.use("/:portfolioId(\\d+)/reports", reports);
+
+/**
+ * Settings subrouter
+ */
+router.use("/:portfolioId(\\d+)/settings", settings);
 
 /**
  * Catch all

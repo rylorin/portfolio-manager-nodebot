@@ -17,6 +17,7 @@ import {
   YahooUpdateBot,
 } from "./bots";
 import { ImporterBot } from "./bots/importer.bot";
+import { TradeBot } from "./bots/trade.bot";
 import {
   BagContract,
   Balance,
@@ -57,13 +58,15 @@ const OPTION_ARGUMENTS: [string, string][] = [
   ["update", "start option contracts updater bot"],
   ["yahoo", "start Yahoo Finance updater"],
   ["account", "start account info update bot"],
+  ["options", "start create options contracts bot"],
+  ["import", "import flex statements"],
+  ["server", "start React + API server"],
+  // The following options may open/close orders
+  ["trader", "start trading bot"],
   ["cash", "start cash management bot"],
   ["cc", "start covered calls bot"],
   ["csp", "start cash secured puts bot"],
   ["roll", "start roll positions bot"],
-  ["options", "start create options contracts bot"],
-  ["import", "import flex statements"],
-  ["server", "start React + API server"],
 ];
 const EXAMPLE_TEXT = path.basename(__filename) + path.basename(__filename) + "-port=7497 -host=localhost ";
 
@@ -141,9 +144,12 @@ export class MyTradingBotApp extends IBApiNextApp {
         const yahooBot: YahooUpdateBot = new YahooUpdateBot(this, this.api, accountId);
         if (this.cmdLineArgs.update) new ContractsUpdaterBot(this, this.api, accountId, yahooBot).start();
         if (this.cmdLineArgs.account)
-          new AccountUpdateBot(this, this.api, accountId).start().catch(() => {
-            /* ignored */
-          });
+          new AccountUpdateBot(this, this.api, accountId)
+            .start()
+            .then(() => {
+              if (this.cmdLineArgs.trader) new TradeBot(this, this.api, accountId).start();
+            })
+            .catch((error: Error) => this.error(error.message));
         if (this.cmdLineArgs.cash) new CashManagementBot(this, this.api, accountId).start();
         if (this.cmdLineArgs.cc) new SellCoveredCallsBot(this, this.api, accountId).start();
         if (this.cmdLineArgs.csp) new SellCashSecuredPutBot(this, this.api, accountId).start();

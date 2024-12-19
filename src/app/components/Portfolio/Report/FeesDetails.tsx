@@ -4,7 +4,7 @@ import { createColumnHelper } from "@tanstack/react-table";
 import { default as React } from "react";
 import { Link as RouterLink, useParams } from "react-router-dom";
 import { StatementTypes } from "../../../../models/types";
-import { FeeStatementEntry, ReportEntry } from "../../../../routers/types";
+import { FeeStatementEntry, ReportEntry } from "../../../../routers";
 import Number from "../../Number/Number";
 import { StatementLink } from "../Statement/links";
 import { DataTable } from "./DataTable";

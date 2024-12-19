@@ -145,7 +145,7 @@ router.get("/id/:contractId(\\d+)", (req, res): void => {
 });
 
 /**
- * List all balances
+ * List all contracts
  */
 router.get("/index", (req, res) => {
   const { portfolioId } = req.params as typeof req.params & parentParams;

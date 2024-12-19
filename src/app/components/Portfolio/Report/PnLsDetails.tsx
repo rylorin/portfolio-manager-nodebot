@@ -12,7 +12,7 @@ import {
   ReportEntry,
   StatementUnderlyingEntry,
   StatementUnderlyingOption,
-} from "../../../../routers/types";
+} from "../../../../routers";
 import Number from "../../Number/Number";
 import { StatementLink } from "../Statement/links";
 import { DataTable } from "./DataTable";

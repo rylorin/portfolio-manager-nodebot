@@ -1,5 +1,6 @@
 import { OptionType, SecType } from "@stoqey/ib";
 import { default as express } from "express";
+import { OptionPositionEntry, PositionEntry } from ".";
 import logger, { LogLevel } from "../logger";
 import {
   Contract,
@@ -12,7 +13,6 @@ import {
   Statement,
 } from "../models";
 import { ContractType } from "../models/types";
-import { OptionPositionEntry, PositionEntry } from "./types";
 
 const MODULE = "PositionsRouter";
 
