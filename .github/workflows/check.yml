@@ -18,7 +18,7 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: 20.12.2
+          node-version: 20.18.1
           cache: "yarn" # caches the yarn cache folder not node_modules
 
       - name: Prepare

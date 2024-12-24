@@ -27,7 +27,8 @@ export const expirationToDateString = (value: string | number): string => {
 };
 
 /** convert Date to YYYYMMDD */
-export const dateToExpiration = (value: Date): string => {
+export const dateToExpiration = (value?: Date): string => {
+  if (!value) value = new Date();
   const day: number = value.getDate();
   const month: number = value.getMonth() + 1;
   const year: number = value.getFullYear();

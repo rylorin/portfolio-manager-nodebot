@@ -8,16 +8,14 @@ import path from "path";
 import { Sequelize, SequelizeOptions } from "sequelize-typescript";
 import {
   AccountUpdateBot,
-  CashManagementBot,
   ContractsUpdaterBot,
-  OptionsCreateBot,
   RollOptionPositionsBot,
   SellCashSecuredPutBot,
   SellCoveredCallsBot,
   YahooUpdateBot,
 } from "./bots";
 import { ImporterBot } from "./bots/importer.bot";
-import { TradeBot } from "./bots/trade.bot";
+import { TradeBot } from "./bots/trader.bot";
 import {
   BagContract,
   Balance,
@@ -51,19 +49,17 @@ import StartServer from "./server";
 // The help text                                                               //
 /////////////////////////////////////////////////////////////////////////////////
 
-const DESCRIPTION_TEXT = "Print real time market data of a given contract id.";
+const DESCRIPTION_TEXT = "Thetagang IB trading bot.";
 const USAGE_TEXT = "Usage: index.js <options>";
 const OPTION_ARGUMENTS: [string, string][] = [
   ["accountId=<string>", "IB account number"],
   ["update", "start option contracts updater bot"],
   ["yahoo", "start Yahoo Finance updater"],
   ["account", "start account info update bot"],
-  ["options", "start create options contracts bot"],
   ["import", "import flex statements"],
   ["server", "start React + API server"],
   // The following options may open/close orders
   ["trader", "start trading bot"],
-  ["cash", "start cash management bot"],
   ["cc", "start covered calls bot"],
   ["csp", "start cash secured puts bot"],
   ["roll", "start roll positions bot"],
@@ -150,12 +146,10 @@ export class MyTradingBotApp extends IBApiNextApp {
               if (this.cmdLineArgs.trader) new TradeBot(this, this.api, accountId).start();
             })
             .catch((error: Error) => this.error(error.message));
-        if (this.cmdLineArgs.cash) new CashManagementBot(this, this.api, accountId).start();
         if (this.cmdLineArgs.cc) new SellCoveredCallsBot(this, this.api, accountId).start();
         if (this.cmdLineArgs.csp) new SellCashSecuredPutBot(this, this.api, accountId).start();
         if (this.cmdLineArgs.roll) new RollOptionPositionsBot(this, this.api, accountId).start();
         if (this.cmdLineArgs.yahoo) yahooBot.start();
-        if (this.cmdLineArgs.options) new OptionsCreateBot(this, this.api, accountId).start();
       })
       .catch(() => {
         /* ignored */

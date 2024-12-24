@@ -10,7 +10,10 @@ import {
   OrderAction,
   OrderType,
   SecType,
+  TickType,
 } from "@stoqey/ib";
+import { IBApiNextTickType, IBApiTickType } from "@stoqey/ib/dist/api-next";
+import { MutableMarketData } from "@stoqey/ib/dist/core/api-next/api/market/mutable-market-data";
 import EventEmitter from "events";
 import { Op, Transaction } from "sequelize";
 import { MyTradingBotApp } from "..";
@@ -233,15 +236,16 @@ export class ITradingBot extends EventEmitter {
         secId: SecType.CASH,
         currency: symbol,
         symbol: symbol + "." + this.portfolio.baseCurrency,
-      }).then(async (contract) => {
-        return Currency.create({
+      }).then(async (contract) =>
+        Currency.create({
           base: this.portfolio.baseCurrency,
           currency: symbol,
           rate: contract.price!,
-        });
-      });
+        }),
+      );
+    } else {
+      return Promise.resolve(currency);
     }
-    return Promise.resolve(currency);
   }
 
   public async getContractOrdersQuantity(benchmark: Contract, actionType?: OrderAction): Promise<number> {
@@ -981,29 +985,211 @@ export class ITradingBot extends EventEmitter {
           `findOrCreateContract failed for ${ibContract.conId} ${ibContract.secType} ${ibContract.symbol} ${ibContract.lastTradeDateOrContractMonth} ${ibContract.strike} ${ibContract.right}:`,
         );
         // this.printObject(ibContract);
-        console.error(err);
-        console.error("transaction_", transaction_);
-        console.error("transaction", transaction);
-        if (err.name == "SequelizeTimeoutError") this.app.stop();
+        // console.error(err);
+        // console.error("transaction_", transaction_);
+        // console.error("transaction", transaction);
+
+        // if (err.name == "SequelizeTimeoutError") this.app.stop();
       }
       // rollback changes
-
       if (!transaction_) await transaction!.rollback();
       // and propagate exception
       throw err;
     }
     return contract;
   }
+
+  protected async updateContratPrice(
+    contract: Contract,
+    marketData: MutableMarketData,
+  ): Promise<number | undefined | null> {
+    // Clear values, we can't keep old invalid values
+    const dataset: {
+      bid: number | null;
+      ask: number | null;
+      price: number | null;
+      previousClosePrice?: number | null;
+    } = { bid: null, ask: null, price: null };
+    const optdataset: {
+      pvDividend?: number | null;
+      delta?: number | null;
+      gamma?: number | null;
+      impliedVolatility?: number | null;
+      vega?: number | null;
+      theta?: number | null;
+    } = {};
+    marketData.forEach((tick, type: TickType) => {
+      if (tick.value)
+        if (type == IBApiTickType.LAST || type == IBApiTickType.DELAYED_LAST) {
+          dataset.price = (tick.value as number) > 0 ? tick.value : null;
+        } else if (type == IBApiTickType.BID || type == IBApiTickType.DELAYED_BID) {
+          dataset.bid = (tick.value as number) > 0 ? tick.value : null;
+        } else if (type == IBApiTickType.ASK || type == IBApiTickType.DELAYED_ASK) {
+          dataset.ask = (tick.value as number) > 0 ? tick.value : null;
+        } else if (type == IBApiTickType.CLOSE || type == IBApiTickType.DELAYED_CLOSE) {
+          dataset.previousClosePrice = (tick.value as number) > 0 ? tick.value : null;
+        } else if (
+          [
+            IBApiTickType.BID_SIZE,
+            IBApiTickType.ASK_SIZE,
+            IBApiTickType.LAST_SIZE,
+            IBApiTickType.OPEN,
+            IBApiTickType.HIGH,
+            IBApiTickType.LOW,
+            IBApiTickType.VOLUME,
+            IBApiTickType.HALTED,
+            IBApiTickType.DELAYED_BID_SIZE,
+            IBApiTickType.DELAYED_ASK_SIZE,
+            IBApiTickType.DELAYED_LAST_SIZE,
+            IBApiTickType.DELAYED_OPEN,
+            IBApiTickType.DELAYED_HIGH,
+            IBApiTickType.DELAYED_LOW,
+            IBApiTickType.DELAYED_VOLUME,
+          ].includes(type as IBApiTickType)
+        ) {
+          // siliently ignore
+          // console.log('silently ignored', type, tick);
+        } else if (type == IBApiNextTickType.OPTION_PV_DIVIDEND) {
+          optdataset.pvDividend = tick.value;
+        } else if (type == IBApiNextTickType.LAST_OPTION_PRICE || type == IBApiNextTickType.DELAYED_LAST_OPTION_PRICE) {
+          if (!dataset.price) {
+            dataset.price = (tick.value as number) > 0 ? tick.value : null;
+          }
+        } else if (type == IBApiNextTickType.LAST_OPTION_DELTA) {
+          if (tick.value) {
+            optdataset.delta = tick.value;
+          }
+          // console.log("delta (last):", optdataset.delta, tick.value);
+        } else if (type == IBApiNextTickType.LAST_OPTION_GAMMA) {
+          if (tick.value) {
+            optdataset.gamma = tick.value;
+          }
+        } else if (type == IBApiNextTickType.LAST_OPTION_VEGA) {
+          if (tick.value) {
+            optdataset.vega = tick.value;
+          }
+        } else if (type == IBApiNextTickType.LAST_OPTION_THETA) {
+          if (tick.value) {
+            optdataset.theta = tick.value;
+          }
+        } else if (type == IBApiNextTickType.LAST_OPTION_IV) {
+          if (tick.value) {
+            optdataset.impliedVolatility = tick.value;
+          }
+          // } else if (type == IBApiNextTickType.MODEL_OPTION_PRICE) {
+          //   if (!dataset.price && (tick.value as number) > 0) {
+          //     dataset.price = tick.value;
+          //   }
+        } else if (type == IBApiNextTickType.MODEL_OPTION_IV) {
+          if (!optdataset.impliedVolatility && (tick.value as number) > 0) {
+            optdataset.impliedVolatility = tick.value;
+          }
+        } else if (type == IBApiNextTickType.MODEL_OPTION_DELTA) {
+          if (!optdataset.delta && tick.value) {
+            optdataset.delta = tick.value;
+          }
+          // console.log("delta (model):", optdataset.delta, tick.value);
+        } else if (type == IBApiNextTickType.MODEL_OPTION_GAMMA) {
+          if (!optdataset.gamma && tick.value) {
+            optdataset.gamma = tick.value;
+          }
+        } else if (type == IBApiNextTickType.MODEL_OPTION_VEGA) {
+          if (!optdataset.vega && tick.value) {
+            optdataset.vega = tick.value;
+          }
+        } else if (type == IBApiNextTickType.MODEL_OPTION_THETA) {
+          if (!optdataset.theta && tick.value) {
+            optdataset.theta = tick.value;
+          }
+        } else if (
+          [
+            // would it be interesting to use OPTION_UNDERLYING to update underlying?
+            IBApiNextTickType.OPTION_UNDERLYING,
+            IBApiNextTickType.BID_OPTION_IV,
+            IBApiNextTickType.BID_OPTION_PRICE,
+            IBApiNextTickType.BID_OPTION_DELTA,
+            IBApiNextTickType.BID_OPTION_GAMMA,
+            IBApiNextTickType.BID_OPTION_VEGA,
+            IBApiNextTickType.BID_OPTION_THETA,
+            IBApiNextTickType.ASK_OPTION_IV,
+            IBApiNextTickType.ASK_OPTION_PRICE,
+            IBApiNextTickType.ASK_OPTION_DELTA,
+            IBApiNextTickType.ASK_OPTION_GAMMA,
+            IBApiNextTickType.ASK_OPTION_VEGA,
+            IBApiNextTickType.ASK_OPTION_THETA,
+            IBApiNextTickType.MODEL_OPTION_PRICE, // ?
+            // Would be interesting to use delayed data if no live data available
+            IBApiNextTickType.DELAYED_BID_OPTION_IV,
+            IBApiNextTickType.DELAYED_BID_OPTION_PRICE,
+            IBApiNextTickType.DELAYED_BID_OPTION_DELTA,
+            IBApiNextTickType.DELAYED_BID_OPTION_GAMMA,
+            IBApiNextTickType.DELAYED_BID_OPTION_VEGA,
+            IBApiNextTickType.DELAYED_BID_OPTION_THETA,
+            IBApiNextTickType.DELAYED_ASK_OPTION_IV,
+            IBApiNextTickType.DELAYED_ASK_OPTION_PRICE,
+            IBApiNextTickType.DELAYED_ASK_OPTION_DELTA,
+            IBApiNextTickType.DELAYED_ASK_OPTION_GAMMA,
+            IBApiNextTickType.DELAYED_ASK_OPTION_VEGA,
+            IBApiNextTickType.DELAYED_ASK_OPTION_THETA,
+            IBApiNextTickType.DELAYED_LAST_OPTION_IV,
+            IBApiNextTickType.DELAYED_LAST_OPTION_DELTA,
+            IBApiNextTickType.DELAYED_LAST_OPTION_GAMMA,
+            IBApiNextTickType.DELAYED_LAST_OPTION_VEGA,
+            IBApiNextTickType.DELAYED_LAST_OPTION_THETA,
+            IBApiNextTickType.DELAYED_MODEL_OPTION_IV,
+            IBApiNextTickType.DELAYED_MODEL_OPTION_PRICE,
+            IBApiNextTickType.DELAYED_MODEL_OPTION_DELTA,
+            IBApiNextTickType.DELAYED_MODEL_OPTION_GAMMA,
+            IBApiNextTickType.DELAYED_MODEL_OPTION_VEGA,
+            IBApiNextTickType.DELAYED_MODEL_OPTION_THETA,
+          ].includes(type as IBApiNextTickType)
+        ) {
+          // siliently ignore
+          // console.log("silently ignored", type, tick);
+        } else {
+          console.log("ignored", type, tick);
+        }
+    });
+    let price: number | null;
+    if (dataset.ask && dataset.bid) price = (dataset.ask + dataset.bid) / 2;
+    else if (dataset.price) price = dataset.price;
+    else price = dataset.previousClosePrice ?? null;
+    if (contract.secType == SecType.CASH) {
+      // we do not get a price for CASH contracts
+      dataset.price = price;
+    }
+    // console.log(contract.symbol, dataset, price);
+    return Contract.update(dataset, {
+      where: {
+        id: contract.id,
+      },
+    }).then(async () => {
+      if (contract.secType == "OPT") {
+        return OptionContract.update(optdataset, { where: { id: contract.id } }).then(() => price);
+      } else if (contract.secType == "CASH") {
+        return Currency.update(
+          { rate: price! },
+          {
+            where: {
+              base: contract.symbol.substring(0, 3),
+              currency: contract.currency,
+            },
+            // logging: false,
+          },
+        ).then(() => price);
+      } else {
+        return price ? (contract.currency == "GBP" ? price / 100 : price) : price;
+      }
+    });
+  }
 }
 
 export { AccountUpdateBot } from "./account.bot";
-export { CashManagementBot } from "./cash.bot";
 export { SellCoveredCallsBot } from "./cc.bot";
 export { SellCashSecuredPutBot } from "./csp.bot";
-export { OptionsCreateBot } from "./options.bot";
 export { RollOptionPositionsBot } from "./roll.bot";
 export { ContractsUpdaterBot } from "./updater.bot";
 export { YahooUpdateBot } from "./yahoo.bot";
 
 export const awaitTimeout = async (delay: number): Promise<unknown> =>
-  new Promise((resolve): NodeJS.Timeout => setTimeout(resolve, delay * 1000));
+  new Promise((resolve): NodeJS.Timeout => setTimeout(resolve, delay * 1_000));

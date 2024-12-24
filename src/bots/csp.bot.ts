@@ -176,7 +176,6 @@ export class SellCashSecuredPutBot extends ITradingBot {
       }
     }
     // order by yield
-
     filtered_options.sort((a: OptionEx, b: OptionEx) => b.yield! - a.yield!);
     if (filtered_options.length > 0) {
       console.log("filtered_options:", filtered_options.length);

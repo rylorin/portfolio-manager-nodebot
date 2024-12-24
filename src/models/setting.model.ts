@@ -42,4 +42,7 @@ export class Setting extends Model<
 
   @Column({ type: DataType.SMALLINT, field: "cc_strategy" })
   declare ccStrategy: number;
+
+  @Column({ type: DataType.SMALLINT })
+  declare lookupDays: number;
 }
