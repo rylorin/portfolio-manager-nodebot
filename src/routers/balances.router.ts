@@ -74,6 +74,7 @@ router.get("/id/:balanceId(\\d+)", (req, res): void => {
           currency: balance.currency,
           baseRate,
           availCurrencies,
+          portfolio_id: portfolioId,
         };
         return result;
       } else {

@@ -32,6 +32,7 @@ export type PositionEntry = Omit<
 > & {
   contract: ContractEntry & {
     // Fields added by router
+    multiplier: number;
     expiration: string | undefined; // format?
   };
   // Fields added by router

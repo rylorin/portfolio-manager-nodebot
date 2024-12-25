@@ -202,7 +202,8 @@ export const tradeModelToTradeEntry = async (
   }
   const trade_entry: TradeEntry = {
     id: thisTrade.id,
-    portfolioId: thisTrade.portfolio_id,
+    portfolio_id: thisTrade.portfolio_id,
+    symbol_id: thisTrade.underlying.id,
     underlying: thisTrade.underlying,
     currency: thisTrade.currency,
     openingDate: thisTrade.openingDate.getTime(),
@@ -213,7 +214,7 @@ export const tradeModelToTradeEntry = async (
     expectedDuration: thisTrade.expectedDuration,
     strategy: thisTrade.strategy,
     risk: thisTrade.risk,
-    pnl: thisTrade.PnL,
+    PnL: thisTrade.PnL,
     unrlzdPnl: thisTrade.expiryPnl || undefined,
     pnlInBase: thisTrade.pnlInBase,
     apy,
@@ -282,9 +283,23 @@ export const addFakeTrades = (theSynthesys: OpenTradesWithPositions): TradeEntry
       }
     });
     const duration = (Date.now() - openingDate) / 1000 / 3600 / 24;
-    theSynthesys.trades.push({
+    const entry: TradeEntry = {
       id,
-      underlying: { id: -1, symbol: underlying, secType: ContractType.Stock, currency },
+      underlying: {
+        id: -1,
+        symbol: underlying,
+        secType: ContractType.Stock,
+        currency,
+        name: "virtual",
+        conId: 0,
+        exchange: "virtual",
+        price: 0,
+        bid: 0,
+        ask: 0,
+        previousClosePrice: 0,
+        fiftyTwoWeekLow: 0,
+        fiftyTwoWeekHigh: 0,
+      },
       currency,
       openingDate,
       status: TradeStatus.open,
@@ -294,7 +309,7 @@ export const addFakeTrades = (theSynthesys: OpenTradesWithPositions): TradeEntry
       expectedDuration,
       strategy: TradeStrategy.undefined,
       risk: undefined,
-      pnl: undefined,
+      PnL: undefined,
       unrlzdPnl: undefined,
       pnlInBase: undefined,
       apy: undefined,
@@ -302,7 +317,11 @@ export const addFakeTrades = (theSynthesys: OpenTradesWithPositions): TradeEntry
       statements: undefined,
       virtuals: undefined,
       positions,
-    } as TradeEntry);
+      // unused?
+      portfolio_id: 0,
+      symbol_id: 0,
+    };
+    theSynthesys.trades.push(entry);
   }
   return theSynthesys.trades;
 };
