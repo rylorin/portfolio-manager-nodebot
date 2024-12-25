@@ -4,7 +4,7 @@ import { Field, Formik, FormikProps } from "formik";
 import React, { FunctionComponent } from "react";
 import { Form, useLoaderData, useNavigate, useSubmit } from "react-router-dom";
 import { TradeStatus, TradeStrategy } from "../../../../models/trade.types";
-import { TradeEntry } from "../../../../routers/trades.types";
+import { TradeEntry } from "../../../../routers/";
 import { formatNumber } from "../../../utils";
 import Number from "../../Number/Number";
 
@@ -125,7 +125,7 @@ const TradeEdit: FunctionComponent<Props> = ({ ..._rest }): React.ReactNode => {
                   P&L:
                 </Text>
                 <Text w="200px" textAlign="right">
-                  <Number value={thisTrade.pnl} />
+                  <Number value={thisTrade.PnL} />
                 </Text>
               </Flex>
               <Flex justifyContent="center" gap="2">

@@ -128,7 +128,7 @@ const TradeShow: FunctionComponent<Props> = ({ ..._rest }): React.ReactNode => {
             P&L:
           </Text>
           <Text w="200px" textAlign="right">
-            <Number value={item.pnl} />
+            <Number value={item.PnL} />
           </Text>
         </Flex>
         <Flex justifyContent="center" gap="2">

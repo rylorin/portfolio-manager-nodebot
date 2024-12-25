@@ -11,7 +11,7 @@ const PerformanceBox = ({ item }: Props): React.ReactNode => {
   return (
     <Box display="flex" alignItems="baseline" mt={1} ml={2}>
       <Text fontWeight="semibold" textTransform="uppercase">
-        P&L: <Number value={item.pnl} />
+        P&L: <Number value={item.PnL} />
       </Text>
       <Text color="gray.500" fontSize="xs">
         &nbsp;Realized +&nbsp;
@@ -23,7 +23,7 @@ const PerformanceBox = ({ item }: Props): React.ReactNode => {
         &nbsp;Unrealized =&nbsp;
       </Text>
       <Box fontWeight="semibold">
-        <Number value={item.pnl + item.unrlzdPnl} /> (<Number value={item.apy} isPercent />)
+        <Number value={item.PnL + item.unrlzdPnl} /> (<Number value={item.apy} isPercent />)
       </Box>
     </Box>
   );

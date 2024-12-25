@@ -39,7 +39,7 @@
     "@chakra-ui/system": "^2.6.2",
     "@emotion/react": "^11.14.0",
     "@emotion/styled": "^11.14.0",
-    "@stoqey/ib": "stoqey/ib#0124309f0b2a2352afc13a2ce98d0f67850aae15",
+    "@stoqey/ib": "stoqey/ib#492d9e2e3b8bfa93d5f9eaef6f1f4ff02155ee1e",
     "@tanstack/react-table": "^8.20.6",
     "chakra-react-select": "^5.0.2",
     "chart.js": "^4.4.7",

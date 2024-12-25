@@ -3,7 +3,7 @@ import { Flex, IconButton, Text, VStack } from "@chakra-ui/react";
 import { Field, Formik, FormikProps } from "formik";
 import { FunctionComponent, default as React } from "react";
 import { Form as RouterForm, useLoaderData, useNavigate, useParams, useSubmit } from "react-router-dom";
-import { PositionEntry } from "../../../../routers/positions.types";
+import { PositionEntry } from "../../../../routers/";
 import { formatNumber } from "../../../utils";
 import Number from "../../Number/Number";
 

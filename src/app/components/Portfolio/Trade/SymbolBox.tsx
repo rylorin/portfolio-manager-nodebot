@@ -14,7 +14,7 @@ const SymbolBox = ({ item }: Props): React.ReactNode => {
   return (
     <Box display="flex" alignItems="baseline" mt={1} ml={2}>
       <Badge borderRadius="full" px="2" colorScheme="teal">
-        <Link to={ContractLink.toItem(item.portfolioId, item.underlying.id)} as={RouterLink}>
+        <Link to={ContractLink.toItem(item.portfolio_id, item.underlying.id)} as={RouterLink}>
           {item.underlying.symbol}
         </Link>
       </Badge>

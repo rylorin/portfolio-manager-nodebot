@@ -1,4 +1,5 @@
-import { ContractType, OptionType } from "../models";
+import { OptionType } from "../models";
+import { ContractEntry } from "./";
 
 export interface SynthesysEntry {
   stocks: number;
@@ -9,14 +10,15 @@ export interface SynthesysEntry {
 }
 export type StatementsSynthesysEntries = Record<"string", SynthesysEntry>;
 
-export interface StatementUnderlyingEntry {
-  id: number;
-  secType: ContractType;
-  symbol: string;
-  currency: string;
-  name: string;
-  price: number | null;
-}
+// export type StatementUnderlyingEntry = {
+//   id: number;
+//   secType: ContractType;
+//   symbol: string;
+//   currency: string;
+//   name: string;
+//   price: number | null;
+// };
+export type StatementUnderlyingEntry = ContractEntry;
 
 export type StatementUnderlyingOption = StatementUnderlyingEntry & {
   // underlying: StatementUnderlyingEntry;
@@ -26,10 +28,11 @@ export type StatementUnderlyingOption = StatementUnderlyingEntry & {
   multiplier: number;
 };
 
-export interface BaseStatement {
+// `type` required instead of `interface` otherwise `Formik` complains about `JsonObject` incompatibility
+// eslint-disable-next-line @typescript-eslint/consistent-type-definitions
+export type BaseStatement = {
   id: number;
   transactionId: number;
-  // statementType: StatementTypes;
   date: number;
   currency: string;
   fxRateToBase: number;
@@ -37,7 +40,7 @@ export interface BaseStatement {
   underlying: StatementUnderlyingEntry | undefined;
   trade_id: number | null;
   description: string;
-}
+};
 
 export type EquityStatementEntry = BaseStatement & {
   statementType: "Trade";

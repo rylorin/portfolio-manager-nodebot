@@ -122,10 +122,10 @@ const PositionsTable: FunctionComponent<Props> = ({
                 </Td>
                 <Td>{item.contract.name}</Td>
                 <Td isNumeric>
-                  {item.trade_id && (
+                  {item.trade_unit_id && (
                     <>
-                      <Link to={`/portfolio/${portfolioId}/trades/id/${item.trade_id}`} as={RouterLink}>
-                        {item.trade_id}
+                      <Link to={`/portfolio/${portfolioId}/trades/id/${item.trade_unit_id}`} as={RouterLink}>
+                        {item.trade_unit_id}
                       </Link>
                       <Form method="post" action={`${item.id}/PositionUnlinkTrade`} className="inline">
                         <IconButton
@@ -138,7 +138,7 @@ const PositionsTable: FunctionComponent<Props> = ({
                       </Form>
                     </>
                   )}
-                  {!item.trade_id && (
+                  {!item.trade_unit_id && (
                     <>
                       <Form method="post" action={`PositionGuessTrade/${item.id}`} className="inline">
                         <IconButton
@@ -190,7 +190,7 @@ const PositionsTable: FunctionComponent<Props> = ({
                       type="submit"
                     />
                   </Form>
-                  {savePrevious(item.trade_id)}
+                  {savePrevious(item.trade_unit_id)}
                 </Td>
               </Tr>
             ))}

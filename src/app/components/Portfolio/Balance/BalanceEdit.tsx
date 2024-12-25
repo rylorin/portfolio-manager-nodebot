@@ -3,7 +3,7 @@ import { Flex, IconButton, Text, VStack } from "@chakra-ui/react";
 import { Field, Formik, FormikProps } from "formik";
 import React, { FunctionComponent } from "react";
 import { Form, useLoaderData, useNavigate, useSubmit } from "react-router-dom";
-import { BalanceEntry } from "../../../../routers/balances.types";
+import { BalanceEntry } from "../../../../routers/";
 
 type Props = Record<string, never>;
 

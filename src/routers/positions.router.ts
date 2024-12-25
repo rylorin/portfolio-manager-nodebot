@@ -54,13 +54,15 @@ export const preparePositions = async (portfolio: Portfolio): Promise<(PositionE
                 price: getPrice(item.contract) || undefined,
                 expiration: undefined,
               },
-              trade_id: item.trade_unit_id ? item.trade_unit_id : undefined,
+              trade_unit_id: item.trade_unit_id ? item.trade_unit_id : null,
               price: price ? price : undefined,
               value,
               pru: item.cost / item.quantity,
               cost: item.cost,
               pnl: value ? value - item.cost : undefined,
               baseRate,
+              portfolio_id: item.portfolio_id,
+              contract_id: item.contract_id,
             };
             // console.log(item.contract.currency, result);
             positions.push(result);
@@ -101,7 +103,7 @@ export const preparePositions = async (portfolio: Portfolio): Promise<(PositionE
                   price: getPrice(item.contract) || undefined,
                   expiration: undefined,
                 },
-                trade_id: item.trade_unit_id ? item.trade_unit_id : undefined,
+                trade_unit_id: item.trade_unit_id ? item.trade_unit_id : null,
                 price: price ? price : undefined,
                 value,
                 pru: item.cost / item.quantity / option.multiplier,
@@ -125,6 +127,8 @@ export const preparePositions = async (portfolio: Portfolio): Promise<(PositionE
                 engaged,
                 risk: option.delta ? engaged * Math.abs(option.delta) : undefined,
                 apy,
+                portfolio_id: item.portfolio_id,
+                contract_id: item.contract_id,
               };
               // console.log(item.contract.currency, result);
               positions.push(result);
@@ -158,13 +162,15 @@ export const preparePositions = async (portfolio: Portfolio): Promise<(PositionE
                   price: getPrice(item.contract) || undefined,
                   expiration: future.lastTradeDate,
                 },
-                trade_id: item.trade_unit_id ? item.trade_unit_id : undefined,
+                trade_unit_id: item.trade_unit_id ? item.trade_unit_id : null,
                 price: price ? price : undefined,
                 value,
                 pru: item.cost / item.quantity / future.multiplier,
                 cost: item.cost,
                 pnl: value ? value - item.cost : undefined,
                 baseRate,
+                portfolio_id: item.portfolio_id,
+                contract_id: item.contract_id,
               };
               // console.log(item.contract.currency, result);
               positions.push(result);
@@ -190,15 +196,16 @@ export const preparePositions = async (portfolio: Portfolio): Promise<(PositionE
                 price: getPrice(item.contract) || undefined,
                 expiration: undefined,
               },
-              trade_id: item.trade_unit_id ? item.trade_unit_id : undefined,
+              trade_unit_id: item.trade_unit_id ? item.trade_unit_id : null,
               price: price ? price : undefined,
               value,
               pru: item.cost / item.quantity,
               cost: item.cost,
               pnl: value ? value - item.cost : undefined,
               baseRate,
+              portfolio_id: item.portfolio_id,
+              contract_id: item.contract_id,
             };
-            // console.log(item.contract.currency, result);
             positions.push(result);
             return positions;
           }
@@ -261,7 +268,7 @@ router.post("/id/:positionId(\\d+)/SavePosition", (req, res): void => {
           contract_id: data.contract.id,
           cost: data.cost,
           quantity: data.quantity,
-          trade_unit_id: data.trade_id,
+          trade_unit_id: data.trade_unit_id,
         });
       else throw Error("position not found");
     })

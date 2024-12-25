@@ -1,4 +1,7 @@
+import { Trade } from "@/models";
+import { Attributes } from "sequelize";
 import {
+  ContractEntry,
   OptionPositionEntry,
   PositionEntry,
   StatementEntry,
@@ -7,45 +10,72 @@ import {
 } from ".";
 import { TradeStatus, TradeStrategy } from "../models/types";
 
-export interface VirtualPositionEntry {
+// `type` required instead of `interface` otherwise `Formik` complains about `JsonObject` incompatibility
+// eslint-disable-next-line @typescript-eslint/consistent-type-definitions
+export type VirtualPositionEntry = {
   id: number;
   openDate: number;
   quantity: number;
   contract: StatementUnderlyingEntry | StatementUnderlyingOption;
-  trade_id: number | undefined;
+  trade_unit_id: number | undefined;
   price: number | null; // current unit price
   value: number | undefined;
   pru: number;
   cost: number;
   pnl: number | undefined;
-}
+
+  portfolio_id: number;
+  contract_id: number;
+};
 
 /**
  * Trade entry data transfered between frontend and backend
  */
-export interface TradeEntry {
+export interface TradeEntry0 {
   /** unique trade id */
   id: number;
-  portfolioId: number;
+  portfolio_id: number;
   underlying: StatementUnderlyingEntry;
-  currency: string;
   status: TradeStatus;
   openingDate: number; // Date in msecs
   closingDate: number | undefined; // Date in msecs
-  duration: number;
   expectedExpiry: string | undefined; // YYYY-MM-DD
-  expectedDuration: number | undefined;
   strategy: TradeStrategy;
-  risk: number | undefined;
-  pnl: number | undefined;
-  unrlzdPnl: number | undefined;
+  PnL: number | undefined;
   pnlInBase: number | undefined;
-  apy: number | undefined;
+  currency: string;
+  risk: number | undefined;
   comment: string | undefined;
+
   statements: StatementEntry[] | undefined;
   positions: PositionEntry[] | undefined;
+
+  // Fileds added by router
+  duration: number;
+  expectedDuration: number | undefined;
+  unrlzdPnl: number | undefined;
+  apy: number | undefined;
   virtuals: VirtualPositionEntry[] | undefined;
 }
+
+export type TradeEntry = Omit<
+  Attributes<Trade>,
+  "portfolio" | "underlying" | "openingDate" | "closingDate" | "statements" | "positions" | "createdAt" | "updatedAt"
+> & {
+  underlying: ContractEntry;
+  openingDate: number; // Date in msecs
+  closingDate: number | undefined; // Date in msecs
+
+  statements: StatementEntry[] | undefined;
+  positions: PositionEntry[] | undefined;
+
+  // Fileds added by router
+  duration: number;
+  expectedDuration: number | undefined;
+  unrlzdPnl: number | undefined;
+  apy: number | undefined;
+  virtuals: VirtualPositionEntry[] | undefined;
+};
 
 export interface TradeMonthlySynthesysEntry {
   count: number;

@@ -120,8 +120,8 @@ const PositionShow: FunctionComponent<PositionShowProps> = ({ ..._rest }): React
             Trade:
           </Text>
           <Text w="200px" textAlign="right">
-            <Link to={TradeLink.toItem(portfolioId, thisPosition.trade_id)} as={RouterLink}>
-              {thisPosition.trade_id}
+            <Link to={TradeLink.toItem(portfolioId, thisPosition.trade_unit_id)} as={RouterLink}>
+              {thisPosition.trade_unit_id}
             </Link>
           </Text>
         </Flex>

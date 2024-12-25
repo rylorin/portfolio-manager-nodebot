@@ -43,12 +43,15 @@ const initVirtualFromStatement = (item: StatementEntry): VirtualPositionEntry =>
     openDate: item.date,
     quantity: 0,
     contract: contract!,
-    trade_id: item.trade_id!,
+    trade_unit_id: item.trade_id!,
     price: null,
     value: undefined,
     pru: 0,
     cost: 0,
     pnl: 0,
+
+    portfolio_id: 0,
+    contract_id: contract!.id,
   };
 };
 
@@ -250,7 +253,7 @@ const formatDate = (when: Date): string => {
  * @returns
  */
 export const addFakeTrades = (theSynthesys: OpenTradesWithPositions): TradeEntry[] => {
-  theSynthesys.positions = theSynthesys.positions.filter((pos) => !pos.trade_id);
+  theSynthesys.positions = theSynthesys.positions.filter((pos) => !pos.trade_unit_id);
   while (theSynthesys.positions.length) {
     const underlying =
       "underlying" in theSynthesys.positions[0]
