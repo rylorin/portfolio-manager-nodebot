@@ -9,7 +9,9 @@ const _sequelize_logging = (...args: any[]): void => logger.trace(MODULE + ".squ
 
 const router = express.Router({ mergeParams: true });
 
-type parentParams = { portfolioId: number };
+interface parentParams {
+  portfolioId: number;
+}
 
 /**
  * Delete a statement

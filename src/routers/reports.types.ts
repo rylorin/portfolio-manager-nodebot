@@ -14,47 +14,47 @@ import {
 /**
  * Dididend Summary entry data transfered between frontend and backend
  */
-export type DididendSummary = {
+export interface DididendSummary {
   country: string;
   grossAmountInBase: number;
   taxes: number;
   netAmountInBase: number;
-};
+}
 
 /**
  * Interest Summary entry data transfered between frontend and backend
  */
-export type InterestsSummary = {
+export interface InterestsSummary {
   country: string;
   grossCredit: number;
   netDebit: number;
   withHolding: number;
   netTotal: number;
-};
+}
 
 /**
  * Fees summary
  */
-export type FeesSummary = {
+export interface FeesSummary {
   totalAmountInBase: number;
-};
+}
 
 /**
  * Trades summary
  */
-export type TradesSummary = {
+export interface TradesSummary {
   stocksPnLInBase: number;
   futuresPnLInBase: number;
   optionsPnLInBase: number;
   fopPnlInBase: number;
   bondPnLInBase: number;
   totalPnL: number;
-};
+}
 
 /**
  * Report entry data transfered between frontend and backend
  */
-export type ReportEntry = {
+export interface ReportEntry {
   // portfolioId: number;
   year: number;
   month: number;
@@ -67,4 +67,4 @@ export type ReportEntry = {
   tradesSummary: TradesSummary;
   tradesDetails: (EquityStatementEntry | OptionStatementEntry | BondStatementEntry | CorporateStatementEntry)[];
   otherDetails: StatementEntry[];
-};
+}

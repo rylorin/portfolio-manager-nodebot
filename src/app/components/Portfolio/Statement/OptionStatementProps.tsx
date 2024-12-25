@@ -2,7 +2,10 @@ import { Flex, Text } from "@chakra-ui/react";
 import { default as React } from "react";
 import { OptionStatementEntry } from "../../../../routers/statements.types";
 
-type Props = { portfolioId: number; statement: OptionStatementEntry };
+interface Props {
+  portfolioId: number;
+  statement: OptionStatementEntry;
+}
 
 const OptionStatementProps = ({ statement, ..._rest }: Props): React.ReactNode => {
   return (

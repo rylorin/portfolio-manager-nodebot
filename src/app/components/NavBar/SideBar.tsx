@@ -2,10 +2,10 @@ import { Flex, Link, Stack, Text } from "@chakra-ui/react";
 import React, { FunctionComponent, ReactNode } from "react";
 import { Link as RouterLink } from "react-router-dom";
 
-type SideBarProps = {
+interface SideBarProps {
   links: Record<string, string>;
   border?: string;
-};
+}
 
 const SideBar: FunctionComponent<SideBarProps> = ({ links, ...rest }): React.ReactNode => {
   // console.log(links);
@@ -16,7 +16,10 @@ const SideBar: FunctionComponent<SideBarProps> = ({ links, ...rest }): React.Rea
   );
 };
 
-type MenuItemProps = { to: string; children: ReactNode };
+interface MenuItemProps {
+  to: string;
+  children: ReactNode;
+}
 
 const MenuItem: FunctionComponent<MenuItemProps> = ({ children, to = "/", ...rest }): React.ReactNode => {
   return (
@@ -28,9 +31,9 @@ const MenuItem: FunctionComponent<MenuItemProps> = ({ children, to = "/", ...res
   );
 };
 
-type MenuLinksProps = {
+interface MenuLinksProps {
   links: Record<string, string>;
-};
+}
 
 const MenuLinks: FunctionComponent<MenuLinksProps> = ({ links }): React.ReactNode => {
   return (
@@ -51,9 +54,9 @@ const MenuLinks: FunctionComponent<MenuLinksProps> = ({ links }): React.ReactNod
   );
 };
 
-type SideBarContainerProps = {
+interface SideBarContainerProps {
   children: ReactNode;
-};
+}
 
 const SideBarContainer: FunctionComponent<SideBarContainerProps> = ({ children, ...rest }): React.ReactNode => {
   return (

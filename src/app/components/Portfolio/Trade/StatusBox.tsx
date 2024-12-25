@@ -5,9 +5,9 @@ import { TradeEntry } from "../../../../routers/trades.types";
 import { formatNumber } from "../../../utils";
 import { tradeStatus2String } from "./utils";
 
-type Props = {
+interface Props {
   item: TradeEntry;
-};
+}
 
 const statusBadgetColor = (status: TradeStatus): string => {
   switch (status) {

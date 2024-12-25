@@ -8,14 +8,17 @@ import { FeeStatementEntry, ReportEntry } from "../../../../routers";
 import Number from "../../Number/Number";
 import { StatementLink } from "../Statement/links";
 import { DataTable } from "./DataTable";
-type Props = { theReports: ReportEntry[] };
 
-type FeesDetails = {
+interface Props {
+  theReports: ReportEntry[];
+}
+
+interface FeesDetails {
   id: number;
   date: Date;
   amount: number;
   description: string;
-};
+}
 
 const columnHelper = createColumnHelper<FeesDetails>();
 

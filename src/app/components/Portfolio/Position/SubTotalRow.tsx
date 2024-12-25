@@ -3,7 +3,7 @@ import { FunctionComponent, default as React } from "react";
 import { formatNumber } from "../../../utils";
 import Number from "../../Number/Number";
 
-export type TotalEntry = {
+export interface TotalEntry {
   id: string;
   expiration: string;
   units: number;
@@ -12,9 +12,11 @@ export type TotalEntry = {
   pnl: number;
   engaged: number;
   risk: number;
-};
+}
 
-type Props = { subTotal: TotalEntry };
+interface Props {
+  subTotal: TotalEntry;
+}
 
 const SubTotalRow: FunctionComponent<Props> = ({ subTotal, ..._rest }): React.ReactNode => {
   const bg = useColorModeValue("gray.200", "gray.700");

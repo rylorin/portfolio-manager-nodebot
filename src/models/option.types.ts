@@ -1,6 +1,6 @@
 import { OptionType } from "@stoqey/ib";
 
-export type OptionAttributes = {
+export interface OptionAttributes {
   id: number;
   updatedAt: Date;
 
@@ -16,6 +16,6 @@ export type OptionAttributes = {
   gamma?: number;
   vega?: number;
   theta?: number;
-};
+}
 
 // export type OptionCreationAttributes = Optional<OptionAttributes, "id" | "updatedAt">;

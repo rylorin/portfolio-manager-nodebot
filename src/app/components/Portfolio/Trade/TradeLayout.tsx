@@ -3,9 +3,9 @@ import { FunctionComponent, default as React } from "react";
 import { Link as RouterLink, useParams } from "react-router-dom";
 import { TradeLink } from "./links";
 
-type TradeLayoutProps = {
+interface TradeLayoutProps {
   children: React.ReactNode;
-};
+}
 
 const TradeLayout: FunctionComponent<TradeLayoutProps> = ({ children, ..._rest }): React.ReactNode => {
   const { portfolioId } = useParams();

@@ -6,7 +6,9 @@ import Number from "../../Number/Number";
 import { StatementLink } from "../Statement/links";
 import { formatMonth } from "./utils";
 
-type Props = { theReports: ReportEntry[] };
+interface Props {
+  theReports: ReportEntry[];
+}
 
 type PnlCallback = (ReportEntry) => number;
 

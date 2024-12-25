@@ -29,7 +29,9 @@ const sequelize_logging = (...args: any[]): void => logger.trace(MODULE + ".sque
 
 const router = express.Router({ mergeParams: true });
 
-type parentParams = { portfolioId: number };
+interface parentParams {
+  portfolioId: number;
+}
 
 const updateStatementTrade = async (statement: Statement): Promise<Statement> => {
   logger.trace(MODULE + ".updateStatementTrade", "statement", statement);

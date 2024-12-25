@@ -133,7 +133,7 @@ const transactionDescriptionFromElement = (element: any): string => {
   );
 };
 
-type FlexStatement = {
+interface FlexStatement {
   AccountInformation?: any;
   EquitySummaryInBase?: any;
   Trades?: any;
@@ -148,7 +148,7 @@ type FlexStatement = {
   toDate?: string;
   period?: string;
   whenGenerated?: string;
-};
+}
 
 export class ImporterBot extends ITradingBot {
   private token: string;

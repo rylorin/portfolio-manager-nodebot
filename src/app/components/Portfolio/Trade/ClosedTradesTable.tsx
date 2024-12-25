@@ -8,10 +8,10 @@ import { ContractLink } from "../Contract/links";
 import { TradeLink } from "./links";
 import { tradeStatus2String, tradeStrategy2String } from "./utils";
 
-type Props = {
+interface Props {
   title?: string;
   content?: TradeEntry[];
-};
+}
 
 /**
  * Closed trades table

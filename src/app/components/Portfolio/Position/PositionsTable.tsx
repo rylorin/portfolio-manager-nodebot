@@ -10,11 +10,11 @@ import { ContractLink } from "../Contract/links";
 import { PositionLink } from "./links";
 import { comparePositions } from "./utils";
 
-type Props = {
+interface Props {
   title?: string;
   content?: PositionEntry[];
   currency?: string;
-};
+}
 
 /**
  * Positions list component

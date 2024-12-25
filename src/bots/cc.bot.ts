@@ -25,7 +25,7 @@ export class SellCoveredCallsBot extends ITradingBot {
     const free_for_this_symbol = stock_positions + call_positions + stock_sell_orders + call_sell_orders;
     console.log("free_for_this_symbol:", free_for_this_symbol);
     if (free_for_this_symbol > 0) {
-      const parameter = await Setting.findOne({
+      const setting = await Setting.findOne({
         where: {
           portfolio_id: this.portfolio.id,
           stock_id: position.contract.id,
@@ -40,21 +40,21 @@ export class SellCoveredCallsBot extends ITradingBot {
         // logging: console.log,
       });
       if (
-        parameter !== null &&
-        parameter.ccStrategy > 0 &&
+        setting !== null &&
+        setting.ccStrategy > 0 &&
         // RULE : stock price is higher than previous close
-        parameter.underlying.livePrice > parameter.underlying.previousClosePrice!
+        setting.underlying.livePrice > setting.underlying.previousClosePrice!
       ) {
-        this.printObject(parameter);
+        this.printObject(setting);
         // RULE defensive : strike > cours (OTM) & strike > position avg price
         // RULE agressive : strike > cours (OTM)
         const strike =
-          parameter.ccStrategy == 1
-            ? Math.max(parameter.underlying.livePrice, position.averagePrice)
-            : parameter.underlying.livePrice;
+          setting.ccStrategy == 1
+            ? Math.max(setting.underlying.livePrice, position.averagePrice)
+            : setting.underlying.livePrice;
         const options = await OptionContract.findAll({
           where: {
-            stock_id: parameter.underlying.id,
+            stock_id: setting.underlying.id,
             strike: {
               [Op.gt]: strike,
             },

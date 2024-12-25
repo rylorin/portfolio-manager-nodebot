@@ -6,7 +6,9 @@ import { Setting } from "../../../../models/setting.model";
 import Number from "../../Number/Number";
 import { PortfolioLink } from "./links";
 
-type Props = { content?: Setting[] };
+interface Props {
+  content?: Setting[];
+}
 
 /**
  * Statements list component

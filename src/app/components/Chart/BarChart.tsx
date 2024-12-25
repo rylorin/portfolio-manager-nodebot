@@ -2,18 +2,18 @@ import { BarElement, CategoryScale, Chart as ChartJS, Legend, LinearScale, Title
 import React, { FunctionComponent } from "react";
 import { Bar } from "react-chartjs-2";
 
-export type DataSet = {
+export interface DataSet {
   label: string;
   data: number[];
-};
+}
 
 ChartJS.register(CategoryScale, LinearScale, BarElement, Title, Tooltip, Legend);
 
-type BarChartProps = {
+interface BarChartProps {
   title: string;
   labels: string[];
   datasets: DataSet[];
-};
+}
 
 const SetParameters: {
   backgroundColor: string;

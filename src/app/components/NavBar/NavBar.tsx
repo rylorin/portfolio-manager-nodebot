@@ -6,10 +6,10 @@ import logo from "../../logo.svg";
 import ColorModeToggle from "../ColorModeToggle/ColorModeToggle";
 import SpinningLogo from "../SpinningLogo/SpinningLogo";
 
-type NavBarProps = {
+interface NavBarProps {
   links: Record<string, string>;
   as: string;
-};
+}
 
 const NavBar: FunctionComponent<NavBarProps> = ({ links, ...rest }): React.ReactNode => {
   const [isOpen, setIsOpen] = React.useState(false);
@@ -30,7 +30,10 @@ const NavBar: FunctionComponent<NavBarProps> = ({ links, ...rest }): React.React
   );
 };
 
-type MenuToggleProps = { isOpen: boolean; toggle: () => void };
+interface MenuToggleProps {
+  isOpen: boolean;
+  toggle: () => void;
+}
 
 const MenuToggle: FunctionComponent<MenuToggleProps> = ({ toggle, isOpen }): React.ReactNode => {
   return (
@@ -44,7 +47,10 @@ const MenuToggle: FunctionComponent<MenuToggleProps> = ({ toggle, isOpen }): Rea
   );
 };
 
-type MenuItemProps = { to: string; children: ReactNode };
+interface MenuItemProps {
+  to: string;
+  children: ReactNode;
+}
 
 const MenuItem: FunctionComponent<MenuItemProps> = ({ children, to = "/", ...rest }): React.ReactNode => {
   return (
@@ -56,10 +62,10 @@ const MenuItem: FunctionComponent<MenuItemProps> = ({ children, to = "/", ...res
   );
 };
 
-type MenuLinksProps = {
+interface MenuLinksProps {
   links: Record<string, string>;
   isOpen: boolean;
-};
+}
 
 const MenuLinks: FunctionComponent<MenuLinksProps> = ({ links, isOpen }): React.ReactNode => {
   return (
@@ -81,9 +87,9 @@ const MenuLinks: FunctionComponent<MenuLinksProps> = ({ links, isOpen }): React.
   );
 };
 
-type NavBarContainerProps = {
+interface NavBarContainerProps {
   children: ReactNode;
-};
+}
 
 const NavBarContainer: FunctionComponent<NavBarContainerProps> = ({ children, ...rest }): React.ReactNode => {
   return (

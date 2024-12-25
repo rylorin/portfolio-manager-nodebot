@@ -8,7 +8,10 @@ import Number from "../../Number/Number";
 import { ContractLink } from "../Contract/links";
 import { PositionLink } from "./links";
 
-type Props = { portfolioId: number; item: OptionPositionEntry };
+interface Props {
+  portfolioId: number;
+  item: OptionPositionEntry;
+}
 
 const OptionRow: FunctionComponent<Props> = ({ portfolioId, item, ..._rest }): React.ReactNode => {
   const getITM = (item: OptionPositionEntry): number => {

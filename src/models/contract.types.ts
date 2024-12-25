@@ -18,7 +18,7 @@ export const OptionType = {
 } as const;
 export type OptionType = (typeof OptionType)[keyof typeof OptionType];
 
-export type ContractAttributes = {
+export interface ContractAttributes {
   id: number;
   updatedAt: Date;
 
@@ -34,6 +34,6 @@ export type ContractAttributes = {
   previousClosePrice?: number;
   fiftyTwoWeekLow?: number;
   fiftyTwoWeekHigh?: number;
-};
+}
 
 export type ContractCreationAttributes = Optional<ContractAttributes, "id" | "updatedAt">;

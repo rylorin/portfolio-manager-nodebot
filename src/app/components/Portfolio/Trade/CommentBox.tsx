@@ -2,9 +2,9 @@ import { Text } from "@chakra-ui/react";
 import React from "react";
 import { TradeEntry } from "../../../../routers/trades.types";
 
-type Props = {
+interface Props {
   item: TradeEntry;
-};
+}
 
 const CommentBox = ({ item }: Props): React.ReactNode => {
   return (

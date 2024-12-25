@@ -15,7 +15,9 @@ const MODULE = "ContractsRouter";
 
 const router = express.Router({ mergeParams: true });
 
-type parentParams = { portfolioId: number };
+interface parentParams {
+  portfolioId: number;
+}
 
 const getAllPositionsRelatedToContract = async (
   portfolioId: number,

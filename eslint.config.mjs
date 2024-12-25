@@ -1,23 +1,21 @@
-import { fixupPluginRules } from "@eslint/compat";
 import eslint from "@eslint/js";
+import rxjs from "@smarttools/eslint-plugin-rxjs";
 import prettier from "eslint-plugin-prettier/recommended";
-import rxjs from "eslint-plugin-rxjs";
-// import storybook from "eslint-plugin-storybook";
 // import react from "eslint-plugin-react";
 import tseslint from "typescript-eslint";
 
 export default tseslint.config(
   eslint.configs.recommended,
-  ...tseslint.configs.recommended,
+  ...tseslint.configs.strict,
+  ...tseslint.configs.stylistic,
   prettier,
-  // storybook.configs.recommended,
   {
     languageOptions: {
       ecmaVersion: 2020,
       sourceType: "module",
       parserOptions: { project: ["./tsconfig.json", "./tsconfig.server.json"] },
     },
-    plugins: { rxjs: fixupPluginRules(rxjs) },
+    plugins: { rxjs },
     rules: {
       strict: "error",
       "no-console": "off",

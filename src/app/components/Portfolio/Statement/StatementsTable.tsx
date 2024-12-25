@@ -28,7 +28,11 @@ import { ContractLink } from "../Contract/links";
 import { TradeLink } from "../Trade/links";
 import { StatementLink } from "./links";
 
-type Props = { content?: StatementEntry[]; currency?: string; title?: string };
+interface Props {
+  content?: StatementEntry[];
+  currency?: string;
+  title?: string;
+}
 
 /**
  * Statements list component

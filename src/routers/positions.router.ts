@@ -21,7 +21,9 @@ const _sequelize_logging = (...args: any[]): void => logger.trace(MODULE + ".squ
 
 export const router = express.Router({ mergeParams: true });
 
-type parentParams = { portfolioId: number };
+interface parentParams {
+  portfolioId: number;
+}
 
 const getPrice = (item: Contract): number | null => {
   return item.ask && item.bid ? (item.ask + item.bid) / 2 : item.price ? item.price : item.previousClosePrice;

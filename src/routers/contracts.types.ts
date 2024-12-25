@@ -5,7 +5,7 @@ import { OptionPositionEntry, PositionEntry } from "./positions.types";
 import { StatementEntry } from "./statements.types";
 import { TradeEntry } from "./trades.types";
 
-export type ContractEntry = {
+export interface ContractEntry {
   id: number;
 
   conId: number;
@@ -24,5 +24,5 @@ export type ContractEntry = {
   positions?: (PositionEntry | OptionPositionEntry)[];
   trades?: TradeEntry[];
   statements?: StatementEntry[];
-};
+}
 export type OptionEntry = ContractEntry & OptionAttributes;

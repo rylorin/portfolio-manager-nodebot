@@ -19,10 +19,10 @@ import StatusBox from "./StatusBox";
 import SymbolBox from "./SymbolBox";
 import TitleBox from "./TitleBox";
 
-type Props = {
+interface Props {
   title?: string;
   content?: TradeEntry[];
-};
+}
 
 /**
  * Trade table with decorations

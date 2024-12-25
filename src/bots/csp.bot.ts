@@ -15,11 +15,11 @@ interface OptionEx extends OptionContract {
   yield?: number;
 }
 
-type Row = {
+interface Row {
   symbol: string;
   engaged_options: number;
   options: OptionContract[];
-};
+}
 
 export class SellCashSecuredPutBot extends ITradingBot {
   private async sumOptionsPositionsAmount(

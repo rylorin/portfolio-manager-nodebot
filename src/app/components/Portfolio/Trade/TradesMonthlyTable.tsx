@@ -5,16 +5,16 @@ import { TradeMonthlyRow, TradeMonthlySynthesys, TradeMonthlySynthesysEntry } fr
 import Number from "../../Number/Number";
 import { TradeLink } from "./links";
 
-type TradesMonthlyTableProps = {
+interface TradesMonthlyTableProps {
   title?: string;
   content: TradeMonthlySynthesys;
-};
+}
 
-type minorRowProps = {
+interface minorRowProps {
   major: string;
   index: string;
   content: TradeMonthlySynthesysEntry;
-};
+}
 
 const MinorRow: FunctionComponent<minorRowProps> = ({ major, index, content, ..._rest }): React.ReactNode => {
   const { portfolioId } = useParams();
@@ -38,10 +38,10 @@ const MinorRow: FunctionComponent<minorRowProps> = ({ major, index, content, ...
   );
 };
 
-type majorRowProps = {
+interface majorRowProps {
   index: string;
   content: TradeMonthlyRow;
-};
+}
 
 const MajorRow: FunctionComponent<majorRowProps> = ({ index, content, ..._rest }): React.ReactNode => {
   const { portfolioId } = useParams();
@@ -73,9 +73,9 @@ const MajorRow: FunctionComponent<majorRowProps> = ({ index, content, ..._rest }
   );
 };
 
-type totalRowProps = {
+interface totalRowProps {
   content: TradeMonthlySynthesys;
-};
+}
 
 const TotalRow: FunctionComponent<totalRowProps> = ({ content, ..._rest }): React.ReactNode => {
   const totals: TradeMonthlySynthesysEntry = Object.keys(content).reduce(

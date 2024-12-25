@@ -11,10 +11,10 @@ type ItemRowType = OptionPositionEntry | TotalEntry;
 
 type PositionsIndexProps = Record<string, never>;
 
-type DataRowProps = {
+interface DataRowProps {
   portfolioId: number;
   item: ItemRowType;
-};
+}
 
 /**
  * Statements list component

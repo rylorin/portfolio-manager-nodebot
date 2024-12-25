@@ -2,7 +2,10 @@ import { Flex, Text } from "@chakra-ui/react";
 import { default as React } from "react";
 import { InterestStatementEntry } from "../../../../routers/statements.types";
 
-type Props = { portfolioId: number; statement: InterestStatementEntry };
+interface Props {
+  portfolioId: number;
+  statement: InterestStatementEntry;
+}
 
 const InterestStatementProps = ({ statement, ..._rest }: Props): React.ReactNode => {
   return (

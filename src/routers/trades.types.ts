@@ -7,7 +7,7 @@ import {
 } from ".";
 import { TradeStatus, TradeStrategy } from "../models/types";
 
-export type VirtualPositionEntry = {
+export interface VirtualPositionEntry {
   id: number;
   openDate: number;
   quantity: number;
@@ -18,12 +18,12 @@ export type VirtualPositionEntry = {
   pru: number;
   cost: number;
   pnl: number | undefined;
-};
+}
 
 /**
  * Trade entry data transfered between frontend and backend
  */
-export type TradeEntry = {
+export interface TradeEntry {
   /** unique trade id */
   id: number;
   portfolioId: number;
@@ -45,17 +45,23 @@ export type TradeEntry = {
   statements: StatementEntry[] | undefined;
   positions: PositionEntry[] | undefined;
   virtuals: VirtualPositionEntry[] | undefined;
-};
+}
 
-export type TradeMonthlySynthesysEntry = {
+export interface TradeMonthlySynthesysEntry {
   count: number;
   success: number;
   duration: number;
   min: number;
   max: number;
   total: number;
-};
+}
 export type TradeMonthlyRow = Record<"string", TradeMonthlySynthesysEntry>;
 export type TradeMonthlySynthesys = Record<"string", TradeMonthlyRow>;
-export type TradeSynthesys = { open: TradeEntry[]; byMonth: TradeMonthlySynthesys };
-export type OpenTradesWithPositions = { trades: TradeEntry[]; positions: (PositionEntry | OptionPositionEntry)[] };
+export interface TradeSynthesys {
+  open: TradeEntry[];
+  byMonth: TradeMonthlySynthesys;
+}
+export interface OpenTradesWithPositions {
+  trades: TradeEntry[];
+  positions: (PositionEntry | OptionPositionEntry)[];
+}

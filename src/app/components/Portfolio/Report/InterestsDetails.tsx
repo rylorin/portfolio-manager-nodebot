@@ -8,9 +8,12 @@ import { InterestStatementEntry, ReportEntry, WithHoldingStatementEntry } from "
 import Number from "../../Number/Number";
 import { StatementLink } from "../Statement/links";
 import { DataTable } from "./DataTable";
-type Props = { theReports: ReportEntry[] };
 
-type InterestDetails = {
+interface Props {
+  theReports: ReportEntry[];
+}
+
+interface InterestDetails {
   id: number;
   date: Date;
   country: string;
@@ -18,7 +21,7 @@ type InterestDetails = {
   debit: number;
   withHolding: number;
   description: string;
-};
+}
 
 const columnHelper = createColumnHelper<InterestDetails>();
 

@@ -10,11 +10,11 @@ import {
 } from "@tanstack/react-table";
 import * as React from "react";
 
-export type DataTableProps<Data extends object> = {
+export interface DataTableProps<Data extends object> {
   data: Data[];
   columns: ColumnDef<Data, any>[];
   title?: string;
-};
+}
 
 export function DataTable<Data extends object>({ data, columns, title }: DataTableProps<Data>): React.JSX.Element {
   const [sorting, setSorting] = React.useState<SortingState>([]);

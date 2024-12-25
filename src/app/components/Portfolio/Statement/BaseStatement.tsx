@@ -6,7 +6,10 @@ import { ContractLink } from "../Contract/links";
 import { StatementLink } from "../Statement/links";
 import { TradeLink } from "../Trade/links";
 
-type Props = { portfolioId: number; statement: StatementEntry };
+interface Props {
+  portfolioId: number;
+  statement: StatementEntry;
+}
 
 const BaseStatement = ({ portfolioId, statement }: Props): React.ReactNode => {
   return (

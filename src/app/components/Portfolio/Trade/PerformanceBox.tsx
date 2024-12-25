@@ -3,9 +3,9 @@ import React from "react";
 import { TradeEntry } from "../../../../routers/trades.types";
 import Number from "../../Number/Number";
 
-type Props = {
+interface Props {
   item: TradeEntry;
-};
+}
 
 const PerformanceBox = ({ item }: Props): React.ReactNode => {
   return (

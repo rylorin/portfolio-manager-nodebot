@@ -1,6 +1,6 @@
 import { ContractType } from "../models/contract.types";
 
-export type PositionEntry = {
+export interface PositionEntry {
   id: number;
   openDate: number;
   quantity: number;
@@ -21,7 +21,7 @@ export type PositionEntry = {
   cost: number;
   pnl: number | undefined;
   baseRate: number;
-};
+}
 
 export type OptionPositionEntry = PositionEntry & {
   option: {

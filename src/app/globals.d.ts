@@ -11,6 +11,6 @@ declare module "*.svg" {
 }
 
 declare module "*.module.css" {
-  const classes: { readonly [key: string]: string };
+  const classes: Record<string, string>;
   export default classes;
 }

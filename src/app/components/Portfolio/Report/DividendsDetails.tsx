@@ -8,16 +8,19 @@ import { DividendStatementEntry, ReportEntry, TaxStatementEntry } from "../../..
 import Number from "../../Number/Number";
 import { StatementLink } from "../Statement/links";
 import { DataTable } from "./DataTable";
-type Props = { theReports: ReportEntry[] };
 
-type DividendDetails = {
+interface Props {
+  theReports: ReportEntry[];
+}
+
+interface DividendDetails {
   id: number;
   date: Date;
   country: string;
   amount: number;
   tax: number;
   description: string;
-};
+}
 
 const columnHelper = createColumnHelper<DividendDetails>();
 

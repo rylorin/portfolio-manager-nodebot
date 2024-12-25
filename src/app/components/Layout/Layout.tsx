@@ -4,9 +4,9 @@ import { useNavigation } from "react-router-dom";
 import NavBar from "../../components/NavBar/NavBar";
 import links from "../../links";
 
-type LayoutProps = {
+interface LayoutProps {
   children: React.ReactNode;
-};
+}
 
 const Layout: React.FunctionComponent<LayoutProps> = ({ children, ..._rest }): React.ReactNode => {
   const navigation = useNavigation();

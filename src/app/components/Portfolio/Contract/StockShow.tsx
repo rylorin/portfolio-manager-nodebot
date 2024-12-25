@@ -6,7 +6,9 @@ import PositionsTable from "../Position/PositionsTable";
 import StatementsTable from "../Statement/StatementsTable";
 import TradesTable from "../Trade/ClosedTradesTable";
 
-type Props = { thisContract: ContractEntry };
+interface Props {
+  thisContract: ContractEntry;
+}
 
 /**
  * Statements list component

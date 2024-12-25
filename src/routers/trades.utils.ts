@@ -395,16 +395,15 @@ const computeComboRisk = (thisTrade: Trade, virtuals: Record<number, VirtualPosi
   console.log(thisTrade.id, "limits", limits);
 
   let options_risk = 0;
-  for (let i = 0; i < limits.length; i++) {
-    const price = limits[i]; // Compute cost for this price
+  for (const price of limits) {
+    // Compute cost for this price
 
     // How much do we get if we close stock position
     const stocks_risk = Object.values(stocks).reduce((p, v) => p + price * v.quantity, 0);
 
     let put_risks = 0;
     let calls_risk = 0;
-    for (let j = 0; j < limits.length; j++) {
-      const strike = limits[j];
+    for (const strike of limits) {
       if (puts[strike]) {
         if (price <= strike) {
           // ITM Put

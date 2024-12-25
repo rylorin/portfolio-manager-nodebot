@@ -16,15 +16,18 @@ import {
 import Number from "../../Number/Number";
 import { StatementLink } from "../Statement/links";
 import { DataTable } from "./DataTable";
-type Props = { theReports: ReportEntry[] };
 
-type PnLDetails = {
+interface Props {
+  theReports: ReportEntry[];
+}
+
+interface PnLDetails {
   id: number;
   date: Date;
   pnl: number;
   underlying: StatementUnderlyingEntry;
   description: string;
-};
+}
 
 const columnHelper = createColumnHelper<PnLDetails>();
 

@@ -1,4 +1,5 @@
 import {
+  IBApiNextError,
   Contract as IbContract,
   Order as IbOrder,
   OptionType,
@@ -7,7 +8,7 @@ import {
   SecType,
   TimeInForce,
 } from "@stoqey/ib";
-import { Op } from "sequelize";
+import { Op, Order } from "sequelize";
 import { ITradingBot } from ".";
 import logger from "../logger";
 import { Balance, Contract, OpenOrder, OptionContract, OptionStatement, Position, Setting } from "../models";
@@ -24,8 +25,130 @@ const timeoutPromise = async (delay: number, reason?: string): Promise<void> =>
     (_, reject) => setTimeout(() => reject(new Error(reason ?? "timeout")), delay * 1_000), // Fail after some time
   );
 
+interface OptionEx extends OptionContract {
+  yield?: number;
+}
+
 export class TradeBot extends ITradingBot {
   timer: NodeJS.Timeout;
+
+  protected async findUpdatedContract(id: number): Promise<Contract | null> {
+    const contract = await Contract.findByPk(id);
+    if (!contract) {
+      return null;
+    } else if (Date.now() - contract.updatedAt.getTime() < 60_000) {
+      // we have a recent contract
+      return contract;
+    } else {
+      return this.api
+        .getMarketDataSnapshot(contract as IbContract, "", false)
+        .then(async (marketData) => this.updateContratPrice(contract, marketData))
+        .catch((err: IBApiNextError | Error) => {
+          logger.error(
+            MODULE + ".findUpdatedContract",
+            "error" in err ? (err.error as Error).message : (err as Error).message,
+          );
+        })
+        .then(() => contract);
+    }
+  }
+
+  protected async findUpdatedContracts(ids: number[]): Promise<(Contract | null)[]> {
+    console.log("findUpdatedContracts", ids.length, "items in");
+    let result: (Contract | null)[] = [];
+    while (ids.length > 0) {
+      const id1 = ids.slice(0, 90);
+      result = result.concat(await Promise.all(id1.map(async (id) => this.findUpdatedContract(id))));
+      ids = ids.slice(90);
+    }
+    console.log("findUpdatedContracts", result.length, "items out");
+    return result;
+  }
+
+  protected async fetchUpdatedOptions(
+    underlying_id: number,
+    strike: number,
+    callOrPut: OptionType,
+  ): Promise<OptionContract[]> {
+    const where = {
+      stock_id: underlying_id,
+      strike:
+        callOrPut == OptionType.Call
+          ? {
+              [Op.gte]: strike,
+            }
+          : {
+              [Op.lte]: strike,
+            },
+      lastTradeDate: { [Op.gt]: new Date() },
+      callOrPut,
+      // delta: {
+      //   [Op.lt]: 1 - this.portfolio.ccWinRatio!, // RULE : delta < 0.25
+      // },
+      updatedAt: { [Op.lt]: new Date(Date.now() - 45_000) }, // older than 45 secs
+    };
+    const order: Order = [
+      ["strike", callOrPut == OptionType.Call ? "ASC" : "DESC"],
+      ["lastTradeDate", "ASC"],
+    ];
+    let options = await OptionContract.findAll({
+      where,
+      include: [
+        {
+          required: true,
+          model: Contract,
+          as: "contract",
+          // where: {
+          //   bid: {
+          //     [Op.gte]: this.portfolio.minPremium, // RULE : premium (bid) >= 0.25$
+          //   },
+          // },
+        },
+        {
+          required: true,
+          model: Contract,
+          as: "stock",
+        },
+      ],
+      order,
+      limit: 3,
+      // logging: console.log,
+    });
+    console.log(options);
+
+    const contracts = await this.findUpdatedContracts(options.map((item) => item.id));
+    console.log("contracts:", contracts);
+
+    options = await OptionContract.findAll({
+      where: {
+        ...where,
+        updatedAt: { [Op.gt]: new Date(Date.now() - 60_000) }, // newer than 60 secs
+      },
+      include: [
+        {
+          required: true,
+          model: Contract,
+          as: "contract",
+          where: {
+            bid: {
+              [Op.gte]: this.portfolio.minPremium, // RULE : premium (bid) >= 0.25$
+            },
+          },
+        },
+        {
+          required: true,
+          model: Contract,
+          as: "stock",
+        },
+      ],
+      order,
+      limit: 3,
+      // logging: console.log,
+    });
+    console.log("updated options:");
+    this.printObject(options);
+    return options;
+  }
 
   async expireOptions(): Promise<void> {
     return OptionContract.findAll({ where: { lastTradeDate: { [Op.lt]: dateToExpiration() } } }).then(async (options) =>
@@ -99,14 +222,88 @@ export class TradeBot extends ITradingBot {
     return setting;
   }
 
+  protected async runCCStrategy(setting: Setting): Promise<Setting> {
+    const position = await Position.findOne({ where: { contract_id: setting.stock_id } });
+    const stock_positions = position?.quantity || 0;
+    console.log("stock_positions:", stock_positions);
+    const stock_sell_orders = -(await this.getContractOrdersQuantity(setting.underlying, OrderAction.SELL));
+    console.log("stock_sell_orders:", stock_sell_orders);
+    const call_positions = await this.getOptionsPositionsQuantity(setting.underlying, "C" as OptionType);
+    console.log("call_positions:", call_positions);
+    const call_sell_orders = -(await this.getOptionsOrdersQuantity(
+      setting.underlying,
+      "C" as OptionType,
+      OrderAction.SELL,
+    ));
+    console.log("call_sell_orders:", call_sell_orders);
+    const free_for_this_symbol = stock_positions + call_positions + stock_sell_orders + call_sell_orders;
+    console.log("free_for_this_symbol:", free_for_this_symbol);
+    if (position && free_for_this_symbol > 0) {
+      if (
+        setting.ccStrategy > 0 &&
+        // RULE : stock price is higher than previous close
+        setting.underlying.livePrice > setting.underlying.previousClosePrice!
+      ) {
+        // RULE defensive : strike > cours (OTM) & strike > position avg price
+        // RULE agressive : strike > cours (OTM)
+        const strike =
+          setting.ccStrategy == 1
+            ? Math.max(setting.underlying.livePrice, position.averagePrice)
+            : setting.underlying.livePrice;
+        const options = await this.fetchUpdatedOptions(setting.underlying.id, strike, OptionType.Call);
+        if (options.length > 0) {
+          for (const option of options) {
+            // const expiry: Date = new Date(option.lastTradeDate);
+            const diffDays = Math.ceil((option.expiryDate.getTime() - Date.now()) / (1000 * 3600 * 24));
+            option["yield"] = (option.contract.bid! / option.strike / diffDays) * 360;
+            // option.stock.contract = await Contract.findByPk(option.stock.id);
+          }
+
+          options.sort((a: OptionEx, b: OptionEx) => b.yield! - a.yield!);
+          // for (const option of options) {
+          //     console.log("yield of contract", option["yield"]);
+          //     this.printObject(option);
+          // }
+          const option = options[0];
+          this.printObject(option);
+          await this.api
+            .placeNewOrder(
+              ITradingBot.OptionToIbContract(option),
+              ITradingBot.CcOrder(
+                OrderAction.SELL,
+                Math.floor(free_for_this_symbol / option.multiplier),
+                option.contract.ask!,
+              ),
+            )
+            .then((orderId: number) => {
+              console.log("orderid:", orderId.toString());
+            });
+        } else {
+          this.error("options list empty");
+        }
+      } else {
+        console.log("no applicable parameters or current price not higher than previous close price");
+      }
+    }
+
+    return setting;
+  }
+
+  protected runCSPStrategy(setting: Setting): Setting {
+    logger.error(MODULE + ".runCSPStrategy", "Method not implemented.");
+    return setting;
+  }
+
+  protected async updateUnderlyingPrice(setting: Setting): Promise<Setting> {
+    return this.findUpdatedContract(setting.underlying.id).then((_contract) => setting);
+  }
+
   protected async runCashStrategy(): Promise<void> {
     if (!this.portfolio.cashStrategy) {
       // Off => nothing to do
     } else if (this.portfolio.cashStrategy == CashStrategy.Balance) {
       // manage cash balance
-      const price = await this.api
-        .getMarketDataSnapshot(this.portfolio.benchmark as IbContract, "", false)
-        .then(async (marketData) => this.updateContratPrice(this.portfolio.benchmark, marketData));
+      const price = await this.findUpdatedContract(this.portfolio.benchmark_id).then((contract) => contract!.livePrice);
       await Balance.findOne({
         where: {
           portfolio_id: this.portfolio.id,
@@ -173,23 +370,6 @@ export class TradeBot extends ITradingBot {
     }
   }
 
-  protected runCCStrategy(setting: Setting): Setting {
-    logger.error(MODULE + ".runCCStrategy", "Method not implemented.");
-    return setting;
-  }
-
-  protected runCSPStrategy(setting: Setting): Setting {
-    logger.error(MODULE + ".runCSPStrategy", "Method not implemented.");
-    return setting;
-  }
-
-  protected async updateUnderlyingPrice(setting: Setting): Promise<Setting> {
-    return this.api
-      .getMarketDataSnapshot(setting.underlying as IbContract, "", false)
-      .then(async (marketData) => this.updateContratPrice(setting.underlying, marketData))
-      .then(() => setting);
-  }
-
   protected async addOptionsChains(setting: Setting): Promise<Setting> {
     return this.api
       .getSecDefOptParams(
@@ -213,7 +393,8 @@ export class TradeBot extends ITradingBot {
               order: [["createdAt", "DESC"]],
             });
 
-            if (!last || last.createdAt.getTime() < Date.now() - 24 * 3_600_000 * (1 + Math.random())) {
+            // update once a day or so
+            if (!last || last.createdAt.getTime() < Date.now() - 24 * 3_600_000 * (0.5 + Math.random())) {
               // Refresh option chain
               logger.info(
                 MODULE + ".addOptionsChains",
@@ -275,25 +456,14 @@ export class TradeBot extends ITradingBot {
           required: true,
         },
       ],
-    }).then(async (positions) =>
-      positions.reduce(
-        async (p, position) =>
-          p.then(async () =>
-            this.api
-              .getMarketDataSnapshot(position.contract as IbContract, "", false)
-              .then(async (marketData) => this.updateContratPrice(position.contract, marketData))
-              .then(() => undefined as void)
-              .catch((err: Error) => logger.error(MODULE + ".updatePositions", err.message)),
-          ),
-        Promise.resolve(),
-      ),
-    );
+    }).then(async (positions) => this.findUpdatedContracts(positions.map((item) => item.contract_id)).then());
   }
 
   public async run(): Promise<void> {
     logger.info(MODULE + ".run", "Trader bot running");
     if (this.portfolio) {
       await this.expireOptions()
+        .then(async () => this.updatePositions())
         .then(async () =>
           this.portfolio.settings
             .sort((a, b) => b.navRatio - a.navRatio)
@@ -309,15 +479,14 @@ export class TradeBot extends ITradingBot {
                       // Roll strategy
                       .then(async (setting) => this.runRollStrategy(setting))
                       // Covered calls strategy
-                      .then((setting) => this.runCCStrategy(setting))
-                      .then(() => undefined as void)
+                      .then(async (setting) => this.runCCStrategy(setting))
+                      .then()
                   );
                 }),
               Promise.resolve(),
             ),
         )
         .then(async () => this.runCashStrategy())
-        .then(async () => this.updatePositions())
         .then(() => logger.info(MODULE + ".run", "Trader bot ran"));
     } else {
       logger.warn(MODULE + ".run", "Portfolio undefined");
@@ -333,7 +502,7 @@ export class TradeBot extends ITradingBot {
       .then(() => {
         this.timer = setTimeout(() => {
           this.run().catch((error: Error) => this.error(error.message));
-        }, 20_000);
+        }, 15_000);
       })
       .catch((error: Error) => this.error(error.message));
   }

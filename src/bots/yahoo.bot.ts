@@ -14,13 +14,13 @@ const YAHOO_PRICE_AGE: number = parseInt(process.env.YAHOO_PRICE_FREQ || "60") |
 const BATCH_SIZE_YAHOO_PRICE: number = parseInt(process.env.BATCH_SIZE_YAHOO_PRICE || "512") || 512; // units
 const NO_RISK_INTEREST_RATE: number = parseFloat(process.env.NO_RISK_INTEREST_RATE || "0.045") || 0.025; // as of 2022-07-28
 
-type MappedQuote = {
+interface MappedQuote {
   contract: Contract;
   symbol: string;
   quote?: Quote;
-};
+}
 
-type Row = {
+interface Row {
   price: number | null;
   ask: number | null;
   bid: number | null;
@@ -28,7 +28,7 @@ type Row = {
   fiftyTwoWeekLow: number | null;
   fiftyTwoWeekHigh: number | null;
   updatedAt: Date;
-};
+}
 
 export class YahooUpdateBot extends ITradingBot {
   private requestsQ: MappedQuote[] = [];
@@ -133,6 +133,7 @@ export class YahooUpdateBot extends ITradingBot {
     return name;
   }
 
+  // eslint-disable-next-line @typescript-eslint/no-invalid-void-type
   private async iterateResults(q: MappedQuote[]): Promise<void[]> {
     const promises: Promise<void>[] = [];
     for (const r of q) {

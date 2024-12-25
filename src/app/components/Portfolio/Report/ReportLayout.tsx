@@ -3,9 +3,9 @@ import { FunctionComponent, default as React } from "react";
 import { Link as RouterLink, useParams } from "react-router-dom";
 import { ReportLink } from "./links";
 
-type ReportLayoutProps = {
+interface ReportLayoutProps {
   children: React.ReactNode;
-};
+}
 
 const ReportLayout: FunctionComponent<ReportLayoutProps> = ({ children, ..._rest }): React.ReactNode => {
   const { portfolioId } = useParams();

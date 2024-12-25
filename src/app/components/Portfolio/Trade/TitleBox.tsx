@@ -4,9 +4,9 @@ import { Link as RouterLink } from "react-router-dom";
 import { TradeEntry } from "../../../../routers/trades.types";
 import { TradeLink } from "./links";
 
-type Props = {
+interface Props {
   item: TradeEntry;
-};
+}
 
 const TitleBox = ({ item }: Props): React.ReactNode => {
   if (item.id > 0)

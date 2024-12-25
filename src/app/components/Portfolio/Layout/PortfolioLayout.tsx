@@ -6,9 +6,9 @@ import { obfuscate } from "../../../utils";
 import SideBar from "../../NavBar/SideBar";
 import { links } from "./links";
 
-type PortfolioLayoutProps = {
+interface PortfolioLayoutProps {
   children: React.ReactNode;
-};
+}
 
 const PortfolioLayout: FunctionComponent<PortfolioLayoutProps> = ({ children, ..._rest }): React.ReactNode => {
   const { portfolioId } = useParams();

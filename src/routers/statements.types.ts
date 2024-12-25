@@ -1,16 +1,22 @@
 import { ContractType, OptionType } from "../models";
 
-export type SynthesysEntry = { stocks: number; options: number; dividends: number; interests: number; total: number };
+export interface SynthesysEntry {
+  stocks: number;
+  options: number;
+  dividends: number;
+  interests: number;
+  total: number;
+}
 export type StatementsSynthesysEntries = Record<"string", SynthesysEntry>;
 
-export type StatementUnderlyingEntry = {
+export interface StatementUnderlyingEntry {
   id: number;
   secType: ContractType;
   symbol: string;
   currency: string;
   name: string;
   price: number | null;
-};
+}
 
 export type StatementUnderlyingOption = StatementUnderlyingEntry & {
   // underlying: StatementUnderlyingEntry;
@@ -20,7 +26,7 @@ export type StatementUnderlyingOption = StatementUnderlyingEntry & {
   multiplier: number;
 };
 
-export type BaseStatement = {
+export interface BaseStatement {
   id: number;
   transactionId: number;
   // statementType: StatementTypes;
@@ -31,7 +37,7 @@ export type BaseStatement = {
   underlying: StatementUnderlyingEntry | undefined;
   trade_id: number | null;
   description: string;
-};
+}
 
 export type EquityStatementEntry = BaseStatement & {
   statementType: "Trade";

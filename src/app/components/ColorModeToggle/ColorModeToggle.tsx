@@ -3,7 +3,7 @@ import { Box, IconButton, ResponsiveValue, useColorMode, useColorModeValue } fro
 import * as CSS from "csstype";
 import React, { FunctionComponent } from "react";
 
-type ColorModeToggleProps = {
+interface ColorModeToggleProps {
   /**
    * Margin
    */
@@ -36,7 +36,7 @@ type ColorModeToggleProps = {
    * Hide from given dimension
    */
   hideFrom?: string;
-};
+}
 
 const ColorModeToggle: FunctionComponent<ColorModeToggleProps> = (props): React.ReactNode => {
   const { toggleColorMode } = useColorMode();

@@ -6,9 +6,9 @@ import Number from "../../Number/Number";
 import { ContractLink } from "../Contract/links";
 import { tradeStrategy2String } from "./utils";
 
-type Props = {
+interface Props {
   item: TradeEntry;
-};
+}
 
 const SymbolBox = ({ item }: Props): React.ReactNode => {
   return (

@@ -7,7 +7,9 @@ const MODULE = "StatementsRouter";
 
 const router = express.Router({ mergeParams: true });
 
-type parentParams = { portfolioId: number };
+interface parentParams {
+  portfolioId: number;
+}
 
 /**
  * List all balances

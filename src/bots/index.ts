@@ -41,13 +41,13 @@ const MODULE = "BotIndex";
 // eslint-disable-next-line @typescript-eslint/no-unsafe-argument,@typescript-eslint/no-unused-vars
 const sequelize_logging = (...args: any[]): void => logger.trace(MODULE + ".squelize", ...args);
 
-type OptionsSynthesis = {
+interface OptionsSynthesis {
   value: number;
   engaged: number;
   risk: number;
   quantity: number;
   options: OptionContract[];
-};
+}
 
 export class ITradingBot extends EventEmitter {
   protected app: MyTradingBotApp;
@@ -1150,22 +1150,23 @@ export class ITradingBot extends EventEmitter {
           console.log("ignored", type, tick);
         }
     });
-    let price: number | null;
+    let price: number | null = null;
     if (dataset.ask && dataset.bid) price = (dataset.ask + dataset.bid) / 2;
     else if (dataset.price) price = dataset.price;
-    else price = dataset.previousClosePrice ?? null;
+    else if (dataset.previousClosePrice) price = dataset.previousClosePrice;
     if (contract.secType == SecType.CASH) {
       // we do not get a price for CASH contracts
       dataset.price = price;
     }
-    // console.log(contract.symbol, dataset, price);
-    return Contract.update(dataset, {
-      where: {
-        id: contract.id,
-      },
-    }).then(async () => {
+    contract.changed("updatedAt", true);
+    return contract.update(dataset).then(async (contract) => {
       if (contract.secType == "OPT") {
-        return OptionContract.update(optdataset, { where: { id: contract.id } }).then(() => price);
+        return OptionContract.findByPk(contract.id)
+          .then(async (option) => {
+            option!.changed("updatedAt", true);
+            return option!.update(optdataset);
+          })
+          .then(() => price);
       } else if (contract.secType == "CASH") {
         return Currency.update(
           { rate: price! },
