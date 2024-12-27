@@ -17,13 +17,13 @@ const PerformanceBox = ({ item }: Props): React.ReactNode => {
         &nbsp;Realized +&nbsp;
       </Text>
       <Box fontWeight="semibold">
-        <Number value={item.unrlzdPnl} />
+        <Number value={item.expiryPnl} />
       </Box>
       <Text color="gray.500" fontSize="xs">
         &nbsp;Unrealized =&nbsp;
       </Text>
       <Box fontWeight="semibold">
-        <Number value={item.PnL + item.unrlzdPnl} /> (<Number value={item.apy} isPercent />)
+        <Number value={item.PnL + item.expiryPnl} /> (<Number value={item.apy} isPercent />)
       </Box>
     </Box>
   );

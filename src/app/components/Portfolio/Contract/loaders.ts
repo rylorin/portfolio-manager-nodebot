@@ -1,5 +1,5 @@
 import { LoaderFunctionArgs } from "react-router-dom";
-import { ContractEntry } from "../../../../routers/repository.types";
+import { ContractEntry } from "../../../../routers/";
 
 /**
  * Load Contract list content
@@ -10,5 +10,5 @@ export const contractShowLoader = async ({ params }: LoaderFunctionArgs): Promis
   const { portfolioId, contractId } = params;
   return fetch(`/api/portfolio/${portfolioId}/contracts/id/${contractId}`)
     .then(async (response) => response.json()) // eslint-disable-line @typescript-eslint/no-unsafe-return
-    .then((data) => data.contract as ContractEntry);
+    .then((data) => data.contract as ContractEntry); // eslint-disable-line @typescript-eslint/no-unsafe-return
 };

@@ -146,7 +146,7 @@ const TradeShow: FunctionComponent<Props> = ({ ..._rest }): React.ReactNode => {
                 Exp. P&L:
               </Text>
               <Text w="200px" textAlign="right">
-                <Number value={item.unrlzdPnl} />
+                <Number value={item.expiryPnl} />
               </Text>
             </Flex>
           </>

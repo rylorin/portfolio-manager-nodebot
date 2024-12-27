@@ -44,7 +44,7 @@ export type BaseStatement = {
 
 export type EquityStatementEntry = BaseStatement & {
   statementType: "Trade";
-  underlying: StatementUnderlyingEntry;
+  // underlying: StatementUnderlyingEntry;
   quantity: number;
   pnl: number;
   fees: number;
@@ -61,8 +61,7 @@ export type OptionStatementEntry = BaseStatement & {
 export type BondStatementEntry = BaseStatement & {
   statementType: "Bond";
   country: string;
-  underlying: StatementUnderlyingEntry | undefined;
-  // accruedInterests: number;
+  // underlying: StatementUnderlyingEntry | undefined;
   quantity: number;
   pnl: number;
   fees: number;
@@ -71,7 +70,7 @@ export type BondStatementEntry = BaseStatement & {
 export type DividendStatementEntry = BaseStatement & {
   statementType: "Dividend";
   country: string;
-  underlying: StatementUnderlyingEntry | undefined;
+  // underlying: StatementUnderlyingEntry | undefined;
 };
 
 export type TaxStatementEntry = BaseStatement & { statementType: "Tax"; country: string };
@@ -79,7 +78,7 @@ export type TaxStatementEntry = BaseStatement & { statementType: "Tax"; country:
 export type InterestStatementEntry = BaseStatement & {
   statementType: "Interest";
   country: string | null;
-  underlying: StatementUnderlyingEntry | undefined;
+  // underlying: StatementUnderlyingEntry | undefined;
 };
 export type WithHoldingStatementEntry = BaseStatement & { statementType: "WithHolding" };
 
@@ -87,7 +86,7 @@ export type FeeStatementEntry = BaseStatement & { statementType: "OtherFee" };
 
 export type CorporateStatementEntry = BaseStatement & {
   statementType: "CorporateStatement";
-  underlying: StatementUnderlyingEntry;
+  // underlying: StatementUnderlyingEntry;
   quantity: number;
   pnl: number;
 };

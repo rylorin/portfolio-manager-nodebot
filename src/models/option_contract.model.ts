@@ -3,88 +3,91 @@ import { CreationOptional, ForeignKey, InferAttributes, InferCreationAttributes,
 import { BelongsTo, Column, DataType, Model, Table } from "sequelize-typescript";
 import { Contract } from "./contract.model";
 
-// @DefaultScope(() => ({
-//   include: [{association:'contract'}]
-// }))
 @Table({ tableName: "option_contract", timestamps: true, deletedAt: false })
 export class OptionContract extends Model<
   InferAttributes<OptionContract>,
   InferCreationAttributes<OptionContract, { omit: "contract" | "stock" }>
 > {
-  // id can be undefined during creation when using `autoIncrement`
+  // Primary key
   declare id: CreationOptional<number>;
-  // timestamps!
-  // createdAt can be undefined during creation
+
+  // Timestamps
   declare createdAt: CreationOptional<Date>;
-  // updatedAt can be undefined during creation
   declare updatedAt: CreationOptional<Date>;
 
-  /** Base contract part of this option */
+  /** Base contract associated with this option */
   @BelongsTo(() => Contract, "id")
   declare contract: Contract;
 
-  /** Underlying */
+  /** Underlying stock contract */
+  @Column({ type: DataType.INTEGER, allowNull: false })
   declare stock_id: ForeignKey<Contract["id"]>;
   @BelongsTo(() => Contract, "stock_id")
   declare stock: Contract;
 
-  /**
-   * last tradable date as YYYY-MM-DD formated string
-   */
-  @Column({ type: DataType.DATEONLY, field: "last_trade_date" })
+  /** Last tradable date in YYYY-MM-DD format */
+  @Column({
+    type: DataType.DATEONLY,
+    field: "last_trade_date",
+    allowNull: false,
+    validate: { isDate: true },
+  })
   declare lastTradeDate: string; // YYYY-MM-DD
 
-  /**
-   * Get last tradable date as Date type
-   */
+  /** Returns the expiry date as a `Date` object */
   get expiryDate(): NonAttribute<Date> {
-    return new Date(this.getDataValue("lastTradeDate"));
+    return new Date(this.lastTradeDate);
   }
 
-  /**
-   * Get last tradable date as number type
-   */
+  /** Returns the expiry date in numeric format (YYYYMMDD) */
   get expiry(): NonAttribute<number> {
-    // Format date to YYYYMMDD
-    return parseInt((this.getDataValue("lastTradeDate") as unknown as string).substring(0, 10).replaceAll("-", ""));
+    return parseInt(this.lastTradeDate.substring(0, 10).replaceAll("-", ""), 10);
   }
 
-  /**
-   * Get number of day till expiration, with a minimum of 1 day (for 0DTE).
-   * Not compatible with past expirations (because of min of 1 day)
-   */
+  /** Days to expiration (DTE) */
   get dte(): NonAttribute<number> {
-    const dte: number = Math.max(
-      (new Date(this.getDataValue("lastTradeDate")).getTime() - Date.now()) / 1000 / 86400,
-      1,
-    );
-    return dte;
+    const daysUntilExpiry = Math.ceil((new Date(this.lastTradeDate).getTime() - Date.now()) / (1000 * 60 * 60 * 24));
+    return Math.max(daysUntilExpiry, 1); // Minimum 1 day for 0DTE
   }
 
-  @Column({ type: DataType.FLOAT })
+  /** Strike price of the option */
+  @Column({ type: DataType.FLOAT, allowNull: false, validate: { min: 0 } })
   declare strike: number;
 
-  @Column({ type: DataType.ENUM("C", "P"), field: "call_or_put" })
+  /** Call or Put option */
+  @Column({
+    type: DataType.ENUM("C", "P"),
+    field: "call_or_put",
+    allowNull: false,
+  })
   declare callOrPut: OptionType;
 
-  @Column({ type: DataType.INTEGER, defaultValue: 100 })
+  /** Option multiplier (default: 100) */
+  @Column({ type: DataType.INTEGER, defaultValue: 100, validate: { min: 1 } })
   declare multiplier: number;
 
-  @Column({ type: DataType.FLOAT(3, 5), field: "implied_volatility" })
+  /** Implied volatility (optional) */
+  @Column({
+    type: DataType.FLOAT(3, 5),
+    field: "implied_volatility",
+    validate: { min: 0, max: 1 },
+  })
   declare impliedVolatility: number | null;
 
+  /** Present value of dividends */
   @Column({ type: DataType.FLOAT, field: "pv_dividend", defaultValue: 0 })
   declare pvDividend: number | null;
 
-  @Column({ type: DataType.FLOAT(1, 4) })
+  /** Greeks */
+  @Column({ type: DataType.FLOAT(1, 4), validate: { min: -1.0, max: 1.0 } })
   declare delta: number | null;
 
-  @Column({ type: DataType.FLOAT })
+  @Column({ type: DataType.FLOAT, validate: { min: 0 } })
   declare gamma: number | null;
 
-  @Column({ type: DataType.FLOAT })
+  @Column({ type: DataType.FLOAT, validate: { min: 0 } })
   declare vega: number | null;
 
-  @Column({ type: DataType.FLOAT })
+  @Column({ type: DataType.FLOAT, validate: { min: 0 } })
   declare theta: number | null;
 }

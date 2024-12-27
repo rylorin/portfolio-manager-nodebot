@@ -91,10 +91,9 @@ router.get("/summary/ytd", (req, res): void => {
   Portfolio.findByPk(portfolioId, {
     include: [
       {
-        model: Statement,
-        as: "statements",
+        association: "statements",
         required: false,
-        include: [{ model: Contract, as: "stock", required: false }],
+        include: [{ association: "stock", required: false }],
         where: {
           date: {
             [Op.gte]: new Date(new Date().getFullYear(), 0, 1),

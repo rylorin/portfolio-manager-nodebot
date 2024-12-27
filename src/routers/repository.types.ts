@@ -1,5 +1,5 @@
-import { ContractAttributes } from "../models/contract.types";
-import { OptionAttributes } from "../models/option.types";
+// import { ContractAttributes } from "../models/contract.types";
+// import { OptionAttributes } from "../models/option.types";
 
-export type ContractEntry = ContractAttributes;
-export type OptionEntry = ContractEntry & OptionAttributes;
+// export type ContractEntry = ContractAttributes;
+// export type OptionEntry = ContractEntry & OptionAttributes;

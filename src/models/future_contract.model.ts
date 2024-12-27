@@ -2,60 +2,74 @@ import { CreationOptional, ForeignKey, InferAttributes, InferCreationAttributes,
 import { BelongsTo, Column, DataType, Model, Table } from "sequelize-typescript";
 import { Contract } from "./contract.model";
 
-@Table({ tableName: "future_contract", timestamps: true, deletedAt: false })
+@Table({
+  tableName: "future_contract",
+  timestamps: true,
+  deletedAt: false,
+})
 export class FutureContract extends Model<
   InferAttributes<FutureContract>,
   InferCreationAttributes<FutureContract, { omit: "contract" | "underlying" }>
 > {
-  // id can be undefined during creation when using `autoIncrement`
+  // Primary key
   declare id: CreationOptional<number>;
-  // timestamps!
-  // createdAt can be undefined during creation
+
+  // Timestamps
   declare createdAt: CreationOptional<Date>;
-  // updatedAt can be undefined during creation
   declare updatedAt: CreationOptional<Date>;
 
+  /** Base contract associated with this future */
   @BelongsTo(() => Contract, "id")
   declare contract: Contract;
 
-  /** Underlying */
+  /** Underlying asset (optional, can be null) */
+  @Column({
+    type: DataType.INTEGER,
+    allowNull: true,
+    field: "underlying_id",
+  })
   declare underlying_id: ForeignKey<Contract["id"]> | null;
+
   @BelongsTo(() => Contract, "underlying_id")
-  declare underlying: Contract;
+  declare underlying: Contract | null;
 
-  /**
-   * last tradable date as YYYY-MM-DD formated string
-   */
-  @Column({ type: DataType.DATEONLY, field: "last_trade_date" })
-  declare lastTradeDate: string; // YYYY-MM-DD
+  /** Expiration date in YYYY-MM-DD format */
+  @Column({
+    type: DataType.DATEONLY,
+    allowNull: false,
+    field: "last_trade_date",
+    validate: { isDate: true },
+  })
+  declare lastTradeDate: string;
 
-  /**
-   * Get last tradable date as Date type
-   */
+  /** Get expiration date as a `Date` object */
   get expiryDate(): NonAttribute<Date> {
-    return new Date(this.getDataValue("lastTradeDate"));
+    return new Date(this.lastTradeDate);
   }
 
-  /**
-   * Get last tradable date as number type
-   */
+  /** Get expiration date as a number in YYYYMMDD format */
   get expiry(): NonAttribute<number> {
-    // Format date to YYYYMMDD
-    return parseInt((this.getDataValue("lastTradeDate") as unknown as string).substring(0, 10).replaceAll("-", ""));
+    return parseInt(this.lastTradeDate.substring(0, 10).replaceAll("-", ""));
   }
 
   /**
-   * Get number of day till expiration, with a minimum of 1 day (for 0DTE).
-   * Not compatible with past expirations (because of min of 1 day)
+   * Days to expiration (DTE)
+   * - Returns a positive integer representing the number of days until expiration.
+   * - For expired contracts, returns 0.
    */
   get dte(): NonAttribute<number> {
-    const dte: number = Math.max(
-      (new Date(this.getDataValue("lastTradeDate")).getTime() - Date.now()) / 1000 / 86400,
-      1,
-    );
-    return dte;
+    const now = new Date().setHours(0, 0, 0, 0); // Normalize to midnight
+    const expiry = new Date(this.lastTradeDate).getTime();
+    const days = Math.ceil((expiry - now) / (1000 * 60 * 60 * 24));
+    return Math.max(days, 0);
   }
 
-  @Column({ type: DataType.INTEGER, defaultValue: 100 })
+  /** Multiplier for the contract */
+  @Column({
+    type: DataType.INTEGER,
+    allowNull: false,
+    defaultValue: 100,
+    validate: { min: 1 },
+  })
   declare multiplier: number;
 }

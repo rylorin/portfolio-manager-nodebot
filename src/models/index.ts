@@ -1,9 +1,13 @@
+/*
+  Export all models.
+  Related types can be found in `./types`
+*/
 import { BagContract } from "./bag_contract.model";
 import { BondContract } from "./bond_contract.model";
 import { CashContract } from "./cash_contract.model";
 import { Contract } from "./contract.model";
 import { FutureContract } from "./future_contract.model";
-import { Index } from "./index.model";
+import { Index } from "./index_contract.model";
 import { OptionContract } from "./option_contract.model";
 import { StockContract } from "./stock_contract.model";
 
@@ -20,7 +24,7 @@ export * from "./dividend_statement.model";
 export * from "./equity_statement.model";
 export * from "./fee_statement.model";
 export * from "./future_contract.model";
-export * from "./index.model";
+export * from "./index_contract.model";
 export * from "./interest_statement.model";
 export * from "./openorder.model";
 export * from "./option_contract.model";

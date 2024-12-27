@@ -9,6 +9,7 @@ import logger, { LogLevel } from "../logger";
 import { Contract, Currency, Portfolio, Position, Trade } from "../models";
 import { expirationToDate } from "../models/date_utils";
 import { ContractType, OptionType, StatementTypes, TradeStatus, TradeStrategy } from "../models/types";
+import { contractModelToContractEntry } from "./contracts.utils";
 import { preparePositions } from "./positions.router";
 import { prepareStatements } from "./statements.utils";
 import {
@@ -200,27 +201,41 @@ export const tradeModelToTradeEntry = async (
       apy = (thisTrade.PnL! / -thisTrade.risk!) * (360 / thisTrade.duration);
       break;
   }
+
+  /* We manually copy each property because we want to get rid of any sequalize non jsonable meta data */
   const trade_entry: TradeEntry = {
+    // Properties
     id: thisTrade.id,
     portfolio_id: thisTrade.portfolio_id,
-    symbol_id: thisTrade.underlying.id,
-    underlying: thisTrade.underlying,
+    symbol_id: thisTrade.symbol_id,
+    status: thisTrade.status,
+    expectedExpiry: thisTrade.expectedExpiry,
+    expiryPnl: thisTrade.expiryPnl,
+    strategy: thisTrade.strategy,
+    PnL: thisTrade.PnL,
+    pnlInBase: thisTrade.pnlInBase,
     currency: thisTrade.currency,
+    risk: thisTrade.risk,
+    comment: thisTrade.comment,
+
+    // Virtual properties
+    duration: thisTrade.duration,
+    expectedDuration: thisTrade.expectedDuration,
+
+    // Make JSON compatible
+    createdAt: thisTrade.createdAt.getTime(),
+    updatedAt: thisTrade.createdAt.getTime(),
     openingDate: thisTrade.openingDate.getTime(),
     closingDate: thisTrade.closingDate ? thisTrade.closingDate.getTime() : undefined,
-    status: thisTrade.status,
-    duration: thisTrade.duration,
-    expectedExpiry: thisTrade.expectedExpiry || undefined,
-    expectedDuration: thisTrade.expectedDuration,
-    strategy: thisTrade.strategy,
-    risk: thisTrade.risk,
-    PnL: thisTrade.PnL,
-    unrlzdPnl: thisTrade.expiryPnl || undefined,
-    pnlInBase: thisTrade.pnlInBase,
-    apy,
-    comment: thisTrade.comment,
+
+    // Relations
+    portolio: undefined,
+    underlying: contractModelToContractEntry(thisTrade.underlying),
     statements: undefined,
     positions: undefined,
+
+    // Fields added by router
+    apy,
     virtuals: undefined,
   };
   if (thisTrade.statements) {
@@ -284,8 +299,16 @@ export const addFakeTrades = (theSynthesys: OpenTradesWithPositions): TradeEntry
     });
     const duration = (Date.now() - openingDate) / 1000 / 3600 / 24;
     const entry: TradeEntry = {
+      createdAt: Date.now(),
+      updatedAt: Date.now(),
+      portolio: undefined,
       id,
       underlying: {
+        createdAt: Date.now(),
+        updatedAt: Date.now(),
+        livePrice: null,
+        isin: null,
+
         id: -1,
         symbol: underlying,
         secType: ContractType.Stock,
@@ -310,7 +333,7 @@ export const addFakeTrades = (theSynthesys: OpenTradesWithPositions): TradeEntry
       strategy: TradeStrategy.undefined,
       risk: undefined,
       PnL: undefined,
-      unrlzdPnl: undefined,
+      expiryPnl: undefined,
       pnlInBase: undefined,
       apy: undefined,
       comment: undefined,

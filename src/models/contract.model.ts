@@ -1,5 +1,5 @@
 import { CreationOptional, InferAttributes, InferCreationAttributes, NonAttribute } from "sequelize";
-import { AllowNull, Column, DataType, Model, Table } from "sequelize-typescript";
+import { Column, DataType, Model, Table } from "sequelize-typescript";
 import { ContractType } from "./contract.types";
 
 @Table({ tableName: "contract", timestamps: true })
@@ -10,74 +10,85 @@ export class Contract extends Model<
     { omit: "name" | "price" | "ask" | "bid" | "previousClosePrice" | "fiftyTwoWeekLow" | "fiftyTwoWeekHigh" }
   >
 > {
-  // id can be undefined during creation when using `autoIncrement`
+  // Auto-incremented ID
   declare id: CreationOptional<number>;
-  // timestamps!
-  // createdAt can be undefined during creation
+
+  // Timestamps
   declare createdAt: CreationOptional<Date>;
-  // updatedAt can be undefined during creation
   declare updatedAt: CreationOptional<Date>;
 
   /** The unique IB contract identifier. */
-  @Column({ type: DataType.INTEGER, field: "con_id" })
+  @Column({ type: DataType.INTEGER, field: "con_id", allowNull: false })
   declare conId: number;
 
-  /** ISIN */
+  /** International Securities Identification Number (ISIN). */
   @Column({ type: DataType.CHAR(12), field: "ISIN" })
-  declare isin?: string;
+  declare isin: string | null;
 
-  /** The asset ticker. */
-  @Column({ type: DataType.STRING })
+  /** The asset ticker (e.g., AAPL, TSLA). */
+  @Column({ type: DataType.STRING, allowNull: false })
   declare symbol: string;
 
-  /** The security type   */
-  @AllowNull(false)
-  @Column({ type: DataType.STRING })
+  /** The security type (e.g., STOCK, FUTURE). */
+  @Column({ type: DataType.STRING, allowNull: false })
   declare secType: ContractType;
 
-  /** The destination exchange. */
-  @Column({ type: DataType.STRING, defaultValue: "SMART" })
+  /** The destination exchange (default: SMART). */
+  @Column({ type: DataType.STRING, defaultValue: "SMART", allowNull: false })
   declare exchange: string;
 
-  /** The trading currency. */
-  @Column({ type: DataType.CHAR(3) })
+  /** The trading currency (ISO 4217 format). */
+  @Column({
+    type: DataType.CHAR(3),
+    validate: { is: /^[A-Z]{3}$/ }, // Validates currency code format
+    allowNull: false,
+  })
   declare currency: string;
 
-  /* other fields to be documented */
-
-  @Column({ type: DataType.STRING })
+  /** The name of the contract. */
+  @Column({ type: DataType.STRING, defaultValue: "", allowNull: false })
   declare name: string;
 
+  /** The last traded price. */
   @Column({ type: DataType.FLOAT(6, 3) })
   declare price: number | null;
 
+  /** The current bid price. */
   @Column({ type: DataType.FLOAT(6, 3) })
   declare bid: number | null;
 
+  /** The current ask price. */
   @Column({ type: DataType.FLOAT(6, 3) })
   declare ask: number | null;
 
+  /** The previous closing price. */
   @Column({ type: DataType.FLOAT(6, 3), field: "previous_close_price" })
   declare previousClosePrice: number | null;
 
-  get livePrice(): NonAttribute<number> {
-    let value = undefined;
-    if (this.getDataValue("ask") !== null && this.getDataValue("bid") !== null) {
-      value = (this.getDataValue("ask") + this.getDataValue("bid")) / 2;
-    } else if (this.getDataValue("price") !== null) {
-      value = this.getDataValue("price");
-    } else {
-      value = this.getDataValue("previousClosePrice");
-    }
-    return Math.round(value * 1000) / 1000;
-  }
-
+  /** The 52-week lowest price. */
   @Column({ type: DataType.FLOAT(6, 3), field: "fifty_two_week_low" })
   declare fiftyTwoWeekLow: number | null;
 
+  /** The 52-week highest price. */
   @Column({ type: DataType.FLOAT(6, 3), field: "fifty_two_week_high" })
   declare fiftyTwoWeekHigh: number | null;
 
+  /** Calculates the live price based on bid, ask, or fallback values. */
+  get livePrice(): NonAttribute<number | null> {
+    const bid = this.getDataValue("bid");
+    const ask = this.getDataValue("ask");
+    const price = this.getDataValue("price");
+    const previousClosePrice = this.getDataValue("previousClosePrice");
+
+    if (bid !== null && ask !== null) {
+      return (bid + ask) / 2;
+    } else if (price !== null) {
+      return price;
+    }
+    return previousClosePrice;
+  }
+
+  // Example for future relationships:
   // @HasMany(() => Position, { sourceKey: "id", foreignKey: "contract_id" })
   // declare positions: Position[];
 }

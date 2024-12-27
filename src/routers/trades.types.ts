@@ -62,17 +62,23 @@ export type TradeEntry = Omit<
   Attributes<Trade>,
   "portfolio" | "underlying" | "openingDate" | "closingDate" | "statements" | "positions" | "createdAt" | "updatedAt"
 > & {
-  underlying: ContractEntry;
+  // Virtual properties
+  duration: number;
+  expectedDuration: number | undefined;
+
+  // Make JSON compatible
+  createdAt: number;
+  updatedAt: number;
   openingDate: number; // Date in msecs
   closingDate: number | undefined; // Date in msecs
 
+  // Relations
+  portolio: undefined;
+  underlying: ContractEntry;
   statements: StatementEntry[] | undefined;
   positions: PositionEntry[] | undefined;
 
-  // Fileds added by router
-  duration: number;
-  expectedDuration: number | undefined;
-  unrlzdPnl: number | undefined;
+  // Fields added by router
   apy: number | undefined;
   virtuals: VirtualPositionEntry[] | undefined;
 };

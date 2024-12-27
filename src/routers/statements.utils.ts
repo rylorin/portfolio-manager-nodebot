@@ -1,10 +1,8 @@
 import {
   BondStatement,
-  Contract,
   DividendStatement,
   EquityStatement,
   InterestStatement,
-  OptionContract,
   OptionStatement,
   Portfolio,
   Statement,
@@ -12,6 +10,7 @@ import {
 } from "../models";
 import { CorporateStatement } from "../models/corpo_statement.model";
 import { ContractType, StatementTypes } from "../models/types";
+import { contractModelToContractEntry } from "./contracts.utils";
 import { DididendSummary, InterestsSummary, ReportEntry } from "./reports.types";
 import { BaseStatement, StatementEntry, StatementUnderlyingOption } from "./statements.types";
 
@@ -26,7 +25,7 @@ export const statementModelToStatementEntry = async (item: Statement): Promise<S
     fxRateToBase: item.fxRateToBase,
     description: item.description,
     trade_id: item.trade_unit_id,
-    underlying: item.stock,
+    underlying: item.stock ? contractModelToContractEntry(item.stock) : undefined,
   };
   switch (item.statementType) {
     case StatementTypes.EquityStatement:
@@ -34,7 +33,7 @@ export const statementModelToStatementEntry = async (item: Statement): Promise<S
         return {
           statementType: StatementTypes.EquityStatement,
           ...baseStatement,
-          underlying: item.stock,
+          // underlying: contractModelToContractEntry(item.stock),
           quantity: thisStatement!.quantity,
           pnl: thisStatement!.realizedPnL,
           fees: thisStatement!.fees,
@@ -44,12 +43,12 @@ export const statementModelToStatementEntry = async (item: Statement): Promise<S
     case StatementTypes.OptionStatement:
       return OptionStatement.findByPk(item.id, {
         include: [
-          { model: Contract, as: "contract" },
-          { model: OptionContract, as: "option" /*, include: [{ model: Contract, as: "underlying" }] */ },
+          { association: "contract" },
+          { association: "option" /*, include: [{ model: Contract, as: "underlying" }] */ },
         ],
       }).then((thisStatement) => {
         const option: StatementUnderlyingOption = {
-          ...thisStatement!.contract,
+          ...contractModelToContractEntry(thisStatement!.contract),
           ...thisStatement!.option,
           // id: thisStatement!.option.id,
           // secType: thisStatement!.contract.secType,
@@ -61,11 +60,13 @@ export const statementModelToStatementEntry = async (item: Statement): Promise<S
           // lastTradeDate: thisStatement!.option.lastTradeDate,
           // callOrPut: thisStatement!.option.callOrPut,
           // multiplier: thisStatement!.option.multiplier,
+          createdAt: 0,
+          updatedAt: 0,
         };
         return {
           statementType: StatementTypes.OptionStatement,
           ...baseStatement,
-          underlying: item.stock,
+          // underlying: contractModelToContractEntry(item.stock),
           option,
           quantity: thisStatement!.quantity,
           pnl: thisStatement!.realizedPnL,
@@ -79,7 +80,7 @@ export const statementModelToStatementEntry = async (item: Statement): Promise<S
           statementType: StatementTypes.DividendStatement,
           ...baseStatement,
           country: thisStatement!.country || "XY",
-          underlying: item.stock,
+          // underlying: contractModelToContractEntry(item.stock),
           pnl: item.netCash,
         };
       });
@@ -90,19 +91,20 @@ export const statementModelToStatementEntry = async (item: Statement): Promise<S
           statementType: StatementTypes.TaxStatement,
           ...baseStatement,
           country: thisStatement!.country || "YY",
-          underlying: item.stock,
+          // underlying: contractModelToContractEntry(item.stock),
           pnl: item.netCash,
         };
       });
 
     case StatementTypes.InterestStatement:
       return InterestStatement.findByPk(item.id).then((thisStatement) => {
+        if (!thisStatement) throw Error(`Interest statement #${item.id} not found.`);
         return {
           statementType: StatementTypes.InterestStatement,
           ...baseStatement,
           pnl: item.netCash,
           country: thisStatement!.country || "",
-          underlying: item.stock,
+          // underlying: contractModelToContractEntry(item.stock),
         };
       });
 
@@ -127,7 +129,7 @@ export const statementModelToStatementEntry = async (item: Statement): Promise<S
         return {
           statementType: StatementTypes.CorporateStatement,
           ...baseStatement,
-          underlying: item.stock,
+          // underlying: contractModelToContractEntry(item.stock),
           quantity: thisStatement?.quantity || 0,
           pnl: thisStatement?.pnl || 0,
         };
@@ -150,7 +152,7 @@ export const statementModelToStatementEntry = async (item: Statement): Promise<S
           statementType: StatementTypes.BondStatement,
           ...baseStatement,
           country,
-          underlying: item.stock,
+          // underlying: contractModelToContractEntry(item.stock),
           quantity: thisStatement.quantity,
           pnl: thisStatement.realizedPnL,
           fees: thisStatement.fees,
@@ -285,7 +287,7 @@ export const prepareReport = async (portfolio: Portfolio): Promise<ReportEntry[]
           break;
 
         case StatementTypes.EquityStatement:
-          switch (statement.underlying.secType) {
+          switch (statement.underlying?.secType) {
             case ContractType.Stock:
               report.tradesSummary.stocksPnLInBase += statement.pnl * statement.fxRateToBase;
               break;
@@ -316,7 +318,7 @@ export const prepareReport = async (portfolio: Portfolio): Promise<ReportEntry[]
 
         case StatementTypes.CorporateStatement:
           if (statement.pnl) {
-            switch (statement.underlying.secType) {
+            switch (statement.underlying?.secType) {
               case ContractType.Bond:
                 report.tradesSummary.bondPnLInBase += statement.pnl * statement.fxRateToBase;
                 report.tradesDetails.push(statement);

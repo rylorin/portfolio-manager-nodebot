@@ -1,5 +1,5 @@
 import { LoaderFunctionArgs } from "react-router-dom";
-import { OptionEntry } from "../../../../routers/repository.types";
+import { OptionEntry } from "../../../../routers/";
 
 /**
  * Load statement list content
@@ -11,5 +11,5 @@ export const optionShowLoader = async ({ params }: LoaderFunctionArgs): Promise<
   // console.log("tradesShowLoader", portfolioId, tradeId);
   return fetch(`/api/repository/options/${optionId}`)
     .then(async (response) => response.json()) // eslint-disable-line @typescript-eslint/no-unsafe-return
-    .then((data) => data.option as OptionEntry);
+    .then((data) => data.option as OptionEntry); // eslint-disable-line @typescript-eslint/no-unsafe-return
 };

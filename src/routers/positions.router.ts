@@ -13,6 +13,7 @@ import {
   Statement,
 } from "../models";
 import { ContractType } from "../models/types";
+import { contractModelToContractEntry } from "./contracts.utils";
 
 const MODULE = "PositionsRouter";
 
@@ -45,7 +46,7 @@ export const preparePositions = async (portfolio: Portfolio): Promise<(PositionE
               openDate: item.createdAt.getTime(),
               quantity: item.quantity,
               contract: {
-                ...item.contract,
+                ...contractModelToContractEntry(item.contract),
                 // id: item.contract.id,
                 // secType: item.contract.secType,
                 // symbol: item.contract.symbol,
@@ -95,7 +96,7 @@ export const preparePositions = async (portfolio: Portfolio): Promise<(PositionE
                 openDate: item.createdAt.getTime(),
                 quantity: item.quantity,
                 contract: {
-                  ...item.contract,
+                  ...contractModelToContractEntry(item.contract),
                   // id: item.contract.id,
                   // secType: item.contract.secType,
                   // symbol: item.contract.symbol,
@@ -155,7 +156,7 @@ export const preparePositions = async (portfolio: Portfolio): Promise<(PositionE
                 openDate: item.createdAt.getTime(),
                 quantity: item.quantity,
                 contract: {
-                  ...item.contract,
+                  ...contractModelToContractEntry(item.contract),
                   // id: item.contract.id,
                   // secType: item.contract.secType,
                   // symbol: item.contract.symbol,
@@ -190,7 +191,7 @@ export const preparePositions = async (portfolio: Portfolio): Promise<(PositionE
               openDate: item.createdAt.getTime(),
               quantity: item.quantity,
               contract: {
-                ...item.contract,
+                ...contractModelToContractEntry(item.contract),
                 // id: item.contract.id,
                 // secType: item.contract.secType,
                 // symbol: item.contract.symbol,

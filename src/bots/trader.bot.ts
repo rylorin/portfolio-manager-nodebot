@@ -1,5 +1,4 @@
 import {
-  IBApiNextError,
   Contract as IbContract,
   Order as IbOrder,
   OptionType,
@@ -13,9 +12,14 @@ import { ITradingBot } from ".";
 import logger from "../logger";
 import { Balance, Contract, OpenOrder, OptionContract, OptionStatement, Position, Setting } from "../models";
 import { dateToExpiration, expirationToDate, expirationToDateString } from "../models/date_utils";
-import { CashStrategy } from "../models/portfolio.types";
+import { CashStrategy } from "../models/types";
 
 const MODULE = "TradeBot";
+
+const GET_MARKET_DATA_BATCH_SIZE = 90;
+const GET_MARKET_DATA_DURATION = 15 * 1_000; // IB says 11 but we add a bit overhead for db update
+const UPDATE_OPTIONS_BATCH_FACTOR = 3;
+const START_AFTER = 15 * 1_000;
 
 // eslint-disable-next-line @typescript-eslint/no-unsafe-argument,@typescript-eslint/no-unused-vars
 const sequelize_logging = (...args: any[]): void => logger.trace(MODULE + ".squelize", ...args);
@@ -43,25 +47,20 @@ export class TradeBot extends ITradingBot {
       return this.api
         .getMarketDataSnapshot(contract as IbContract, "", false)
         .then(async (marketData) => this.updateContratPrice(contract, marketData))
-        .catch((err: IBApiNextError | Error) => {
-          logger.error(
-            MODULE + ".findUpdatedContract",
-            "error" in err ? (err.error as Error).message : (err as Error).message,
-          );
+        .catch((err: Error) => {
+          logger.error(MODULE + ".findUpdatedContract", err.message);
         })
         .then(() => contract);
     }
   }
 
   protected async findUpdatedContracts(ids: number[]): Promise<(Contract | null)[]> {
-    console.log("findUpdatedContracts", ids.length, "items in");
     let result: (Contract | null)[] = [];
     while (ids.length > 0) {
-      const id1 = ids.slice(0, 90);
+      const id1 = ids.slice(0, GET_MARKET_DATA_BATCH_SIZE);
       result = result.concat(await Promise.all(id1.map(async (id) => this.findUpdatedContract(id))));
-      ids = ids.slice(90);
+      ids = ids.slice(GET_MARKET_DATA_BATCH_SIZE);
     }
-    console.log("findUpdatedContracts", result.length, "items out");
     return result;
   }
 
@@ -69,6 +68,7 @@ export class TradeBot extends ITradingBot {
     underlying_id: number,
     strike: number,
     callOrPut: OptionType,
+    lastTradeDate: string,
   ): Promise<OptionContract[]> {
     const where = {
       stock_id: underlying_id,
@@ -80,49 +80,34 @@ export class TradeBot extends ITradingBot {
           : {
               [Op.lte]: strike,
             },
-      lastTradeDate: { [Op.gt]: new Date() },
+      lastTradeDate: { [Op.gt]: lastTradeDate },
       callOrPut,
-      // delta: {
-      //   [Op.lt]: 1 - this.portfolio.ccWinRatio!, // RULE : delta < 0.25
-      // },
-      updatedAt: { [Op.lt]: new Date(Date.now() - 45_000) }, // older than 45 secs
+      updatedAt: {
+        [Op.lt]: new Date(Date.now() - UPDATE_OPTIONS_BATCH_FACTOR * GET_MARKET_DATA_DURATION),
+      },
     };
-    const order: Order = [
-      ["strike", callOrPut == OptionType.Call ? "ASC" : "DESC"],
-      ["lastTradeDate", "ASC"],
-    ];
+    const order: Order = [["strike", callOrPut == OptionType.Call ? "ASC" : "DESC"]];
+
     let options = await OptionContract.findAll({
       where,
-      include: [
-        {
-          required: true,
-          model: Contract,
-          as: "contract",
-          // where: {
-          //   bid: {
-          //     [Op.gte]: this.portfolio.minPremium, // RULE : premium (bid) >= 0.25$
-          //   },
-          // },
-        },
-        {
-          required: true,
-          model: Contract,
-          as: "stock",
-        },
-      ],
-      order,
-      limit: 3,
-      // logging: console.log,
+      order: [...order, ["lastTradeDate", "ASC"]],
+      limit: UPDATE_OPTIONS_BATCH_FACTOR * GET_MARKET_DATA_BATCH_SIZE,
     });
-    console.log(options);
+    // console.log("initial options:");
+    // this.printObject(options);
 
-    const contracts = await this.findUpdatedContracts(options.map((item) => item.id));
-    console.log("contracts:", contracts);
+    /* const contracts = */ await this.findUpdatedContracts(options.map((item) => item.id));
+    // console.log("contracts:", contracts);
 
     options = await OptionContract.findAll({
       where: {
         ...where,
-        updatedAt: { [Op.gt]: new Date(Date.now() - 60_000) }, // newer than 60 secs
+        updatedAt: {
+          [Op.gt]: new Date(Date.now() - UPDATE_OPTIONS_BATCH_FACTOR * GET_MARKET_DATA_DURATION * 2),
+        },
+        delta: {
+          [Op.lt]: 1 - this.portfolio.ccWinRatio!, // RULE : delta < 0.25
+        },
       },
       include: [
         {
@@ -141,12 +126,13 @@ export class TradeBot extends ITradingBot {
           as: "stock",
         },
       ],
-      order,
+      order: [["lastTradeDate", "ASC"], ...order],
       limit: 3,
       // logging: console.log,
     });
-    console.log("updated options:");
-    this.printObject(options);
+    // console.log("updated options:");
+    // this.printObject(options);
+
     return options;
   }
 
@@ -173,50 +159,57 @@ export class TradeBot extends ITradingBot {
     );
   }
 
+  protected async getOptionsPositionsForUnderlying(underlying_id: number): Promise<Position[]> {
+    return Position.findAll({
+      where: { portfolio_id: this.portfolio.id },
+      include: [
+        {
+          association: "contract",
+          where: { secType: SecType.OPT },
+          required: true,
+        },
+      ],
+    }).then(async (positions) => {
+      // Got all options positions
+      return positions.reduce(
+        async (p, position) =>
+          p.then(async (positions) =>
+            OptionContract.findByPk(position.contract_id).then((option) => {
+              if (option?.stock_id == underlying_id) {
+                positions.push(position);
+              }
+              return positions;
+            }),
+          ),
+        Promise.resolve([] as Position[]),
+      );
+    });
+  }
+
   protected async runRollStrategy(setting: Setting): Promise<Setting> {
-    if (setting.rollPutStrategy || setting.rollCallStrategy) {
-      const price = await Contract.findByPk(setting.underlying.id).then((contract) => contract!.livePrice);
-      const positions = await Position.findAll({
-        where: { portfolio_id: this.portfolio.id },
-        include: [
-          {
-            association: "contract",
-            where: { secType: SecType.OPT },
-            required: true,
-          },
-        ],
-      });
-      if (setting.rollPutStrategy) {
-        await positions.reduce(
-          async (p, position) =>
-            p.then(async () =>
-              OptionContract.findByPk(position.contract_id).then((option) => {
-                if (
-                  option!.stock_id == setting.underlying.id &&
-                  option!.callOrPut == OptionType.Put &&
-                  price < option!.strike
-                )
-                  console.log("ITM!", price, option);
-              }),
-            ),
-          Promise.resolve(),
-        );
-      }
-      if (setting.rollCallStrategy) {
-        await positions.reduce(
-          async (p, position) =>
-            p.then(async () =>
-              OptionContract.findByPk(position.contract_id).then((option) => {
-                if (
-                  option!.stock_id == setting.underlying.id &&
-                  option!.callOrPut == OptionType.Call &&
-                  price > option!.strike
-                )
-                  console.log("ITM!", price, option);
-              }),
-            ),
-          Promise.resolve(),
-        );
+    const price = await Contract.findByPk(setting.underlying.id).then((contract) => contract!.livePrice);
+    if (price) {
+      const positions = await this.getOptionsPositionsForUnderlying(setting.underlying.id);
+      for (const position of positions) {
+        const option = await OptionContract.findByPk(position.contract_id);
+        if (option!.callOrPut == OptionType.Put && price < option!.strike) {
+          console.log("ITM Put!", price);
+          if (setting.rollPutStrategy) {
+            this.printObject(position);
+            const options = await this.fetchUpdatedOptions(
+              setting.underlying.id,
+              option!.strike,
+              option!.callOrPut,
+              option!.lastTradeDate,
+            );
+            this.printObject(options);
+          }
+        } else if (option!.callOrPut == OptionType.Call && price > option!.strike) {
+          console.log("ITM Call!", price);
+          if (setting.rollCallStrategy) {
+            this.printObject(position);
+          }
+        }
       }
     }
     return setting;
@@ -239,10 +232,13 @@ export class TradeBot extends ITradingBot {
     const free_for_this_symbol = stock_positions + call_positions + stock_sell_orders + call_sell_orders;
     console.log("free_for_this_symbol:", free_for_this_symbol);
     if (position && free_for_this_symbol > 0) {
+      console.log("prices", setting.underlying.livePrice, setting.underlying.previousClosePrice);
       if (
         setting.ccStrategy > 0 &&
+        setting.underlying.livePrice &&
+        setting.underlying.previousClosePrice &&
         // RULE : stock price is higher than previous close
-        setting.underlying.livePrice > setting.underlying.previousClosePrice!
+        setting.underlying.livePrice > setting.underlying.previousClosePrice
       ) {
         // RULE defensive : strike > cours (OTM) & strike > position avg price
         // RULE agressive : strike > cours (OTM)
@@ -250,7 +246,12 @@ export class TradeBot extends ITradingBot {
           setting.ccStrategy == 1
             ? Math.max(setting.underlying.livePrice, position.averagePrice)
             : setting.underlying.livePrice;
-        const options = await this.fetchUpdatedOptions(setting.underlying.id, strike, OptionType.Call);
+        const options = await this.fetchUpdatedOptions(
+          setting.underlying.id,
+          strike,
+          OptionType.Call,
+          new Date().toISOString().substring(0, 10),
+        );
         if (options.length > 0) {
           for (const option of options) {
             // const expiry: Date = new Date(option.lastTradeDate);
@@ -290,12 +291,7 @@ export class TradeBot extends ITradingBot {
   }
 
   protected runCSPStrategy(setting: Setting): Setting {
-    logger.error(MODULE + ".runCSPStrategy", "Method not implemented.");
     return setting;
-  }
-
-  protected async updateUnderlyingPrice(setting: Setting): Promise<Setting> {
-    return this.findUpdatedContract(setting.underlying.id).then((_contract) => setting);
   }
 
   protected async runCashStrategy(): Promise<void> {
@@ -435,7 +431,7 @@ export class TradeBot extends ITradingBot {
                 ),
               ]).catch((reason: Error) => logger.error(MODULE + ".addOptionsChains", reason.message));
             } else {
-              logger.info(
+              logger.trace(
                 MODULE + ".addOptionsChains",
                 `Ignoring recent ${setting.underlying.symbol}@${expstr} option chain`,
               );
@@ -472,7 +468,8 @@ export class TradeBot extends ITradingBot {
                 p.then(async () => {
                   logger.info(MODULE + ".run", `Running ${setting.underlying.symbol} strategies`);
                   return (
-                    this.updateUnderlyingPrice(setting)
+                    this.findUpdatedContract(setting.underlying.id)
+                      .then((_contract) => setting)
                       .then(async (setting) => this.addOptionsChains(setting))
                       // Cash secured puts strategy
                       .then((setting) => this.runCSPStrategy(setting))
@@ -487,6 +484,7 @@ export class TradeBot extends ITradingBot {
             ),
         )
         .then(async () => this.runCashStrategy())
+        .then(async () => this.updatePositions())
         .then(() => logger.info(MODULE + ".run", "Trader bot ran"));
     } else {
       logger.warn(MODULE + ".run", "Portfolio undefined");
@@ -502,7 +500,7 @@ export class TradeBot extends ITradingBot {
       .then(() => {
         this.timer = setTimeout(() => {
           this.run().catch((error: Error) => this.error(error.message));
-        }, 15_000);
+        }, START_AFTER);
       })
       .catch((error: Error) => this.error(error.message));
   }

@@ -2,7 +2,7 @@ import express from "express";
 import { Op } from "sequelize";
 import { PositionEntry } from ".";
 import logger, { LogLevel } from "../logger";
-import { Contract, Currency, Portfolio, Position, Statement, Trade } from "../models";
+import { Contract, Portfolio, Position, Statement, Trade } from "../models";
 import { TradeStatus } from "../models/types";
 import { preparePositions } from "./positions.router";
 import { OpenTradesWithPositions, TradeEntry } from "./trades.types";
@@ -182,7 +182,7 @@ router.get("/summary/open", (req, res): void => {
       status: TradeStatus.open,
     },
     include: [
-      { model: Contract, as: "underlying" },
+      { association: "underlying", required: true },
       { association: "statements", include: [{ association: "stock" }] },
     ],
   })
@@ -191,11 +191,10 @@ router.get("/summary/open", (req, res): void => {
       return Portfolio.findByPk(portfolioId, {
         include: [
           {
-            model: Position,
-            as: "positions",
-            include: [{ model: Contract, as: "contract" }],
+            association: "positions",
+            include: [{ association: "contract" }],
           },
-          { model: Currency, as: "baseRates" },
+          { association: "baseRates" },
         ],
         // logging: console.log,
       })
@@ -212,7 +211,10 @@ router.get("/summary/open", (req, res): void => {
         });
     })
     .then((tradessynthesys) => addFakeTrades(tradessynthesys))
-    // .then((trades) => sortTrades(trades))
+    .then((trades) => {
+      // console.log(trades);
+      return trades;
+    })
     .then((trades) => res.status(200).json({ trades }))
     .catch((error) => {
       console.error(error);
