@@ -7,14 +7,14 @@ export class BagContract extends Model<
   InferAttributes<BagContract>,
   InferCreationAttributes<BagContract, { omit: "contract" }>
 > {
-  // id can be undefined during creation when using `autoIncrement`
-  declare id: CreationOptional<number>;
-  // timestamps!
-  // createdAt can be undefined during creation
-  declare createdAt: CreationOptional<Date>;
-  // updatedAt can be undefined during creation
-  declare updatedAt: CreationOptional<Date>;
+  // Primary key
+  declare id: number;
 
+  /** Base contract associated with this bag */
   @BelongsTo(() => Contract, "id")
   declare contract: Contract;
+
+  // Timestamps
+  declare createdAt: CreationOptional<Date>;
+  declare updatedAt: CreationOptional<Date>;
 }

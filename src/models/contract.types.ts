@@ -15,23 +15,3 @@ export const OptionType = {
   Put: "P",
 } as const;
 export type OptionType = (typeof OptionType)[keyof typeof OptionType];
-
-// export interface ContractAttributes {
-//   id: number;
-//   updatedAt: Date;
-
-//   conId: number;
-//   symbol: string;
-//   secType: ContractType;
-//   exchange: string;
-//   currency: string;
-//   name?: string;
-//   price?: number;
-//   bid?: number;
-//   ask?: number;
-//   previousClosePrice?: number;
-//   fiftyTwoWeekLow?: number;
-//   fiftyTwoWeekHigh?: number;
-// }
-
-// export type ContractCreationAttributes = Optional<ContractAttributes, "id" | "updatedAt">;

@@ -5,7 +5,7 @@ import { Contract } from "./contract.model";
 @Table({ tableName: "index_contract", timestamps: true, deletedAt: false })
 export class Index extends Model<InferAttributes<Index>, InferCreationAttributes<Index, { omit: "contract" }>> {
   // Primary key
-  declare id: CreationOptional<number>;
+  declare id: number;
 
   // Timestamps
   declare createdAt: CreationOptional<Date>;

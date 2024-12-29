@@ -1,24 +1,31 @@
-import { CreationOptional, InferAttributes, InferCreationAttributes } from "sequelize";
-import { BelongsTo, Column, DataType, Model, Table } from "sequelize-typescript";
-import { Statement } from ".";
+import { InferAttributes, InferCreationAttributes } from "sequelize";
+import { BelongsTo, Column, DataType, ForeignKey, Model, Table } from "sequelize-typescript";
+import { Statement } from "./statement.model";
 
-@Table({ tableName: "dividend_statement", timestamps: false, createdAt: false, updatedAt: false })
+/**
+ * Represents a dividend payment statement, inheriting from `Statement`.
+ */
+@Table({
+  tableName: "dividend_statement",
+  timestamps: false,
+})
 export class DividendStatement extends Model<
   InferAttributes<DividendStatement>,
   InferCreationAttributes<DividendStatement, { omit: "statement" }>
 > {
-  // id can be undefined during creation when using `autoIncrement`
-  declare id: CreationOptional<number>;
-  // timestamps!
-  // createdAt can be undefined during creation
-  declare createdAt: CreationOptional<Date>;
-  // updatedAt can be undefined during creation
-  declare updatedAt: CreationOptional<Date>;
+  /** Primary key (inherited from `Statement`) */
+  @ForeignKey(() => Statement)
+  @Column({ primaryKey: true })
+  declare id: number;
 
+  /** Relationship with the `Statement` model */
   @BelongsTo(() => Statement, "id")
-  public statement: Statement;
+  declare statement: Statement;
 
-  /** country */
-  @Column({ type: DataType.STRING(2) })
+  /** Country of origin for the dividend payment */
+  @Column({
+    type: DataType.STRING(2),
+    allowNull: false,
+  })
   declare country: string;
 }

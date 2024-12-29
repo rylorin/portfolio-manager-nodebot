@@ -1,47 +1,82 @@
 import { CreationOptional, InferAttributes, InferCreationAttributes } from "sequelize";
-import { BelongsTo, Column, DataType, Model, Table } from "sequelize-typescript";
-import { Statement } from ".";
+import { BelongsTo, Column, DataType, ForeignKey, Model, Table } from "sequelize-typescript";
+import { Statement } from "./statement.model";
 
-@Table({ tableName: "bond_statement", timestamps: false, createdAt: false, updatedAt: false })
+/**
+ * Represents a financial statement specifically for bonds, inheriting from `Statement`.
+ */
+@Table({ tableName: "bond_statement", timestamps: false })
 export class BondStatement extends Model<
   InferAttributes<BondStatement>,
   InferCreationAttributes<BondStatement, { omit: "statement" }>
 > {
-  // id can be undefined during creation when using `autoIncrement`
-  declare id: CreationOptional<number>;
-  // timestamps!
-  // createdAt can be undefined during creation
+  /** Primary key (inherited from `Statement`) */
+  @ForeignKey(() => Statement)
+  @Column({ primaryKey: true })
+  declare id: number;
+
+  /** Timestamps (inherited but unused in this table) */
   declare createdAt: CreationOptional<Date>;
-  // updatedAt can be undefined during creation
   declare updatedAt: CreationOptional<Date>;
 
+  /** Relationship with the `Statement` model */
   @BelongsTo(() => Statement, "id")
-  public statement: Statement;
+  declare statement: Statement;
 
-  @Column({ type: DataType.STRING(2), field: "country" })
+  /** Country of the bond (ISO 3166-1 alpha-2 code) */
+  @Column({
+    type: DataType.STRING(2),
+    allowNull: false,
+    field: "country",
+  })
   declare country: string;
 
-  /** accruedInterests are part of price and PnL */
-  @Column({ type: DataType.FLOAT, field: "accruedInt" })
+  /** Accrued interests are part of price and PnL */
+  @Column({
+    type: DataType.FLOAT,
+    allowNull: true,
+    field: "accruedInt",
+  })
   declare accruedInterests?: number;
 
-  /** proceeds */
-  @Column({ type: DataType.FLOAT(8, 2), defaultValue: 0 })
+  /** Proceeds from the bond transaction */
+  @Column({
+    type: DataType.FLOAT(8, 2),
+    allowNull: false,
+    defaultValue: 0,
+  })
   declare proceeds: number;
 
-  /** quantity */
-  @Column({ type: DataType.FLOAT(8, 2), defaultValue: 0 })
+  /** Quantity of bonds involved in the transaction */
+  @Column({
+    type: DataType.FLOAT(8, 2),
+    allowNull: false,
+    defaultValue: 0,
+  })
   declare quantity: number;
 
-  /** price */
-  @Column({ type: DataType.FLOAT(8, 3), field: "tradePrice" })
+  /** Trade price of the bond */
+  @Column({
+    type: DataType.FLOAT(8, 3),
+    allowNull: false,
+    field: "tradePrice",
+  })
   declare price: number;
 
-  /** fees */
-  @Column({ type: DataType.FLOAT(8, 2), defaultValue: 0 })
+  /** Fees associated with the bond transaction */
+  @Column({
+    type: DataType.FLOAT(8, 2),
+    allowNull: false,
+    defaultValue: 0,
+  })
   declare fees: number;
 
-  /** realizedPnL */
-  @Column({ type: DataType.FLOAT(8, 2), defaultValue: 0, field: "pnl" })
+  /** Realized profit or loss from the bond transaction */
+  @Column({
+    type: DataType.FLOAT(8, 2),
+    allowNull: false,
+    defaultValue: 0,
+    field: "pnl",
+  })
   declare realizedPnL: number;
 }

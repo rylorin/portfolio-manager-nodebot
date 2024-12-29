@@ -2,36 +2,68 @@ import { CreationOptional, InferAttributes, InferCreationAttributes } from "sequ
 import { BelongsTo, Column, DataType, ForeignKey, Model, Table } from "sequelize-typescript";
 import { Statement } from "./statement.model";
 
-@Table({})
+@Table({
+  tableName: "sales_taxes", // Nom de la table spécifié
+  timestamps: true, // Ajout des timestamps pour faciliter le suivi des opérations
+})
 export class SalesTaxes extends Model<InferAttributes<SalesTaxes>, InferCreationAttributes<SalesTaxes>> {
-  // id can be undefined during creation when using `autoIncrement`
+  // Identifiant unique de la taxe de vente, auto-incrémenté
   declare id: CreationOptional<number>;
-  // timestamps!
-  // createdAt can be undefined during creation
+
+  // Timestamp de création de la ligne
   declare createdAt: CreationOptional<Date>;
-  // updatedAt can be undefined during creation
+
+  // Timestamp de la dernière mise à jour de la ligne
   declare updatedAt: CreationOptional<Date>;
 
-  /** Underlying transaction */
-  // declare taxableTransactionID: ForeignKey<Contract["Statement"]>;
+  /** Identifiant de la transaction sous-jacente liée à cette taxe de vente */
   @ForeignKey(() => Statement)
-  @Column
+  @Column({
+    type: DataType.INTEGER,
+    allowNull: false, // Assure que cet identifiant est obligatoire
+  })
   declare taxableTransactionID: number;
-  @BelongsTo(() => Statement, "taxableTransactionID")
-  declare taxableTransaction: CreationOptional<Statement>;
 
-  @Column({ type: DataType.STRING })
+  /** Relation avec le modèle Statement, permettant de lier une transaction */
+  @BelongsTo(() => Statement, "taxableTransactionID")
+  declare taxableTransaction: Statement;
+
+  /** Pays où la taxe est appliquée */
+  @Column({
+    type: DataType.STRING(2), // Limite la longueur à 2 caractères pour le code pays (ex: FR, US)
+    allowNull: false,
+  })
   declare country: string;
 
-  @Column({ type: DataType.STRING })
+  /** Type de taxe (ex: TVA, impôt sur les ventes) */
+  @Column({
+    type: DataType.STRING,
+    allowNull: false,
+    comment: "Type de taxe appliquée (ex: TVA, impôt sur les ventes)",
+  })
   declare taxType: string;
 
-  @Column({ type: DataType.FLOAT })
+  /** Montant imposable sur lequel la taxe est calculée */
+  @Column({
+    type: DataType.FLOAT,
+    allowNull: false,
+    defaultValue: 0,
+  })
   declare taxableAmount: number;
 
-  @Column({ type: DataType.FLOAT })
+  /** Taux de la taxe applicable */
+  @Column({
+    type: DataType.FLOAT,
+    allowNull: false,
+    defaultValue: 0,
+  })
   declare taxRate: number;
 
-  @Column({ type: DataType.FLOAT })
+  /** Montant total de la taxe de vente calculée */
+  @Column({
+    type: DataType.FLOAT,
+    allowNull: false,
+    defaultValue: 0,
+  })
   declare salesTax: number;
 }

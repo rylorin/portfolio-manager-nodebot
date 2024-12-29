@@ -1,20 +1,25 @@
 import { CreationOptional, InferAttributes, InferCreationAttributes } from "sequelize";
-import { BelongsTo, Model, Table } from "sequelize-typescript";
-import { Statement } from ".";
+import { BelongsTo, Column, DataType, ForeignKey, Model, Table } from "sequelize-typescript";
+import { Statement } from "./statement.model";
 
-@Table({ tableName: "fee_statement", timestamps: false, createdAt: false, updatedAt: false })
+@Table({
+  tableName: "fee_statement",
+  timestamps: false, // Désactivation explicite car déjà gérés dans Statement
+})
 export class FeeStatement extends Model<
   InferAttributes<FeeStatement>,
   InferCreationAttributes<FeeStatement, { omit: "statement" }>
 > {
-  // id can be undefined during creation when using `autoIncrement`
+  /** Clé primaire reliée à Statement */
+  @ForeignKey(() => Statement)
+  @Column({
+    type: DataType.INTEGER,
+    primaryKey: true,
+    allowNull: false,
+  })
   declare id: CreationOptional<number>;
-  // timestamps!
-  // createdAt can be undefined during creation
-  declare createdAt: CreationOptional<Date>;
-  // updatedAt can be undefined during creation
-  declare updatedAt: CreationOptional<Date>;
 
+  /** Relation avec le modèle parent Statement */
   @BelongsTo(() => Statement, "id")
-  public statement: Statement;
+  declare statement: Statement;
 }

@@ -12,7 +12,7 @@ export class StockContract extends Model<
   InferCreationAttributes<StockContract, { omit: "contract" }>
 > {
   // Primary key
-  declare id: CreationOptional<number>;
+  declare id: number;
 
   // Timestamps
   declare createdAt: CreationOptional<Date>;

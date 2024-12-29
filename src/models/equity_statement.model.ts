@@ -1,7 +1,10 @@
-import { CreationOptional, InferAttributes, InferCreationAttributes } from "sequelize";
-import { BelongsTo, Column, DataType, Model, Table } from "sequelize-typescript";
-import { Statement } from ".";
+import { InferAttributes, InferCreationAttributes } from "sequelize";
+import { BelongsTo, Column, DataType, ForeignKey, Model, Table } from "sequelize-typescript";
+import { Statement } from "./statement.model";
 
+/**
+ * Enum defining the possible statuses for an Equity Statement.
+ */
 export const StatementStatus = {
   UNDEFINED_STATUS: 0,
   OPEN_STATUS: 1,
@@ -11,45 +14,75 @@ export const StatementStatus = {
   EXERCISED_STATUS: 5,
   CANCELLED_STATUS: 6,
 } as const;
+
 export type StatementStatus = (typeof StatementStatus)[keyof typeof StatementStatus];
 
-@Table({ tableName: "equity_statement", timestamps: false, createdAt: false, updatedAt: false })
+/**
+ * Represents an equity statement inheriting from `Statement`.
+ */
+@Table({
+  tableName: "equity_statement",
+  timestamps: false,
+})
 export class EquityStatement extends Model<
   InferAttributes<EquityStatement>,
   InferCreationAttributes<EquityStatement, { omit: "statement" }>
 > {
-  // id can be undefined during creation when using `autoIncrement`
-  declare id: CreationOptional<number>;
-  // timestamps!
-  // createdAt can be undefined during creation
-  declare createdAt: CreationOptional<Date>;
-  // updatedAt can be undefined during creation
-  declare updatedAt: CreationOptional<Date>;
+  /** Primary key (inherited from `Statement`) */
+  @ForeignKey(() => Statement)
+  @Column({ primaryKey: true })
+  declare id: number;
 
+  /** Relationship with the `Statement` model */
   @BelongsTo(() => Statement, "id")
-  public statement: Statement;
+  declare statement: Statement;
 
-  /** quantity */
-  @Column({ type: DataType.FLOAT(8, 2), defaultValue: 0 })
+  /** Quantity of equities in the statement */
+  @Column({
+    type: DataType.FLOAT(10, 5),
+    allowNull: false,
+    defaultValue: 0,
+  })
   declare quantity: number;
 
-  /** price */
-  @Column({ type: DataType.FLOAT(8, 3), defaultValue: 0 })
+  /** Price per equity */
+  @Column({
+    type: DataType.FLOAT(10, 3),
+    allowNull: false,
+    defaultValue: 0,
+  })
   declare price: number;
 
-  /** proceeds */
-  @Column({ type: DataType.FLOAT(8, 2), defaultValue: 0 })
+  /** Total proceeds from the equities */
+  @Column({
+    type: DataType.FLOAT(10, 2),
+    allowNull: false,
+    defaultValue: 0,
+  })
   declare proceeds: number;
 
-  /** fees */
-  @Column({ type: DataType.FLOAT(8, 2), defaultValue: 0 })
+  /** Fees associated with the transaction */
+  @Column({
+    type: DataType.FLOAT(10, 2),
+    allowNull: false,
+    defaultValue: 0,
+  })
   declare fees: number;
 
-  /** realizedPnL */
-  @Column({ type: DataType.FLOAT(8, 2), defaultValue: 0, field: "realized_pnl" })
+  /** Realized profit or loss */
+  @Column({
+    type: DataType.FLOAT(10, 2),
+    allowNull: false,
+    defaultValue: 0,
+    field: "realized_pnl",
+  })
   declare realizedPnL: number;
 
-  /** status */
-  @Column({ type: DataType.SMALLINT, defaultValue: 0 })
+  /** Status of the statement */
+  @Column({
+    type: DataType.SMALLINT,
+    allowNull: false,
+    defaultValue: StatementStatus.UNDEFINED_STATUS,
+  })
   declare status: StatementStatus;
 }

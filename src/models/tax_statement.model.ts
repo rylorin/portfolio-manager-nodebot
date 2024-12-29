@@ -1,24 +1,23 @@
-import { CreationOptional, InferAttributes, InferCreationAttributes } from "sequelize";
+import { InferAttributes, InferCreationAttributes } from "sequelize";
 import { BelongsTo, Column, DataType, Model, Table } from "sequelize-typescript";
 import { Statement } from ".";
 
-@Table({ tableName: "tax_statement", timestamps: false, createdAt: false, updatedAt: false })
-export class TaxStatement extends Model<
-  InferAttributes<TaxStatement>,
-  InferCreationAttributes<TaxStatement, { omit: "statement" }>
-> {
-  // id can be undefined during creation when using `autoIncrement`
-  declare id: CreationOptional<number>;
-  // timestamps!
-  // createdAt can be undefined during creation
-  declare createdAt: CreationOptional<Date>;
-  // updatedAt can be undefined during creation
-  declare updatedAt: CreationOptional<Date>;
+@Table({
+  tableName: "tax_statement", // Nom de la table dans la base de données
+  timestamps: false,
+})
+export class TaxStatement extends Model<InferAttributes<TaxStatement>, InferCreationAttributes<TaxStatement>> {
+  // Identifiant unique de l'enregistrement, auto-incrémenté
+  declare id: number;
 
+  /** Identifiant de la transaction associée à cette déclaration fiscale */
   @BelongsTo(() => Statement, "id")
-  public statement: Statement;
+  declare statement: Statement;
 
-  /** country */
-  @Column({ type: DataType.STRING(2) })
+  /** Code du pays associé à cette déclaration fiscale */
+  @Column({
+    type: DataType.STRING(2), // Limite à 2 caractères (ex: FR, US)
+    allowNull: false, // Assure que cette valeur est obligatoire
+  })
   declare country: string;
 }

@@ -12,7 +12,7 @@ export class CashContract extends Model<
   InferCreationAttributes<CashContract, { omit: "contract" }>
 > {
   // Primary key
-  declare id: CreationOptional<number>;
+  declare id: number;
 
   // Timestamps
   declare createdAt: CreationOptional<Date>;

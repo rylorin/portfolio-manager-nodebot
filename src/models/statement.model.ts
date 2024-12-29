@@ -5,91 +5,78 @@ import { Portfolio } from "./portfolio.model";
 import { StatementTypes } from "./statement.types";
 import { Trade } from "./trade.model";
 
-// type StatementAttributes = {
-//   id: number;
-//   date: Date;
-//   currency: string;
-//   amount: number;
-//   transactionID: number;
-//   fxRateToBase: number;
-// };
-
-// type StatementCreationAttributes = Optional<StatementAttributes, 'id'>;
-
-// @Table({ tableName: 'statement', timestamps: false, createdAt: false, updatedAt: false })
-// export class Statement extends Model<StatementAttributes, StatementCreationAttributes> {
-//   declare id: number;
-//   declare date: Date;
-//   declare currency: string;
-//   declare amount: number;
-//   declare transactionID: number;
-//   declare fxRateToBase: number;
-//   /** portfolio */
-//   @BelongsTo(() => Portfolio, 'portfolio_id')
-//   portfolio!: Portfolio;
-//   /** contract */
-//   @BelongsTo(() => Contract, 'stock_id')
-//   contract: Contract;
-// }
-
-// export type StatementCreationAttributes = InferCreationAttributes<Statement, { omit: "stock" | "portfolio" | "trade" |"stock_id"|"trade_unit_id"}>;
-
+/**
+ * Represents a financial statement associated with a portfolio, stock, or trade.
+ */
 @Table({ tableName: "statement", timestamps: true })
 export class Statement extends Model<
   InferAttributes<Statement>,
   InferCreationAttributes<Statement, { omit: "stock" | "portfolio" | "trade" }>
 > {
-  // id can be undefined during creation when using `autoIncrement`
+  /** Primary key */
   declare id: CreationOptional<number>;
-  // timestamps!
-  // createdAt can be undefined during creation
+
+  /** Timestamps */
   declare createdAt: CreationOptional<Date>;
-  // updatedAt can be undefined during creation
   declare updatedAt: CreationOptional<Date>;
 
-  /** Portfolio */
-  // declare portfolio_id: ForeignKey<Portfolio["id"]>;
+  /** Portfolio relation */
   @ForeignKey(() => Portfolio)
-  @Column
+  @Column({ allowNull: false })
   declare portfolio_id: number;
+
   @BelongsTo(() => Portfolio, "portfolio_id")
   declare portfolio: Portfolio;
 
-  @Column({ type: DataType.ENUM(typeof StatementTypes), field: "statement_type" })
+  /** Type of the statement */
+  @Column({
+    type: DataType.ENUM(...Object.values(StatementTypes)),
+    field: "statement_type",
+    allowNull: false,
+  })
   declare statementType: StatementTypes;
 
-  @Column({ type: DataType.DATE, field: "date" })
+  /** Date of the statement */
+  @Column({ type: DataType.DATE, allowNull: false })
   declare date: Date;
 
-  @Column({ type: DataType.STRING(3), field: "currency" })
+  /** Currency of the statement */
+  @Column({
+    type: DataType.STRING(3),
+    allowNull: false,
+    comment: "ISO 4217 currency code",
+  })
   declare currency: string;
 
-  // netCash = proceeds + ibCommission
-  @Column({ type: DataType.FLOAT, defaultValue: 0 })
+  /** Net cash, calculated as proceeds + commission */
+  @Column({ type: DataType.FLOAT, allowNull: false, defaultValue: 0 })
   declare netCash: number;
 
-  @Column({ type: DataType.STRING })
+  /** Description of the statement */
+  @Column({ type: DataType.STRING, allowNull: true })
   declare description: string;
 
-  @Column({ type: DataType.INTEGER, field: "transaction_id" })
+  /** Transaction ID, if applicable */
+  @Column({ type: DataType.INTEGER, allowNull: true, field: "transaction_id" })
   declare transactionId: number;
 
-  @Column({ type: DataType.FLOAT, field: "fx_rate_to_base" })
+  /** FX rate to base currency */
+  @Column({ type: DataType.FLOAT, allowNull: true, field: "fx_rate_to_base" })
   declare fxRateToBase: number;
 
-  /** Related underlying */
-  // declare stock_id: ForeignKey<Contract["id"]>;
+  /** Related stock (underlying) */
   @ForeignKey(() => Contract)
-  @Column
+  @Column({ allowNull: true })
   declare stock_id: number | null;
+
   @BelongsTo(() => Contract, "stock_id")
   declare stock: Contract;
 
-  /** Trade */
-  // declare trade_unit_id: ForeignKey<Trade["id"]> | null;
+  /** Related trade */
   @ForeignKey(() => Trade)
-  @Column
+  @Column({ allowNull: true, field: "trade_unit_id" })
   declare trade_unit_id: number | null;
+
   @BelongsTo(() => Trade, "trade_unit_id")
   declare trade: Trade;
 }

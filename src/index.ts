@@ -16,6 +16,7 @@ import {
 } from "./bots";
 import { ImporterBot } from "./bots/importer.bot";
 import { TradeBot } from "./bots/trader.bot";
+import logger from "./logger";
 import {
   BagContract,
   Balance,
@@ -151,8 +152,8 @@ export class MyTradingBotApp extends IBApiNextApp {
         if (this.cmdLineArgs.roll) new RollOptionPositionsBot(this, this.api, accountId).start();
         if (this.cmdLineArgs.yahoo) yahooBot.start();
       })
-      .catch(() => {
-        /* ignored */
+      .catch((err) => {
+        logger.error("main.main", err);
       });
   }
 

@@ -1,3 +1,5 @@
+// @ts-check
+
 import eslint from "@eslint/js";
 // import rxjs from "@smarttools/eslint-plugin-rxjs";
 import prettier from "eslint-plugin-prettier/recommended";
@@ -11,8 +13,8 @@ import tseslint from "typescript-eslint";
 
 export default tseslint.config(
   eslint.configs.recommended,
-  ...tseslint.configs.strict,
-  ...tseslint.configs.stylistic,
+  tseslint.configs.strict,
+  tseslint.configs.stylistic,
   prettier,
   {
     languageOptions: {
@@ -26,6 +28,7 @@ export default tseslint.config(
       "no-console": "off",
       "no-unsafe-optional-chaining": "error",
       "no-unused-vars": "off", // off required as we use the @typescript-eslint/no-unused-vars rule
+
       "@typescript-eslint/no-unused-vars": [
         "error",
         {
@@ -34,18 +37,12 @@ export default tseslint.config(
           varsIgnorePattern: "^_",
         },
       ],
-
       // "@typescript-eslint/ban-types": "error",
-      "@typescript-eslint/no-empty-object-type": "error",
-      "@typescript-eslint/no-unsafe-function-type": "error",
-      "@typescript-eslint/no-wrapper-object-types": "error",
       "@typescript-eslint/explicit-function-return-type": "error",
       "@typescript-eslint/explicit-module-boundary-types": "error",
-      "@typescript-eslint/no-empty-function": "error",
       "@typescript-eslint/no-explicit-any": "off", // We allow explicit any
       "@typescript-eslint/no-floating-promises": "error",
       "@typescript-eslint/no-non-null-assertion": "off", // behavior mismatch between TSlint and TScompiler. I make a valid usage of non null assertions
-      "@typescript-eslint/no-inferrable-types": "error",
       "@typescript-eslint/no-misused-promises": "error",
       "@typescript-eslint/no-unnecessary-type-assertion": "off", // behavior mismatch between TSlint and TScompiler. giving too many useless errors and we allow unnecessary type assertions
       "@typescript-eslint/no-unsafe-argument": "error",

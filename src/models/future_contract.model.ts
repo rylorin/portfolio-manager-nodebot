@@ -12,7 +12,7 @@ export class FutureContract extends Model<
   InferCreationAttributes<FutureContract, { omit: "contract" | "underlying" }>
 > {
   // Primary key
-  declare id: CreationOptional<number>;
+  declare id: number;
 
   // Timestamps
   declare createdAt: CreationOptional<Date>;

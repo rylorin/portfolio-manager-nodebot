@@ -1,28 +1,41 @@
 import { CreationOptional, InferAttributes, InferCreationAttributes } from "sequelize";
-import { BelongsTo, Column, DataType, Model, Table } from "sequelize-typescript";
-import { Statement } from ".";
+import { BelongsTo, Column, DataType, ForeignKey, Model, Table } from "sequelize-typescript";
+import { Statement } from "./statement.model";
 
+/**
+ * Represents a corporate action statement, inheriting from `Statement`.
+ */
 @Table({ tableName: "corporate_statement", timestamps: true })
 export class CorporateStatement extends Model<
   InferAttributes<CorporateStatement>,
   InferCreationAttributes<CorporateStatement, { omit: "statement" }>
 > {
-  // id can be undefined during creation when using `autoIncrement`
-  declare id: CreationOptional<number>;
-  // timestamps!
-  // createdAt can be undefined during creation
+  /** Primary key (inherited from `Statement`) */
+  @ForeignKey(() => Statement)
+  @Column({ primaryKey: true })
+  declare id: number;
+
+  /** Timestamps */
   declare createdAt: CreationOptional<Date>;
-  // updatedAt can be undefined during creation
   declare updatedAt: CreationOptional<Date>;
 
+  /** Relationship with the `Statement` model */
   @BelongsTo(() => Statement, "id")
-  public statement: Statement;
+  declare statement: Statement;
 
-  /** quantity */
-  @Column({ type: DataType.FLOAT(10, 2), defaultValue: 0 })
+  /** Quantity impacted by the corporate action */
+  @Column({
+    type: DataType.FLOAT(10, 2),
+    allowNull: false,
+    defaultValue: 0,
+  })
   declare quantity: number;
 
-  /** PnL */
-  @Column({ type: DataType.FLOAT(10, 2), defaultValue: 0 })
+  /** Realized profit or loss (PnL) resulting from the corporate action */
+  @Column({
+    type: DataType.FLOAT(10, 2),
+    allowNull: false,
+    defaultValue: 0,
+  })
   declare pnl: number;
 }
