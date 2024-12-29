@@ -1164,7 +1164,7 @@
   resolved "https://registry.yarnpkg.com/@sinclair/typebox/-/typebox-0.32.35.tgz#41c04473509478df9895800018a3d3ae7d40fb3c"
   integrity sha512-Ul3YyOTU++to8cgNkttakC0dWvpERr6RYoHO2W47DLbFvrwBDJUY31B1sImH6JZSYc4Kt4PyHtoPNu+vL2r2dA==
 
-"@smarttools/eslint-plugin-rxjs@^1.0.9":
+"@smarttools/eslint-plugin-rxjs@^1.0.10":
   version "1.0.10"
   resolved "https://registry.yarnpkg.com/@smarttools/eslint-plugin-rxjs/-/eslint-plugin-rxjs-1.0.10.tgz#ba333511012e471ab262864970dcf2823791e9a7"
   integrity sha512-mvDkiJqku300swHQHk8GMZO0PGzqoS3JOPvckKYPG7pqGa2CqHxVc26EbR3HU7sYWqii4wDUQxGCBhHPgs2MUQ==

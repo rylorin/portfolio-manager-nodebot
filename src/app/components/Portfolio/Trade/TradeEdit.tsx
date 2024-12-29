@@ -19,7 +19,6 @@ const TradeEdit: FunctionComponent<Props> = ({ ..._rest }): React.ReactNode => {
     <Formik
       initialValues={thisTrade}
       onSubmit={(values, _actions): void => {
-        // console.log("submit values", values);
         submit(
           values,
           // {

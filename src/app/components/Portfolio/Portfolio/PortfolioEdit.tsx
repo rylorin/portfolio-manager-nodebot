@@ -3,19 +3,19 @@ import { Flex, IconButton, Select, Text } from "@chakra-ui/react";
 import { Field, Formik, FormikProps } from "formik";
 import React, { FunctionComponent } from "react";
 import { Form, useLoaderData, useNavigate, useSubmit } from "react-router-dom";
-import { PortfolioEntry } from "../../../../routers";
+import { ContractEntry, PortfolioEntry } from "../../../../routers";
 import { obfuscate } from "../../../utils";
 
 type PortfolioShowProps = Record<string, never>;
 
 const PortfolioEdit: FunctionComponent<PortfolioShowProps> = ({ ..._rest }): React.ReactNode => {
-  const thisPortfolio = useLoaderData() as PortfolioEntry;
+  const { portfolio, contracts }: { portfolio: PortfolioEntry; contracts: ContractEntry[] } = useLoaderData();
   const navigate = useNavigate();
   const submit = useSubmit();
 
   return (
     <Formik
-      initialValues={thisPortfolio}
+      initialValues={portfolio}
       onSubmit={(values, _actions): void => {
         // console.log("submit values", values);
         submit(
@@ -33,13 +33,12 @@ const PortfolioEdit: FunctionComponent<PortfolioShowProps> = ({ ..._rest }): Rea
       {(formik: FormikProps<PortfolioEntry>): React.ReactNode => {
         return (
           <Form method="post" onSubmit={formik.handleSubmit}>
-            {" "}
             <Flex justifyContent="center" gap="2">
               <Text w="90px" as="b" textAlign="right">
                 Id:
               </Text>
               <Text textAlign="left" w="120px">
-                {thisPortfolio.id}
+                {portfolio.id}
               </Text>
             </Flex>
             <Flex justifyContent="center" gap="2">
@@ -47,7 +46,7 @@ const PortfolioEdit: FunctionComponent<PortfolioShowProps> = ({ ..._rest }): Rea
                 Name:
               </Text>
               <Text w="120px" textAlign="left">
-                {thisPortfolio.name}
+                {portfolio.name}
               </Text>
             </Flex>
             <Flex justifyContent="center" gap="2">
@@ -55,7 +54,7 @@ const PortfolioEdit: FunctionComponent<PortfolioShowProps> = ({ ..._rest }): Rea
                 Account:
               </Text>
               <Text w="120px" textAlign="left">
-                {obfuscate(thisPortfolio.account)}
+                {obfuscate(portfolio.account)}
               </Text>
             </Flex>
             <Flex justifyContent="center" gap="2">
@@ -63,7 +62,7 @@ const PortfolioEdit: FunctionComponent<PortfolioShowProps> = ({ ..._rest }): Rea
                 Currency:
               </Text>
               <Text w="120px" textAlign="left">
-                {thisPortfolio.baseCurrency}
+                {portfolio.baseCurrency}
               </Text>
             </Flex>
             <Flex justifyContent="center" gap="2">
@@ -71,15 +70,18 @@ const PortfolioEdit: FunctionComponent<PortfolioShowProps> = ({ ..._rest }): Rea
                 Cash:
               </Text>
               <Field as={Select} name="benchmark_id" w="200px" type="number" variant="outline">
-                <option value={thisPortfolio.benchmark_id} key={`k${thisPortfolio.benchmark_id}`}>
-                  {thisPortfolio.benchmark.symbol} ({thisPortfolio.benchmark_id})
+                <option value={portfolio.benchmark_id} key={`k${portfolio.benchmark_id}`}>
+                  {portfolio.benchmark.symbol} ({portfolio.benchmark_id})
                 </option>
                 <option disabled={true}>-</option>
-                {/* {Object.entries(TradeStrategy).map((v, k) => (
-                    <option value={v[1]} key={`k${k}`}>
-                      {v[0]} ({v[1]})
+                {contracts
+                  .filter((item) => item.id != portfolio.benchmark_id && item.exchange != "VALUE")
+                  .sort((a, b) => a.symbol.localeCompare(b.symbol))
+                  .map((item) => (
+                    <option value={item.id} key={`k${item.id}`}>
+                      {item.symbol} ({item.id})
                     </option>
-                  ))} */}
+                  ))}
               </Field>
             </Flex>
             <Flex justifyContent="center" gap="2" mt="1">

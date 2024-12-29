@@ -14,8 +14,8 @@ import PortfolioLayout from "./components/Portfolio/Layout/PortfolioLayout";
 import { action as PortfolioAction } from "./components/Portfolio/Layout/actions";
 import PortfolioEdit from "./components/Portfolio/Portfolio/PortfolioEdit";
 import PortfolioShow from "./components/Portfolio/Portfolio/PortfolioShow";
-import { settingDelete } from "./components/Portfolio/Portfolio/actions";
-import { portfolioLoader } from "./components/Portfolio/Portfolio/loaders";
+import { portfolioSave, settingDelete } from "./components/Portfolio/Portfolio/actions";
+import { portfolioEditLoader, portfolioLoader } from "./components/Portfolio/Portfolio/loaders";
 import PortfolioIndex from "./components/Portfolio/PortfolioIndex";
 import OptionsPositions from "./components/Portfolio/Position/OptionsPositions";
 import PositionEdit from "./components/Portfolio/Position/PositionEdit";
@@ -114,7 +114,7 @@ const router = createBrowserRouter(
                   path: "parameters",
                   children: [
                     { index: true, element: <PortfolioShow />, loader: portfolioLoader },
-                    { path: "edit", element: <PortfolioEdit />, loader: portfolioLoader },
+                    { path: "edit", element: <PortfolioEdit />, loader: portfolioEditLoader, action: portfolioSave },
                     { path: "DeleteSetting/:itemId", action: settingDelete },
                   ],
                 },

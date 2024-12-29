@@ -1,9 +1,19 @@
+import { SecType } from "@stoqey/ib";
 import express from "express";
 import { Contract, OptionContract } from "../models";
+import { contractModelToContractEntry } from "./contracts.utils";
 
 const router = express.Router();
 
-// export const contractModelToContractEntry = () => {};
+/**
+ * Fetch all stock contracts
+ */
+router.get("/stocks/", (req, res): void => {
+  Contract.findAll({ where: { secType: SecType.STK } })
+    .then((contracts) => contracts.map((item) => contractModelToContractEntry(item)))
+    .then((contracts) => res.status(200).json({ contracts }))
+    .catch((error) => res.status(500).json({ error }));
+});
 
 /**
  * Fetch an option contract

@@ -3,6 +3,7 @@ import logger, { LogLevel } from "../logger";
 import { Contract, Portfolio } from "../models";
 import balances from "./balances.router";
 import contracts from "./contracts.router";
+import { PortfolioEntry } from "./portfolio.types";
 import positions from "./positions.router";
 import reports from "./reports.router";
 import settings from "./settings.router";
@@ -47,6 +48,28 @@ router.get("/:portfolioId(\\d+)", (req, res): void => {
     .catch((error) => {
       console.error(error);
       logger.log(LogLevel.Error, MODULE + ".GetPortfolio", undefined, error.msg);
+      res.status(500).json({ error });
+    });
+});
+
+/**
+ * Save a portfolio
+ */
+router.post("/:portfolioId(\\d+)", (req, res): void => {
+  const { portfolioId } = req.params;
+  const data = req.body as PortfolioEntry;
+
+  Portfolio.findByPk(portfolioId)
+    .then(async (portfolio: Portfolio) => {
+      if (portfolio) {
+        portfolio.benchmark_id = data.benchmark_id;
+        return portfolio.save();
+      } else throw Error(`Portfolio #${portfolioId} not found!`);
+    })
+    .then((portfolio) => res.status(200).json({ portfolio }))
+    .catch((error) => {
+      console.error(error);
+      logger.log(LogLevel.Error, MODULE + ".SavePortfolio", undefined, error.msg);
       res.status(500).json({ error });
     });
 });
