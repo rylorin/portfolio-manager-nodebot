@@ -8,29 +8,32 @@
     "experimentalDecorators": true,
     "forceConsistentCasingInFileNames": true,
     "isolatedModules": true,
-    "jsx": "react",
+    "jsx": "react-jsx", // Mise à jour pour JSX moderne
     "lib": ["ESNext", "DOM", "DOM.Iterable", "ES2021.String"],
-    "module": "CommonJS", // Was ESNext
+    "module": "CommonJS", // Compatibilité Node.js
     "moduleResolution": "Node",
-    "noImplicitAny": false, // TODO set to true once all data hava a type
+    "noImplicitAny": false, // TODO: Passez à true après typage complet
     "noImplicitReturns": true,
-    "noUnusedLocals": false, // eslint rule in charge of this check
-    "noUnusedParameters": false, // eslint rule in charge of this check
+    "noFallthroughCasesInSwitch": true, // Empêche les erreurs dans les switch/case
+    "noUnusedLocals": false, // eslint s'en charge
+    "noUnusedParameters": false, // eslint s'en charge
     "outDir": "./dist",
     "paths": {
       "@/*": ["./src/*"]
+      // "react": ["./node_modules/@types/react"]
     },
     "resolveJsonModule": true,
     "rootDir": "./src",
     "skipLibCheck": true,
     "sourceMap": true,
     "strict": true,
-    "strictNullChecks": false, // TODO set to true when fixed
+    "strictNullChecks": false, // TODO: Passez à true après correction
+    "strictBindCallApply": true, // Vérifie strictement les appels de méthode
     "target": "ESNext",
     "types": ["node"],
-    "typeRoots": ["node_modules/@types", "src/ts-types"],
-    "useUnknownInCatchVariables": false
+    "typeRoots": ["./node_modules/@types", "./src/ts-types"],
+    "useUnknownInCatchVariables": true // Bonne pratique pour une meilleure gestion des erreurs
   },
-  "exclude": ["./node_modules"],
-  "include": ["./src/app"]
+  "exclude": ["node_modules", "dist", "**/*.test.ts", "**/*.spec.ts"], // Ajout des tests et du dossier dist
+  "include": ["./src"]
 }

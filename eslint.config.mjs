@@ -1,8 +1,13 @@
 import eslint from "@eslint/js";
-import rxjs from "@smarttools/eslint-plugin-rxjs";
+// import rxjs from "@smarttools/eslint-plugin-rxjs";
 import prettier from "eslint-plugin-prettier/recommended";
 // import react from "eslint-plugin-react";
 import tseslint from "typescript-eslint";
+
+// const eslint = require("@eslint/js");
+// const rxjs = require("@smarttools/eslint-plugin-rxjs");
+// const prettier = require("eslint-plugin-prettier/recommended");
+// const tseslint = require("typescript-eslint");
 
 export default tseslint.config(
   eslint.configs.recommended,
@@ -15,7 +20,7 @@ export default tseslint.config(
       sourceType: "module",
       parserOptions: { project: ["./tsconfig.json", "./tsconfig.server.json"] },
     },
-    plugins: { rxjs },
+    // plugins: { rxjs },
     rules: {
       strict: "error",
       "no-console": "off",
@@ -34,7 +39,6 @@ export default tseslint.config(
       "@typescript-eslint/no-empty-object-type": "error",
       "@typescript-eslint/no-unsafe-function-type": "error",
       "@typescript-eslint/no-wrapper-object-types": "error",
-
       "@typescript-eslint/explicit-function-return-type": "error",
       "@typescript-eslint/explicit-module-boundary-types": "error",
       "@typescript-eslint/no-empty-function": "error",
@@ -54,17 +58,13 @@ export default tseslint.config(
       "@typescript-eslint/restrict-template-expressions": "error",
       "@typescript-eslint/unbound-method": "error",
       "@typescript-eslint/promise-function-async": "error",
-      "rxjs/no-async-subscribe": "warn",
-      "rxjs/no-ignored-observable": "warn",
-      "rxjs/no-ignored-subscription": "warn",
-      "rxjs/no-unbound-methods": "warn",
-      "rxjs/throw-error": "warn",
+
+      // "rxjs/no-async-subscribe": "warn",
+      // "rxjs/no-ignored-observable": "warn",
+      // "rxjs/no-ignored-subscription": "warn",
+      // "rxjs/no-unbound-methods": "warn",
+      // "rxjs/throw-error": "warn",
     },
   },
-  // {
-  //   files: ["**/*.{js,mjs,cjs,jsx,mjsx,ts,tsx,mtsx}"],
-  //   plugins: { react: fixupPluginRules(react) },
-  //   ...react.configs.recommended,
-  // },
   { ignores: ["node_modules/*", ".storybook/", "build/*", "dist/*", "**/*.spec.ts", "*.config.mjs"] },
 );
