@@ -1,10 +1,11 @@
-// import { OptionAttributes } from "../models";
-import { Contract } from "@/models";
+import { Contract, OptionContract } from "@/models";
 import { Attributes } from "sequelize";
-import { OptionAttributes } from "../models/types";
 import { OptionPositionEntry, PositionEntry, StatementEntry, TradeEntry } from "./";
 
-export type ContractEntry = Omit<Attributes<Contract>, "createdAt" | "updatedAt"> & {
+export type ContractEntry = Omit<
+  Attributes<Contract>,
+  "createdAt" | "updatedAt" | "positions" | "trades" | "statements"
+> & {
   // Virtual properties
   livePrice: number | null;
 
@@ -18,4 +19,17 @@ export type ContractEntry = Omit<Attributes<Contract>, "createdAt" | "updatedAt"
   statements?: StatementEntry[];
 };
 
-export type OptionEntry = ContractEntry & OptionAttributes;
+export type OptionContractEntry = Omit<Attributes<OptionContract>, "createdAt" | "updatedAt" | "contract" | "stock"> & {
+  // Make JSON compatible
+  createdAt: number;
+  updatedAt: number;
+
+  // Virtual properties
+  expiryDate: number;
+  expiry: number;
+  dte: number;
+
+  // Relations
+  contract?: ContractEntry;
+  stock?: ContractEntry;
+};

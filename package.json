@@ -28,7 +28,7 @@
     "release": "yarn lint && yarn qc && yarn doc && yarn build && yarn run storybook:build",
     "serve": "vite preview",
     "server:build": "tsc --project tsconfig.server.json",
-    "server:dev": "ts-node-dev --project tsconfig.server.json src/index -watch -server -account -import -trader",
+    "server:dev": "ts-node-dev --project tsconfig.server.json src/index -watch -server -account -import",
     "start": "node dist/index.js -server",
     "start:dev": "concurrently \"yarn server:dev\" \"yarn client:dev\""
   },
@@ -79,7 +79,7 @@
     "eslint": "^9.17.0",
     "eslint-config-prettier": "^9.1.0",
     "eslint-plugin-prettier": "^5.2.1",
-    "eslint-plugin-react": "^7.37.2",
+    "eslint-plugin-react": "^7.37.3",
     "http-proxy-middleware": "^3.0.3",
     "husky": "^9.1.7",
     "lint-staged": "^15.2.11",
@@ -91,7 +91,7 @@
     "ts-node-dev": "^2.0.0",
     "typescript": "^5.7.2",
     "typescript-eslint": "^8.18.2",
-    "vite": "^6.0.5",
+    "vite": "^6.0.6",
     "webpack": "^5.97.1"
   },
   "engines": {

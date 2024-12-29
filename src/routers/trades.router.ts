@@ -264,12 +264,11 @@ router.post("/id/:tradeId(\\d+)/SaveTrade", (req, res): void => {
 
   Trade.findByPk(tradeId, {
     include: [
-      { model: Contract, as: "underlying", required: false },
+      { association: "underlying", required: false },
       {
-        model: Statement,
-        as: "statements",
+        association: "statements",
         required: false,
-        include: [{ model: Contract, as: "stock", required: false }],
+        include: [{ association: "stock", required: false }],
       },
     ],
   })
@@ -277,7 +276,7 @@ router.post("/id/:tradeId(\\d+)/SaveTrade", (req, res): void => {
       if (trade) {
         trade.status = data.status;
         trade.strategy = data.strategy;
-        trade.comment = data.comment ? data.comment : "";
+        trade.comment = data.comment ?? "";
         return trade;
       } else throw Error(`trade id ${tradeId} not found!`);
     })

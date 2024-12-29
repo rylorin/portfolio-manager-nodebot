@@ -10,7 +10,7 @@ import {
 } from "../models";
 import { CorporateStatement } from "../models/corpo_statement.model";
 import { ContractType, StatementTypes } from "../models/types";
-import { contractModelToContractEntry } from "./contracts.utils";
+import { contractModelToContractEntry, optionContractModelToOptionContractEntry } from "./contracts.utils";
 import { DididendSummary, InterestsSummary, ReportEntry } from "./reports.types";
 import { BaseStatement, StatementEntry, StatementUnderlyingOption } from "./statements.types";
 
@@ -49,19 +49,7 @@ export const statementModelToStatementEntry = async (item: Statement): Promise<S
       }).then((thisStatement) => {
         const option: StatementUnderlyingOption = {
           ...contractModelToContractEntry(thisStatement!.contract),
-          ...thisStatement!.option,
-          // id: thisStatement!.option.id,
-          // secType: thisStatement!.contract.secType,
-          // symbol: thisStatement!.contract.symbol,
-          // currency: item.currency,
-          // name: thisStatement!.contract.name,
-          // price: thisStatement!.contract.price,
-          // strike: thisStatement!.option.strike,
-          // lastTradeDate: thisStatement!.option.lastTradeDate,
-          // callOrPut: thisStatement!.option.callOrPut,
-          // multiplier: thisStatement!.option.multiplier,
-          createdAt: 0,
-          updatedAt: 0,
+          ...optionContractModelToOptionContractEntry(thisStatement!.option),
         };
         return {
           statementType: StatementTypes.OptionStatement,

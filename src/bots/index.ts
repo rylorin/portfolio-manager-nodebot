@@ -838,7 +838,7 @@ export class ITradingBot extends EventEmitter {
       strike: ibContract.currency == "GBP" ? ibContract.strike! / 100 : ibContract.strike!,
       callOrPut: ibContract.right!,
       multiplier: ibContract.multiplier!,
-      delta: ibContract.right == OptionType.Call ? 0.5 : -0.5,
+      // delta: ibContract.right == OptionType.Call ? 0.5 : -0.5,
     };
     const underlying = {
       // option underlying contract

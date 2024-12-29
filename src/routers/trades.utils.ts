@@ -57,7 +57,7 @@ const initVirtualFromStatement = (item: StatementEntry): VirtualPositionEntry =>
 };
 
 /**
- * Update virtuals using a single statement
+ * Update virtuals given a new statement
  * @param virtuals
  * @param statement_entry
  * @returns
@@ -68,6 +68,7 @@ const updateVirtuals = (
 ): Record<number, VirtualPositionEntry> => {
   let id: number;
   let virtual: VirtualPositionEntry | undefined;
+  // logger.debug(MODULE + ".updateVirtuals", virtuals, statement_entry);
   switch (statement_entry.statementType) {
     case StatementTypes.EquityStatement:
     case StatementTypes.BondStatement:
@@ -97,7 +98,7 @@ const updateVirtuals = (
     virtual.cost -= statement_entry.amount;
     if (!virtual.quantity) virtual.cost = 0; // is this usefull?
   }
-
+  // logger.debug(MODULE + ".updateVirtuals", "=>", virtuals);
   return virtuals;
 };
 
@@ -530,7 +531,9 @@ const computeTradeStrategy = (thisTrade: Trade, virtuals: Record<number, Virtual
     let strategy: TradeStrategy = TradeStrategy.undefined;
     const [long_stock, short_stock, long_call, short_call, long_put, short_put, long_bond] =
       countContratTypes(virtuals);
-    if (long_bond > 0) {
+    if (!long_stock && !short_stock && !long_call && !short_call && !long_put && !short_put && !long_bond) {
+      logger.warn(MODULE + ".computeTradeStrategy", "missing data", thisTrade, virtuals);
+    } else if (long_bond > 0) {
       strategy = TradeStrategy["long bond"];
     } else if (long_stock > 0) {
       // Longs stock strategies
@@ -578,7 +581,7 @@ const computeTradeStrategy = (thisTrade: Trade, virtuals: Record<number, Virtual
           .filter((item) => item.quantity < 0)
           .map((v) => (v.contract as StatementUnderlyingOption).strike)
           .sort((a, b) => a - b);
-        console.log("long_strikes", long_strikes, "short_strikes", short_strikes);
+        logger.debug(MODULE + ".computeTradeStrategy", "long_strikes", long_strikes, "short_strikes", short_strikes);
         if (short_strikes[0] < long_strikes[0]) strategy = TradeStrategy["bear spread"];
       }
     }
