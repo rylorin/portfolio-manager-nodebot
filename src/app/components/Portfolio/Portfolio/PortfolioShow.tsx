@@ -1,18 +1,19 @@
-import { DeleteIcon, EditIcon } from "@chakra-ui/icons";
-import { Center, Flex, Text } from "@chakra-ui/layout";
+import { EditIcon } from "@chakra-ui/icons";
+import { Flex, Text, VStack } from "@chakra-ui/layout";
+import { IconButton } from "@chakra-ui/react";
 import React, { FunctionComponent } from "react";
 import { Link as RouterLink, useLoaderData } from "react-router-dom";
-import { Portfolio as PortfolioModel } from "../../../../models/portfolio.model";
 import { obfuscate } from "../../../utils";
-import SettingsTable from "./SettingsTable";
+import SettingsTable from "../Setting/SettingsTable";
+import { portfolioLoader } from "./loaders";
 
 type PortfolioShowProps = Record<string, never>;
 
 const PortfolioShow: FunctionComponent<PortfolioShowProps> = ({ ..._rest }): React.ReactNode => {
-  const thisPortfolio = useLoaderData() as PortfolioModel;
+  const thisPortfolio = useLoaderData<typeof portfolioLoader>();
 
   return (
-    <>
+    <VStack>
       <Flex justifyContent="center" gap="2">
         <Text w="90px" as="b" textAlign="right">
           Id:
@@ -56,20 +57,11 @@ const PortfolioShow: FunctionComponent<PortfolioShowProps> = ({ ..._rest }): Rea
         </Flex>
       )}
       <Flex justifyContent="center" gap="2" mt="1">
-        <RouterLink to="edit">
-          <Center w="40px" h="40px">
-            <EditIcon />
-          </Center>
-        </RouterLink>
-        <RouterLink to="delete_but_edit">
-          <Center w="40px" h="40px">
-            <DeleteIcon />
-          </Center>
-        </RouterLink>
+        <IconButton aria-label="Edit" icon={<EditIcon />} variant="ghost" as={RouterLink} to="edit" />
       </Flex>
 
       <SettingsTable content={thisPortfolio.settings} />
-    </>
+    </VStack>
   );
 };
 

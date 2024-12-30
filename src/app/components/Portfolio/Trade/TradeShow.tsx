@@ -178,6 +178,7 @@ const TradeShow: FunctionComponent<Props> = ({ ..._rest }): React.ReactNode => {
             <IconButton aria-label="Delete" icon={<DeleteIcon />} variant="ghost" type="submit" />
           </Form>
         </Flex>
+
         {item.positions?.length && <PositionsTable content={item.positions} currency={item.currency} />}
         {item.statements?.length && <StatementsTable content={item.statements} currency={item.currency} />}
         {item.virtuals?.length && (

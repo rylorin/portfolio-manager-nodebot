@@ -1,4 +1,10 @@
-import { CreationOptional, ForeignKey, InferAttributes, InferCreationAttributes } from "sequelize";
+import {
+  CreationOptional,
+  ForeignKey,
+  HasManyGetAssociationsMixin,
+  InferAttributes,
+  InferCreationAttributes,
+} from "sequelize";
 import { BelongsTo, Column, DataType, Model, Table } from "sequelize-typescript";
 import { Contract } from "./contract.model";
 import { Portfolio } from "./portfolio.model";
@@ -25,6 +31,7 @@ export class Setting extends Model<
   declare stock_id: ForeignKey<Contract["id"]>;
   @BelongsTo(() => Contract, "stock_id")
   declare underlying: Contract;
+  declare getUnderlying: HasManyGetAssociationsMixin<Contract>;
 
   @Column({ type: DataType.SMALLINT, field: "csp_strategy" })
   declare cspStrategy: number;

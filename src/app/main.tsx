@@ -14,7 +14,7 @@ import PortfolioLayout from "./components/Portfolio/Layout/PortfolioLayout";
 import { action as PortfolioAction } from "./components/Portfolio/Layout/actions";
 import PortfolioEdit from "./components/Portfolio/Portfolio/PortfolioEdit";
 import PortfolioShow from "./components/Portfolio/Portfolio/PortfolioShow";
-import { portfolioSave, settingDelete } from "./components/Portfolio/Portfolio/actions";
+import { portfolioSave } from "./components/Portfolio/Portfolio/actions";
 import { portfolioEditLoader, portfolioLoader } from "./components/Portfolio/Portfolio/loaders";
 import PortfolioIndex from "./components/Portfolio/PortfolioIndex";
 import OptionsPositions from "./components/Portfolio/Position/OptionsPositions";
@@ -43,6 +43,10 @@ import {
   reportsIndexLoader12m,
   reportsIndexLoaderYtd,
 } from "./components/Portfolio/Report/loaders";
+import SettingEdit from "./components/Portfolio/Setting/SettingEdit";
+import SettingShow from "./components/Portfolio/Setting/SettingShow";
+import { settingDelete, settingSave } from "./components/Portfolio/Setting/actions";
+import { settingEditLoader, settingLoader, settingNewLoader } from "./components/Portfolio/Setting/loaders";
 import StatementEdit from "./components/Portfolio/Statement/StatementEdit";
 import StatementShow from "./components/Portfolio/Statement/StatementShow";
 import StatementSummary from "./components/Portfolio/Statement/StatementSummary";
@@ -115,7 +119,15 @@ const router = createBrowserRouter(
                   children: [
                     { index: true, element: <PortfolioShow />, loader: portfolioLoader },
                     { path: "edit", element: <PortfolioEdit />, loader: portfolioEditLoader, action: portfolioSave },
-                    { path: "DeleteSetting/:itemId", action: settingDelete },
+                    {
+                      path: ":settingId",
+                      children: [
+                        { index: true, element: <SettingShow />, loader: settingLoader },
+                        { path: "edit", element: <SettingEdit />, loader: settingEditLoader, action: settingSave },
+                        { path: "delete", action: settingDelete },
+                      ],
+                    },
+                    { path: "create", element: <SettingEdit />, loader: settingNewLoader, action: settingSave },
                   ],
                 },
 
