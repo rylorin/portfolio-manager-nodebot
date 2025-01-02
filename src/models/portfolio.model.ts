@@ -1,79 +1,149 @@
-import { Association, CreationOptional, ForeignKey, InferAttributes, InferCreationAttributes } from "sequelize";
-import { BelongsTo, Column, DataType, HasMany, Model, Table } from "sequelize-typescript";
-import { Balance } from "./balance.model";
-import { Contract } from "./contract.model";
-import { Currency } from "./currency.model";
-import { CashStrategy } from "./portfolio.types";
-import { Position } from "./position.model";
-import { Setting } from "./setting.model";
-import { Statement } from "./statement.model";
+import { Association, CreationOptional, InferAttributes, InferCreationAttributes } from "sequelize";
+import { BelongsTo, Column, DataType, ForeignKey, HasMany, Model, Table } from "sequelize-typescript";
+import { Balance, Contract, Currency, Position, Setting, Statement } from "./";
+import { CashStrategy } from "./types";
 
-@Table({ tableName: "portfolio", timestamps: false, deletedAt: false, updatedAt: false })
+@Table({
+  tableName: "portfolio",
+  timestamps: true, // Include `createdAt` and `updatedAt` for audit purposes
+  paranoid: false, // No `deletedAt` field since it's explicitly disabled
+  comment: "Portfolio entity with trading parameters for the robot.",
+})
 export class Portfolio extends Model<
   InferAttributes<Portfolio>,
   InferCreationAttributes<
     Portfolio,
-    { omit: "benchmark" | "positions" | "balances" | "baseRates" | "settings" | "statements" }
+    {
+      omit:
+        | "benchmark"
+        | "positions"
+        | "balances"
+        | "baseRates"
+        | "settings"
+        | "statements"
+        | "createdAt"
+        | "updatedAt";
+    }
   >
 > {
-  // id can be undefined during creation when using `autoIncrement`
+  /** Auto-incrementing primary key */
+  @Column({
+    type: DataType.INTEGER,
+    autoIncrement: true,
+    primaryKey: true,
+  })
   declare id: CreationOptional<number>;
-  // timestamps!
-  // createdAt can be undefined during creation
+
+  /** Timestamp when the record was created */
+  @Column({
+    type: DataType.DATE,
+    allowNull: false,
+  })
   declare createdAt: CreationOptional<Date>;
-  // updatedAt can be undefined during creation
+
+  /** Timestamp when the record was last updated */
+  @Column({
+    type: DataType.DATE,
+    allowNull: false,
+  })
   declare updatedAt: CreationOptional<Date>;
 
-  /** The account number. */
-  @Column({ type: DataType.STRING })
+  /** Account number */
+  @Column({
+    type: DataType.STRING,
+    allowNull: false,
+    unique: true,
+  })
   declare account: string;
 
-  /** The benchmark symbol. */
-  declare benchmark_id: ForeignKey<Contract["id"]>;
+  /** Benchmark contract (e.g., index or ETF) */
+  @ForeignKey(() => Contract)
+  @Column({
+    type: DataType.INTEGER,
+    allowNull: true,
+  })
+  declare benchmark_id: number;
+
   @BelongsTo(() => Contract, "benchmark_id")
   declare benchmark: Contract;
 
-  @Column({ type: DataType.STRING(32), field: "name" })
+  /** Portfolio name */
+  @Column({
+    type: DataType.STRING(32),
+    allowNull: false,
+  })
   declare name: string;
 
-  @Column({ type: DataType.STRING(3), field: "base_currency" })
+  /** Base currency of the portfolio (e.g., USD, EUR) */
+  @Column({
+    type: DataType.CHAR(3),
+    allowNull: false,
+    validate: {
+      isAlpha: true,
+      isUppercase: true,
+      len: [3, 3],
+    },
+  })
   declare baseCurrency: string;
 
-  @Column({ type: DataType.STRING(2), field: "country" })
+  /** Country code of the portfolio */
+  @Column({
+    type: DataType.CHAR(2),
+    allowNull: false,
+    validate: {
+      isAlpha: true,
+      isUppercase: true,
+      len: [2, 2],
+    },
+    field: "country",
+  })
   declare country: string;
 
-  @Column({ type: DataType.FLOAT, field: "put_ratio", defaultValue: 0 })
+  /** Put ratio used in trading */
+  @Column({
+    type: DataType.FLOAT,
+    allowNull: true,
+    defaultValue: 0,
+    field: "put_ratio",
+  })
   declare putRatio?: number;
 
-  @Column({ type: DataType.FLOAT, field: "naked_put_win_ratio", defaultValue: 0 })
+  /** Win ratio for naked puts */
+  @Column({
+    type: DataType.FLOAT,
+    allowNull: true,
+    defaultValue: 0,
+    field: "naked_put_win_ratio",
+  })
   declare cspWinRatio?: number;
 
-  @Column({ type: DataType.FLOAT, field: "naked_call_win_ratio", defaultValue: 0 })
+  /** Win ratio for covered calls */
+  @Column({
+    type: DataType.FLOAT,
+    allowNull: true,
+    defaultValue: 0,
+    field: "naked_call_win_ratio",
+  })
   declare ccWinRatio?: number;
 
-  @Column({ type: DataType.FLOAT, field: "min_premium", defaultValue: 0.25 })
+  /** Minimum acceptable premium */
+  @Column({
+    type: DataType.FLOAT,
+    allowNull: true,
+    defaultValue: 1,
+    field: "min_premium",
+  })
   declare minPremium?: number;
 
-  @Column({ type: DataType.INTEGER, field: "roll_Days_Before", defaultValue: 6 })
-  declare rollDaysBefore?: number;
+  /** Cash strategy applied to the portfolio */
+  @Column({
+    type: DataType.ENUM(typeof CashStrategy),
+    defaultValue: 0,
+    field: "cash_strategy",
+  })
+  declare cashStrategy: CashStrategy;
 
-  @Column({ type: DataType.SMALLINT, field: "cash_strategy", defaultValue: 0 })
-  declare cashStrategy?: CashStrategy;
-
-  @Column({ type: DataType.INTEGER, field: "sell_Naked_Put_Sleep" })
-  declare sellNakedPutSleep?: number;
-
-  @Column({ type: DataType.INTEGER, field: "find_Symbols_Sleep" })
-  declare findSymbolsSleep?: number;
-
-  @Column({ type: DataType.INTEGER, field: "adjust_Cash_Sleep" })
-  declare adjustCashSleep?: number;
-
-  @Column({ type: DataType.INTEGER, field: "roll_Options_Sleep" })
-  declare rollOptionsSleep?: number;
-
-  @Column({ type: DataType.INTEGER, field: "crawler_Days", defaultValue: 90 })
-  declare crawlerDays?: number;
+  /** Associations */
 
   @HasMany(() => Position, "portfolio_id")
   declare positions: Position[];
@@ -90,9 +160,9 @@ export class Portfolio extends Model<
   @HasMany(() => Statement, "portfolio_id")
   declare statements: Statement[];
 
+  /** Static associations for Sequelize tooling */
   declare static associations: {
     benchmark: Association<Portfolio, Contract>;
-
     positions: Association<Portfolio, Position>;
     balances: Association<Portfolio, Balance>;
     baseRates: Association<Portfolio, Currency>;

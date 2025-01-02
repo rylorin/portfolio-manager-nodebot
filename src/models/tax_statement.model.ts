@@ -16,8 +16,13 @@ export class TaxStatement extends Model<InferAttributes<TaxStatement>, InferCrea
 
   /** Code du pays associé à cette déclaration fiscale */
   @Column({
-    type: DataType.STRING(2), // Limite à 2 caractères (ex: FR, US)
+    type: DataType.CHAR(2), // Limite à 2 caractères (ex: FR, US)
     allowNull: false, // Assure que cette valeur est obligatoire
+    validate: {
+      isAlpha: true,
+      isUppercase: true,
+      len: [2, 2],
+    },
   })
   declare country: string;
 }

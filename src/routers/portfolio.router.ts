@@ -1,9 +1,9 @@
 import express from "express";
 import logger, { LogLevel } from "../logger";
 import { Contract, Portfolio } from "../models";
+import { PortfolioEntry } from "./";
 import balances from "./balances.router";
 import contracts from "./contracts.router";
-import { PortfolioEntry } from "./portfolio.types";
 import positions from "./positions.router";
 import reports from "./reports.router";
 import settings from "./settings.router";
@@ -63,6 +63,7 @@ router.post("/:portfolioId(\\d+)", (req, res): void => {
     .then(async (portfolio: Portfolio) => {
       if (portfolio) {
         portfolio.benchmark_id = data.benchmark_id;
+        portfolio.cashStrategy = data.cashStrategy;
         return portfolio.save();
       } else throw Error(`Portfolio #${portfolioId} not found!`);
     })

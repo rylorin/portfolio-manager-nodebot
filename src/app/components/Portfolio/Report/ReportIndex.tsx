@@ -6,6 +6,7 @@ import BarChart, { DataSet } from "../../Chart/BarChart";
 import Number from "../../Number/Number";
 import { StatementLink } from "../Statement/links";
 import { ReportLink } from "./links";
+import { reportsIndexLoader } from "./loaders";
 
 type Props = Record<string, never>;
 
@@ -24,7 +25,7 @@ const compareReports = (a: ReportEntry, b: ReportEntry): number => {
  */
 const ReportsIndex: FunctionComponent<Props> = ({ ..._rest }): React.ReactNode => {
   const { portfolioId } = useParams();
-  const theReports: ReportEntry[] = (useLoaderData() as ReportEntry[]).sort(compareReports);
+  const theReports: ReportEntry[] = useLoaderData<typeof reportsIndexLoader>().sort(compareReports);
   const years = theReports
     .reduce((p, v) => {
       if (!p.includes(v.year)) p.push(v.year);

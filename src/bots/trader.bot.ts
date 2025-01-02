@@ -267,18 +267,17 @@ export class TradeBot extends ITradingBot {
           // }
           const option = options[0];
           this.printObject(option);
-          await this.api
-            .placeNewOrder(
-              ITradingBot.OptionToIbContract(option),
-              ITradingBot.CcOrder(
-                OrderAction.SELL,
-                Math.floor(free_for_this_symbol / option.multiplier),
-                option.contract.ask!,
-              ),
-            )
-            .then((orderId: number) => {
-              console.log("orderid:", orderId.toString());
-            });
+          const units = Math.floor(free_for_this_symbol / option.multiplier);
+          if (units > 0) {
+            await this.api
+              .placeNewOrder(
+                ITradingBot.OptionToIbContract(option),
+                ITradingBot.CcOrder(OrderAction.SELL, units, option.contract.ask!),
+              )
+              .then((orderId: number) => {
+                console.log("orderid:", orderId.toString());
+              });
+          }
         } else {
           this.error("options list empty");
         }
@@ -362,7 +361,7 @@ export class TradeBot extends ITradingBot {
         }
       });
     } else {
-      throw Error(`unimplemented cash strategy ${this.portfolio.cashStrategy}`);
+      throw Error(`unimplemented cash strategy ${this.portfolio.cashStrategy as number}`);
     }
   }
 
@@ -379,8 +378,7 @@ export class TradeBot extends ITradingBot {
         for (const expstr of detail.expirations) {
           const expdate = expirationToDate(expstr);
           const days = (expdate.getTime() - Date.now()) / 60000 / 1440;
-          if (days > 0 && days < (setting.lookupDays || 40)) {
-            // lookup to 40 days
+          if (days > 0 && days <= setting.lookupDays) {
             const last = await OptionContract.findOne({
               where: {
                 stock_id: setting.stock_id,

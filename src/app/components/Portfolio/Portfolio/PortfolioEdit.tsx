@@ -3,6 +3,7 @@ import { Flex, IconButton, Select, Text } from "@chakra-ui/react";
 import { Field, Formik, FormikProps } from "formik";
 import React, { FunctionComponent } from "react";
 import { Form, useLoaderData, useNavigate, useSubmit } from "react-router-dom";
+import { CashStrategy } from "../../../../models/types";
 import { ContractEntry, PortfolioEntry } from "../../../../routers";
 import { obfuscate } from "../../../utils";
 
@@ -34,7 +35,7 @@ const PortfolioEdit: FunctionComponent<PortfolioShowProps> = ({ ..._rest }): Rea
         return (
           <Form method="post" onSubmit={formik.handleSubmit}>
             <Flex justifyContent="center" gap="2">
-              <Text w="90px" as="b" textAlign="right">
+              <Text w="150px" as="b" textAlign="right">
                 Id:
               </Text>
               <Text textAlign="left" w="120px">
@@ -42,7 +43,7 @@ const PortfolioEdit: FunctionComponent<PortfolioShowProps> = ({ ..._rest }): Rea
               </Text>
             </Flex>
             <Flex justifyContent="center" gap="2">
-              <Text w="90px" as="b" textAlign="right">
+              <Text w="150px" as="b" textAlign="right">
                 Name:
               </Text>
               <Text w="120px" textAlign="left">
@@ -50,7 +51,7 @@ const PortfolioEdit: FunctionComponent<PortfolioShowProps> = ({ ..._rest }): Rea
               </Text>
             </Flex>
             <Flex justifyContent="center" gap="2">
-              <Text w="90px" as="b" textAlign="right">
+              <Text w="150px" as="b" textAlign="right">
                 Account:
               </Text>
               <Text w="120px" textAlign="left">
@@ -58,7 +59,7 @@ const PortfolioEdit: FunctionComponent<PortfolioShowProps> = ({ ..._rest }): Rea
               </Text>
             </Flex>
             <Flex justifyContent="center" gap="2">
-              <Text w="90px" as="b" textAlign="right">
+              <Text w="150px" as="b" textAlign="right">
                 Currency:
               </Text>
               <Text w="120px" textAlign="left">
@@ -66,8 +67,8 @@ const PortfolioEdit: FunctionComponent<PortfolioShowProps> = ({ ..._rest }): Rea
               </Text>
             </Flex>
             <Flex justifyContent="center" gap="2">
-              <Text w="90px" as="b" textAlign="right">
-                Cash:
+              <Text w="150px" as="b" textAlign="right">
+                Cash contract:
               </Text>
               <Field as={Select} name="benchmark_id" w="200px" type="number" variant="outline">
                 <option value={portfolio.benchmark_id} key={`k${portfolio.benchmark_id}`}>
@@ -84,6 +85,21 @@ const PortfolioEdit: FunctionComponent<PortfolioShowProps> = ({ ..._rest }): Rea
                   ))}
               </Field>
             </Flex>
+            <Flex justifyContent="center" gap="2">
+              <Text w="150px" as="b" textAlign="right">
+                Status:
+              </Text>
+              {/* <Select w="200px" name="status" variant="outline" value={formik.values.status}> */}
+              <Field as={Select} name="cashStrategy" w="200px" type="number" variant="outline">
+                {Object.entries(CashStrategy).map((v, k) => (
+                  <option value={v[1]} key={`k${k}`}>
+                    {v[0]} ({v[1]})
+                  </option>
+                ))}
+              </Field>
+              {/* </Select> */}
+            </Flex>
+
             <Flex justifyContent="center" gap="2" mt="1">
               <IconButton
                 aria-label="Back"

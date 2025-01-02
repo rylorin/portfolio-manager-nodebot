@@ -56,7 +56,7 @@ export class OptionContract extends Model<
 
   /** Call or Put option */
   @Column({
-    type: DataType.ENUM("C", "P"),
+    type: DataType.ENUM(typeof OptionType),
     field: "call_or_put",
     allowNull: false,
   })
@@ -66,12 +66,8 @@ export class OptionContract extends Model<
   @Column({ type: DataType.INTEGER, defaultValue: 100, validate: { min: 1 } })
   declare multiplier: number;
 
-  /** Implied volatility (optional) */
-  @Column({
-    type: DataType.FLOAT(3, 5),
-    field: "implied_volatility",
-    validate: { min: 0, max: 1 },
-  })
+  /** Implied volatility */
+  @Column({ type: DataType.FLOAT, field: "implied_volatility" })
   declare impliedVolatility: number | null;
 
   /** Present value of dividends */
@@ -79,7 +75,7 @@ export class OptionContract extends Model<
   declare pvDividend: number | null;
 
   /** Greeks */
-  @Column({ type: DataType.FLOAT(1, 4), validate: { min: -1.0, max: 1.0 } })
+  @Column({ type: DataType.FLOAT, validate: { min: -1.0, max: 1.0 } })
   declare delta: number | null;
 
   @Column({ type: DataType.FLOAT, validate: { min: 0 } })
@@ -88,6 +84,6 @@ export class OptionContract extends Model<
   @Column({ type: DataType.FLOAT, validate: { min: 0 } })
   declare vega: number | null;
 
-  @Column({ type: DataType.FLOAT, validate: { min: 0 } })
+  @Column({ type: DataType.FLOAT })
   declare theta: number | null;
 }

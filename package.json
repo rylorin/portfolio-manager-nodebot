@@ -28,7 +28,7 @@
     "release": "yarn lint && yarn qc && yarn doc && yarn build && yarn run storybook:build",
     "serve": "vite preview",
     "server:build": "tsc --project tsconfig.server.json",
-    "server:dev": "ts-node-dev --project tsconfig.server.json src/index -watch -server -account -import",
+    "server:dev": "ts-node-dev --project tsconfig.server.json src/index -watch -server -account -import -trader",
     "start": "node dist/index.js -server",
     "start:dev": "concurrently \"yarn server:dev\" \"yarn client:dev\""
   },
@@ -39,7 +39,7 @@
     "@chakra-ui/system": "^2.6.2",
     "@emotion/react": "^11.14.0",
     "@emotion/styled": "^11.14.0",
-    "@stoqey/ib": "stoqey/ib#492d9e2e3b8bfa93d5f9eaef6f1f4ff02155ee1e",
+    "@stoqey/ib": "stoqey/ib#60e8b20f072d20a580e74150f0f4008a619be26f",
     "@tanstack/react-table": "^8.20.6",
     "chakra-react-select": "^5.0.2",
     "chart.js": "^4.4.7",

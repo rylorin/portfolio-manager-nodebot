@@ -3,6 +3,7 @@ import { Flex, IconButton, Select, Text, VStack } from "@chakra-ui/react";
 import { Field, Formik, FormikProps } from "formik";
 import React, { FunctionComponent } from "react";
 import { Form, useLoaderData, useNavigate, useSubmit } from "react-router-dom";
+import { StrategySetting } from "../../../../models/types";
 import { SettingEntry } from "../../../../routers/";
 import { settingEditLoader } from "./loaders";
 
@@ -26,7 +27,7 @@ const SettingEdit: FunctionComponent<Props> = ({ ..._rest }): React.ReactNode =>
             <VStack>
               {setting.id && (
                 <Flex justifyContent="center" gap="2">
-                  <Text w="90px" as="b" textAlign="right">
+                  <Text w="180px" as="b" textAlign="right">
                     Setting Id:
                   </Text>
                   <Text w="200px" textAlign="right">
@@ -35,7 +36,7 @@ const SettingEdit: FunctionComponent<Props> = ({ ..._rest }): React.ReactNode =>
                 </Flex>
               )}
               <Flex justifyContent="center" gap="2">
-                <Text w="90px" as="b" textAlign="right">
+                <Text w="180px" as="b" textAlign="right">
                   Symbol:
                 </Text>
                 <Field as={Select} name="stock_id" w="200px" type="number" variant="outline">
@@ -53,6 +54,78 @@ const SettingEdit: FunctionComponent<Props> = ({ ..._rest }): React.ReactNode =>
                         {item.symbol} ({item.id})
                       </option>
                     ))}
+                </Field>
+              </Flex>
+              <Flex justifyContent="center" gap="2">
+                <Text w="180px" as="b" textAlign="right">
+                  Lookup days:
+                </Text>
+                <Text w="200px">
+                  <Field name="lookupDays" type="number" />
+                </Text>
+              </Flex>
+              <Flex justifyContent="center" gap="2">
+                <Text w="180px" as="b" textAlign="right">
+                  NAV ratio:
+                </Text>
+                <Text w="200px">
+                  <Field name="navRatio" type="number" />
+                </Text>
+              </Flex>
+              <Flex justifyContent="center" gap="2">
+                <Text w="180px" as="b" textAlign="right">
+                  Premium:
+                </Text>
+                <Text w="200px">
+                  <Field name="minPremium" type="number" />
+                </Text>
+              </Flex>
+              <Flex justifyContent="center" gap="2">
+                <Text w="180px" as="b" textAlign="right">
+                  CSP strat.:
+                </Text>
+                <Field as={Select} name="cspStrategy" w="200px" type="number" variant="outline">
+                  {Object.entries(StrategySetting).map((v, k) => (
+                    <option value={v[1]} key={`k${k}`}>
+                      {v[0]} ({v[1]})
+                    </option>
+                  ))}
+                </Field>
+              </Flex>
+              <Flex justifyContent="center" gap="2">
+                <Text w="180px" as="b" textAlign="right">
+                  CSP Roll:
+                </Text>
+                <Field as={Select} name="rollPutStrategy" w="200px" type="number" variant="outline">
+                  {Object.entries(StrategySetting).map((v, k) => (
+                    <option value={v[1]} key={`k${k}`}>
+                      {v[0]} ({v[1]})
+                    </option>
+                  ))}
+                </Field>
+              </Flex>
+              <Flex justifyContent="center" gap="2">
+                <Text w="180px" as="b" textAlign="right">
+                  Covered calls strat.:
+                </Text>
+                <Field as={Select} name="ccStrategy" w="200px" type="number" variant="outline">
+                  {Object.entries(StrategySetting).map((v, k) => (
+                    <option value={v[1]} key={`k${k}`}>
+                      {v[0]} ({v[1]})
+                    </option>
+                  ))}
+                </Field>
+              </Flex>
+              <Flex justifyContent="center" gap="2">
+                <Text w="180px" as="b" textAlign="right">
+                  Covered calls Roll:
+                </Text>
+                <Field as={Select} name="rollCallStrategy" w="200px" type="number" variant="outline">
+                  {Object.entries(StrategySetting).map((v, k) => (
+                    <option value={v[1]} key={`k${k}`}>
+                      {v[0]} ({v[1]})
+                    </option>
+                  ))}
                 </Field>
               </Flex>
 

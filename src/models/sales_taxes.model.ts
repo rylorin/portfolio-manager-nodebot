@@ -30,8 +30,13 @@ export class SalesTaxes extends Model<InferAttributes<SalesTaxes>, InferCreation
 
   /** Pays où la taxe est appliquée */
   @Column({
-    type: DataType.STRING(2), // Limite la longueur à 2 caractères pour le code pays (ex: FR, US)
+    type: DataType.CHAR(2), // Limite la longueur à 2 caractères pour le code pays (ex: FR, US)
     allowNull: false,
+    validate: {
+      isAlpha: true,
+      isUppercase: true,
+      len: [2, 2],
+    },
   })
   declare country: string;
 
@@ -39,7 +44,6 @@ export class SalesTaxes extends Model<InferAttributes<SalesTaxes>, InferCreation
   @Column({
     type: DataType.STRING,
     allowNull: false,
-    comment: "Type de taxe appliquée (ex: TVA, impôt sur les ventes)",
   })
   declare taxType: string;
 

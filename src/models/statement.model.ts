@@ -30,7 +30,7 @@ export class Statement extends Model<
 
   /** Type of the statement */
   @Column({
-    type: DataType.ENUM(...Object.values(StatementTypes)),
+    type: DataType.ENUM(typeof StatementTypes),
     field: "statement_type",
     allowNull: false,
   })
@@ -42,9 +42,13 @@ export class Statement extends Model<
 
   /** Currency of the statement */
   @Column({
-    type: DataType.STRING(3),
+    type: DataType.CHAR(3),
     allowNull: false,
-    comment: "ISO 4217 currency code",
+    validate: {
+      isAlpha: true,
+      isUppercase: true,
+      len: [3, 3],
+    },
   })
   declare currency: string;
 

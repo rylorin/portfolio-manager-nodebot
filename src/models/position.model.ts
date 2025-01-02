@@ -11,24 +11,6 @@ import { Contract } from "./contract.model";
 import { Portfolio } from "./portfolio.model";
 import { Trade } from "./trade.model";
 
-// export type PositionAttributes = {
-//   id: number;
-//   createdAt: Date;
-//   updatedAt: Date;
-
-//   portfolio_id: number;
-//   contract_id: number;
-//   trade_unit_id?: number;
-
-//   cost: number;
-//   quantity: number;
-// };
-
-// export type PositionCreationAttributes = Optional<
-//   PositionAttributes,
-//   "id" | "createdAt" | "updatedAt" | "trade_unit_id"
-// >;
-
 @Table({ tableName: "position", timestamps: true })
 export class Position extends Model<
   InferAttributes<Position>,

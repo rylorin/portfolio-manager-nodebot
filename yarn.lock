@@ -1178,13 +1178,13 @@
     tsutils-etc "^1.4.2"
     typescript "~5.5.4"
 
-"@stoqey/ib@stoqey/ib#492d9e2e3b8bfa93d5f9eaef6f1f4ff02155ee1e":
+"@stoqey/ib@stoqey/ib#60e8b20f072d20a580e74150f0f4008a619be26f":
   version "1.4.0"
-  resolved "https://codeload.github.com/stoqey/ib/tar.gz/492d9e2e3b8bfa93d5f9eaef6f1f4ff02155ee1e"
+  resolved "https://codeload.github.com/stoqey/ib/tar.gz/60e8b20f072d20a580e74150f0f4008a619be26f"
   dependencies:
     colors "^1.4.0"
     command-buffer "^0.1.0"
-    dotenv "^16.4.5"
+    dotenv "^16.4.7"
     eventemitter3 "^5.0.1"
     function-rate-limit "^1.1.0"
     rxjs "^7.8.1"
@@ -2832,7 +2832,7 @@ dom-helpers@^5.0.1:
     "@babel/runtime" "^7.8.7"
     csstype "^3.0.2"
 
-dotenv@^16.4.5, dotenv@^16.4.7:
+dotenv@^16.4.7:
   version "16.4.7"
   resolved "https://registry.yarnpkg.com/dotenv/-/dotenv-16.4.7.tgz#0e20c5b82950140aa99be360a8a5f52335f53c26"
   integrity sha512-47qPchRCykZC03FhkYAhrvwU4xDBFIj1QPqaarj6mdM/hgUzfPHcpkHJOn3mJAufFeeAxAzeGsr5X0M4k6fLZQ==

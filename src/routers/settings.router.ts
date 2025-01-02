@@ -24,12 +24,13 @@ router.put("/", (req, res): void => {
   const setting = {
     portfolio_id: portfolioId,
     stock_id: data.stock_id,
-    navRatio: 0,
-    cspStrategy: 0,
-    rollCallStrategy: 0,
-    rollPutStrategy: 0,
-    ccStrategy: 0,
-    lookupDays: null,
+    lookupDays: data.lookupDays,
+    navRatio: data.navRatio,
+    minPremium: data.minPremium,
+    cspStrategy: data.cspStrategy,
+    rollPutStrategy: data.rollPutStrategy,
+    ccStrategy: data.ccStrategy,
+    rollCallStrategy: data.rollCallStrategy,
   };
   Setting.create(setting)
     .then(async (setting) => setting.getUnderlying().then((_) => setting))
@@ -67,6 +68,13 @@ router.post("/:itemId(\\d+)/", (req, res): void => {
     .then(async (setting: Setting) => {
       if (setting) {
         setting.stock_id = data.stock_id;
+        setting.lookupDays = data.lookupDays;
+        setting.navRatio = data.navRatio;
+        setting.minPremium = data.minPremium;
+        setting.cspStrategy = data.cspStrategy;
+        setting.rollPutStrategy = data.rollPutStrategy;
+        setting.ccStrategy = data.ccStrategy;
+        setting.rollCallStrategy = data.rollCallStrategy;
         return setting.save();
       } else throw Error(`Setting #${itemId} not found!`);
     })

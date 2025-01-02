@@ -30,7 +30,10 @@ export class Contract extends Model<
   declare symbol: string;
 
   /** The security type (e.g., STOCK, FUTURE). */
-  @Column({ type: DataType.STRING, allowNull: false })
+  @Column({
+    type: DataType.ENUM(typeof ContractType),
+    allowNull: false,
+  })
   declare secType: ContractType;
 
   /** The destination exchange (default: SMART). */
@@ -40,8 +43,12 @@ export class Contract extends Model<
   /** The trading currency (ISO 4217 format). */
   @Column({
     type: DataType.CHAR(3),
-    validate: { is: /^[A-Z]{3}$/ }, // Validates currency code format
     allowNull: false,
+    validate: {
+      isAlpha: true,
+      isUppercase: true,
+      len: [3, 3],
+    },
   })
   declare currency: string;
 

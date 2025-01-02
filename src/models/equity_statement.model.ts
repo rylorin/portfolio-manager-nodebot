@@ -14,7 +14,6 @@ export const StatementStatus = {
   EXERCISED_STATUS: 5,
   CANCELLED_STATUS: 6,
 } as const;
-
 export type StatementStatus = (typeof StatementStatus)[keyof typeof StatementStatus];
 
 /**
@@ -39,7 +38,7 @@ export class EquityStatement extends Model<
 
   /** Quantity of equities in the statement */
   @Column({
-    type: DataType.FLOAT(10, 5),
+    type: DataType.FLOAT(10, 4),
     allowNull: false,
     defaultValue: 0,
   })
@@ -80,7 +79,7 @@ export class EquityStatement extends Model<
 
   /** Status of the statement */
   @Column({
-    type: DataType.SMALLINT,
+    type: DataType.ENUM(typeof StatementStatus),
     allowNull: false,
     defaultValue: StatementStatus.UNDEFINED_STATUS,
   })

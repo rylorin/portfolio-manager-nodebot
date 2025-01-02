@@ -27,8 +27,13 @@ export class InterestStatement extends Model<
 
   /** Pays d'origine des intérêts */
   @Column({
-    type: DataType.STRING(2),
+    type: DataType.CHAR(2),
     allowNull: true,
+    validate: {
+      isAlpha: true,
+      isUppercase: true,
+      len: [2, 2],
+    },
   })
   declare country?: string;
 }

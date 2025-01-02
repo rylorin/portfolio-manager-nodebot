@@ -25,13 +25,17 @@ export class BondStatement extends Model<
 
   /** Country of the bond (ISO 3166-1 alpha-2 code) */
   @Column({
-    type: DataType.STRING(2),
+    type: DataType.CHAR(2),
     allowNull: false,
-    field: "country",
+    validate: {
+      isAlpha: true,
+      isUppercase: true,
+      len: [2, 2],
+    },
   })
   declare country: string;
 
-  /** Accrued interests are part of price and PnL */
+  /** Accrued interests already part of price and PnL */
   @Column({
     type: DataType.FLOAT,
     allowNull: true,
@@ -49,7 +53,7 @@ export class BondStatement extends Model<
 
   /** Quantity of bonds involved in the transaction */
   @Column({
-    type: DataType.FLOAT(8, 2),
+    type: DataType.FLOAT(8, 0),
     allowNull: false,
     defaultValue: 0,
   })
@@ -57,7 +61,7 @@ export class BondStatement extends Model<
 
   /** Trade price of the bond */
   @Column({
-    type: DataType.FLOAT(8, 3),
+    type: DataType.FLOAT(8, 5),
     allowNull: false,
     field: "tradePrice",
   })

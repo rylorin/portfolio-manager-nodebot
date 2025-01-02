@@ -1,8 +1,13 @@
 import { ContractEntry, OptionContractEntry } from ".";
+import logger from "../logger";
 import { Contract, OptionContract } from "../models";
+
+const MODULE = "contracts_utils";
 
 /* We manually copy each property because we want to get rid of any sequalize non jsonable meta data */
 export const contractModelToContractEntry = (contract: Contract): ContractEntry => {
+  if (!contract.createdAt || !contract.updatedAt)
+    logger.error(MODULE + ".contractModelToContractEntry", `Invalid date for contract #${contract.id}`);
   const result: ContractEntry = {
     // Properties
     id: contract.id,
@@ -25,7 +30,7 @@ export const contractModelToContractEntry = (contract: Contract): ContractEntry 
 
     // Make JSON compatible
     createdAt: contract.createdAt.getTime(),
-    updatedAt: contract.createdAt.getTime(),
+    updatedAt: contract.updatedAt.getTime(),
 
     // Associations
     positions: undefined,

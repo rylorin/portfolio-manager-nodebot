@@ -104,14 +104,14 @@ export class RollOptionPositionsBot extends ITradingBot {
                 console.log("rollPutStrategy set to: off");
               } else if (
                 (parameter.rollPutStrategy == 1 && diffDays > DEFENSIVE_ROLL_DAYS) ||
-                (parameter.rollPutStrategy == 2 && diffDays > AGRESSIVE_ROLL_DAYS)
+                ((parameter.rollPutStrategy as number) == 2 && diffDays > AGRESSIVE_ROLL_DAYS)
               ) {
                 console.log("too early to roll contract:", diffDays, "days before exipiration");
               } else {
                 if (parameter.rollPutStrategy == 1 && defensive) {
                   selected = defensive;
                   price = position.contract.ask - defensive.contract.bid;
-                } else if (parameter.rollPutStrategy == 2 && agressive) {
+                } else if ((parameter.rollPutStrategy as number) == 2 && agressive) {
                   selected = agressive;
                   price = position.contract.ask - agressive.contract.bid;
                 }
@@ -186,14 +186,14 @@ export class RollOptionPositionsBot extends ITradingBot {
                 console.log("rollCallStrategy set to: off");
               } else if (
                 (parameter.rollCallStrategy == 1 && diffDays > DEFENSIVE_ROLL_DAYS) ||
-                (parameter.rollCallStrategy == 2 && diffDays > AGRESSIVE_ROLL_DAYS)
+                (parameter.rollCallStrategy == (2 as number) && diffDays > AGRESSIVE_ROLL_DAYS)
               ) {
                 console.log("too early to roll contract:", diffDays, "days before exipiration");
               } else {
                 if (parameter.rollCallStrategy == 1 && defensive) {
                   selected = defensive;
                   price = position.contract.ask - defensive.contract.bid;
-                } else if (parameter.rollCallStrategy == 2 && agressive) {
+                } else if ((parameter.rollCallStrategy as number) == 2 && agressive) {
                   selected = agressive;
                   price = position.contract.ask - agressive.contract.bid;
                 }
