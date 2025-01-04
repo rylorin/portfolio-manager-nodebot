@@ -118,6 +118,14 @@ const SettingEdit: FunctionComponent<Props> = ({ ..._rest }): React.ReactNode =>
               </Flex>
               <Flex justifyContent="center" gap="2">
                 <Text w="180px" as="b" textAlign="right">
+                  Covered calls Delta:
+                </Text>
+                <Text w="200px">
+                  <Field name="ccDelta" type="number" />
+                </Text>
+              </Flex>
+              <Flex justifyContent="center" gap="2">
+                <Text w="180px" as="b" textAlign="right">
                   Covered calls Roll:
                 </Text>
                 <Field as={Select} name="rollCallStrategy" w="200px" type="number" variant="outline">

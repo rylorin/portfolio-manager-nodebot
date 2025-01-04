@@ -1150,6 +1150,13 @@ export class ITradingBot extends EventEmitter {
           console.log("ignored", type, tick);
         }
     });
+    // GBP prices are in pences, fix it
+    if (contract.currency == "GBP" && contract.secType != SecType.CASH) {
+      if (dataset.ask) dataset.ask /= 100;
+      if (dataset.bid) dataset.bid /= 100;
+      if (dataset.price) dataset.price /= 100;
+      if (dataset.previousClosePrice) dataset.previousClosePrice /= 100;
+    }
     let price: number | null = null;
     if (dataset.ask && dataset.bid) price = (dataset.ask + dataset.bid) / 2;
     else if (dataset.price) price = dataset.price;
@@ -1179,7 +1186,7 @@ export class ITradingBot extends EventEmitter {
           },
         ).then(() => price);
       } else {
-        return price ? (contract.currency == "GBP" ? price / 100 : price) : price;
+        return price;
       }
     });
   }

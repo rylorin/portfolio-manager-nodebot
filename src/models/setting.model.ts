@@ -41,7 +41,7 @@ export class Setting extends Model<
   @Column({ type: DataType.FLOAT, field: "nav_ratio", defaultValue: 0 })
   declare navRatio: number;
 
-  @Column({ type: DataType.FLOAT(6, 3), defaultValue: 1 })
+  @Column({ type: DataType.FLOAT, defaultValue: 1 })
   declare minPremium: number;
 
   @Column({ type: DataType.ENUM(typeof StrategySetting), field: "csp_strategy", defaultValue: 0 })
@@ -53,6 +53,9 @@ export class Setting extends Model<
 
   @Column({ type: DataType.ENUM(typeof StrategySetting), field: "cc_strategy", defaultValue: 0 })
   declare ccStrategy: StrategySetting;
+
+  @Column({ type: DataType.FLOAT(3, 2), defaultValue: 0.15 })
+  declare ccDelta: number;
 
   @Column({ type: DataType.ENUM(typeof StrategySetting), field: "roll_call_strategy", defaultValue: 0 })
   declare rollCallStrategy: StrategySetting;

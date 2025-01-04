@@ -3,20 +3,20 @@ import { BelongsTo, Column, DataType, Model, Table } from "sequelize-typescript"
 import { Statement } from ".";
 
 @Table({
-  tableName: "tax_statement", // Nom de la table dans la base de données
+  tableName: "tax_statement",
   timestamps: false,
 })
 export class TaxStatement extends Model<InferAttributes<TaxStatement>, InferCreationAttributes<TaxStatement>> {
   // Identifiant unique de l'enregistrement, auto-incrémenté
   declare id: number;
 
-  /** Identifiant de la transaction associée à cette déclaration fiscale */
+  /** Identifiant de la transaction associée à cette taxe */
   @BelongsTo(() => Statement, "id")
   declare statement: Statement;
 
-  /** Code du pays associé à cette déclaration fiscale */
+  /** Country code which collected this tax */
   @Column({
-    type: DataType.CHAR(2), // Limite à 2 caractères (ex: FR, US)
+    type: DataType.STRING,
     allowNull: false, // Assure que cette valeur est obligatoire
     validate: {
       isAlpha: true,

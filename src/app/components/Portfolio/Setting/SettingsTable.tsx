@@ -30,9 +30,11 @@ const SettingsTable: FunctionComponent<Props> = ({ content, ..._rest }): React.R
               <Td>Symbol</Td>
               <Td>Lookup</Td>
               <Td>NAV Ratio</Td>
+              <Td>Prem.</Td>
               <Td>CSP strat.</Td>
               <Td>CSP Roll</Td>
               <Td>CC strat.</Td>
+              <Td>CC delta</Td>
               <Td>CC Roll</Td>
               <Td>Actions</Td>
             </Tr>
@@ -49,9 +51,15 @@ const SettingsTable: FunctionComponent<Props> = ({ content, ..._rest }): React.R
                   <Td isNumeric>
                     <Number value={item.navRatio} isPercent color="-" />
                   </Td>
+                  <Td isNumeric>
+                    <Number value={item.minPremium} decimals={2} color="-" />
+                  </Td>
                   <Td>{strategy2String(item.cspStrategy)}</Td>
                   <Td>{strategy2String(item.rollPutStrategy)}</Td>
                   <Td>{strategy2String(item.ccStrategy)}</Td>
+                  <Td isNumeric>
+                    <Number value={item.ccDelta} decimals={2} color="-" />
+                  </Td>
                   <Td>{strategy2String(item.rollCallStrategy)}</Td>
 
                   <Td>

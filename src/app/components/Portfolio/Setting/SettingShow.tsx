@@ -50,7 +50,7 @@ const SettingShow: FunctionComponent<SettingShowProps> = ({ ..._rest }): React.R
         <Text w="180px" as="b" textAlign="right">
           Premium:
         </Text>
-        <Number textAlign="left" w="120px" value={thisItem.minPremium} color={"-"} />
+        <Number textAlign="left" w="120px" value={thisItem.minPremium} decimals={2} color={"-"} />
       </Flex>
       <Flex justifyContent="center" gap="2">
         <Text w="180px" as="b" textAlign="right">
@@ -75,6 +75,12 @@ const SettingShow: FunctionComponent<SettingShowProps> = ({ ..._rest }): React.R
         <Text textAlign="left" w="120px">
           {strategy2String(thisItem.ccStrategy)}
         </Text>
+      </Flex>
+      <Flex justifyContent="center" gap="2">
+        <Text w="180px" as="b" textAlign="right">
+          Covered calls delta:
+        </Text>
+        <Number textAlign="left" w="120px" value={thisItem.ccDelta} decimals={2} color={"-"} />
       </Flex>
       <Flex justifyContent="center" gap="2">
         <Text w="180px" as="b" textAlign="right">

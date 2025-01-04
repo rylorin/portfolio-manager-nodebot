@@ -30,6 +30,7 @@ router.put("/", (req, res): void => {
     cspStrategy: data.cspStrategy,
     rollPutStrategy: data.rollPutStrategy,
     ccStrategy: data.ccStrategy,
+    ccDelta: data.ccDelta,
     rollCallStrategy: data.rollCallStrategy,
   };
   Setting.create(setting)
@@ -74,6 +75,7 @@ router.post("/:itemId(\\d+)/", (req, res): void => {
         setting.cspStrategy = data.cspStrategy;
         setting.rollPutStrategy = data.rollPutStrategy;
         setting.ccStrategy = data.ccStrategy;
+        setting.ccDelta = data.ccDelta;
         setting.rollCallStrategy = data.rollCallStrategy;
         return setting.save();
       } else throw Error(`Setting #${itemId} not found!`);
