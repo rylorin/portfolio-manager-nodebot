@@ -3,7 +3,7 @@ import { DeleteIcon, EditIcon, PlusSquareIcon, SearchIcon } from "@chakra-ui/ico
 import { IconButton, Link, Table, TableCaption, TableContainer, Tbody, Td, Tfoot, Thead, Tr } from "@chakra-ui/react";
 import { FunctionComponent, default as React } from "react";
 import { Form, Link as RouterLink, useLoaderData, useParams } from "react-router-dom";
-import { strategy2String } from "../../../../models/setting.types";
+import { cspStrategy2String, strategy2String } from "../../../../models/setting.types";
 import Number from "../../Number/Number";
 import { SettingLink } from "./links";
 
@@ -29,9 +29,9 @@ const SettingsTable: FunctionComponent<Props> = ({ content, ..._rest }): React.R
             <Tr>
               <Td>Symbol</Td>
               <Td>Lookup</Td>
-              <Td>NAV Ratio</Td>
               <Td>Prem.</Td>
               <Td>CSP strat.</Td>
+              <Td>Ratio</Td>
               <Td>CSP Roll</Td>
               <Td>CC strat.</Td>
               <Td>CC delta</Td>
@@ -49,12 +49,12 @@ const SettingsTable: FunctionComponent<Props> = ({ content, ..._rest }): React.R
                     <Number value={item.lookupDays} color="-" />
                   </Td>
                   <Td isNumeric>
-                    <Number value={item.navRatio} isPercent color="-" />
-                  </Td>
-                  <Td isNumeric>
                     <Number value={item.minPremium} decimals={2} color="-" />
                   </Td>
-                  <Td>{strategy2String(item.cspStrategy)}</Td>
+                  <Td>{cspStrategy2String(item.cspStrategy)}</Td>
+                  <Td isNumeric>
+                    <Number value={item.navRatio} isPercent color="-" />
+                  </Td>
                   <Td>{strategy2String(item.rollPutStrategy)}</Td>
                   <Td>{strategy2String(item.ccStrategy)}</Td>
                   <Td isNumeric>

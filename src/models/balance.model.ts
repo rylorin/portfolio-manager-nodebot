@@ -33,7 +33,7 @@ export class Balance extends Model<InferAttributes<Balance>, InferCreationAttrib
 
   /** The asset currency symbol (e.g., USD, EUR, GBP) */
   @Column({
-    type: DataType.STRING(3),
+    type: DataType.CHAR(3),
     allowNull: false,
     validate: {
       isUppercase: true,
@@ -45,12 +45,9 @@ export class Balance extends Model<InferAttributes<Balance>, InferCreationAttrib
 
   /** The quantity or balance available in the specified currency */
   @Column({
-    type: DataType.FLOAT(12, 2), // Increased precision to handle larger balances
+    type: DataType.FLOAT,
     allowNull: false,
     defaultValue: 0,
-    validate: {
-      min: 0, // Ensure non-negative balance
-    },
   })
   declare quantity: number;
 }

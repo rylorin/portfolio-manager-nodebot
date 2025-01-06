@@ -8,7 +8,7 @@ import {
 import { BelongsTo, Column, DataType, Model, Table } from "sequelize-typescript";
 import { Contract } from "./contract.model";
 import { Portfolio } from "./portfolio.model";
-import { StrategySetting } from "./types";
+import { CspStrategySetting, StrategySetting } from "./types";
 
 @Table({ tableName: "trading_parameters", timestamps: true })
 export class Setting extends Model<
@@ -37,15 +37,14 @@ export class Setting extends Model<
   @Column({ type: DataType.SMALLINT, defaultValue: 40 })
   declare lookupDays: number;
 
-  /** NAV ratio */
-  @Column({ type: DataType.FLOAT, field: "nav_ratio", defaultValue: 0 })
-  declare navRatio: number;
-
   @Column({ type: DataType.FLOAT, defaultValue: 1 })
   declare minPremium: number;
 
-  @Column({ type: DataType.ENUM(typeof StrategySetting), field: "csp_strategy", defaultValue: 0 })
-  declare cspStrategy: StrategySetting;
+  @Column({ type: DataType.ENUM(typeof CspStrategySetting), field: "csp_strategy", defaultValue: 0 })
+  declare cspStrategy: CspStrategySetting;
+
+  @Column({ type: DataType.FLOAT, field: "nav_ratio", defaultValue: 0 })
+  declare navRatio: number;
 
   /** rollPutStrategy */
   @Column({ type: DataType.ENUM(typeof StrategySetting), field: "roll_put_strategy", defaultValue: 0 })
