@@ -57,7 +57,7 @@ export class ITradingBot extends EventEmitter {
   public get portfolio(): Portfolio {
     return this._portfolio;
   }
-  protected base_rates: number[] = [];
+  protected baseRates: number[] = [];
 
   constructor(app: MyTradingBotApp, api: IBApiNext, account: string) {
     super();
@@ -199,8 +199,8 @@ export class ITradingBot extends EventEmitter {
         } else throw Error("portfolio not found");
       })
       .then((currencies) => {
-        for (const currency of currencies) this.base_rates[currency.currency] = currency.rate;
-        this.base_rates[this.portfolio.baseCurrency] = 1.0;
+        for (const currency of currencies) this.baseRates[currency.currency] = currency.rate;
+        this.baseRates[this.portfolio.baseCurrency] = 1.0;
       });
   }
 
@@ -335,15 +335,15 @@ export class ITradingBot extends EventEmitter {
         result.quantity += position.quantity * opt.multiplier;
         result.value +=
           (position.quantity * opt.multiplier * position.contract.livePrice) /
-          this.base_rates[position.contract.currency];
+          this.baseRates[position.contract.currency];
         result.engaged +=
-          (position.quantity * opt.multiplier * opt.strike) / this.base_rates[position.contract.currency];
+          (position.quantity * opt.multiplier * opt.strike) / this.baseRates[position.contract.currency];
         result.risk +=
           (position.quantity *
             opt.multiplier *
             opt.strike *
             (opt.delta ? opt.delta : opt.callOrPut == OptionType.Call ? +0.5 : -0.5)) /
-          this.base_rates[position.contract.currency];
+          this.baseRates[position.contract.currency];
         result.options.push(opt);
       }
     }
@@ -362,16 +362,24 @@ export class ITradingBot extends EventEmitter {
       };
       if (short && !long) where.quantity = { [Op.lt]: 0 };
       if (!short && long) where.quantity = { [Op.gt]: 0 };
-      return Position.findAll({
-        where: where,
-        include: {
-          model: Contract,
-          where: {
-            secType: IbSecType.OPT,
+      return (
+        Position.findAll({
+          where: where,
+          include: {
+            model: Contract,
+            where: {
+              secType: IbSecType.OPT,
+            },
           },
-        },
-      }).then(async (positions: Position[]) => this.sumOptionsPositionsSynthesisInBase(positions, underlying, right));
+        })
+          // .then(async (positions: Position[]) => {
+          //   console.log('getOptionsPositionsSynthesisInBase',positions);
+          //   return positions;
+          // })
+          .then(async (positions: Position[]) => this.sumOptionsPositionsSynthesisInBase(positions, underlying, right))
+      );
     } else {
+      logger.error(MODULE + ".getOptionsPositionsSynthesisInBase", "Portfolio not loaded");
       return Promise.resolve({
         engaged: 0,
         value: 0,
@@ -530,7 +538,7 @@ export class ITradingBot extends EventEmitter {
         currency: currency,
       },
     }).then((balance) => {
-      if (balance) return balance.quantity / this.base_rates[balance.currency];
+      if (balance) return balance.quantity / this.baseRates[balance.currency];
       else return 0;
     });
   }
@@ -539,7 +547,7 @@ export class ITradingBot extends EventEmitter {
     return Balance.findAll({ where: { portfolio_id: this.portfolio.id } }).then((balances) => {
       return balances.reduce(
         (p, b) => {
-          p.quantity += b.quantity / this.base_rates[b.currency];
+          p.quantity += b.quantity / this.baseRates[b.currency];
           return p;
         },
         { quantity: 0, currency: this.portfolio.baseCurrency },

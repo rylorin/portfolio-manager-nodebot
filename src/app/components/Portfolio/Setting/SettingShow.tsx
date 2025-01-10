@@ -62,6 +62,12 @@ const SettingShow: FunctionComponent<SettingShowProps> = ({ ..._rest }): React.R
       </Flex>
       <Flex justifyContent="center" gap="2">
         <Text w="180px" as="b" textAlign="right">
+          CSP delta:
+        </Text>
+        <Number textAlign="left" w="120px" value={thisItem.cspDelta} decimals={2} color={"-"} />
+      </Flex>
+      <Flex justifyContent="center" gap="2">
+        <Text w="180px" as="b" textAlign="right">
           CSP Roll:
         </Text>
         <Text textAlign="left" w="120px">

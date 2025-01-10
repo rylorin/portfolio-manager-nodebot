@@ -46,6 +46,9 @@ export class Setting extends Model<
   @Column({ type: DataType.FLOAT, field: "nav_ratio", defaultValue: 0 })
   declare navRatio: number;
 
+  @Column({ type: DataType.FLOAT(3, 2), defaultValue: -0.15 })
+  declare cspDelta: number;
+
   /** rollPutStrategy */
   @Column({ type: DataType.ENUM(typeof StrategySetting), field: "roll_put_strategy", defaultValue: 0 })
   declare rollPutStrategy: StrategySetting;

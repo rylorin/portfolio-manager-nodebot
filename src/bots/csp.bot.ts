@@ -97,7 +97,7 @@ export class SellCashSecuredPutBot extends ITradingBot {
     console.log("parameter.underlying.price:", parameter.underlying.livePrice);
     console.log(
       "free_for_this_symbol in currency:",
-      Math.round(free_for_this_symbol * this.base_rates[parameter.underlying.currency]),
+      Math.round(free_for_this_symbol * this.baseRates[parameter.underlying.currency]),
     );
     // RULE 7: stock price is lower than previous close
     const options =
@@ -164,7 +164,7 @@ export class SellCashSecuredPutBot extends ITradingBot {
     for (const option of all_options) {
       // RULE 6: check overall margin space
       const stock = await StockContract.findByPk(option.stock.id);
-      if (option.strike * option.multiplier * this.base_rates[option.contract.currency] < max_for_all_symbols) {
+      if (option.strike * option.multiplier * this.baseRates[option.contract.currency] < max_for_all_symbols) {
         if (option.impliedVolatility! > stock!.historicalVolatility!) {
           // RULE 1: implied volatility > historical volatility
           // const expiry: Date = new Date(option.lastTradeDate);

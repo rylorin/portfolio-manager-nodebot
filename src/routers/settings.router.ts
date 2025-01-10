@@ -25,10 +25,14 @@ router.put("/", (req, res): void => {
     portfolio_id: portfolioId,
     stock_id: data.stock_id,
     lookupDays: data.lookupDays,
-    navRatio: data.navRatio,
+
     minPremium: data.minPremium,
+
     cspStrategy: data.cspStrategy,
+    navRatio: data.navRatio,
+    cspDelta: data.cspDelta,
     rollPutStrategy: data.rollPutStrategy,
+
     ccStrategy: data.ccStrategy,
     ccDelta: data.ccDelta,
     rollCallStrategy: data.rollCallStrategy,
@@ -70,10 +74,13 @@ router.post("/:itemId(\\d+)/", (req, res): void => {
       if (setting) {
         setting.stock_id = data.stock_id;
         setting.lookupDays = data.lookupDays;
-        setting.navRatio = data.navRatio;
         setting.minPremium = data.minPremium;
+
         setting.cspStrategy = data.cspStrategy;
+        setting.navRatio = data.navRatio;
+        setting.cspDelta = data.cspDelta;
         setting.rollPutStrategy = data.rollPutStrategy;
+
         setting.ccStrategy = data.ccStrategy;
         setting.ccDelta = data.ccDelta;
         setting.rollCallStrategy = data.rollCallStrategy;

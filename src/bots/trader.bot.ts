@@ -16,11 +16,11 @@ import { CashStrategy, cspStrategy2String, CspStrategySetting, StrategySetting }
 
 const MODULE = "TradeBot";
 
-const GET_MARKET_DATA_BATCH_SIZE = 90;
-const GET_MARKET_DATA_DURATION = 15 * 1_000; // IB says 11 but we add a bit overhead for db update
+const GET_MARKET_DATA_BATCH_SIZE = 95;
+const GET_MARKET_DATA_DURATION = 16 * 1_000; // IB says 11 but we add a bit overhead for db update
 const UPDATE_OPTIONS_BATCH_FACTOR = 3;
 const START_AFTER = 15 * 1_000;
-const RECENT_UPDATE = Math.max(UPDATE_OPTIONS_BATCH_FACTOR * GET_MARKET_DATA_DURATION * 3, 120_000);
+const RECENT_UPDATE = Math.max(UPDATE_OPTIONS_BATCH_FACTOR * GET_MARKET_DATA_DURATION * 3, 90_000);
 
 // eslint-disable-next-line @typescript-eslint/no-unsafe-argument,@typescript-eslint/no-unused-vars
 const sequelize_logging = (...args: any[]): void => logger.trace(MODULE + ".squelize", ...args);
@@ -34,13 +34,42 @@ interface _OptionEx extends OptionContract {
   yield?: number;
 }
 
+enum LongShort {
+  Long = "L",
+  Short = "S",
+}
+// export type LongShort = (typeof LongShort)[keyof typeof LongShort];
+
+interface OptionsEval {
+  units: number;
+  value: number;
+  engaged: number;
+}
+
+interface OptionsEval2 {
+  [OptionType.Put]: OptionsEval;
+  [OptionType.Call]: OptionsEval;
+}
+
+interface PositionsEval {
+  stocks: OptionsEval;
+  [LongShort.Long]: OptionsEval2;
+  [LongShort.Short]: OptionsEval2;
+}
+
+interface OrdersEval {
+  stocks: OptionsEval;
+  [OrderAction.BUY]: OptionsEval2;
+  [OrderAction.SELL]: OptionsEval2;
+}
+
 export class TradeBot extends ITradingBot {
   timer: NodeJS.Timeout;
 
-  protected async findUpdatedContract(contract: number | Contract): Promise<Contract | null> {
+  private async findUpdatedContract(contract: number | Contract): Promise<Contract> {
     if (!contract) return null;
     else if (typeof contract == "number") contract = await Contract.findByPk(contract);
-    if (Date.now() - contract.updatedAt.getTime() < RECENT_UPDATE / 2) {
+    if (Date.now() - contract.updatedAt.getTime() < RECENT_UPDATE) {
       // we already have a recent contract
       return contract;
     } else {
@@ -55,7 +84,7 @@ export class TradeBot extends ITradingBot {
     }
   }
 
-  protected async findUpdatedContracts(ids: (number | Contract)[]): Promise<(Contract | null)[]> {
+  private async findUpdatedContracts(ids: (number | Contract)[]): Promise<Contract[]> {
     let result: (Contract | null)[] = [];
     while (ids.length > 0) {
       const id1 = ids.slice(0, GET_MARKET_DATA_BATCH_SIZE);
@@ -65,7 +94,7 @@ export class TradeBot extends ITradingBot {
     return result;
   }
 
-  protected async findUpdatedOptions(
+  private async findUpdatedOptions(
     underlying_id: number,
     strike: number,
     callOrPut: OptionType,
@@ -130,7 +159,7 @@ export class TradeBot extends ITradingBot {
       );
   }
 
-  protected async expireOptions(): Promise<void> {
+  private async expireOptions(): Promise<void> {
     logger.info(MODULE + ".expireOptions", "Expiring old options contracts");
     return OptionContract.findAll({ where: { lastTradeDate: { [Op.lt]: dateToExpiration() } } }).then(async (options) =>
       options.reduce(
@@ -158,7 +187,7 @@ export class TradeBot extends ITradingBot {
     );
   }
 
-  protected async getPositionsValueInBase(): Promise<number> {
+  private async getPositionsValueInBase(): Promise<number> {
     return Position.findAll({ where: { portfolio_id: this.portfolio.id }, include: { association: "contract" } }).then(
       (positions) =>
         positions.reduce(
@@ -171,7 +200,7 @@ export class TradeBot extends ITradingBot {
     );
   }
 
-  protected async getOptionsPositionsForUnderlying(underlying_id: number): Promise<Position[]> {
+  private async _getOptionsPositionsForUnderlying(underlying_id: number, right?: OptionType): Promise<Position[]> {
     return Position.findAll({
       where: { portfolio_id: this.portfolio.id },
       include: [
@@ -187,8 +216,10 @@ export class TradeBot extends ITradingBot {
         async (p, position) =>
           p.then(async (positions) =>
             OptionContract.findByPk(position.contract_id).then((option) => {
-              if (option?.stock_id == underlying_id) {
-                positions.push(position);
+              if (option) {
+                if (option.stock_id == underlying_id && (right == undefined || option.callOrPut == right)) {
+                  positions.push(position);
+                }
               }
               return positions;
             }),
@@ -198,14 +229,146 @@ export class TradeBot extends ITradingBot {
     });
   }
 
-  protected async updateCurrencyContracts(): Promise<void> {
-    logger.info(MODULE + ".updateCurrencyContracts", "Updating currencies' contracts");
-    return Contract.findAll({ where: { secType: SecType.CASH } }).then(async (contracts) =>
-      this.findUpdatedContracts(contracts.map((item) => item.id)).then(),
-    );
+  private async evaluatePositions(underlying_id: number): Promise<PositionsEval> {
+    const result: PositionsEval = {
+      stocks: { units: 0, value: 0, engaged: 0 },
+      [LongShort.Long]: {
+        [OptionType.Put]: { units: 0, value: 0, engaged: 0 },
+        [OptionType.Call]: { units: 0, value: 0, engaged: 0 },
+      },
+      [LongShort.Short]: {
+        [OptionType.Put]: { units: 0, value: 0, engaged: 0 },
+        [OptionType.Call]: { units: 0, value: 0, engaged: 0 },
+      },
+    };
+    return Position.findAll({
+      where: { portfolio_id: this.portfolio.id },
+      include: [
+        {
+          association: "contract",
+          required: true,
+        },
+      ],
+    }).then(async (positions) => {
+      // Got all options positions
+      return positions.reduce(
+        async (p, position) =>
+          p.then(async (result) => {
+            switch (position.contract.secType) {
+              case SecType.STK:
+                if (position.contract_id == underlying_id) {
+                  result.stocks.units += position.quantity;
+                  result.stocks.value += position.quantity * position.contract.livePrice;
+                  result.stocks.engaged += position.quantity * position.averagePrice;
+                }
+                return result;
+                break;
+
+              case SecType.OPT:
+              case SecType.FOP:
+                return OptionContract.findByPk(position.contract_id)
+                  .then((option) => {
+                    if (option) {
+                      if (option.stock_id == underlying_id) {
+                        const ls: LongShort = position.quantity >= 0 ? LongShort.Long : LongShort.Short;
+                        result[ls][option.callOrPut].units += Math.abs(position.quantity) * option.multiplier;
+                        result[ls][option.callOrPut].value +=
+                          (Math.abs(position.quantity) * option.multiplier * position.contract.livePrice) /
+                          this.baseRates[position.contract.currency];
+                        result[ls][option.callOrPut].engaged +=
+                          (Math.abs(position.quantity) * option.multiplier * option.strike) /
+                          this.baseRates[position.contract.currency];
+                      }
+                    }
+                  })
+                  .then(() => result);
+                break;
+
+              default:
+                return result;
+            }
+          }),
+        Promise.resolve(result),
+      );
+    });
   }
 
-  protected async updatePositionsContracts(): Promise<void> {
+  private async evaluateOrders(underlying_id: number): Promise<OrdersEval> {
+    const result: OrdersEval = {
+      stocks: { units: 0, value: 0, engaged: 0 },
+      [OrderAction.BUY]: {
+        [OptionType.Put]: { units: 0, value: 0, engaged: 0 },
+        [OptionType.Call]: { units: 0, value: 0, engaged: 0 },
+      },
+      [OrderAction.SELL]: {
+        [OptionType.Put]: { units: 0, value: 0, engaged: 0 },
+        [OptionType.Call]: { units: 0, value: 0, engaged: 0 },
+      },
+    };
+    return OpenOrder.findAll({
+      where: { portfolio_id: this.portfolio.id },
+      include: [
+        {
+          association: "contract",
+          required: true,
+        },
+      ],
+    }).then(async (orders) => {
+      // Got all options positions
+      return orders.reduce(
+        async (p, order) =>
+          p.then(async (result) => {
+            switch (order.contract.secType) {
+              case SecType.STK:
+                if (order.contract_id == underlying_id) {
+                  result.stocks.units += order.totalQty;
+                  result.stocks.value +=
+                    (order.totalQty * (order.lmtPrice ? order.lmtPrice : order.contract.livePrice)) /
+                    this.baseRates[order.contract.currency];
+                }
+                return result;
+                break;
+
+              case SecType.OPT:
+              case SecType.FOP:
+                return OptionContract.findByPk(order.contract_id)
+                  .then((option) => {
+                    if (option) {
+                      if (option.stock_id == underlying_id) {
+                        result[order.actionType][option.callOrPut].units += order.totalQty * option.multiplier;
+                        result[order.actionType][option.callOrPut].value +=
+                          (order.totalQty *
+                            option.multiplier *
+                            (order.lmtPrice ? order.lmtPrice : order.contract.livePrice)) /
+                          this.baseRates[order.contract.currency];
+                        result[order.actionType][option.callOrPut].engaged +=
+                          (order.totalQty * option.multiplier * option.strike) /
+                          this.baseRates[order.contract.currency];
+                      }
+                    }
+                  })
+                  .then(() => result);
+                break;
+
+              default:
+                return result;
+            }
+          }),
+        Promise.resolve(result),
+      );
+    });
+  }
+
+  private async updateCurrencyContracts(): Promise<void> {
+    logger.info(MODULE + ".updateCurrencyContracts", "Updating currencies' contracts");
+    return Contract.findAll({ where: { secType: SecType.CASH } })
+      .then(async (contracts) => this.findUpdatedContracts(contracts.map((item) => item.id)))
+      .then((currencies) =>
+        currencies.forEach((currency) => (this.baseRates[currency.symbol.substring(4)] = currency.livePrice)),
+      );
+  }
+
+  private async updatePositionsContracts(): Promise<Contract[]> {
     logger.info(MODULE + ".updatePositions", "Updating positions' contracts");
     return Position.findAll({
       where: { portfolio_id: this.portfolio.id },
@@ -215,11 +378,28 @@ export class TradeBot extends ITradingBot {
           required: true,
         },
       ],
-    }).then(async (positions) => this.findUpdatedContracts(positions.map((item) => item.contract_id)).then());
+    })
+      .then(async (positions) => {
+        const ids: number[] = [];
+        for (const pos of positions) {
+          ids.push(pos.contract_id);
+          switch (pos.contract.secType) {
+            case SecType.OPT:
+              ids.push((await OptionContract.findByPk(pos.contract_id)).stock_id);
+              break;
+          }
+        }
+        return ids;
+      })
+      .then(async (contrats) => this.findUpdatedContracts(contrats));
   }
 
-  protected async addOneOptionsChains(setting: Setting): Promise<Setting> {
-    logger.info(MODULE + ".addOptionsChains", `Add or Update ${setting.underlying.symbol} options' chains`);
+  private async updateSettingsContracts(settings: Setting[]): Promise<Setting[]> {
+    return this.findUpdatedContracts(settings.map((item) => item.underlying)).then(() => settings);
+  }
+
+  private async addOneOptionsChains(setting: Setting): Promise<Setting> {
+    logger.info(MODULE + ".addOptionsChains", `Add or Update options' chains: ${setting.underlying.symbol}`);
     return this.api
       .getSecDefOptParams(
         setting.underlying.symbol,
@@ -231,7 +411,7 @@ export class TradeBot extends ITradingBot {
         const detail = details.filter((item) => item.exchange == "SMART")[0];
         for (const expstr of detail.expirations) {
           const expdate = expirationToDate(expstr);
-          const days = (expdate.getTime() - Date.now()) / 60000 / 1440;
+          const days = (expdate.getTime() - Date.now()) / 60_000 / 1440;
           if (days > 0 && days <= setting.lookupDays) {
             const last = await OptionContract.findOne({
               where: {
@@ -242,7 +422,7 @@ export class TradeBot extends ITradingBot {
             });
 
             // update once a day or so
-            if (!last || last.createdAt.getTime() < Date.now() - 24 * 3_600_000 * (0.5 + Math.random())) {
+            if (!last || last.createdAt.getTime() < Date.now() - 24 * 3_600_000 * (1 + Math.random())) {
               // Refresh option chain
               logger.info(
                 MODULE + ".addOptionsChains",
@@ -294,7 +474,7 @@ export class TradeBot extends ITradingBot {
       .then(() => setting);
   }
 
-  protected async addOptionsChains(): Promise<void> {
+  private async addOptionsChains(): Promise<void> {
     logger.info(MODULE + ".addOptionsChains", "Add or Update options' chains");
     return this.portfolio.settings.reduce(
       async (p, setting) => p.then(async () => this.addOneOptionsChains(setting).then()),
@@ -302,7 +482,7 @@ export class TradeBot extends ITradingBot {
     );
   }
 
-  protected async runOneRollStrategy(position: Position, setting: Setting): Promise<void> {
+  private async runOneRollStrategy(position: Position, setting: Setting): Promise<void> {
     if (setting) {
       logger.info(MODULE + ".runOneRollStrategy", `Roll strategy for ${position.contract.symbol}`);
       const price = await this.findUpdatedContract(setting.underlying.id).then((contract) => contract!.livePrice);
@@ -315,7 +495,7 @@ export class TradeBot extends ITradingBot {
         ((option!.callOrPut == OptionType.Put && price < option!.strike) ||
           (option!.callOrPut == OptionType.Call && price > option!.strike))
       ) {
-        logger.info(MODULE + ".runOneRollStrategy", `Roll strategy for ${setting.underlying.symbol}: ITM`);
+        logger.info(MODULE + ".runOneRollStrategy", `Roll strategy for ${position.contract.symbol}: ITM`);
 
         if (option!.callOrPut == OptionType.Put && setting.rollPutStrategy) {
           logger.info(MODULE + ".run", `Roll Put strategy for ${setting.underlying.symbol}: Rolling`);
@@ -364,16 +544,16 @@ export class TradeBot extends ITradingBot {
             );
             this.printObject(options);
           }
-        } else logger.info(MODULE + ".runOneRollStrategy", `Roll Put strategy for ${setting.underlying.symbol}: Off`);
+        } else logger.info(MODULE + ".runOneRollStrategy", `Roll strategy for ${position.contract.symbol}: Off`);
       } else {
-        logger.info(MODULE + ".runOneRollStrategy", `Roll Put strategy for ${setting.underlying.symbol}: OTM`);
+        logger.info(MODULE + ".runOneRollStrategy", `Roll strategy for ${position.contract.symbol}: OTM`);
       }
     } else {
       logger.info(MODULE + ".runOneRollStrategy", `Roll strategy for ${position.contract.symbol}: Unmanaged`);
     }
   }
 
-  protected async runRollStrategies(): Promise<void> {
+  private async runRollStrategies(): Promise<void> {
     logger.info(MODULE + ".runRollStrategies", "Running Roll strategies");
     return Position.findAll({
       where: { portfolio_id: this.portfolio.id },
@@ -396,19 +576,24 @@ export class TradeBot extends ITradingBot {
     );
   }
 
-  protected async runOneCCStrategy(position: Position, setting: Setting): Promise<void> {
+  private async runOneCCStrategy(position: Position, setting: Setting): Promise<void> {
     if (!setting) {
       logger.info(MODULE + ".runOneCCStrategy", `Covered Calls strategy for ${position.contract.symbol}: Unmanaged`);
     } else if (setting.ccStrategy == StrategySetting.Off) {
       logger.info(MODULE + ".runOneCCStrategy", `Covered Calls strategy for ${position.contract.symbol}: Off`);
     } else {
-      logger.info(MODULE + ".runOneCCStrategy", `Covered Calls strategy for ${setting.underlying.symbol}: Running`);
+      logger.info(MODULE + ".runOneCCStrategy", `Covered Calls strategy for ${setting.underlying.symbol}: On`);
       if (
         setting.underlying.livePrice &&
         setting.underlying.previousClosePrice &&
         // RULE : stock price is higher than previous close
         setting.underlying.livePrice > setting.underlying.previousClosePrice
       ) {
+        const positions = await this.evaluatePositions(setting.underlying.id);
+        const orders = await this.evaluateOrders(setting.underlying.id);
+        console.log(positions);
+        console.log(orders);
+
         const stock_positions = position.quantity;
         // console.log("stock_positions:", stock_positions);
         const stock_sell_orders = -(await this.getContractOrdersQuantity(setting.underlying, OrderAction.SELL));
@@ -438,14 +623,13 @@ export class TradeBot extends ITradingBot {
             this.printObject(option);
             const units = Math.floor(free_for_this_symbol / option.multiplier);
             if (units > 0) {
-              await this.api
-                .placeNewOrder(
-                  ITradingBot.OptionToIbContract(option),
-                  ITradingBot.CcOrder(OrderAction.SELL, units, option.contract.livePrice),
-                )
-                .then((orderId: number) => {
-                  logger.info(MODULE + ".runOneCCStrategy", `${setting.underlying.symbol}: ${orderId} placed`);
-                });
+              const contract = ITradingBot.OptionToIbContract(option);
+              const order = ITradingBot.CcOrder(OrderAction.SELL, units, option.contract.livePrice);
+              this.printObject(contract);
+              this.printObject(order);
+              await this.api.placeNewOrder(contract, order).then((orderId: number) => {
+                logger.info(MODULE + ".runOneCCStrategy", `${setting.underlying.symbol}: order #${orderId} placed`);
+              });
             }
           } else {
             logger.warn(MODULE + ".runOneCCStrategy", `${setting.underlying.symbol}: empty options list`);
@@ -454,12 +638,12 @@ export class TradeBot extends ITradingBot {
       } else
         logger.info(
           MODULE + ".runOneCCStrategy",
-          `Covered Calls strategy for ${setting.underlying.symbol}: skipped not green stock price`,
+          `Covered Calls strategy for ${setting.underlying.symbol}: stock price not up`,
         );
     }
   }
 
-  protected async runCCStrategies(): Promise<void> {
+  private async runCCStrategies(): Promise<void> {
     logger.info(MODULE + ".run", "Running Covered Calls strategies");
     return Position.findAll({
       where: { portfolio_id: this.portfolio.id },
@@ -478,126 +662,107 @@ export class TradeBot extends ITradingBot {
     );
   }
 
-  protected async runOneCSPStrategy(setting: Setting): Promise<void> {
+  private async runOneCSPStrategy(setting: Setting): Promise<void> {
     if (setting.cspStrategy) {
       logger.info(
         MODULE + ".runOneCSPStrategy",
         `Cash Secured Puts strategy for ${setting.underlying.symbol}: ${cspStrategy2String(setting.cspStrategy)}`,
       );
+
       if (
         setting.underlying.livePrice &&
         setting.underlying.previousClosePrice &&
+        // RULE: stock price is lower than previous close
         setting.underlying.livePrice < setting.underlying.previousClosePrice
       ) {
-        const stock_positions = await this.getContractPositionValueInBase(setting.underlying);
-        const stock_orders = await this.getContractOrderValueInBase(setting.underlying);
-        const call_positions = await this.getOptionsPositionsSynthesisInBase(
-          setting.underlying.id,
-          OptionType.Call,
-          true,
-        ).then((r) => r.value);
-        const call_sell_orders = 0; // not relevant
+        const positions = await this.evaluatePositions(setting.underlying.id);
+        const orders = await this.evaluateOrders(setting.underlying.id);
+        console.log(positions);
+        console.log(orders);
 
-        const put_positions = await this.getOptionsPositionsSynthesisInBase(setting.underlying.id, OptionType.Put).then(
-          (r) => r.engaged,
-        );
-        const put_sell_orders = await this.getOptionsOrdersEngagedInBase(
-          setting.underlying.id,
-          OptionType.Put,
-          OrderAction.SELL,
-        );
+        const stock_positions = positions.stocks.value;
+        const stock_orders = orders.stocks.engaged;
 
-        const engaged_options = -(put_positions + put_sell_orders);
-        const engaged_symbol = stock_positions + stock_orders + call_positions + call_sell_orders + engaged_options;
+        const positions_put_short_engaged = positions[LongShort.Short][OptionType.Put].engaged;
+        const put_sell_orders = orders[OrderAction.SELL][OptionType.Put].engaged;
 
-        if (stock_positions) console.log("stock_positions_amount in base:", Math.round(stock_positions));
-        if (stock_orders) console.log("stock_orders amount in base:", Math.round(stock_orders));
-        if (call_positions) console.log("call_positions value in base:", Math.round(call_positions));
-        if (call_sell_orders) console.log("call_sell_orders risk in base:", Math.round(call_sell_orders));
-        if (put_positions) console.log("put_positions engaged in base:", Math.round(put_positions));
-        if (put_sell_orders) console.log("put_sell_orders engaged in base:", Math.round(put_sell_orders));
-        console.log("=> engaged:", Math.round(engaged_symbol), Math.round(engaged_options));
+        const engaged_options = positions_put_short_engaged + put_sell_orders;
+        const engaged_symbol = stock_positions + stock_orders + engaged_options;
 
-        let free_for_this_symbol = 0;
-
+        let max_for_this_symbol = 0;
         switch (setting.cspStrategy) {
           case CspStrategySetting.Cash:
             // we can use `navRatio` part of cash (balances + invested cash) for put selling, minus what has already been sold or on orders
-            free_for_this_symbol =
+            max_for_this_symbol =
               ((await this.getContractPositionValueInBase(this.portfolio.benchmark)) +
                 (await this.getTotalBalanceInBase())) *
-                setting.navRatio -
-              engaged_options;
+              setting.navRatio;
             break;
 
           case CspStrategySetting.Nav:
             // we can invest in this symbol up to `navRatio` part of portfolio Nav
-            free_for_this_symbol =
-              ((await this.getPositionsValueInBase()) + (await this.getTotalBalanceInBase())) * setting.navRatio -
-              engaged_symbol;
+            max_for_this_symbol =
+              ((await this.getPositionsValueInBase()) + (await this.getTotalBalanceInBase())) * setting.navRatio;
             break;
-
-          default:
-            // do not allow orders for everything else
-            free_for_this_symbol = 0;
         }
-
-        console.log("free_for_this_symbol in base:", Math.round(free_for_this_symbol));
-        console.log("parameter.underlying.price:", setting.underlying.livePrice);
+        const free_for_this_symbol = max_for_this_symbol - engaged_symbol;
         console.log(
-          "free_for_this_symbol in currency:",
-          Math.round(free_for_this_symbol * this.base_rates[setting.underlying.currency]),
+          "=> engaged:",
+          "max:",
+          max_for_this_symbol,
+          "engaged:",
+          engaged_symbol,
+          "free:",
+          free_for_this_symbol,
+          free_for_this_symbol * this.baseRates[setting.underlying.currency],
         );
 
         if (free_for_this_symbol > 0) {
-          // RULE 7: stock price is lower than previous close
-
           const options = await this.findUpdatedOptions(
             setting.underlying.id,
-            Math.min(setting.underlying.livePrice, free_for_this_symbol / 100), // RULE 2 & 5: strike < cours (OTM) & max ratio per symbol
+            setting.underlying.livePrice, // RULE 2 & 5: strike < cours (OTM) & max ratio per symbol
             OptionType.Put,
             new Date().toISOString().substring(0, 10),
             setting.minPremium,
-            this.portfolio.cspWinRatio! - 1, // RULE 3: delta >= -0.2
+            setting.cspDelta ?? this.portfolio.cspWinRatio! - 1, // RULE 3: delta <= -0.15
           );
           if (options.length > 0) {
             const option = options[0];
             this.printObject(option);
-            const units = Math.floor(free_for_this_symbol / option.multiplier);
+            const units = Math.floor(free_for_this_symbol / option.strike / option.multiplier);
             if (units > 0) {
-              await this.api
-                .placeNewOrder(
-                  ITradingBot.OptionToIbContract(option),
-                  ITradingBot.CcOrder(OrderAction.SELL, units, option.contract.livePrice),
-                )
-                .then((orderId: number) => {
-                  logger.info(MODULE + ".runOneCSPStrategy", `${setting.underlying.symbol}: ${orderId} placed`);
-                });
+              const contract = ITradingBot.OptionToIbContract(option);
+              const order = ITradingBot.CcOrder(OrderAction.SELL, units, option.contract.livePrice);
+              this.printObject(contract);
+              this.printObject(order);
+              await this.api.placeNewOrder(contract, order).then((orderId: number) => {
+                logger.info(MODULE + ".runOneCSPStrategy", `${setting.underlying.symbol}: order #${orderId} placed`);
+              });
             }
           } else
             logger.warn(
               MODULE + ".runOneCSPStrategy",
-              `Cash Secured Put strategy for ${setting.underlying.symbol}: empty option list`,
+              `Cash Secured Puts strategy for ${setting.underlying.symbol}: empty option list`,
             );
         }
       } else
         logger.info(
           MODULE + ".runOneCSPStrategy",
-          `Cash Secured Put strategy for ${setting.underlying.symbol}: stock price not down`,
+          `Cash Secured Puts strategy for ${setting.underlying.symbol}: stock price not down`,
         );
     } else {
-      logger.info(MODULE + ".runOneCSPStrategy", `Cash Secured Put strategy for ${setting.underlying.symbol}: Off`);
+      logger.info(MODULE + ".runOneCSPStrategy", `Cash Secured Puts strategy for ${setting.underlying.symbol}: Off`);
     }
   }
 
-  protected async runCSPStrategies(): Promise<void> {
+  private async runCSPStrategies(): Promise<void> {
     logger.info(MODULE + ".runCSPStrategies", "Running Cash Secured Put strategies");
     return this.portfolio.settings
       .filter((item) => item.cspStrategy)
       .reduce(async (p, setting) => p.then(async () => this.runOneCSPStrategy(setting)), Promise.resolve());
   }
 
-  protected async runCashStrategy(): Promise<void> {
+  private async runCashStrategy(): Promise<void> {
     if (!this.portfolio.cashStrategy) {
       // Off => nothing to do
     } else if (this.portfolio.cashStrategy == CashStrategy.Balance) {
@@ -655,10 +820,11 @@ export class TradeBot extends ITradingBot {
                     "units of",
                     this.portfolio.benchmark.symbol,
                   );
-                  // this.printObject(contract);
-                  // this.printObject(order);
-                  const orderId = await this.placeNewOrder(contract, order);
-                  this.info("orderid", orderId, "placed");
+                  this.printObject(contract);
+                  this.printObject(order);
+                  await this.placeNewOrder(contract, order).then((orderId) =>
+                    logger.info(MODULE + ".runCashStrategy", `orderid ${orderId} placed`),
+                  );
                 }
               });
           }
@@ -684,10 +850,11 @@ export class TradeBot extends ITradingBot {
         .then(async () => this.expireOptions())
         .then(async () => this.addOptionsChains())
         .then(async () => this.updateCurrencyContracts())
+        .then(async () => this.updateSettingsContracts(this.portfolio.settings))
         .then(async () => this.updatePositionsContracts())
+        .then(async () => this.runRollStrategies())
         .then(async () => this.runCCStrategies())
         .then(async () => this.runCSPStrategies())
-        .then(async () => this.runRollStrategies())
         .then(async () => this.runCashStrategy())
         .then(() => logger.info(MODULE + ".run", "Trader bot ran"));
     } else {

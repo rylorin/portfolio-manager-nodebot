@@ -72,6 +72,7 @@ const SettingEdit: FunctionComponent<Props> = ({ ..._rest }): React.ReactNode =>
                   <Field name="minPremium" type="number" />
                 </Text>
               </Flex>
+
               <Flex justifyContent="center" gap="2">
                 <Text w="180px" as="b" textAlign="right">
                   CSP strat.:
@@ -94,6 +95,14 @@ const SettingEdit: FunctionComponent<Props> = ({ ..._rest }): React.ReactNode =>
               </Flex>
               <Flex justifyContent="center" gap="2">
                 <Text w="180px" as="b" textAlign="right">
+                  CSP Delta:
+                </Text>
+                <Text w="200px">
+                  <Field name="ccDelta" type="number" />
+                </Text>
+              </Flex>
+              <Flex justifyContent="center" gap="2">
+                <Text w="180px" as="b" textAlign="right">
                   CSP Roll:
                 </Text>
                 <Field as={Select} name="rollPutStrategy" w="200px" type="number" variant="outline">
@@ -104,6 +113,7 @@ const SettingEdit: FunctionComponent<Props> = ({ ..._rest }): React.ReactNode =>
                   ))}
                 </Field>
               </Flex>
+
               <Flex justifyContent="center" gap="2">
                 <Text w="180px" as="b" textAlign="right">
                   Covered calls strat.:

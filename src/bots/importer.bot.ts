@@ -726,7 +726,7 @@ export class ImporterBot extends ITradingBot {
           case StatementTypes.InterestStatement:
             return InterestStatement.findOrCreate({
               where: { id: statement.id },
-              defaults: { id: statement.id, country: "" },
+              defaults: { id: statement.id, country: this.portfolio.country },
             }).then(([_interestStatement, _created]) => statement);
 
           case StatementTypes.CashStatement:

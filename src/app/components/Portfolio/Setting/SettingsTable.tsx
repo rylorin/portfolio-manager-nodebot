@@ -55,6 +55,9 @@ const SettingsTable: FunctionComponent<Props> = ({ content, ..._rest }): React.R
                   <Td isNumeric>
                     <Number value={item.navRatio} isPercent color="-" />
                   </Td>
+                  <Td isNumeric>
+                    <Number value={item.cspDelta} decimals={2} color="-" />
+                  </Td>
                   <Td>{strategy2String(item.rollPutStrategy)}</Td>
                   <Td>{strategy2String(item.ccStrategy)}</Td>
                   <Td isNumeric>
@@ -94,6 +97,8 @@ const SettingsTable: FunctionComponent<Props> = ({ content, ..._rest }): React.R
                   color="-"
                 />
               </Td>
+              <Td></Td>
+              <Td></Td>
               <Td></Td>
               <Td></Td>
               <Td></Td>
