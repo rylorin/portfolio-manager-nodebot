@@ -53,7 +53,11 @@ export class Statement extends Model<
   declare currency: string;
 
   /** Net cash, calculated as proceeds + commission */
-  @Column({ type: DataType.FLOAT, allowNull: false, defaultValue: 0 })
+  @Column({
+    type: DataType.FLOAT,
+    allowNull: false,
+    defaultValue: 0,
+  })
   declare netCash: number;
 
   /** Description of the statement */

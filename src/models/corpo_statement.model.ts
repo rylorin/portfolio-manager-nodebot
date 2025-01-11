@@ -25,7 +25,7 @@ export class CorporateStatement extends Model<
 
   /** Quantity impacted by the corporate action */
   @Column({
-    type: DataType.FLOAT(10, 2),
+    type: DataType.FLOAT,
     allowNull: false,
     defaultValue: 0,
   })
@@ -33,7 +33,7 @@ export class CorporateStatement extends Model<
 
   /** Realized profit or loss (PnL) resulting from the corporate action */
   @Column({
-    type: DataType.FLOAT(10, 2),
+    type: DataType.FLOAT,
     allowNull: false,
     defaultValue: 0,
   })

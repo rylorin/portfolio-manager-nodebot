@@ -38,7 +38,7 @@ export class EquityStatement extends Model<
 
   /** Quantity of equities in the statement */
   @Column({
-    type: DataType.FLOAT(10, 4),
+    type: DataType.FLOAT,
     allowNull: false,
     defaultValue: 0,
   })
@@ -46,7 +46,7 @@ export class EquityStatement extends Model<
 
   /** Price per equity */
   @Column({
-    type: DataType.FLOAT(10, 3),
+    type: DataType.FLOAT,
     allowNull: false,
     defaultValue: 0,
   })
@@ -54,7 +54,7 @@ export class EquityStatement extends Model<
 
   /** Total proceeds from the equities */
   @Column({
-    type: DataType.FLOAT(10, 2),
+    type: DataType.FLOAT,
     allowNull: false,
     defaultValue: 0,
   })
@@ -62,7 +62,7 @@ export class EquityStatement extends Model<
 
   /** Fees associated with the transaction */
   @Column({
-    type: DataType.FLOAT(10, 2),
+    type: DataType.FLOAT,
     allowNull: false,
     defaultValue: 0,
   })
@@ -70,7 +70,7 @@ export class EquityStatement extends Model<
 
   /** Realized profit or loss */
   @Column({
-    type: DataType.FLOAT(10, 2),
+    type: DataType.FLOAT,
     allowNull: false,
     defaultValue: 0,
     field: "realized_pnl",

@@ -1,7 +1,7 @@
 import {
   CreationOptional,
   ForeignKey,
-  HasManyGetAssociationsMixin,
+  HasOneGetAssociationMixin,
   InferAttributes,
   InferCreationAttributes,
 } from "sequelize";
@@ -32,7 +32,7 @@ export class Setting extends Model<
   declare stock_id: ForeignKey<Contract["id"]>;
   @BelongsTo(() => Contract, "stock_id")
   declare underlying: Contract;
-  declare getUnderlying: HasManyGetAssociationsMixin<Contract>;
+  declare getUnderlying: HasOneGetAssociationMixin<Contract>;
 
   @Column({ type: DataType.SMALLINT, defaultValue: 40 })
   declare lookupDays: number;
@@ -43,10 +43,10 @@ export class Setting extends Model<
   @Column({ type: DataType.ENUM(typeof CspStrategySetting), field: "csp_strategy", defaultValue: 0 })
   declare cspStrategy: CspStrategySetting;
 
-  @Column({ type: DataType.FLOAT, field: "nav_ratio", defaultValue: 0 })
+  @Column({ type: DataType.FLOAT, field: "nav_ratio", validate: { min: 0, max: 1.0 }, defaultValue: 0 })
   declare navRatio: number;
 
-  @Column({ type: DataType.FLOAT(3, 2), defaultValue: -0.15 })
+  @Column({ type: DataType.FLOAT, defaultValue: -0.15, validate: { min: -1.0, max: 1.0 } })
   declare cspDelta: number;
 
   /** rollPutStrategy */
@@ -56,7 +56,7 @@ export class Setting extends Model<
   @Column({ type: DataType.ENUM(typeof StrategySetting), field: "cc_strategy", defaultValue: 0 })
   declare ccStrategy: StrategySetting;
 
-  @Column({ type: DataType.FLOAT(3, 2), defaultValue: 0.15 })
+  @Column({ type: DataType.FLOAT, defaultValue: 0.15, validate: { min: -1.0, max: 1.0 } })
   declare ccDelta: number;
 
   @Column({ type: DataType.ENUM(typeof StrategySetting), field: "roll_call_strategy", defaultValue: 0 })

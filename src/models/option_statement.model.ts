@@ -20,7 +20,7 @@ export class OptionStatement extends Model<
 
   /** Quantité d'options traitées (ex : nombre de contrats) */
   @Column({
-    type: DataType.FLOAT(8, 0),
+    type: DataType.FLOAT,
     defaultValue: 0,
     allowNull: false,
   })
@@ -28,7 +28,7 @@ export class OptionStatement extends Model<
 
   /** Prix appliqué à l'option lors de la transaction */
   @Column({
-    type: DataType.FLOAT(8, 3),
+    type: DataType.FLOAT,
     defaultValue: 0,
     allowNull: false,
   })
@@ -36,7 +36,7 @@ export class OptionStatement extends Model<
 
   /** Montant des produits générés (proceeds) par l'opération */
   @Column({
-    type: DataType.FLOAT(8, 2),
+    type: DataType.FLOAT,
     defaultValue: 0,
     allowNull: false,
   })
@@ -44,7 +44,7 @@ export class OptionStatement extends Model<
 
   /** Frais associés à l'opération */
   @Column({
-    type: DataType.FLOAT(8, 2),
+    type: DataType.FLOAT,
     defaultValue: 0,
     allowNull: false,
   })
@@ -52,7 +52,7 @@ export class OptionStatement extends Model<
 
   /** Gain ou perte réalisée lors de l'opération */
   @Column({
-    type: DataType.FLOAT(8, 2),
+    type: DataType.FLOAT,
     defaultValue: 0,
     field: "realized_pnl",
     allowNull: false,

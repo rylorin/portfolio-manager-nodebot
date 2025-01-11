@@ -204,7 +204,7 @@ export class ITradingBot extends EventEmitter {
       });
   }
 
-  public async getContractPosition(contract: Contract): Promise<number> {
+  public async _getContractPosition(contract: Contract): Promise<number> {
     if (this.portfolio !== null && contract !== null) {
       return Position.findOne({
         where: {
@@ -220,8 +220,8 @@ export class ITradingBot extends EventEmitter {
     }
   }
 
-  public async getContractPositionValueInBase(contract: Contract): Promise<number> {
-    return this.getContractPosition(contract).then(async (position) => {
+  public async _getContractPositionValueInBase(contract: Contract): Promise<number> {
+    return this._getContractPosition(contract).then(async (position) => {
       return this.findOrCreateCurrency(contract.currency).then((currency) => {
         // console.log("getContractPositionValueInBase", position, contract.livePrice, currency.rate);
         return (position * contract.livePrice) / currency.rate;
@@ -248,7 +248,7 @@ export class ITradingBot extends EventEmitter {
     }
   }
 
-  public async getContractOrdersQuantity(benchmark: Contract, actionType?: OrderAction): Promise<number> {
+  public async _getContractOrdersQuantity(benchmark: Contract, actionType?: OrderAction): Promise<number> {
     const where: {
       portfolio_id: number;
       status: string[];
@@ -273,7 +273,7 @@ export class ITradingBot extends EventEmitter {
     }
   }
 
-  protected async getContractOrderValueInBase(benchmark: Contract, actionType?: OrderAction): Promise<number> {
+  protected async _getContractOrderValueInBase(benchmark: Contract, actionType?: OrderAction): Promise<number> {
     if (this.portfolio !== null && benchmark !== null) {
       const where: {
         portfolio_id: number;
@@ -316,7 +316,7 @@ export class ITradingBot extends EventEmitter {
     }
   }
 
-  private async sumOptionsPositionsSynthesisInBase(
+  private async _sumOptionsPositionsSynthesisInBase(
     positions: Position[],
     underlying?: number,
     right?: OptionType,
@@ -350,7 +350,7 @@ export class ITradingBot extends EventEmitter {
     return result;
   }
 
-  protected async getOptionsPositionsSynthesisInBase(
+  protected async _getOptionsPositionsSynthesisInBase(
     underlying?: number,
     right?: OptionType,
     short?: boolean,
@@ -376,7 +376,7 @@ export class ITradingBot extends EventEmitter {
           //   console.log('getOptionsPositionsSynthesisInBase',positions);
           //   return positions;
           // })
-          .then(async (positions: Position[]) => this.sumOptionsPositionsSynthesisInBase(positions, underlying, right))
+          .then(async (positions: Position[]) => this._sumOptionsPositionsSynthesisInBase(positions, underlying, right))
       );
     } else {
       logger.error(MODULE + ".getOptionsPositionsSynthesisInBase", "Portfolio not loaded");
@@ -390,33 +390,33 @@ export class ITradingBot extends EventEmitter {
     }
   }
 
-  protected async getOptionsPositionsQuantity(underlying: Contract, right: OptionType): Promise<number> {
-    return this.getOptionsPositionsSynthesisInBase(underlying.id, right).then((r) => r.quantity);
+  protected async _getOptionsPositionsQuantity(underlying: Contract, right: OptionType): Promise<number> {
+    return this._getOptionsPositionsSynthesisInBase(underlying.id, right).then((r) => r.quantity);
   }
 
-  public async getOptionPositionsValueInBase(
+  public async _getOptionPositionsValueInBase(
     underlying: number | undefined,
     right: OptionType | undefined,
   ): Promise<number> {
-    return this.getOptionsPositionsSynthesisInBase(underlying, right).then((r) => r.value);
+    return this._getOptionsPositionsSynthesisInBase(underlying, right).then((r) => r.value);
   }
 
-  protected async getOptionsPositionsEngagedInBase(underlying: number, right: OptionType): Promise<number> {
-    return this.getOptionsPositionsSynthesisInBase(underlying, right).then((r) => r.engaged);
+  protected async _getOptionsPositionsEngagedInBase(underlying: number, right: OptionType): Promise<number> {
+    return this._getOptionsPositionsSynthesisInBase(underlying, right).then((r) => r.engaged);
   }
 
-  public async getOptionsPositionsRiskInBase(
+  public async _getOptionsPositionsRiskInBase(
     underlying: number | undefined,
     right: OptionType | undefined,
   ): Promise<number> {
-    return this.getOptionsPositionsSynthesisInBase(underlying, right).then((r) => r.risk);
+    return this._getOptionsPositionsSynthesisInBase(underlying, right).then((r) => r.risk);
   }
 
-  protected async getOptionShortPositionsValueInBase(underlying: number, right: OptionType): Promise<number> {
-    return this.getOptionsPositionsSynthesisInBase(underlying, right, true).then((r) => r.quantity);
+  protected async _getOptionShortPositionsValueInBase(underlying: number, right: OptionType): Promise<number> {
+    return this._getOptionsPositionsSynthesisInBase(underlying, right, true).then((r) => r.quantity);
   }
 
-  private async sumOptionsOrdersInBase(
+  private async _sumOptionsOrdersInBase(
     orders: OpenOrder[],
     underlying: number,
     right?: OptionType,
@@ -464,7 +464,7 @@ export class ITradingBot extends EventEmitter {
     return result;
   }
 
-  protected async getOptionsOrdersSynthesisInBase(
+  protected async _getOptionsOrdersSynthesisInBase(
     underlying: number,
     right?: OptionType,
     actionType?: OrderAction,
@@ -487,7 +487,7 @@ export class ITradingBot extends EventEmitter {
             secType: IbSecType.OPT,
           },
         },
-      }).then(async (orders: OpenOrder[]) => this.sumOptionsOrdersInBase(orders, underlying, right));
+      }).then(async (orders: OpenOrder[]) => this._sumOptionsOrdersInBase(orders, underlying, right));
     } else {
       return Promise.resolve({
         engaged: 0,
@@ -499,36 +499,36 @@ export class ITradingBot extends EventEmitter {
     }
   }
 
-  protected async getOptionsOrdersValueInBase(
+  protected async _getOptionsOrdersValueInBase(
     underlying: number,
     right: OptionType,
     actionType?: OrderAction,
   ): Promise<number> {
-    return this.getOptionsOrdersSynthesisInBase(underlying, right, actionType).then((r) => r.value);
+    return this._getOptionsOrdersSynthesisInBase(underlying, right, actionType).then((r) => r.value);
   }
 
-  protected async getOptionsOrdersEngagedInBase(
+  protected async _getOptionsOrdersEngagedInBase(
     underlying: number,
     right: OptionType,
     actionType?: OrderAction,
   ): Promise<number> {
-    return this.getOptionsOrdersSynthesisInBase(underlying, right, actionType).then((r) => r.engaged);
+    return this._getOptionsOrdersSynthesisInBase(underlying, right, actionType).then((r) => r.engaged);
   }
 
-  protected async getOptionsOrdersRiskInBase(
+  protected async _getOptionsOrdersRiskInBase(
     underlying: number,
     right?: OptionType,
     actionType?: OrderAction,
   ): Promise<number> {
-    return this.getOptionsOrdersSynthesisInBase(underlying, right, actionType).then((r) => r.risk);
+    return this._getOptionsOrdersSynthesisInBase(underlying, right, actionType).then((r) => r.risk);
   }
 
-  public async getOptionsOrdersQuantity(
+  public async _getOptionsOrdersQuantity(
     underlying: Contract,
     right: OptionType,
     actionType: OrderAction,
   ): Promise<number> {
-    return this.getOptionsOrdersSynthesisInBase(underlying.id, right, actionType).then((r) => r.quantity);
+    return this._getOptionsOrdersSynthesisInBase(underlying.id, right, actionType).then((r) => r.quantity);
   }
 
   public async getBalanceInBase(currency: string): Promise<number> {
@@ -1201,10 +1201,6 @@ export class ITradingBot extends EventEmitter {
 }
 
 export { AccountUpdateBot } from "./account.bot";
-export { SellCoveredCallsBot } from "./cc.bot";
-export { SellCashSecuredPutBot } from "./csp.bot";
-export { RollOptionPositionsBot } from "./roll.bot";
-export { ContractsUpdaterBot } from "./updater.bot";
 export { YahooUpdateBot } from "./yahoo.bot";
 
 export const awaitTimeout = async (delay: number): Promise<unknown> =>

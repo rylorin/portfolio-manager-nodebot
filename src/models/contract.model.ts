@@ -57,27 +57,27 @@ export class Contract extends Model<
   declare name: string;
 
   /** The last traded price. */
-  @Column({ type: DataType.FLOAT(6, 3) })
+  @Column({ type: DataType.FLOAT })
   declare price: number | null;
 
   /** The current bid price. */
-  @Column({ type: DataType.FLOAT(6, 3) })
+  @Column({ type: DataType.FLOAT })
   declare bid: number | null;
 
   /** The current ask price. */
-  @Column({ type: DataType.FLOAT(6, 3) })
+  @Column({ type: DataType.FLOAT })
   declare ask: number | null;
 
   /** The previous closing price. */
-  @Column({ type: DataType.FLOAT(6, 3), field: "previous_close_price" })
+  @Column({ type: DataType.FLOAT, field: "previous_close_price" })
   declare previousClosePrice: number | null;
 
   /** The 52-week lowest price. */
-  @Column({ type: DataType.FLOAT(6, 3), field: "fifty_two_week_low" })
+  @Column({ type: DataType.FLOAT, field: "fifty_two_week_low" })
   declare fiftyTwoWeekLow: number | null;
 
   /** The 52-week highest price. */
-  @Column({ type: DataType.FLOAT(6, 3), field: "fifty_two_week_high" })
+  @Column({ type: DataType.FLOAT, field: "fifty_two_week_high" })
   declare fiftyTwoWeekHigh: number | null;
 
   /** Calculates the live price based on bid, ask, or fallback values. */

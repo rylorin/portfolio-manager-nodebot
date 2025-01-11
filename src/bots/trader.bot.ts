@@ -30,15 +30,10 @@ const timeoutPromise = async (delay: number, reason?: string): Promise<void> =>
     (_, reject) => setTimeout(() => reject(new Error(reason ?? "timeout")), delay * 1_000), // Fail after some time
   );
 
-interface _OptionEx extends OptionContract {
-  yield?: number;
-}
-
 enum LongShort {
   Long = "L",
   Short = "S",
 }
-// export type LongShort = (typeof LongShort)[keyof typeof LongShort];
 
 interface OptionsEval {
   units: number;
@@ -47,18 +42,17 @@ interface OptionsEval {
 }
 
 interface OptionsEval2 {
+  stocks: OptionsEval;
   [OptionType.Put]: OptionsEval;
   [OptionType.Call]: OptionsEval;
 }
 
 interface PositionsEval {
-  stocks: OptionsEval;
   [LongShort.Long]: OptionsEval2;
   [LongShort.Short]: OptionsEval2;
 }
 
 interface OrdersEval {
-  stocks: OptionsEval;
   [OrderAction.BUY]: OptionsEval2;
   [OrderAction.SELL]: OptionsEval2;
 }
@@ -231,12 +225,13 @@ export class TradeBot extends ITradingBot {
 
   private async evaluatePositions(underlying_id: number): Promise<PositionsEval> {
     const result: PositionsEval = {
-      stocks: { units: 0, value: 0, engaged: 0 },
       [LongShort.Long]: {
+        stocks: { units: 0, value: 0, engaged: 0 },
         [OptionType.Put]: { units: 0, value: 0, engaged: 0 },
         [OptionType.Call]: { units: 0, value: 0, engaged: 0 },
       },
       [LongShort.Short]: {
+        stocks: { units: 0, value: 0, engaged: 0 },
         [OptionType.Put]: { units: 0, value: 0, engaged: 0 },
         [OptionType.Call]: { units: 0, value: 0, engaged: 0 },
       },
@@ -254,12 +249,13 @@ export class TradeBot extends ITradingBot {
       return positions.reduce(
         async (p, position) =>
           p.then(async (result) => {
+            const ls: LongShort = position.quantity >= 0 ? LongShort.Long : LongShort.Short;
             switch (position.contract.secType) {
               case SecType.STK:
                 if (position.contract_id == underlying_id) {
-                  result.stocks.units += position.quantity;
-                  result.stocks.value += position.quantity * position.contract.livePrice;
-                  result.stocks.engaged += position.quantity * position.averagePrice;
+                  result[ls].stocks.units += Math.abs(position.quantity);
+                  result[ls].stocks.value += Math.abs(position.quantity) * position.contract.livePrice;
+                  result[ls].stocks.engaged += Math.abs(position.quantity) * position.averagePrice;
                 }
                 return result;
                 break;
@@ -270,7 +266,6 @@ export class TradeBot extends ITradingBot {
                   .then((option) => {
                     if (option) {
                       if (option.stock_id == underlying_id) {
-                        const ls: LongShort = position.quantity >= 0 ? LongShort.Long : LongShort.Short;
                         result[ls][option.callOrPut].units += Math.abs(position.quantity) * option.multiplier;
                         result[ls][option.callOrPut].value +=
                           (Math.abs(position.quantity) * option.multiplier * position.contract.livePrice) /
@@ -295,12 +290,13 @@ export class TradeBot extends ITradingBot {
 
   private async evaluateOrders(underlying_id: number): Promise<OrdersEval> {
     const result: OrdersEval = {
-      stocks: { units: 0, value: 0, engaged: 0 },
       [OrderAction.BUY]: {
+        stocks: { units: 0, value: 0, engaged: 0 },
         [OptionType.Put]: { units: 0, value: 0, engaged: 0 },
         [OptionType.Call]: { units: 0, value: 0, engaged: 0 },
       },
       [OrderAction.SELL]: {
+        stocks: { units: 0, value: 0, engaged: 0 },
         [OptionType.Put]: { units: 0, value: 0, engaged: 0 },
         [OptionType.Call]: { units: 0, value: 0, engaged: 0 },
       },
@@ -321,10 +317,11 @@ export class TradeBot extends ITradingBot {
             switch (order.contract.secType) {
               case SecType.STK:
                 if (order.contract_id == underlying_id) {
-                  result.stocks.units += order.totalQty;
-                  result.stocks.value +=
+                  result[order.actionType].stocks.units += order.totalQty;
+                  result[order.actionType].stocks.value +=
                     (order.totalQty * (order.lmtPrice ? order.lmtPrice : order.contract.livePrice)) /
                     this.baseRates[order.contract.currency];
+                  result[order.actionType].stocks.engaged = result[order.actionType].stocks.value;
                 }
                 return result;
                 break;
@@ -594,20 +591,14 @@ export class TradeBot extends ITradingBot {
         console.log(positions);
         console.log(orders);
 
-        const stock_positions = position.quantity;
-        // console.log("stock_positions:", stock_positions);
-        const stock_sell_orders = -(await this.getContractOrdersQuantity(setting.underlying, OrderAction.SELL));
-        // console.log("stock_sell_orders:", stock_sell_orders);
-        const call_positions = await this.getOptionsPositionsQuantity(setting.underlying, "C" as OptionType);
-        // console.log("call_positions:", call_positions);
-        const call_sell_orders = -(await this.getOptionsOrdersQuantity(
-          setting.underlying,
-          "C" as OptionType,
-          OrderAction.SELL,
-        ));
-        // console.log("call_sell_orders:", call_sell_orders);
-        const free_for_this_symbol = stock_positions + call_positions + stock_sell_orders + call_sell_orders;
-        // console.log("free_for_this_symbol:", free_for_this_symbol);
+        const stock_positions = positions[LongShort.Long].stocks.units - positions[LongShort.Short].stocks.units;
+        const stock_sell_orders = orders[OrderAction.SELL].stocks.units;
+
+        const call_positions = position[LongShort.Short][OptionType.Call].units;
+        const call_sell_orders = orders[OrderAction.SELL][OptionType.Call].units;
+
+        const free_for_this_symbol = stock_positions - stock_sell_orders - call_positions - call_sell_orders;
+        console.log("free_for_this_symbol:", free_for_this_symbol);
         if (free_for_this_symbol > 0) {
           const strike = Math.max(setting.underlying.livePrice, position.averagePrice);
           const options = await this.findUpdatedOptions(
@@ -680,23 +671,26 @@ export class TradeBot extends ITradingBot {
         console.log(positions);
         console.log(orders);
 
-        const stock_positions = positions.stocks.value;
-        const stock_orders = orders.stocks.engaged;
+        const stock_positions = positions[LongShort.Long].stocks.units - positions[LongShort.Short].stocks.units;
+        const stock_sell_orders = orders[OrderAction.SELL].stocks.engaged;
 
         const positions_put_short_engaged = positions[LongShort.Short][OptionType.Put].engaged;
         const put_sell_orders = orders[OrderAction.SELL][OptionType.Put].engaged;
 
-        const engaged_options = positions_put_short_engaged + put_sell_orders;
-        const engaged_symbol = stock_positions + stock_orders + engaged_options;
+        const engaged_symbol = stock_positions - stock_sell_orders - positions_put_short_engaged - put_sell_orders;
 
         let max_for_this_symbol = 0;
         switch (setting.cspStrategy) {
           case CspStrategySetting.Cash:
-            // we can use `navRatio` part of cash (balances + invested cash) for put selling, minus what has already been sold or on orders
-            max_for_this_symbol =
-              ((await this.getContractPositionValueInBase(this.portfolio.benchmark)) +
-                (await this.getTotalBalanceInBase())) *
-              setting.navRatio;
+            {
+              // we can use `navRatio` part of cash (balances + invested cash) for put selling, minus what has already been sold or on orders
+              const benchmark_positions = await this.evaluatePositions(this.portfolio.benchmark_id);
+              max_for_this_symbol =
+                (benchmark_positions[LongShort.Long].stocks.value -
+                  benchmark_positions[LongShort.Short].stocks.value +
+                  (await this.getTotalBalanceInBase())) *
+                setting.navRatio;
+            }
             break;
 
           case CspStrategySetting.Nav:
@@ -775,14 +769,12 @@ export class TradeBot extends ITradingBot {
         },
       }).then(async (balance) => {
         if (price) {
+          const positions = await this.evaluatePositions(this.portfolio.benchmark_id);
+          const orders = await this.evaluateOrders(this.portfolio.benchmark_id);
+          console.log(positions);
+          console.log(orders);
+          const benchmark_on_order = orders[OrderAction.BUY].stocks.units - orders[OrderAction.SELL].stocks.units;
           const units_to_order = Math.floor(balance!.quantity / price);
-          const benchmark_on_order =
-            (await this.getContractOrdersQuantity(this.portfolio.benchmark, OrderAction.BUY)) +
-            (await this.getOptionsOrdersQuantity(this.portfolio.benchmark, OptionType.Put, OrderAction.SELL)) -
-            (await this.getContractOrdersQuantity(this.portfolio.benchmark, OrderAction.SELL));
-          // console.log(
-          //   `strategy ${this.portfolio.cashStrategy} to order ${units_to_order} on order ${benchmark_on_order}`,
-          // );
           if (units_to_order != benchmark_on_order) {
             // cancel any pending order
             await OpenOrder.findAll({

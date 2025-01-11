@@ -45,7 +45,7 @@ export class BondStatement extends Model<
 
   /** Proceeds from the bond transaction */
   @Column({
-    type: DataType.FLOAT(8, 2),
+    type: DataType.FLOAT,
     allowNull: false,
     defaultValue: 0,
   })
@@ -53,7 +53,7 @@ export class BondStatement extends Model<
 
   /** Quantity of bonds involved in the transaction */
   @Column({
-    type: DataType.FLOAT(8, 0),
+    type: DataType.FLOAT,
     allowNull: false,
     defaultValue: 0,
   })
@@ -61,7 +61,7 @@ export class BondStatement extends Model<
 
   /** Trade price of the bond */
   @Column({
-    type: DataType.FLOAT(8, 5),
+    type: DataType.FLOAT,
     allowNull: false,
     field: "tradePrice",
   })
@@ -69,7 +69,7 @@ export class BondStatement extends Model<
 
   /** Fees associated with the bond transaction */
   @Column({
-    type: DataType.FLOAT(8, 2),
+    type: DataType.FLOAT,
     allowNull: false,
     defaultValue: 0,
   })
@@ -77,7 +77,7 @@ export class BondStatement extends Model<
 
   /** Realized profit or loss from the bond transaction */
   @Column({
-    type: DataType.FLOAT(8, 2),
+    type: DataType.FLOAT,
     allowNull: false,
     defaultValue: 0,
     field: "pnl",
