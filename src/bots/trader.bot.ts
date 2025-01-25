@@ -72,7 +72,7 @@ export class TradeBot extends ITradingBot {
         .then(async (marketData) => this.updateContratPrice(contract, marketData))
         .then(async (_price) => contract.reload())
         .catch((err: Error) => {
-          logger.error(MODULE + ".findUpdatedContract", err.message);
+          logger.error(MODULE + ".findUpdatedContract", err.message, contract);
           return contract;
         });
     }
@@ -124,11 +124,16 @@ export class TradeBot extends ITradingBot {
         OptionContract.findAll({
           where: {
             ...where,
+            delta:
+              callOrPut == OptionType.Call
+                ? {
+                    [Op.lte]: delta,
+                  }
+                : {
+                    [Op.gte]: delta,
+                  },
             updatedAt: {
               [Op.gt]: new Date(Date.now() - RECENT_UPDATE),
-            },
-            delta: {
-              [Op.lt]: delta || 1 - this.portfolio.ccWinRatio!, // RULE : delta < 0.25
             },
           },
           include: [
@@ -382,7 +387,10 @@ export class TradeBot extends ITradingBot {
           ids.push(pos.contract_id);
           switch (pos.contract.secType) {
             case SecType.OPT:
-              ids.push((await OptionContract.findByPk(pos.contract_id)).stock_id);
+              {
+                const underlying_id = (await OptionContract.findByPk(pos.contract_id)).stock_id;
+                if (ids.findIndex((value) => value == underlying_id) < 0) ids.push(underlying_id);
+              }
               break;
           }
         }
@@ -392,6 +400,7 @@ export class TradeBot extends ITradingBot {
   }
 
   private async updateSettingsContracts(settings: Setting[]): Promise<Setting[]> {
+    logger.info(MODULE + ".updateSettingsContracts", "Updating settings' contracts");
     return this.findUpdatedContracts(settings.map((item) => item.underlying)).then(() => settings);
   }
 
@@ -482,6 +491,7 @@ export class TradeBot extends ITradingBot {
   private async runOneRollStrategy(position: Position, setting: Setting): Promise<void> {
     if (setting) {
       logger.info(MODULE + ".runOneRollStrategy", `Roll strategy for ${position.contract.symbol}`);
+      /** Underlying price */
       const price = await this.findUpdatedContract(setting.underlying.id).then((contract) => contract!.livePrice);
       const option = await this.findUpdatedContract(position.contract_id).then(async (contract) =>
         OptionContract.findByPk(contract.id),
@@ -502,7 +512,7 @@ export class TradeBot extends ITradingBot {
             price,
             option!.callOrPut,
             option!.lastTradeDate,
-            option.contract.ask,
+            position.contract.ask,
             -1,
           );
           this.printObject(options);
@@ -513,7 +523,7 @@ export class TradeBot extends ITradingBot {
               option!.strike,
               option!.callOrPut,
               option!.lastTradeDate,
-              option.contract.ask,
+              position.contract.ask,
               -1,
             );
             this.printObject(options);
@@ -526,7 +536,7 @@ export class TradeBot extends ITradingBot {
             price,
             option!.callOrPut,
             option!.lastTradeDate,
-            option.contract.ask,
+            position.contract.ask,
             1,
           );
           this.printObject(options);
@@ -536,7 +546,7 @@ export class TradeBot extends ITradingBot {
               option!.strike,
               option!.callOrPut,
               option!.lastTradeDate,
-              option.contract.ask,
+              position.contract.ask,
               1,
             );
             this.printObject(options);
@@ -594,7 +604,7 @@ export class TradeBot extends ITradingBot {
         const stock_positions = positions[LongShort.Long].stocks.units - positions[LongShort.Short].stocks.units;
         const stock_sell_orders = orders[OrderAction.SELL].stocks.units;
 
-        const call_positions = position[LongShort.Short][OptionType.Call].units;
+        const call_positions = positions[LongShort.Short][OptionType.Call].units;
         const call_sell_orders = orders[OrderAction.SELL][OptionType.Call].units;
 
         const free_for_this_symbol = stock_positions - stock_sell_orders - call_positions - call_sell_orders;
@@ -668,8 +678,8 @@ export class TradeBot extends ITradingBot {
       ) {
         const positions = await this.evaluatePositions(setting.underlying.id);
         const orders = await this.evaluateOrders(setting.underlying.id);
-        console.log(positions);
-        console.log(orders);
+        // console.log(positions);
+        // console.log(orders);
 
         const stock_positions = positions[LongShort.Long].stocks.units - positions[LongShort.Short].stocks.units;
         const stock_sell_orders = orders[OrderAction.SELL].stocks.engaged;
@@ -700,16 +710,17 @@ export class TradeBot extends ITradingBot {
             break;
         }
         const free_for_this_symbol = max_for_this_symbol - engaged_symbol;
-        console.log(
-          "=> engaged:",
-          "max:",
-          max_for_this_symbol,
-          "engaged:",
-          engaged_symbol,
-          "free:",
-          free_for_this_symbol,
-          free_for_this_symbol * this.baseRates[setting.underlying.currency],
-        );
+        // console.log(
+        //   "=> engaged:",
+        //   "max:",
+        //   max_for_this_symbol,
+        //   "engaged:",
+        //   engaged_symbol,
+        //   "free (in base):",
+        //   free_for_this_symbol,
+        //   "free (in currency):",
+        //   free_for_this_symbol * this.baseRates[setting.underlying.currency],
+        // );
 
         if (free_for_this_symbol > 0) {
           const options = await this.findUpdatedOptions(
@@ -718,23 +729,32 @@ export class TradeBot extends ITradingBot {
             OptionType.Put,
             new Date().toISOString().substring(0, 10),
             setting.minPremium,
-            setting.cspDelta ?? this.portfolio.cspWinRatio! - 1, // RULE 3: delta <= -0.15
+            -Math.abs(setting.cspDelta ?? this.portfolio.cspWinRatio! - 1), // RULE 3: delta <= -0.15
           );
           if (options.length > 0) {
             const option = options[0];
             this.printObject(option);
-            const units = Math.floor(free_for_this_symbol / option.strike / option.multiplier);
+            const option_engaging = option.strike * option.multiplier;
+            const units = Math.floor(free_for_this_symbol / option_engaging);
             if (units > 0) {
               const contract = ITradingBot.OptionToIbContract(option);
-              const order = ITradingBot.CcOrder(OrderAction.SELL, units, option.contract.livePrice);
+              const order = ITradingBot.CcOrder(OrderAction.SELL, units, option.contract.ask);
               this.printObject(contract);
               this.printObject(order);
               await this.api.placeNewOrder(contract, order).then((orderId: number) => {
                 logger.info(MODULE + ".runOneCSPStrategy", `${setting.underlying.symbol}: order #${orderId} placed`);
               });
+            } else {
+              logger.info(
+                MODULE + ".runOneCSPStrategy",
+                "Can't submit order, option engaging",
+                option_engaging,
+                "free",
+                free_for_this_symbol,
+              );
             }
           } else
-            logger.warn(
+            logger.info(
               MODULE + ".runOneCSPStrategy",
               `Cash Secured Puts strategy for ${setting.underlying.symbol}: empty option list`,
             );
@@ -848,7 +868,11 @@ export class TradeBot extends ITradingBot {
         .then(async () => this.runCCStrategies())
         .then(async () => this.runCSPStrategies())
         .then(async () => this.runCashStrategy())
-        .then(() => logger.info(MODULE + ".run", "Trader bot ran"));
+        .then(() => logger.info(MODULE + ".run", "Trader bot ran"))
+        .catch((error) => {
+          console.error(error);
+          logger.error(MODULE + ".run", error);
+        });
     } else {
       logger.warn(MODULE + ".run", "Portfolio undefined");
     }

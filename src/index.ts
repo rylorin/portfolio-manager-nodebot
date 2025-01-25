@@ -6,14 +6,7 @@ import { LogLevel, MarketDataType } from "@stoqey/ib";
 import { IBApiNextApp } from "@stoqey/ib/dist/tools/common/ib-api-next-app";
 import path from "path";
 import { Sequelize, SequelizeOptions } from "sequelize-typescript";
-import {
-  AccountUpdateBot,
-  ContractsUpdaterBot,
-  RollOptionPositionsBot,
-  SellCashSecuredPutBot,
-  SellCoveredCallsBot,
-  YahooUpdateBot,
-} from "./bots";
+import { AccountUpdateBot, YahooUpdateBot } from "./bots";
 import { ImporterBot } from "./bots/importer.bot";
 import { TradeBot } from "./bots/trader.bot";
 import logger from "./logger";
@@ -139,7 +132,6 @@ export class MyTradingBotApp extends IBApiNextApp {
 
         if (this.cmdLineArgs.import) new ImporterBot(this, this.api, accountId).start();
         const yahooBot: YahooUpdateBot = new YahooUpdateBot(this, this.api, accountId);
-        if (this.cmdLineArgs.update) new ContractsUpdaterBot(this, this.api, accountId, yahooBot).start();
         if (this.cmdLineArgs.account)
           new AccountUpdateBot(this, this.api, accountId)
             .start()
@@ -147,9 +139,6 @@ export class MyTradingBotApp extends IBApiNextApp {
               if (this.cmdLineArgs.trader) new TradeBot(this, this.api, accountId).start();
             })
             .catch((error: Error) => this.error(error.message));
-        if (this.cmdLineArgs.cc) new SellCoveredCallsBot(this, this.api, accountId).start();
-        if (this.cmdLineArgs.csp) new SellCashSecuredPutBot(this, this.api, accountId).start();
-        if (this.cmdLineArgs.roll) new RollOptionPositionsBot(this, this.api, accountId).start();
         if (this.cmdLineArgs.yahoo) yahooBot.start();
       })
       .catch((err) => {

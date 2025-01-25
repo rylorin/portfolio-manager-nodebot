@@ -1,5 +1,5 @@
 import { Box, Flex, Link, Spinner } from "@chakra-ui/react";
-import React from "react";
+import React, { FunctionComponent } from "react";
 import { useNavigation } from "react-router-dom";
 import NavBar from "../../components/NavBar/NavBar";
 import links from "../../links";
@@ -8,7 +8,7 @@ interface LayoutProps {
   children: React.ReactNode;
 }
 
-const Layout: React.FunctionComponent<LayoutProps> = ({ children, ..._rest }): React.ReactNode => {
+const Layout: FunctionComponent<LayoutProps> = ({ children, ..._rest }): React.ReactNode => {
   const navigation = useNavigation();
   return (
     <>

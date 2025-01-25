@@ -30,7 +30,7 @@ router.put("/", (req, res): void => {
 
     cspStrategy: data.cspStrategy,
     navRatio: data.navRatio,
-    cspDelta: data.cspDelta,
+    cspDelta: -Math.abs(data.cspDelta),
     rollPutStrategy: data.rollPutStrategy,
 
     ccStrategy: data.ccStrategy,
@@ -78,7 +78,7 @@ router.post("/:itemId(\\d+)/", (req, res): void => {
 
         setting.cspStrategy = data.cspStrategy;
         setting.navRatio = data.navRatio;
-        setting.cspDelta = data.cspDelta;
+        setting.cspDelta = -Math.abs(data.cspDelta);
         setting.rollPutStrategy = data.rollPutStrategy;
 
         setting.ccStrategy = data.ccStrategy;

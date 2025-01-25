@@ -98,7 +98,7 @@ const SettingEdit: FunctionComponent<Props> = ({ ..._rest }): React.ReactNode =>
                   CSP Delta:
                 </Text>
                 <Text w="200px">
-                  <Field name="ccDelta" type="number" />
+                  <Field name="cspDelta" type="number" />
                 </Text>
               </Flex>
               <Flex justifyContent="center" gap="2">

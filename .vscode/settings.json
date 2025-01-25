@@ -18,5 +18,8 @@
   },
   "typescript.enablePromptUseWorkspaceTsdk": true,
   "typescript.tsdk": "./node_modules/typescript/lib",
-  "js/ts.implicitProjectConfig.target": "ESNext"
+  "js/ts.implicitProjectConfig.target": "ESNext",
+  "[xml]": {
+    "editor.defaultFormatter": "redhat.vscode-xml"
+  }
 }

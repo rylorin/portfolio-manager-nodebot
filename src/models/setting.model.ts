@@ -46,7 +46,7 @@ export class Setting extends Model<
   @Column({ type: DataType.FLOAT, field: "nav_ratio", validate: { min: 0, max: 1.0 }, defaultValue: 0 })
   declare navRatio: number;
 
-  @Column({ type: DataType.FLOAT, defaultValue: -0.15, validate: { min: -1.0, max: 1.0 } })
+  @Column({ type: DataType.FLOAT, defaultValue: -0.15, validate: { min: -1.0, max: 0 } })
   declare cspDelta: number;
 
   /** rollPutStrategy */
@@ -56,7 +56,7 @@ export class Setting extends Model<
   @Column({ type: DataType.ENUM(typeof StrategySetting), field: "cc_strategy", defaultValue: 0 })
   declare ccStrategy: StrategySetting;
 
-  @Column({ type: DataType.FLOAT, defaultValue: 0.15, validate: { min: -1.0, max: 1.0 } })
+  @Column({ type: DataType.FLOAT, defaultValue: 0.15, validate: { min: 0, max: 1.0 } })
   declare ccDelta: number;
 
   @Column({ type: DataType.ENUM(typeof StrategySetting), field: "roll_call_strategy", defaultValue: 0 })

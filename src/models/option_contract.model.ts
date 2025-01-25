@@ -67,7 +67,7 @@ export class OptionContract extends Model<
   declare multiplier: number;
 
   /** Implied volatility */
-  @Column({ type: DataType.FLOAT, field: "implied_volatility" })
+  @Column({ type: DataType.FLOAT, field: "implied_volatility", validate: { min: 0 } })
   declare impliedVolatility: number | null;
 
   /** Present value of dividends */
@@ -78,10 +78,10 @@ export class OptionContract extends Model<
   @Column({ type: DataType.FLOAT, validate: { min: -1.0, max: 1.0 } })
   declare delta: number | null;
 
-  @Column({ type: DataType.FLOAT, validate: { min: 0 } })
+  @Column({ type: DataType.FLOAT })
   declare gamma: number | null;
 
-  @Column({ type: DataType.FLOAT, validate: { min: 0 } })
+  @Column({ type: DataType.FLOAT })
   declare vega: number | null;
 
   @Column({ type: DataType.FLOAT })

@@ -32,6 +32,7 @@ const SettingsTable: FunctionComponent<Props> = ({ content, ..._rest }): React.R
               <Td>Prem.</Td>
               <Td>CSP strat.</Td>
               <Td>Ratio</Td>
+              <Td>CSP delta</Td>
               <Td>CSP Roll</Td>
               <Td>CC strat.</Td>
               <Td>CC delta</Td>

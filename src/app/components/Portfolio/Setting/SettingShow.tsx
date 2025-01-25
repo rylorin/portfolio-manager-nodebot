@@ -42,16 +42,11 @@ const SettingShow: FunctionComponent<SettingShowProps> = ({ ..._rest }): React.R
       </Flex>
       <Flex justifyContent="center" gap="2">
         <Text w="180px" as="b" textAlign="right">
-          NAV Ratio:
-        </Text>
-        <Number textAlign="left" w="120px" value={thisItem.navRatio} isPercent color={"-"} />
-      </Flex>
-      <Flex justifyContent="center" gap="2">
-        <Text w="180px" as="b" textAlign="right">
           Premium:
         </Text>
         <Number textAlign="left" w="120px" value={thisItem.minPremium} decimals={2} color={"-"} />
       </Flex>
+
       <Flex justifyContent="center" gap="2">
         <Text w="180px" as="b" textAlign="right">
           CSP strat.:
@@ -59,6 +54,12 @@ const SettingShow: FunctionComponent<SettingShowProps> = ({ ..._rest }): React.R
         <Text textAlign="left" w="120px">
           {cspStrategy2String(thisItem.cspStrategy)}
         </Text>
+      </Flex>
+      <Flex justifyContent="center" gap="2">
+        <Text w="180px" as="b" textAlign="right">
+          NAV Ratio:
+        </Text>
+        <Number textAlign="left" w="120px" value={thisItem.navRatio} isPercent color={"-"} />
       </Flex>
       <Flex justifyContent="center" gap="2">
         <Text w="180px" as="b" textAlign="right">
@@ -74,6 +75,7 @@ const SettingShow: FunctionComponent<SettingShowProps> = ({ ..._rest }): React.R
           {strategy2String(thisItem.rollPutStrategy)}
         </Text>
       </Flex>
+
       <Flex justifyContent="center" gap="2">
         <Text w="180px" as="b" textAlign="right">
           Covered calls strat.:
