@@ -25,9 +25,9 @@ const RECENT_UPDATE = Math.max(UPDATE_OPTIONS_BATCH_FACTOR * GET_MARKET_DATA_DUR
 // eslint-disable-next-line @typescript-eslint/no-unsafe-argument,@typescript-eslint/no-unused-vars
 const sequelize_logging = (...args: any[]): void => logger.trace(MODULE + ".squelize", ...args);
 
-const timeoutPromise = async (delay: number, reason?: string): Promise<void> =>
+const timeoutPromise = async (secs: number, reason?: string): Promise<void> =>
   new Promise(
-    (_, reject) => setTimeout(() => reject(new Error(reason ?? "timeout")), delay * 1_000), // Fail after some time
+    (_, reject) => setTimeout(() => reject(new Error(reason ?? "timeout")), secs * 1_000), // Fail after some time
   );
 
 enum LongShort {
@@ -464,7 +464,7 @@ export class TradeBot extends ITradingBot {
                     }
                   }),
                 timeoutPromise(
-                  30,
+                  15,
                   `timeout fetching ${setting.underlying.symbol} option chain for expiration ${expstr}`,
                 ),
               ]).catch((reason: Error) => logger.error(MODULE + ".addOptionsChains", reason.message));
@@ -678,16 +678,14 @@ export class TradeBot extends ITradingBot {
       ) {
         const positions = await this.evaluatePositions(setting.underlying.id);
         const orders = await this.evaluateOrders(setting.underlying.id);
-        // console.log(positions);
-        // console.log(orders);
 
         const stock_positions = positions[LongShort.Long].stocks.units - positions[LongShort.Short].stocks.units;
-        const stock_sell_orders = orders[OrderAction.SELL].stocks.engaged;
+        // const stock_sell_orders = orders[OrderAction.SELL].stocks.engaged;
 
         const positions_put_short_engaged = positions[LongShort.Short][OptionType.Put].engaged;
         const put_sell_orders = orders[OrderAction.SELL][OptionType.Put].engaged;
 
-        const engaged_symbol = stock_positions - stock_sell_orders - positions_put_short_engaged - put_sell_orders;
+        const engaged_symbol = stock_positions + positions_put_short_engaged + put_sell_orders;
 
         let max_for_this_symbol = 0;
         switch (setting.cspStrategy) {
@@ -710,17 +708,6 @@ export class TradeBot extends ITradingBot {
             break;
         }
         const free_for_this_symbol = max_for_this_symbol - engaged_symbol;
-        // console.log(
-        //   "=> engaged:",
-        //   "max:",
-        //   max_for_this_symbol,
-        //   "engaged:",
-        //   engaged_symbol,
-        //   "free (in base):",
-        //   free_for_this_symbol,
-        //   "free (in currency):",
-        //   free_for_this_symbol * this.baseRates[setting.underlying.currency],
-        // );
 
         if (free_for_this_symbol > 0) {
           const options = await this.findUpdatedOptions(
@@ -732,6 +719,19 @@ export class TradeBot extends ITradingBot {
             -Math.abs(setting.cspDelta ?? this.portfolio.cspWinRatio! - 1), // RULE 3: delta <= -0.15
           );
           if (options.length > 0) {
+            console.log(positions);
+            console.log(orders);
+            console.log(
+              "=> engaged:",
+              "max:",
+              max_for_this_symbol,
+              "engaged:",
+              engaged_symbol,
+              "free (in base):",
+              free_for_this_symbol,
+              "free (in currency):",
+              free_for_this_symbol * this.baseRates[setting.underlying.currency],
+            );
             const option = options[0];
             this.printObject(option);
             const option_engaging = option.strike * option.multiplier;

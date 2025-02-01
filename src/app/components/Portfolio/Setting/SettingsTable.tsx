@@ -90,6 +90,8 @@ const SettingsTable: FunctionComponent<Props> = ({ content, ..._rest }): React.R
             <Tr>
               <Td fontWeight="bold">Total</Td>
               <Td></Td>
+              <Td></Td>
+              <Td></Td>
               <Td isNumeric>
                 <Number
                   value={theSettings.reduce((p, item) => (p += item.navRatio), 0)}
@@ -98,7 +100,6 @@ const SettingsTable: FunctionComponent<Props> = ({ content, ..._rest }): React.R
                   color="-"
                 />
               </Td>
-              <Td></Td>
               <Td></Td>
               <Td></Td>
               <Td></Td>

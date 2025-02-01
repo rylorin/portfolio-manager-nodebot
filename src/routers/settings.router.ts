@@ -30,7 +30,7 @@ router.put("/", (req, res): void => {
 
     cspStrategy: data.cspStrategy,
     navRatio: data.navRatio,
-    cspDelta: -Math.abs(data.cspDelta),
+    cspDelta: data.cspDelta ? -Math.abs(data.cspDelta) : -0.15,
     rollPutStrategy: data.rollPutStrategy,
 
     ccStrategy: data.ccStrategy,
