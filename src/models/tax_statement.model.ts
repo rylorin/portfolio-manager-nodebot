@@ -16,7 +16,7 @@ export class TaxStatement extends Model<InferAttributes<TaxStatement>, InferCrea
 
   /** Country code which collected this tax */
   @Column({
-    type: DataType.STRING,
+    type: DataType.STRING(2),
     allowNull: false, // Assure que cette valeur est obligatoire
     validate: {
       isAlpha: true,

@@ -116,15 +116,15 @@ export class ITradingBot extends EventEmitter {
       conId: buyleg,
       ratio: 1,
       action: OrderAction.BUY,
-      exchange: "SMART",
+      // exchange: "SMART",
     };
     const leg2: ComboLeg = {
       conId: sellleg,
       ratio: 1,
       action: OrderAction.SELL,
-      exchange: "SMART",
+      // exchange: "SMART",
     };
-    contract.comboLegs = [leg2, leg1];
+    contract.comboLegs = [leg1, leg2];
     return contract;
   }
 
@@ -909,53 +909,53 @@ export class ITradingBot extends EventEmitter {
         // ibContract conId not found in DB, find by data and update it or create it
         // canonize ibContract
         let details: ContractDetails | undefined = undefined;
-        if (ibContract.secType != IbSecType.BAG) {
-          if (ibContract.secType == IbSecType.STK && ibContract.currency == "USD") {
-            // Workaround because sometimes NASDAQ (for example) as exchange doesn't get contract
-            ibContract.exchange = "SMART";
-          }
-          logger.log(
-            LogLevel.Trace,
-            MODULE + ".findOrCreateContract",
-            undefined,
-            "requesting contract details",
-            ibContract,
-          );
-          await this.api
-            .getContractDetails(ibContract)
-            .then((detailstab) => {
-              if (detailstab.length >= 1) {
-                details = detailstab[0];
-                ibContract = details.contract;
-                logger.log(
-                  LogLevel.Trace,
-                  MODULE + ".findOrCreateContract",
-                  undefined,
-                  "got contract details",
-                  ibContract,
-                );
-              } else {
-                logger.log(
-                  LogLevel.Warning,
-                  MODULE + ".findOrCreateContract",
-                  undefined,
-                  "Contract details not found",
-                  ibContract,
-                );
-              }
-            })
-            .catch((err: IBApiNextError) => {
-              const message = `getContractDetails failed for ${ibContract.secType} ${ibContract.symbol} ${ibContract.lastTradeDateOrContractMonth} ${ibContract.strike} ${ibContract.right} with error #${err.code}: '${err.error.message}'`;
-              logger.log(LogLevel.Error, MODULE + ".findOrCreateContract", undefined, message, ibContract);
-              throw {
-                name: "IBApiNextError",
-                message,
-                code: err.code,
-                parent: Error,
-                original: Error,
-              } as Error;
-            });
+        // if (ibContract.secType != IbSecType.BAG) {
+        if (ibContract.secType == IbSecType.STK && ibContract.currency == "USD") {
+          // Workaround because sometimes NASDAQ (for example) as exchange doesn't get contract
+          ibContract.exchange = "SMART";
         }
+        logger.log(
+          LogLevel.Trace,
+          MODULE + ".findOrCreateContract",
+          undefined,
+          "requesting contract details",
+          ibContract,
+        );
+        await this.api
+          .getContractDetails(ibContract)
+          .then((detailstab) => {
+            if (detailstab.length >= 1) {
+              details = detailstab[0];
+              ibContract = details.contract;
+              logger.log(
+                LogLevel.Trace,
+                MODULE + ".findOrCreateContract",
+                undefined,
+                "got contract details",
+                ibContract,
+              );
+            } else {
+              logger.log(
+                LogLevel.Warning,
+                MODULE + ".findOrCreateContract",
+                undefined,
+                "Contract details not found",
+                ibContract,
+              );
+            }
+          })
+          .catch((err: IBApiNextError) => {
+            const message = `getContractDetails failed for ${ibContract.secType} ${ibContract.symbol} ${ibContract.lastTradeDateOrContractMonth} ${ibContract.strike} ${ibContract.right} with error #${err.code}: '${err.error.message}'`;
+            logger.log(LogLevel.Error, MODULE + ".findOrCreateContract", undefined, message, ibContract);
+            throw {
+              name: "IBApiNextError",
+              message,
+              code: err.code,
+              parent: Error,
+              original: Error,
+            } as Error;
+          });
+        // }
         if (details && ibContract.secType == IbSecType.STK) {
           contract = await this.createStockContract(ibContract, details, transaction);
         } else if (details && ibContract.secType == IbSecType.IND) {

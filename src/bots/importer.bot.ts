@@ -629,7 +629,6 @@ export class ImporterBot extends ITradingBot {
   // eslint-disable-next-line @typescript-eslint/explicit-module-boundary-types
   protected async processCashTransaction(element: any): Promise<Statement | null> {
     logger.log(LogLevel.Trace, MODULE + ".processCashTransaction", element.securityID as string, element);
-    // if (element.assetCategory == "BOND") console.log("processCashTransaction", element);
     let statementType: StatementTypes;
     switch (element.type) {
       case "Withholding Tax":
@@ -653,7 +652,6 @@ export class ImporterBot extends ITradingBot {
               return BondStatement.findByPk(statement.id).then(async (bond_statement) => {
                 if (bond_statement)
                   return bond_statement.update({ accruedInterests: element.amount }).then(() => null as null);
-                // .catch((error) => console.error(error));
                 else {
                   this.warn(`Bond statement #${statement.id} not found!`);
                   return null as null;
@@ -683,8 +681,8 @@ export class ImporterBot extends ITradingBot {
         throw Error("undefined cash trasaction type: " + element.type);
     }
     return (element.assetCategory ? this.findOrCreateContract(ibContractFromElement(element)) : Promise.resolve(null))
-      .then(async (contract: Contract | null | undefined) => {
-        return Statement.findOrCreate({
+      .then(async (contract: Contract | null | undefined) =>
+        Statement.findOrCreate({
           where: { transactionId: element.transactionID },
           defaults: {
             portfolio_id: this.portfolio.id,
@@ -697,14 +695,21 @@ export class ImporterBot extends ITradingBot {
             fxRateToBase: element.fxRateToBase,
             stock_id: contract?.id,
           },
-        });
-      })
+        }),
+      )
       .then(async ([statement, _created]) => {
         switch (statementType) {
-          case StatementTypes.TaxStatement:
+          case StatementTypes.TaxStatement: // Withholding Tax
             {
-              const idx = (element.description as string).indexOf("(");
-              const country = (element.description as string).substring(idx + 1, idx + 3);
+              // let country = null;
+              // let idx = (element.description as string).indexOf(" TAX");
+              // if (idx > 0) {
+              //   country = (element.description as string).substring(idx - 2, idx);
+              // } else {
+              //   idx = (element.description as string).indexOf("(");
+              //   country = (element.description as string).substring(idx + 1, idx + 3);
+              // }
+              const country = (element.isin as string).substring(0, 2);
               return TaxStatement.findOrCreate({
                 where: { id: statement.id },
                 defaults: { id: statement.id, country },
@@ -714,8 +719,8 @@ export class ImporterBot extends ITradingBot {
 
           case StatementTypes.DividendStatement:
             {
-              const idx = (element.description as string).indexOf("(");
-              const country = (element.description as string).substring(idx + 1, idx + 3);
+              // console.log(element);
+              const country = (element.isin as string).substring(0, 2);
               return DividendStatement.findOrCreate({
                 where: { id: statement.id },
                 defaults: { id: statement.id, country },
@@ -744,6 +749,10 @@ export class ImporterBot extends ITradingBot {
             console.error(element);
             throw Error("invalid statement type");
         }
+      })
+      .catch((error) => {
+        logger.error(MODULE + ".processCashTransaction", undefined, error, element);
+        return null as null;
       });
   }
 

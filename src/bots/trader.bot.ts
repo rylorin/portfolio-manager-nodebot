@@ -21,6 +21,9 @@ const GET_MARKET_DATA_DURATION = 16 * 1_000; // IB says 11 but we add a bit over
 const UPDATE_OPTIONS_BATCH_FACTOR = 3;
 const START_AFTER = 15 * 1_000;
 const RECENT_UPDATE = Math.max(UPDATE_OPTIONS_BATCH_FACTOR * GET_MARKET_DATA_DURATION * 3, 90_000);
+const RUN_INTERVAL = 600_000; // 10 minutes
+const MIN_UNITS_TO_TRADE = 1;
+const DEFAULT_TIMEOUT_SECONDS = 15;
 
 // eslint-disable-next-line @typescript-eslint/no-unsafe-argument,@typescript-eslint/no-unused-vars
 const sequelize_logging = (...args: any[]): void => logger.trace(MODULE + ".squelize", ...args);
@@ -464,7 +467,7 @@ export class TradeBot extends ITradingBot {
                     }
                   }),
                 timeoutPromise(
-                  15,
+                  DEFAULT_TIMEOUT_SECONDS,
                   `timeout fetching ${setting.underlying.symbol} option chain for expiration ${expstr}`,
                 ),
               ]).catch((reason: Error) => logger.error(MODULE + ".addOptionsChains", reason.message));
@@ -503,11 +506,11 @@ export class TradeBot extends ITradingBot {
           (option!.callOrPut == OptionType.Call && price > option!.strike))
       ) {
         logger.info(MODULE + ".runOneRollStrategy", `Roll strategy for ${position.contract.symbol}: ITM`);
-
+        let options: OptionContract[] = [];
         if (option!.callOrPut == OptionType.Put && setting.rollPutStrategy) {
           logger.info(MODULE + ".run", `Roll Put strategy for ${setting.underlying.symbol}: Rolling`);
           // try to find OTM option first
-          let options = await this.findUpdatedOptions(
+          options = await this.findUpdatedOptions(
             setting.underlying.id,
             price,
             option!.callOrPut,
@@ -531,7 +534,7 @@ export class TradeBot extends ITradingBot {
         } else if (option!.callOrPut == OptionType.Call && setting.rollCallStrategy) {
           logger.info(MODULE + ".run", `Roll Call strategy for ${setting.underlying.symbol}: Rolling`);
           // try to find OTM option first
-          let options = await this.findUpdatedOptions(
+          options = await this.findUpdatedOptions(
             setting.underlying.id,
             price,
             option!.callOrPut,
@@ -552,6 +555,24 @@ export class TradeBot extends ITradingBot {
             this.printObject(options);
           }
         } else logger.info(MODULE + ".runOneRollStrategy", `Roll strategy for ${position.contract.symbol}: Off`);
+        if (setting.rollPutStrategy != StrategySetting.Off && options.length > 0) {
+          const option = options[0];
+          this.printObject(option);
+          const contract = ITradingBot.OptionComboContract(option.stock, position.contract_id, option.id);
+          await this.findOrCreateContract(contract).then((contract) => contract);
+          const order = ITradingBot.ComboLimitOrder(
+            OrderAction.BUY,
+            -position.quantity,
+            -option.contract.ask + option.contract.bid,
+          );
+          this.printObject(contract);
+          this.printObject(order);
+          await this.api.placeNewOrder(contract, order).then((orderId: number) => {
+            logger.info(MODULE + ".runOneRollStrategy", `${setting.underlying.symbol}: order #${orderId} placed`);
+          });
+        } else {
+          logger.warn(MODULE + ".runOneRollStrategy", `${setting.underlying.symbol}: empty options list`);
+        }
       } else {
         logger.info(MODULE + ".runOneRollStrategy", `Roll strategy for ${position.contract.symbol}: OTM`);
       }
@@ -623,7 +644,7 @@ export class TradeBot extends ITradingBot {
             const option = options[0];
             this.printObject(option);
             const units = Math.floor(free_for_this_symbol / option.multiplier);
-            if (units > 0) {
+            if (units >= MIN_UNITS_TO_TRADE) {
               const contract = ITradingBot.OptionToIbContract(option);
               const order = ITradingBot.CcOrder(OrderAction.SELL, units, option.contract.livePrice);
               this.printObject(contract);
@@ -736,7 +757,7 @@ export class TradeBot extends ITradingBot {
             this.printObject(option);
             const option_engaging = option.strike * option.multiplier;
             const units = Math.floor(free_for_this_symbol / option_engaging);
-            if (units > 0) {
+            if (units >= MIN_UNITS_TO_TRADE) {
               const contract = ITradingBot.OptionToIbContract(option);
               const order = ITradingBot.CcOrder(OrderAction.SELL, units, option.contract.ask);
               this.printObject(contract);
@@ -847,6 +868,23 @@ export class TradeBot extends ITradingBot {
     }
   }
 
+  private async placeOptionOrder(contract: IbContract, order: IbOrder): Promise<void> {
+    try {
+      const orderId = await this.api.placeNewOrder(contract, order);
+      logger.info(MODULE + ".placeOptionOrder", `Order #${orderId} placed for ${contract.symbol}`);
+    } catch (error) {
+      logger.error(MODULE + ".placeOptionOrder", `Failed to place order for ${contract.symbol}:`, error);
+      throw error;
+    }
+  }
+
+  private async processBatch<T>(items: T[], batchSize: number, processor: (item: T) => Promise<void>): Promise<void> {
+    for (let i = 0; i < items.length; i += batchSize) {
+      const batch = items.slice(i, i + batchSize);
+      await Promise.all(batch.map(processor));
+    }
+  }
+
   public async run(): Promise<void> {
     logger.info(MODULE + ".run", "Trader bot running");
     if (this.portfolio) {
@@ -868,17 +906,17 @@ export class TradeBot extends ITradingBot {
         .then(async () => this.runCCStrategies())
         .then(async () => this.runCSPStrategies())
         .then(async () => this.runCashStrategy())
-        .then(() => logger.info(MODULE + ".run", "Trader bot ran"))
         .catch((error) => {
           console.error(error);
           logger.error(MODULE + ".run", error);
-        });
+        })
+        .finally(() => logger.info(MODULE + ".run", "Trader bot ran"));
     } else {
       logger.warn(MODULE + ".run", "Portfolio undefined");
     }
     this.timer = setTimeout(() => {
       this.run().catch((error: Error) => this.error(error.message));
-    }, 600_000);
+    }, RUN_INTERVAL);
   }
 
   public start(): void {

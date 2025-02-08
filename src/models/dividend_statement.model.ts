@@ -25,7 +25,12 @@ export class DividendStatement extends Model<
   /** Country of origin for the dividend payment */
   @Column({
     type: DataType.STRING(2),
-    allowNull: false,
+    allowNull: false, // Assure que cette valeur est obligatoire
+    validate: {
+      isAlpha: true,
+      isUppercase: true,
+      len: [2, 2],
+    },
   })
   declare country: string;
 }

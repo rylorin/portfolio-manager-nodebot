@@ -78,8 +78,7 @@ export const statementModelToStatementEntry = async (item: Statement): Promise<S
         return {
           statementType: StatementTypes.TaxStatement,
           ...baseStatement,
-          country: thisStatement!.country || "YY",
-          // underlying: contractModelToContractEntry(item.stock),
+          country: thisStatement?.country || "YY",
           pnl: item.netCash,
         };
       });
