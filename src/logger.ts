@@ -46,7 +46,7 @@ class Logger {
     return createLogger({
       transports: [
         new transports.File({
-          dirname: "logs",
+          dirname: process.env.NODE_ENV === "production" ? "/var/log/node" : "logs",
           filename: module + ".csv",
           level: Logger.level2string(level),
           tailable: true,

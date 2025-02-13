@@ -1178,9 +1178,10 @@
     tsutils-etc "^1.4.2"
     typescript "~5.5.4"
 
-"@stoqey/ib@stoqey/ib#60e8b20f072d20a580e74150f0f4008a619be26f":
-  version "1.4.0"
-  resolved "https://codeload.github.com/stoqey/ib/tar.gz/60e8b20f072d20a580e74150f0f4008a619be26f"
+"@stoqey/ib@^1.4.4":
+  version "1.4.4"
+  resolved "https://registry.yarnpkg.com/@stoqey/ib/-/ib-1.4.4.tgz#f9f5808bf75e845f3292c680b345ceeea21f534a"
+  integrity sha512-dMq3Y3w6QyPluV7FysXoOE2ngrfn/DsTj61GPK+LH02mgODHPdGTO06naTpp3oCRopfqiXAzvAWHToyPmEEI1A==
   dependencies:
     colors "^1.4.0"
     command-buffer "^0.1.0"
