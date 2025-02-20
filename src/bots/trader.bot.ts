@@ -95,10 +95,12 @@ export class TradeBot extends ITradingBot {
     underlying_id: number,
     strike: number,
     callOrPut: OptionType,
-    lastTradeDate: string,
+    fromTradeDate: string,
     minPremium: number,
     delta: number,
+    days: number,
   ): Promise<OptionContract[]> {
+    const lastTradeDate = new Date(Date.now() + days * 3_600_000 * 24).toISOString().substring(0, 10);
     const where = {
       stock_id: underlying_id,
       strike:
@@ -109,7 +111,7 @@ export class TradeBot extends ITradingBot {
           : {
               [Op.lte]: strike,
             },
-      lastTradeDate: { [Op.gt]: lastTradeDate },
+      lastTradeDate: { [Op.gte]: fromTradeDate, [Op.lte]: lastTradeDate },
       callOrPut,
       updatedAt: {
         [Op.lt]: new Date(Date.now() - RECENT_UPDATE / 2),
@@ -181,7 +183,7 @@ export class TradeBot extends ITradingBot {
             } else {
               await option
                 .set({ impliedVolatility: null, pvDividend: null, delta: null, gamma: null, vega: null, theta: null })
-                .save();
+                .save({ omitNull: false });
             }
           }),
         Promise.resolve(),
@@ -517,6 +519,7 @@ export class TradeBot extends ITradingBot {
             option!.lastTradeDate,
             position.contract.ask,
             -1,
+            setting.lookupDays,
           );
           this.printObject(options);
           // if not, just roll to later date
@@ -528,6 +531,7 @@ export class TradeBot extends ITradingBot {
               option!.lastTradeDate,
               position.contract.ask,
               -1,
+              setting.lookupDays,
             );
             this.printObject(options);
           }
@@ -541,6 +545,7 @@ export class TradeBot extends ITradingBot {
             option!.lastTradeDate,
             position.contract.ask,
             1,
+            setting.lookupDays,
           );
           this.printObject(options);
           if (!options.length) {
@@ -551,6 +556,7 @@ export class TradeBot extends ITradingBot {
               option!.lastTradeDate,
               position.contract.ask,
               1,
+              setting.lookupDays,
             );
             this.printObject(options);
           }
@@ -558,8 +564,11 @@ export class TradeBot extends ITradingBot {
         if (setting.rollPutStrategy != StrategySetting.Off && options.length > 0) {
           const option = options[0];
           this.printObject(option);
-          const contract = ITradingBot.OptionComboContract(option.stock, position.contract_id, option.id);
-          await this.findOrCreateContract(contract).then((contract) => contract);
+          const contract = ITradingBot.OptionComboContract(
+            option.stock,
+            position.contract.conId,
+            option.contract.conId,
+          );
           const order = ITradingBot.ComboLimitOrder(
             OrderAction.BUY,
             -position.quantity,
@@ -639,6 +648,7 @@ export class TradeBot extends ITradingBot {
             new Date().toISOString().substring(0, 10),
             setting.minPremium,
             setting.ccDelta,
+            setting.lookupDays,
           );
           if (options.length > 0) {
             const option = options[0];
@@ -738,6 +748,7 @@ export class TradeBot extends ITradingBot {
             new Date().toISOString().substring(0, 10),
             setting.minPremium,
             -Math.abs(setting.cspDelta ?? this.portfolio.cspWinRatio! - 1), // RULE 3: delta <= -0.15
+            setting.lookupDays,
           );
           if (options.length > 0) {
             console.log(positions);
@@ -798,6 +809,7 @@ export class TradeBot extends ITradingBot {
   }
 
   private async runCashStrategy(): Promise<void> {
+    logger.info(MODULE + ".runCashStrategy", "Running Cash strategy");
     if (!this.portfolio.cashStrategy) {
       // Off => nothing to do
     } else if (this.portfolio.cashStrategy == CashStrategy.Balance) {

@@ -108,7 +108,7 @@ export class ITradingBot extends EventEmitter {
   protected static OptionComboContract(underlying: Contract, buyleg: number, sellleg: number): IbContract {
     const contract: IbContract = {
       symbol: underlying.symbol,
-      secType: "BAG" as IbSecType,
+      secType: IbSecType.BAG,
       currency: underlying.currency,
       exchange: underlying.currency == "USD" ? "SMART" : (underlying.exchange ?? "SMART"),
     };
@@ -116,13 +116,15 @@ export class ITradingBot extends EventEmitter {
       conId: buyleg,
       ratio: 1,
       action: OrderAction.BUY,
-      // exchange: "SMART",
+      exchange: "SMART",
+      openClose: 0,
     };
     const leg2: ComboLeg = {
       conId: sellleg,
       ratio: 1,
       action: OrderAction.SELL,
-      // exchange: "SMART",
+      exchange: "SMART",
+      openClose: 0,
     };
     contract.comboLegs = [leg1, leg2];
     return contract;
@@ -1057,8 +1059,7 @@ export class ITradingBot extends EventEmitter {
         //   }
       }
     });
-    // if (contract.secType == SecType.STK) console.log("Updating", contract.symbol, dataset);
-    // GBP prices are in pences, fix it
+    // GBP prices are in pences, convert them
     if (contract.currency == "GBP" && contract.secType != SecType.CASH) {
       if (dataset.ask !== null) dataset.ask /= 100;
       if (dataset.bid !== null) dataset.bid /= 100;
@@ -1073,8 +1074,18 @@ export class ITradingBot extends EventEmitter {
       // we do not get a price for CASH contracts
       dataset.price = price;
     }
+    // if (contract.id == 350889) console.log("Updating", contract.symbol, dataset);
+    contract.set("bid", dataset.bid ?? null); // set `bid` to `null` if the value is `undefined`
+    contract.set("ask", dataset.ask ?? null);
+    contract.set("price", dataset.price ?? null);
+    contract.set("previousClosePrice", dataset.previousClosePrice);
+    contract.changed("bid", true); // mark `bid` as changed
+    contract.changed("ask", true);
+    contract.changed("price", true);
     contract.changed("updatedAt", true);
-    return contract.update(dataset).then(async (contract) => {
+    return contract.save({ omitNull: false }).then(async (contract) => {
+      // make sure to write null values
+      // if (contract.id == 350889) console.log("Updated", contract.symbol, JSON.stringify(contract));
       if (contract.secType == "OPT") {
         return OptionContract.findByPk(contract.id)
           .then(async (option) => {
