@@ -56,17 +56,6 @@ export class Portfolio extends Model<
   })
   declare account: string;
 
-  /** Benchmark contract (e.g., index or ETF) */
-  @ForeignKey(() => Contract)
-  @Column({
-    type: DataType.INTEGER,
-    allowNull: true,
-  })
-  declare benchmark_id: number;
-
-  @BelongsTo(() => Contract, "benchmark_id")
-  declare benchmark: Contract;
-
   /** Portfolio name */
   @Column({
     type: DataType.STRING(32),
@@ -99,14 +88,34 @@ export class Portfolio extends Model<
   })
   declare country: string;
 
-  /** Put ratio used in trading */
+  /** Benchmark contract (e.g., index or ETF) */
+  @ForeignKey(() => Contract)
   @Column({
-    type: DataType.FLOAT,
+    type: DataType.INTEGER,
     allowNull: true,
-    defaultValue: 0,
-    field: "put_ratio",
   })
-  declare putRatio?: number;
+  declare benchmark_id: number;
+
+  @BelongsTo(() => Contract, "benchmark_id")
+  declare benchmark: Contract;
+
+  /** Cash strategy applied to the portfolio */
+  @Column({
+    type: DataType.ENUM(typeof CashStrategy),
+    defaultValue: 0,
+    field: "cash_strategy",
+  })
+  declare cashStrategy: CashStrategy;
+
+  /** Minimum number of units for benchmark buy orders */
+  @Column({
+    type: DataType.INTEGER,
+    defaultValue: 1,
+    validate: {
+      min: 1,
+    },
+  })
+  declare minBenchmarkUnits: number;
 
   /** Win ratio for naked puts */
   @Column({
@@ -117,15 +126,6 @@ export class Portfolio extends Model<
   })
   declare cspWinRatio?: number;
 
-  /** Win ratio for covered calls */
-  @Column({
-    type: DataType.FLOAT,
-    allowNull: true,
-    defaultValue: 0,
-    field: "naked_call_win_ratio",
-  })
-  declare ccWinRatio?: number;
-
   /** Minimum acceptable premium */
   @Column({
     type: DataType.FLOAT,
@@ -134,14 +134,6 @@ export class Portfolio extends Model<
     field: "min_premium",
   })
   declare minPremium?: number;
-
-  /** Cash strategy applied to the portfolio */
-  @Column({
-    type: DataType.ENUM(typeof CashStrategy),
-    defaultValue: 0,
-    field: "cash_strategy",
-  })
-  declare cashStrategy: CashStrategy;
 
   /** Associations */
 

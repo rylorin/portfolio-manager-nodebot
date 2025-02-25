@@ -64,6 +64,7 @@ router.post("/:portfolioId(\\d+)", (req, res): void => {
       if (portfolio) {
         portfolio.benchmark_id = data.benchmark_id;
         portfolio.cashStrategy = data.cashStrategy;
+        portfolio.minBenchmarkUnits = data.minBenchmarkUnits;
         return portfolio.save();
       } else throw Error(`Portfolio #${portfolioId} not found!`);
     })

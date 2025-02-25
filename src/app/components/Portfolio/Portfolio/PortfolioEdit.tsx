@@ -99,6 +99,14 @@ const PortfolioEdit: FunctionComponent<PortfolioShowProps> = ({ ..._rest }): Rea
               </Field>
               {/* </Select> */}
             </Flex>
+            <Flex justifyContent="center" gap="2">
+              <Text w="150px" as="b" textAlign="right">
+                Min buy units:
+              </Text>
+              <Text w="200px">
+                <Field name="minBenchmarkUnits" type="number" />
+              </Text>
+            </Flex>
 
             <Flex justifyContent="center" gap="2" mt="1">
               <IconButton

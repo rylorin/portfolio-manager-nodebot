@@ -49,23 +49,33 @@ const PortfolioShow: FunctionComponent<PortfolioShowProps> = ({ ..._rest }): Rea
       </Flex>
 
       {thisPortfolio.benchmark && (
-        <Flex justifyContent="center" gap="2">
-          <Text w="150px" as="b" textAlign="right">
-            Cash contract:
-          </Text>
-          <Text w="120px" textAlign="left">
-            {thisPortfolio.benchmark.symbol}
-          </Text>
-        </Flex>
+        <>
+          <Flex justifyContent="center" gap="2">
+            <Text w="150px" as="b" textAlign="right">
+              Cash contract:
+            </Text>
+            <Text w="120px" textAlign="left">
+              {thisPortfolio.benchmark.symbol}
+            </Text>
+          </Flex>
+          <Flex justifyContent="center" gap="2">
+            <Text w="150px" as="b" textAlign="right">
+              Cash strategy:
+            </Text>
+            <Text w="120px" textAlign="left">
+              {cashStrategy2String(thisPortfolio.cashStrategy)}
+            </Text>
+          </Flex>
+          <Flex justifyContent="center" gap="2">
+            <Text w="150px" as="b" textAlign="right">
+              Min buy units:
+            </Text>
+            <Text w="120px" textAlign="left">
+              {thisPortfolio.minBenchmarkUnits}
+            </Text>
+          </Flex>
+        </>
       )}
-      <Flex justifyContent="center" gap="2">
-        <Text w="150px" as="b" textAlign="right">
-          Cash strategy:
-        </Text>
-        <Text w="120px" textAlign="left">
-          {cashStrategy2String(thisPortfolio.cashStrategy)}
-        </Text>
-      </Flex>
 
       <Flex justifyContent="center" gap="2" mt="1">
         <IconButton aria-label="Edit" icon={<EditIcon />} variant="ghost" as={RouterLink} to="edit" />

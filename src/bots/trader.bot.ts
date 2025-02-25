@@ -858,7 +858,7 @@ export class TradeBot extends ITradingBot {
                   outsideRth: false,
                   transmit: true,
                 };
-                if (order.totalQuantity) {
+                if (order.totalQuantity < 0 || order.totalQuantity >= this.portfolio.minBenchmarkUnits) {
                   this.info(
                     units_to_order >= 0 ? "buying" : "selling",
                     Math.abs(units_to_order),

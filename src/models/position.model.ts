@@ -18,6 +18,7 @@ export class Position extends Model<
 > {
   // id can be undefined during creation when using `autoIncrement`
   declare id: CreationOptional<number>;
+
   // timestamps!
   // createdAt can be undefined during creation
   declare createdAt: CreationOptional<Date>;
