@@ -18,7 +18,9 @@ interface Props {
  */
 const SettingsTable: FunctionComponent<Props> = ({ content, ..._rest }): React.ReactNode => {
   const { portfolioId } = useParams();
-  const theSettings = content || (useLoaderData() as SettingEntry[]);
+  const theSettings = (content || (useLoaderData() as SettingEntry[])).sort((a, b) =>
+    a.underlying.symbol.localeCompare(b.underlying.symbol),
+  );
 
   return (
     <>

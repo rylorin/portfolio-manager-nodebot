@@ -87,7 +87,7 @@ const SettingEdit: FunctionComponent<Props> = ({ ..._rest }): React.ReactNode =>
               </Flex>
               <Flex justifyContent="center" gap="2">
                 <Text w="180px" as="b" textAlign="right">
-                  {cspStrategy2String(setting.cspStrategy)} Ratio:
+                  {cspStrategy2String(formik.values.cspStrategy)} Ratio:
                 </Text>
                 <Text w="200px">
                   <Field name="navRatio" type="number" />
