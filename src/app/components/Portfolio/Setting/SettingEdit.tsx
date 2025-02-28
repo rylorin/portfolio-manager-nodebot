@@ -103,7 +103,7 @@ const SettingEdit: FunctionComponent<Props> = ({ ..._rest }): React.ReactNode =>
               </Flex>
               <Flex justifyContent="center" gap="2">
                 <Text w="180px" as="b" textAlign="right">
-                  CSP Roll:
+                  Put Roll strat.:
                 </Text>
                 <Field as={Select} name="rollPutStrategy" w="200px" type="number" variant="outline">
                   {Object.entries(StrategySetting).map((v, k) => (
@@ -112,6 +112,14 @@ const SettingEdit: FunctionComponent<Props> = ({ ..._rest }): React.ReactNode =>
                     </option>
                   ))}
                 </Field>
+              </Flex>
+              <Flex justifyContent="center" gap="2">
+                <Text w="180px" as="b" textAlign="right">
+                  Put Roll days:
+                </Text>
+                <Text w="200px">
+                  <Field name="rollPutDays" type="number" />
+                </Text>
               </Flex>
 
               <Flex justifyContent="center" gap="2">
@@ -145,6 +153,14 @@ const SettingEdit: FunctionComponent<Props> = ({ ..._rest }): React.ReactNode =>
                     </option>
                   ))}
                 </Field>
+              </Flex>
+              <Flex justifyContent="center" gap="2">
+                <Text w="180px" as="b" textAlign="right">
+                  Call Roll days:
+                </Text>
+                <Text w="200px">
+                  <Field name="rollCallDays" type="number" />
+                </Text>
               </Flex>
 
               <Flex justifyContent="center" gap="2" mt="1">

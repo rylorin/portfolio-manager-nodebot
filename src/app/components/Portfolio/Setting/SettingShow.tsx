@@ -75,6 +75,14 @@ const SettingShow: FunctionComponent<SettingShowProps> = ({ ..._rest }): React.R
           {strategy2String(thisItem.rollPutStrategy)}
         </Text>
       </Flex>
+      <Flex justifyContent="center" gap="2">
+        <Text w="180px" as="b" textAlign="right">
+          CSP Roll days:
+        </Text>
+        <Text textAlign="left" w="120px">
+          {thisItem.rollPutDays}
+        </Text>
+      </Flex>
 
       <Flex justifyContent="center" gap="2">
         <Text w="180px" as="b" textAlign="right">
@@ -96,6 +104,14 @@ const SettingShow: FunctionComponent<SettingShowProps> = ({ ..._rest }): React.R
         </Text>
         <Text textAlign="left" w="120px">
           {strategy2String(thisItem.rollCallStrategy)}
+        </Text>
+      </Flex>
+      <Flex justifyContent="center" gap="2">
+        <Text w="180px" as="b" textAlign="right">
+          Call Roll days:
+        </Text>
+        <Text textAlign="left" w="120px">
+          {thisItem.rollCallDays}
         </Text>
       </Flex>
 

@@ -35,3 +35,11 @@ export const dateToExpiration = (value?: Date): string => {
   const lastTradeDate: string = year.toString() + (month < 10 ? "0" + month : month) + (day < 10 ? "0" + day : day);
   return lastTradeDate;
 };
+
+export const daysToExpiration = (lastTradeDate: string): number => {
+  const [year, month, day] = new Date().toISOString().substring(0, 10).split("-");
+  const now = new Date(+year, +month - 1, +day);
+  const [yyyy, mm, dd] = lastTradeDate.split("-");
+  const expiration = new Date(+yyyy, +mm - 1, +dd);
+  return (expiration.getTime() - now.getTime()) / 60_000 / 1440;
+};

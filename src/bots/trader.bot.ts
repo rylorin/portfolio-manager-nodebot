@@ -11,7 +11,7 @@ import { Op, Order } from "sequelize";
 import { ITradingBot } from ".";
 import logger from "../logger";
 import { Balance, Contract, OpenOrder, OptionContract, OptionStatement, Position, Setting } from "../models";
-import { dateToExpiration, expirationToDate, expirationToDateString } from "../models/date_utils";
+import { dateToExpiration, daysToExpiration, expirationToDate, expirationToDateString } from "../models/date_utils";
 import { CashStrategy, cspStrategy2String, CspStrategySetting, StrategySetting } from "../models/types";
 
 const MODULE = "TradeBot";
@@ -70,14 +70,16 @@ export class TradeBot extends ITradingBot {
       // we already have a recent contract
       return contract;
     } else {
-      return this.api
-        .getMarketDataSnapshot(contract as IbContract, "", false)
-        .then(async (marketData) => this.updateContratPrice(contract, marketData))
-        .then(async (_price) => contract.reload())
-        .catch((err: Error) => {
-          logger.error(MODULE + ".findUpdatedContract", err.message, contract);
-          return contract;
-        });
+      return Promise.race([
+        this.api
+          .getMarketDataSnapshot(contract as IbContract, "", false)
+          .then(async (marketData) => this.updateContratPrice(contract, marketData))
+          .then(async (_price) => contract.reload()),
+        timeoutPromise(DEFAULT_TIMEOUT_SECONDS, `Timeout fetching ${contract.symbol} contract`).then(() => contract),
+      ]).catch((err: Error) => {
+        logger.error(MODULE + ".findUpdatedContract", err.message, contract);
+        return contract;
+      });
     }
   }
 
@@ -204,34 +206,34 @@ export class TradeBot extends ITradingBot {
     );
   }
 
-  private async _getOptionsPositionsForUnderlying(underlying_id: number, right?: OptionType): Promise<Position[]> {
-    return Position.findAll({
-      where: { portfolio_id: this.portfolio.id },
-      include: [
-        {
-          association: "contract",
-          where: { secType: SecType.OPT },
-          required: true,
-        },
-      ],
-    }).then(async (positions) => {
-      // Got all options positions
-      return positions.reduce(
-        async (p, position) =>
-          p.then(async (positions) =>
-            OptionContract.findByPk(position.contract_id).then((option) => {
-              if (option) {
-                if (option.stock_id == underlying_id && (right == undefined || option.callOrPut == right)) {
-                  positions.push(position);
-                }
-              }
-              return positions;
-            }),
-          ),
-        Promise.resolve([] as Position[]),
-      );
-    });
-  }
+  // private async _getOptionsPositionsForUnderlying(underlying_id: number, right?: OptionType): Promise<Position[]> {
+  //   return Position.findAll({
+  //     where: { portfolio_id: this.portfolio.id },
+  //     include: [
+  //       {
+  //         association: "contract",
+  //         where: { secType: SecType.OPT },
+  //         required: true,
+  //       },
+  //     ],
+  //   }).then(async (positions) => {
+  //     // Got all options positions
+  //     return positions.reduce(
+  //       async (p, position) =>
+  //         p.then(async (positions) =>
+  //           OptionContract.findByPk(position.contract_id).then((option) => {
+  //             if (option) {
+  //               if (option.stock_id == underlying_id && (right == undefined || option.callOrPut == right)) {
+  //                 positions.push(position);
+  //               }
+  //             }
+  //             return positions;
+  //           }),
+  //         ),
+  //       Promise.resolve([] as Position[]),
+  //     );
+  //   });
+  // }
 
   private async evaluatePositions(underlying_id: number): Promise<PositionsEval> {
     const result: PositionsEval = {
@@ -401,7 +403,11 @@ export class TradeBot extends ITradingBot {
         }
         return ids;
       })
-      .then(async (contrats) => this.findUpdatedContracts(contrats));
+      .then(async (contrats) => this.findUpdatedContracts(contrats))
+      .catch((error) => {
+        logger.error(MODULE + ".updatePositionsContracts", error.message);
+        return null as Contract[];
+      });
   }
 
   private async updateSettingsContracts(settings: Setting[]): Promise<Setting[]> {
@@ -470,7 +476,7 @@ export class TradeBot extends ITradingBot {
                   }),
                 timeoutPromise(
                   DEFAULT_TIMEOUT_SECONDS,
-                  `timeout fetching ${setting.underlying.symbol} option chain for expiration ${expstr}`,
+                  `Timeout fetching ${setting.underlying.symbol} option chain for expiration ${expstr}`,
                 ),
               ]).catch((reason: Error) => logger.error(MODULE + ".addOptionsChains", reason.message));
             } else {
@@ -504,12 +510,14 @@ export class TradeBot extends ITradingBot {
       if (
         price &&
         option &&
-        ((option!.callOrPut == OptionType.Put && price < option!.strike) ||
-          (option!.callOrPut == OptionType.Call && price > option!.strike))
+        ((option.callOrPut == OptionType.Put && price < option.strike) ||
+          (option.callOrPut == OptionType.Call && price > option.strike))
       ) {
         logger.info(MODULE + ".runOneRollStrategy", `Roll strategy for ${position.contract.symbol}: ITM`);
+        const days = daysToExpiration(option.lastTradeDate);
         let options: OptionContract[] = [];
-        if (option!.callOrPut == OptionType.Put && setting.rollPutStrategy) {
+        if (days < 0) logger.warn(MODULE + ".runOneRollStrategy", `${position.contract.symbol} expired`);
+        else if (option.callOrPut == OptionType.Put && setting.rollPutStrategy) {
           logger.info(MODULE + ".run", `Roll Put strategy for ${setting.underlying.symbol}: Rolling`);
           // try to find OTM option first
           options = await this.findUpdatedOptions(
@@ -535,7 +543,7 @@ export class TradeBot extends ITradingBot {
             );
             this.printObject(options);
           }
-        } else if (option!.callOrPut == OptionType.Call && setting.rollCallStrategy) {
+        } else if (option.callOrPut == OptionType.Call && setting.rollCallStrategy) {
           logger.info(MODULE + ".run", `Roll Call strategy for ${setting.underlying.symbol}: Rolling`);
           // try to find OTM option first
           options = await this.findUpdatedOptions(
@@ -560,8 +568,13 @@ export class TradeBot extends ITradingBot {
             );
             this.printObject(options);
           }
-        } else logger.info(MODULE + ".runOneRollStrategy", `Roll strategy for ${position.contract.symbol}: Off`);
-        if (setting.rollPutStrategy != StrategySetting.Off && options.length > 0) {
+        } else
+          logger.info(
+            MODULE + ".runOneRollStrategy",
+            `Roll ${option.callOrPut == OptionType.Call ? "Call" : "Put"} strategy for ${position.contract.symbol}: Off`,
+          );
+
+        if (options.length > 0) {
           const option = options[0];
           this.printObject(option);
           const contract = ITradingBot.OptionComboContract(
@@ -680,18 +693,22 @@ export class TradeBot extends ITradingBot {
     return Position.findAll({
       where: { portfolio_id: this.portfolio.id },
       include: { association: "contract", where: { secType: SecType.STK } },
-    }).then(async (positions) =>
-      positions.reduce(
-        async (p, position) =>
-          p.then(async () =>
-            Setting.findOne({
-              where: { portfolio_id: this.portfolio.id, stock_id: position.contract_id },
-              include: { association: "underlying" },
-            }).then(async (setting) => this.runOneCCStrategy(position, setting)),
-          ),
-        Promise.resolve(),
-      ),
-    );
+    })
+      .then(async (positions) =>
+        positions.reduce(
+          async (p, position) =>
+            p.then(async () =>
+              Setting.findOne({
+                where: { portfolio_id: this.portfolio.id, stock_id: position.contract_id },
+                include: { association: "underlying" },
+              }).then(async (setting) => this.runOneCCStrategy(position, setting)),
+            ),
+          Promise.resolve(),
+        ),
+      )
+      .catch((error) => {
+        logger.error(MODULE + ".runCCStrategies", error.message);
+      });
   }
 
   private async runOneCSPStrategy(setting: Setting): Promise<void> {
@@ -824,11 +841,21 @@ export class TradeBot extends ITradingBot {
         if (price) {
           const positions = await this.evaluatePositions(this.portfolio.benchmark_id);
           const orders = await this.evaluateOrders(this.portfolio.benchmark_id);
-          console.log(positions);
-          console.log(orders);
           const benchmark_on_order = orders[OrderAction.BUY].stocks.units - orders[OrderAction.SELL].stocks.units;
           const units_to_order = Math.floor(balance!.quantity / price);
-          if (units_to_order != benchmark_on_order) {
+          console.log(
+            "positions:",
+            positions,
+            "orders:",
+            orders,
+            "benchmark_on_order:",
+            benchmark_on_order,
+            "units_to_order:",
+            units_to_order,
+          );
+          if (units_to_order == benchmark_on_order) {
+            logger.info(MODULE + ".runCashStrategy", "Allset, nothing to do");
+          } else if (benchmark_on_order) {
             // cancel any pending order
             await OpenOrder.findAll({
               where: {
@@ -836,43 +863,42 @@ export class TradeBot extends ITradingBot {
                 contract_id: this.portfolio.benchmark.id,
                 orderId: { [Op.ne]: 0 },
               },
-            })
-              .then(async (orders) =>
-                orders.reduce(async (p, order) => {
-                  return p.then(() => this.cancelOrder(order.orderId));
-                }, Promise.resolve()),
-              )
-              .then(async () => {
-                const contract: IbContract = {
-                  conId: this.portfolio.benchmark.conId,
-                  secType: this.portfolio.benchmark.secType as SecType,
-                  currency: this.portfolio.benchmark.currency,
-                  symbol: this.portfolio.benchmark.symbol,
-                  exchange: "SMART",
-                };
-                const order: IbOrder = {
-                  action: units_to_order >= 0 ? OrderAction.BUY : OrderAction.SELL,
-                  orderType: "MIDPRICE" as OrderType,
-                  totalQuantity: Math.abs(units_to_order),
-                  tif: TimeInForce.DAY,
-                  outsideRth: false,
-                  transmit: true,
-                };
-                if (order.totalQuantity < 0 || order.totalQuantity >= this.portfolio.minBenchmarkUnits) {
-                  this.info(
-                    units_to_order >= 0 ? "buying" : "selling",
-                    Math.abs(units_to_order),
-                    "units of",
-                    this.portfolio.benchmark.symbol,
-                  );
-                  this.printObject(contract);
-                  this.printObject(order);
-                  await this.placeNewOrder(contract, order).then((orderId) =>
-                    logger.info(MODULE + ".runCashStrategy", `orderid ${orderId} placed`),
-                  );
-                }
-              });
-          }
+            }).then(async (orders) =>
+              orders.reduce(async (p, order) => {
+                return p.then(() => this.cancelOrder(order.orderId));
+              }, Promise.resolve()),
+            );
+          } else if (units_to_order != benchmark_on_order) {
+            // place an order to manage cash balance
+            const contract: IbContract = {
+              conId: this.portfolio.benchmark.conId,
+              secType: this.portfolio.benchmark.secType as SecType,
+              currency: this.portfolio.benchmark.currency,
+              symbol: this.portfolio.benchmark.symbol,
+              exchange: "SMART",
+            };
+            const order: IbOrder = {
+              action: units_to_order >= 0 ? OrderAction.BUY : OrderAction.SELL,
+              orderType: "MIDPRICE" as OrderType,
+              totalQuantity: Math.abs(units_to_order),
+              tif: TimeInForce.DAY,
+              outsideRth: false,
+              transmit: true,
+            };
+            if (units_to_order < 0 || units_to_order >= this.portfolio.minBenchmarkUnits) {
+              this.info(
+                units_to_order >= 0 ? "buying" : "selling",
+                Math.abs(units_to_order),
+                "units of",
+                this.portfolio.benchmark.symbol,
+              );
+              this.printObject(contract);
+              this.printObject(order);
+              await this.placeNewOrder(contract, order).then((orderId) =>
+                logger.info(MODULE + ".runCashStrategy", `orderid ${orderId} placed`),
+              );
+            }
+          } else logger.error(MODULE + ".runCashStrategy", "Something went wrong");
         }
       });
     } else {
@@ -920,7 +946,7 @@ export class TradeBot extends ITradingBot {
         .then(async () => this.runCashStrategy())
         .catch((error) => {
           console.error(error);
-          logger.error(MODULE + ".run", error);
+          logger.error(MODULE + ".run", error.message);
         })
         .finally(() => logger.info(MODULE + ".run", "Trader bot ran"));
     } else {

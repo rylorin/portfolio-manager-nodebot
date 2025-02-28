@@ -32,10 +32,12 @@ router.put("/", (req, res): void => {
     navRatio: data.navRatio,
     cspDelta: data.cspDelta ? -Math.abs(data.cspDelta) : -0.15,
     rollPutStrategy: data.rollPutStrategy,
+    rollPutDays: data.rollPutDays,
 
     ccStrategy: data.ccStrategy,
     ccDelta: data.ccDelta,
     rollCallStrategy: data.rollCallStrategy,
+    rollCallDays: data.rollCallDays,
   };
   Setting.create(setting)
     .then(async (setting) => setting.getUnderlying().then((_) => setting))
@@ -80,10 +82,12 @@ router.post("/:itemId(\\d+)/", (req, res): void => {
         setting.navRatio = data.navRatio;
         setting.cspDelta = -Math.abs(data.cspDelta);
         setting.rollPutStrategy = data.rollPutStrategy;
+        setting.rollPutDays = data.rollPutDays;
 
         setting.ccStrategy = data.ccStrategy;
         setting.ccDelta = data.ccDelta;
         setting.rollCallStrategy = data.rollCallStrategy;
+        setting.rollCallDays = data.rollCallDays;
         return setting.save();
       } else throw Error(`Setting #${itemId} not found!`);
     })

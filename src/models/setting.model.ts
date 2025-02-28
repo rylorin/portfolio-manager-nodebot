@@ -15,12 +15,26 @@ export class Setting extends Model<
   InferAttributes<Setting>,
   InferCreationAttributes<Setting, { omit: "underlying" | "portfolio" }>
 > {
-  // id can be undefined during creation when using `autoIncrement`
+  /** Auto-incrementing primary key */
+  @Column({
+    type: DataType.INTEGER,
+    autoIncrement: true,
+    primaryKey: true,
+  })
   declare id: CreationOptional<number>;
-  // timestamps!
-  // createdAt can be undefined during creation
+
+  /** Timestamp when the record was created */
+  @Column({
+    type: DataType.DATE,
+    allowNull: false,
+  })
   declare createdAt: CreationOptional<Date>;
-  // updatedAt can be undefined during creation
+
+  /** Timestamp when the record was last updated */
+  @Column({
+    type: DataType.DATE,
+    allowNull: false,
+  })
   declare updatedAt: CreationOptional<Date>;
 
   /** Portfolio */
@@ -34,10 +48,10 @@ export class Setting extends Model<
   declare underlying: Contract;
   declare getUnderlying: HasOneGetAssociationMixin<Contract>;
 
-  @Column({ type: DataType.SMALLINT, defaultValue: 40 })
+  @Column({ type: DataType.SMALLINT, validate: { min: 0 }, defaultValue: 40 })
   declare lookupDays: number;
 
-  @Column({ type: DataType.FLOAT, defaultValue: 1 })
+  @Column({ type: DataType.FLOAT, validate: { min: 0.05 }, defaultValue: 1 })
   declare minPremium: number;
 
   @Column({ type: DataType.ENUM(typeof CspStrategySetting), field: "csp_strategy", defaultValue: 0 })
@@ -46,19 +60,25 @@ export class Setting extends Model<
   @Column({ type: DataType.FLOAT, field: "nav_ratio", validate: { min: 0, max: 1.0 }, defaultValue: 0 })
   declare navRatio: number;
 
-  @Column({ type: DataType.FLOAT, defaultValue: -0.15, validate: { min: -1.0, max: 0 } })
+  @Column({ type: DataType.FLOAT, validate: { min: -1.0, max: 0 }, defaultValue: -0.15 })
   declare cspDelta: number;
 
   /** rollPutStrategy */
   @Column({ type: DataType.ENUM(typeof StrategySetting), field: "roll_put_strategy", defaultValue: 0 })
   declare rollPutStrategy: StrategySetting;
 
+  @Column({ type: DataType.SMALLINT, validate: { min: 0 }, defaultValue: 0 })
+  declare rollPutDays: number;
+
   @Column({ type: DataType.ENUM(typeof StrategySetting), field: "cc_strategy", defaultValue: 0 })
   declare ccStrategy: StrategySetting;
 
-  @Column({ type: DataType.FLOAT, defaultValue: 0.15, validate: { min: 0, max: 1.0 } })
+  @Column({ type: DataType.FLOAT, validate: { min: 0, max: 1.0 }, defaultValue: 0.15 })
   declare ccDelta: number;
 
   @Column({ type: DataType.ENUM(typeof StrategySetting), field: "roll_call_strategy", defaultValue: 0 })
   declare rollCallStrategy: StrategySetting;
+
+  @Column({ type: DataType.SMALLINT, validate: { min: 0 }, defaultValue: 0 })
+  declare rollCallDays: number;
 }
