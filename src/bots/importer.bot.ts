@@ -1,5 +1,6 @@
 import { IBApiNext, Contract as IbContract, SecType } from "@stoqey/ib";
 import { XMLParser } from "fast-xml-parser";
+import { DateTime } from "luxon";
 import { ITradingBot, awaitTimeout } from ".";
 import { MyTradingBotApp } from "..";
 import logger, { LogLevel } from "../logger";
@@ -17,10 +18,7 @@ import {
   StatementStatus,
   TaxStatement,
 } from "../models";
-import { BondStatement } from "../models/bond_statement.model";
-import { CorporateStatement } from "../models/corpo_statement.model";
-import { StatementTypes } from "../models/statement.types";
-
+import { BondStatement, CorporateStatement, StatementTypes } from "../models/";
 const MODULE = "ImporterBot";
 
 // eslint-disable-next-line @typescript-eslint/no-unsafe-argument,@typescript-eslint/no-unused-vars
@@ -544,6 +542,13 @@ export class ImporterBot extends ITradingBot {
   // eslint-disable-next-line @typescript-eslint/explicit-module-boundary-types
   protected async processOneTrade(element: any): Promise<void> {
     logger.log(LogLevel.Trace, MODULE + ".processOneTrade", element.securityID as string, element);
+    // if (element.transactionID == 3765267831)
+    //   console.log(element.dateTime, element.tradeID, element.transactionID, element.description);
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-call
+    const dt: DateTime = DateTime.fromISO((element.dateTime as string).replace(" ", "T"), { zone: "America/New_York" });
+    element.dateTime = dt.toISO(); // eslint-disable-line @typescript-eslint/no-unsafe-call
+    // if (element.transactionID == 3765267831)
+    //   console.log(element.dateTime, element.tradeID, element.transactionID, element.description);
     switch (element.assetCategory) {
       case SecType.STK:
       case SecType.FUT:
