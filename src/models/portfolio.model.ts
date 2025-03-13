@@ -21,6 +21,7 @@ export class Portfolio extends Model<
         | "baseRates"
         | "settings"
         | "statements"
+        | "orders"
         | "createdAt"
         | "updatedAt";
     }

@@ -8,7 +8,15 @@ export type SettingEntry = Omit<Attributes<Setting>, "underlying" | "portfolio" 
 
 export type PortfolioEntry = Omit<
   Attributes<Portfolio>,
-  "benchmark" | "positions" | "balances" | "baseRates" | "settings" | "statements" | "createdAt" | "updatedAt"
+  | "benchmark"
+  | "positions"
+  | "balances"
+  | "baseRates"
+  | "settings"
+  | "statements"
+  | "orders"
+  | "createdAt"
+  | "updatedAt"
 > & {
   benchmark: ContractEntry;
   settings: SettingEntry[];

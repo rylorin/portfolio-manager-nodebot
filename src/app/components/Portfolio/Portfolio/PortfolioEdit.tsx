@@ -6,11 +6,13 @@ import { Form, useLoaderData, useNavigate, useSubmit } from "react-router-dom";
 import { CashStrategy } from "../../../../models/types";
 import { ContractEntry, PortfolioEntry } from "../../../../routers";
 import { obfuscate } from "../../../utils";
+import { portfolioEditLoader } from "./loaders";
 
 type PortfolioShowProps = Record<string, never>;
 
 const PortfolioEdit: FunctionComponent<PortfolioShowProps> = ({ ..._rest }): React.ReactNode => {
-  const { portfolio, contracts }: { portfolio: PortfolioEntry; contracts: ContractEntry[] } = useLoaderData();
+  const { portfolio, contracts }: { portfolio: PortfolioEntry; contracts: ContractEntry[] } =
+    useLoaderData<typeof portfolioEditLoader>();
   const navigate = useNavigate();
   const submit = useSubmit();
 
