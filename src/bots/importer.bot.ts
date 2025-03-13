@@ -542,8 +542,7 @@ export class ImporterBot extends ITradingBot {
   // eslint-disable-next-line @typescript-eslint/explicit-module-boundary-types
   protected async processOneTrade(element: any): Promise<void> {
     logger.log(LogLevel.Trace, MODULE + ".processOneTrade", element.securityID as string, element);
-    // if (element.transactionID == 3765267831)
-    //   console.log(element.dateTime, element.tradeID, element.transactionID, element.description);
+    // if (element.description.includes("18150")) console.log(element);
     // eslint-disable-next-line @typescript-eslint/no-unsafe-call
     const dt: DateTime = DateTime.fromISO((element.dateTime as string).replace(" ", "T"), { zone: "America/New_York" });
     element.dateTime = dt.toISO(); // eslint-disable-line @typescript-eslint/no-unsafe-call
