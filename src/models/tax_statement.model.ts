@@ -1,5 +1,5 @@
 import { InferAttributes, InferCreationAttributes } from "sequelize";
-import { BelongsTo, Column, DataType, Model, Table } from "sequelize-typescript";
+import { BelongsTo, Column, DataType, ForeignKey, Model, Table } from "sequelize-typescript";
 import { Statement } from ".";
 
 @Table({
@@ -7,7 +7,9 @@ import { Statement } from ".";
   timestamps: false,
 })
 export class TaxStatement extends Model<InferAttributes<TaxStatement>, InferCreationAttributes<TaxStatement>> {
-  // Identifiant unique de l'enregistrement, auto-incrémenté
+  /** Primary key (inherited from `Statement`) */
+  @ForeignKey(() => Statement)
+  @Column({ primaryKey: true })
   declare id: number;
 
   /** Identifiant de la transaction associée à cette taxe */

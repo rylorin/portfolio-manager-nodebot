@@ -8,8 +8,9 @@ export class OptionContract extends Model<
   InferAttributes<OptionContract>,
   InferCreationAttributes<OptionContract, { omit: "contract" | "stock" }>
 > {
-  // Primary key
-  declare id: number;
+  /** Primary key (inherited from `Contract`) */
+  @Column({ type: DataType.INTEGER, allowNull: false, primaryKey: true, unique: true })
+  declare id: ForeignKey<Contract["id"]>;
 
   // Timestamps
   declare createdAt: CreationOptional<Date>;

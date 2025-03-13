@@ -95,7 +95,7 @@ export class AccountUpdateBot extends ITradingBot {
               const where = {
                 permId: order.order.permId!,
                 portfolioId: this.portfolio.id,
-                contract_id: contract.id,
+                contractId: contract.id,
               };
               const values = {
                 ...where,
@@ -139,7 +139,7 @@ export class AccountUpdateBot extends ITradingBot {
   protected async handleUpdateOpenOrder(order: IbOpenOrder, transaction: Transaction): Promise<void> {
     logger.log(LogLevel.Info, MODULE + ".handleUpdateOpenOrder", undefined, order.order.permId, order.contract.symbol);
     await this.findOrCreateContract(order.contract, transaction).then(async (contract: Contract) => {
-      logger.log(LogLevel.Trace, MODULE + ".updateOpenOrder", contract.symbol, "contract found", contract.id);
+      logger.log(LogLevel.Trace, MODULE + ".handleUpdateOpenOrder", contract.symbol, "contract found", contract.id);
       return OpenOrder.findOrCreate({
         where: {
           permId: order.order.permId,
@@ -148,7 +148,7 @@ export class AccountUpdateBot extends ITradingBot {
         defaults: {
           permId: order.order.permId!,
           portfolioId: this.portfolio.id,
-          contract_id: contract.id,
+          contractId: contract.id,
           actionType: order.order.action!,
           lmtPrice: order.order.lmtPrice,
           auxPrice: order.order.auxPrice,
@@ -168,7 +168,6 @@ export class AccountUpdateBot extends ITradingBot {
           else
             return open_order.update(
               {
-                // contract_id: contract.id,  // contract is not supposed to change
                 actionType: order.order.action,
                 lmtPrice: order.order.lmtPrice,
                 auxPrice: order.order.auxPrice,
@@ -300,7 +299,7 @@ export class AccountUpdateBot extends ITradingBot {
       this.iterateOpenOrdersForUpdate(orders);
       return OpenOrder.destroy({
         where: {
-          portfolio_id: this.portfolio.id,
+          portfolioId: this.portfolio.id,
           updatedAt: { [Op.lt]: new Date(now) },
           // [Op.or]: [{ updatedAt: { [Op.lt]: new Date(now) } }, { updatedAt: null }],
         },

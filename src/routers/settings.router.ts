@@ -74,18 +74,19 @@ router.post("/:itemId(\\d+)/", (req, res): void => {
   Setting.findByPk(itemId)
     .then(async (setting: Setting) => {
       if (setting) {
+        console.log(data, data.rollCallDays != null);
         setting.stock_id = data.stock_id;
         setting.lookupDays = data.lookupDays;
         setting.minPremium = data.minPremium;
 
         setting.cspStrategy = data.cspStrategy;
         setting.navRatio = data.navRatio;
-        setting.cspDelta = -Math.abs(data.cspDelta);
+        setting.cspDelta = -Math.abs(data.cspDelta || 0.5);
         setting.rollPutStrategy = data.rollPutStrategy;
         setting.rollPutDays = data.rollPutDays;
 
         setting.ccStrategy = data.ccStrategy;
-        setting.ccDelta = data.ccDelta;
+        setting.ccDelta = data.ccDelta || 0.5;
         setting.rollCallStrategy = data.rollCallStrategy;
         setting.rollCallDays = data.rollCallDays;
         return setting.save();

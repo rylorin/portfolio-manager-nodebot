@@ -1,6 +1,6 @@
 import { LoaderFunctionArgs } from "react-router-dom";
 import { Position } from "../../../../models";
-import { PositionEntry } from "../../../../routers/positions.types";
+import { PositionEntry } from "../../../../routers/";
 
 /**
  * Load all positions

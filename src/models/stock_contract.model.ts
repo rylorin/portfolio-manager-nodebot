@@ -1,4 +1,4 @@
-import { CreationOptional, InferAttributes, InferCreationAttributes, NonAttribute } from "sequelize";
+import { CreationOptional, ForeignKey, InferAttributes, InferCreationAttributes, NonAttribute } from "sequelize";
 import { BelongsTo, Column, DataType, Model, Table } from "sequelize-typescript";
 import { Contract } from "./contract.model";
 
@@ -11,8 +11,9 @@ export class StockContract extends Model<
   InferAttributes<StockContract>,
   InferCreationAttributes<StockContract, { omit: "contract" }>
 > {
-  // Primary key
-  declare id: number;
+  /** Primary key (inherited from `Contract`) */
+  @Column({ type: DataType.INTEGER, allowNull: false, primaryKey: true, unique: true })
+  declare id: ForeignKey<Contract["id"]>;
 
   // Timestamps
   declare createdAt: CreationOptional<Date>;

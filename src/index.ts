@@ -110,7 +110,7 @@ export class MyTradingBotApp extends IBApiNextApp {
       modelMatch: (filename, member) => {
         return filename.substring(0, filename.indexOf(".model")) === member.toLowerCase();
       },
-      sync: { alter: false },
+      sync: { alter: false, force: false },
       // isolationLevel: Transaction.ISOLATION_LEVELS.SERIALIZABLE,
       // transactionType: Transaction.TYPES.EXCLUSIVE,
     };

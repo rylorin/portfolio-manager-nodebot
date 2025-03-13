@@ -11,7 +11,9 @@ export class OptionStatement extends Model<
   InferAttributes<OptionStatement>,
   InferCreationAttributes<OptionStatement, { omit: "statement" | "contract" | "option" }>
 > {
-  /** Clé primaire de l'option statement */
+  /** Primary key (inherited from `Statement`) */
+  @ForeignKey(() => Statement)
+  @Column({ primaryKey: true })
   declare id: number;
 
   /** Relation avec le modèle parent Statement */

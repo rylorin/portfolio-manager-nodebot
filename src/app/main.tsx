@@ -12,6 +12,9 @@ import ContractShow from "./components/Portfolio/Contract/ContractShow";
 import { contractShowLoader } from "./components/Portfolio/Contract/loaders";
 import PortfolioLayout from "./components/Portfolio/Layout/PortfolioLayout";
 import { action as PortfolioAction } from "./components/Portfolio/Layout/actions";
+import OrdersIndex from "./components/Portfolio/Order/OrdersIndex";
+import { orderDelete } from "./components/Portfolio/Order/actions";
+import { ordersIndexLoader } from "./components/Portfolio/Order/loaders";
 import PortfolioEdit from "./components/Portfolio/Portfolio/PortfolioEdit";
 import PortfolioShow from "./components/Portfolio/Portfolio/PortfolioShow";
 import { portfolioSave } from "./components/Portfolio/Portfolio/actions";
@@ -205,6 +208,15 @@ const router = createBrowserRouter(
                         { path: "edit", element: <PositionEdit />, loader: positionShowLoader, action: positionSave },
                       ],
                     },
+                  ],
+                },
+
+                /* Orders */
+                {
+                  path: "orders",
+                  children: [
+                    { index: true, element: <OrdersIndex />, loader: ordersIndexLoader },
+                    { path: "DeleteOrder/:orderId", action: orderDelete },
                   ],
                 },
 

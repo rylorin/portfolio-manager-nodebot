@@ -3,7 +3,7 @@
   "repository": {
     "url": "https://github.com/rylorin/nodebot"
   },
-  "license": "UNLICENSED",
+  "license": "MIT",
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",
   "files": [

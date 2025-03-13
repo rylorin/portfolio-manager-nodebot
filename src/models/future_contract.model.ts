@@ -11,8 +11,9 @@ export class FutureContract extends Model<
   InferAttributes<FutureContract>,
   InferCreationAttributes<FutureContract, { omit: "contract" | "underlying" }>
 > {
-  // Primary key
-  declare id: number;
+  /** Primary key (inherited from `Contract`) */
+  @Column({ type: DataType.INTEGER, allowNull: false, primaryKey: true, unique: true })
+  declare id: ForeignKey<Contract["id"]>;
 
   // Timestamps
   declare createdAt: CreationOptional<Date>;

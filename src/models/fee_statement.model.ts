@@ -1,5 +1,5 @@
-import { CreationOptional, InferAttributes, InferCreationAttributes } from "sequelize";
-import { BelongsTo, Column, DataType, ForeignKey, Model, Table } from "sequelize-typescript";
+import { InferAttributes, InferCreationAttributes } from "sequelize";
+import { BelongsTo, Column, ForeignKey, Model, Table } from "sequelize-typescript";
 import { Statement } from "./statement.model";
 
 @Table({
@@ -10,14 +10,10 @@ export class FeeStatement extends Model<
   InferAttributes<FeeStatement>,
   InferCreationAttributes<FeeStatement, { omit: "statement" }>
 > {
-  /** Clé primaire reliée à Statement */
+  /** Primary key (inherited from `Statement`) */
   @ForeignKey(() => Statement)
-  @Column({
-    type: DataType.INTEGER,
-    primaryKey: true,
-    allowNull: false,
-  })
-  declare id: CreationOptional<number>;
+  @Column({ primaryKey: true })
+  declare id: number;
 
   /** Relation avec le modèle parent Statement */
   @BelongsTo(() => Statement, "id")

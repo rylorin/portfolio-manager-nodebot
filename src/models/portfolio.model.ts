@@ -1,6 +1,6 @@
 import { Association, CreationOptional, InferAttributes, InferCreationAttributes } from "sequelize";
 import { BelongsTo, Column, DataType, ForeignKey, HasMany, Model, Table } from "sequelize-typescript";
-import { Balance, Contract, Currency, Position, Setting, Statement } from "./";
+import { Balance, Contract, Currency, OpenOrder, Position, Setting, Statement } from "./";
 import { CashStrategy } from "./types";
 
 @Table({
@@ -152,6 +152,9 @@ export class Portfolio extends Model<
   @HasMany(() => Statement, "portfolio_id")
   declare statements: Statement[];
 
+  @HasMany(() => OpenOrder, "portfolioId")
+  declare orders: OpenOrder[];
+
   /** Static associations for Sequelize tooling */
   declare static associations: {
     benchmark: Association<Portfolio, Contract>;
@@ -160,5 +163,6 @@ export class Portfolio extends Model<
     baseRates: Association<Portfolio, Currency>;
     settings: Association<Portfolio, Setting>;
     statements: Association<Portfolio, Statement>;
+    orders: Association<Portfolio, OpenOrder>;
   };
 }

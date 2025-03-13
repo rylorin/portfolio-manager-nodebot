@@ -21,9 +21,9 @@ const GET_MARKET_DATA_DURATION = 16 * 1_000; // IB says 11 but we add a bit over
 const UPDATE_OPTIONS_BATCH_FACTOR = 3;
 const START_AFTER = 15 * 1_000;
 const RECENT_UPDATE = Math.max(UPDATE_OPTIONS_BATCH_FACTOR * GET_MARKET_DATA_DURATION * 3, 90_000);
-const RUN_INTERVAL = 600_000; // 10 minutes
+const RUN_INTERVAL = 600_000; // run bot every 10 minutes
 const MIN_UNITS_TO_TRADE = 1;
-const DEFAULT_TIMEOUT_SECONDS = 15;
+const DEFAULT_TIMEOUT_SECONDS = 20;
 
 // eslint-disable-next-line @typescript-eslint/no-unsafe-argument,@typescript-eslint/no-unused-vars
 const sequelize_logging = (...args: any[]): void => logger.trace(MODULE + ".squelize", ...args);
@@ -314,7 +314,7 @@ export class TradeBot extends ITradingBot {
       },
     };
     return OpenOrder.findAll({
-      where: { portfolio_id: this.portfolio.id },
+      where: { portfolioId: this.portfolio.id },
       include: [
         {
           association: "contract",
@@ -328,7 +328,7 @@ export class TradeBot extends ITradingBot {
           p.then(async (result) => {
             switch (order.contract.secType) {
               case SecType.STK:
-                if (order.contract_id == underlying_id) {
+                if (order.contractId == underlying_id) {
                   result[order.actionType].stocks.units += order.totalQty;
                   result[order.actionType].stocks.value +=
                     (order.totalQty * (order.lmtPrice ? order.lmtPrice : order.contract.livePrice)) /
@@ -340,7 +340,7 @@ export class TradeBot extends ITradingBot {
 
               case SecType.OPT:
               case SecType.FOP:
-                return OptionContract.findByPk(order.contract_id)
+                return OptionContract.findByPk(order.contractId)
                   .then((option) => {
                     if (option) {
                       if (option.stock_id == underlying_id) {
@@ -859,8 +859,8 @@ export class TradeBot extends ITradingBot {
             // cancel any pending order
             await OpenOrder.findAll({
               where: {
-                portfolio_id: this.portfolio.id,
-                contract_id: this.portfolio.benchmark.id,
+                portfolioId: this.portfolio.id,
+                contractId: this.portfolio.benchmark.id,
                 orderId: { [Op.ne]: 0 },
               },
             }).then(async (orders) =>

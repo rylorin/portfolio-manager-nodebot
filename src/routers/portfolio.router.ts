@@ -4,6 +4,7 @@ import { Contract, Portfolio } from "../models";
 import { PortfolioEntry } from "./";
 import balances from "./balances.router";
 import contracts from "./contracts.router";
+import orders from "./orders.router";
 import positions from "./positions.router";
 import reports from "./reports.router";
 import settings from "./settings.router";
@@ -85,6 +86,11 @@ router.use("/:portfolioId(\\d+)/statements", statements);
  * Positions subrouter
  */
 router.use("/:portfolioId(\\d+)/positions", positions);
+
+/**
+ * Orders subrouter
+ */
+router.use("/:portfolioId(\\d+)/orders", orders);
 
 /**
  * Balances subrouter

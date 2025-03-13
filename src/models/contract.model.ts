@@ -11,6 +11,7 @@ export class Contract extends Model<
   >
 > {
   // Auto-incremented ID
+  @Column({ type: DataType.INTEGER, allowNull: false, primaryKey: true, autoIncrement: true, unique: true })
   declare id: CreationOptional<number>;
 
   // Timestamps
