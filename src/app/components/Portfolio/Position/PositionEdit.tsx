@@ -126,7 +126,7 @@ const PositionEdit: FunctionComponent<PositionEditProps> = ({ ..._rest }): React
                   Trade:
                 </Text>
                 <Text w="200px">
-                  <Field name="trade_id" type="number" />
+                  <Field name="trade_unit_id" type="number" />
                 </Text>
               </Flex>
 

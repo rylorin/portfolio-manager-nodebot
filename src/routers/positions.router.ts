@@ -263,7 +263,7 @@ router.get("/index", (req, res): void => {
 router.post("/id/:positionId(\\d+)/SavePosition", (req, res): void => {
   const { _portfolioId, positionId } = req.params as typeof req.params & parentParams;
   const data = req.body as PositionEntry;
-  // console.log("SavePosition", portfolioId, positionId, data, req.body);
+  // console.log("SavePosition", _portfolioId, positionId, data, req.body);
 
   Position.findByPk(positionId)
     .then(async (position) => {

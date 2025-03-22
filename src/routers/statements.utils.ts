@@ -14,7 +14,11 @@ import { contractModelToContractEntry, optionContractModelToOptionContractEntry 
 import { DididendSummary, InterestsSummary, ReportEntry } from "./reports.types";
 import { BaseStatement, StatementEntry, StatementUnderlyingOption } from "./statements.types";
 
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
+const MODULE = "statements_utils";
+
 export const statementModelToStatementEntry = async (item: Statement): Promise<StatementEntry> => {
+  // logger.log(LogLevel.Info, MODULE + "statementModelToStatementEntry", null, item.id);
   const baseStatement: BaseStatement = {
     id: item.id,
     transactionId: item.transactionId,

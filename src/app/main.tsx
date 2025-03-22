@@ -175,6 +175,7 @@ const router = createBrowserRouter(
                         { path: "GuessTrade", action: statementGuessTrade },
                         { path: "AddToTrade/:tradeId", action: statementAddToTrade },
                         { path: "UnlinkTrade", action: statementUnlinkTrade },
+                        { path: "delete", action: statementDelete },
                       ],
                     },
                   ],

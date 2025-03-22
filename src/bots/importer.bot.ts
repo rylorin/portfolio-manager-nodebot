@@ -19,6 +19,7 @@ import {
   TaxStatement,
 } from "../models";
 import { BondStatement, CorporateStatement, StatementTypes } from "../models/";
+
 const MODULE = "ImporterBot";
 
 // eslint-disable-next-line @typescript-eslint/no-unsafe-argument,@typescript-eslint/no-unused-vars
@@ -303,7 +304,7 @@ export class ImporterBot extends ITradingBot {
   }
 
   // eslint-disable-next-line @typescript-eslint/explicit-module-boundary-types
-  protected async processStockTrade(element: any): Promise<void> {
+  protected async _processStockTrade(element: any): Promise<void> {
     logger.log(LogLevel.Trace, MODULE + ".processStockTrade", element.symbol as string, element);
     // if (element.symbol == "SHYL") console.log(element);
     return this.findOrCreateContract(ibContractFromElement(element)).then(async (contract) =>
@@ -404,7 +405,7 @@ export class ImporterBot extends ITradingBot {
  }
   */
   // eslint-disable-next-line @typescript-eslint/explicit-module-boundary-types
-  protected async processOptionTrade(element: any): Promise<Statement> {
+  protected async _processOptionTrade(element: any): Promise<Statement> {
     logger.log(LogLevel.Trace, MODULE + ".processOptionTrade", element.underlyingSymbol as string, element);
     return this.processSecurityInfoUnderlying(element).then(async (underlying) =>
       Statement.findOrCreate({
@@ -504,7 +505,7 @@ export class ImporterBot extends ITradingBot {
   }
   */
   // eslint-disable-next-line @typescript-eslint/explicit-module-boundary-types
-  protected async processBondTrade(element: any): Promise<BondStatement | null> {
+  protected async _processBondTrade(element: any): Promise<BondStatement | null> {
     logger.log(LogLevel.Trace, MODULE + ".processBondTrade", element.securityID as string, element);
     // this.printObject(element);
     return this.findOrCreateContract(ibContractFromElement(element)).then(async (contract) =>
@@ -542,26 +543,108 @@ export class ImporterBot extends ITradingBot {
   // eslint-disable-next-line @typescript-eslint/explicit-module-boundary-types
   protected async processOneTrade(element: any): Promise<void> {
     logger.log(LogLevel.Trace, MODULE + ".processOneTrade", element.securityID as string, element);
-    // if (element.description.includes("18150")) console.log(element);
+
     // eslint-disable-next-line @typescript-eslint/no-unsafe-call
-    const dt: DateTime = DateTime.fromISO((element.dateTime as string).replace(" ", "T"), { zone: "America/New_York" });
-    element.dateTime = dt.toISO(); // eslint-disable-line @typescript-eslint/no-unsafe-call
-    // if (element.transactionID == 3765267831)
-    //   console.log(element.dateTime, element.tradeID, element.transactionID, element.description);
+    const date = DateTime.fromISO((element.dateTime as string).replace(" ", "T"), { zone: "America/New_York" }).toISO();
+    const proceeds = parseFloat(element.proceeds as string);
+    let fees = parseFloat(element.ibCommission as string);
+    let netCash = parseFloat(element.netCash as string);
+    let description = transactionDescriptionFromElement(element);
+    if (element.currency !== element.ibCommissionCurrency) {
+      logger.warn(
+        MODULE + ".processStockTrade",
+        "transaction and commission currencies differs, convertion needed",
+        element,
+      );
+      description += ` Fee: ${fees} ${element.ibCommissionCurrency}`;
+      fees = 0;
+    }
+
+    let contract: Contract;
+    let underlying: Contract;
+    let statementType: StatementTypes;
     switch (element.assetCategory) {
       case SecType.STK:
       case SecType.FUT:
+        statementType = StatementTypes.EquityStatement;
+        contract = await this.findOrCreateContract(ibContractFromElement(element));
+        break;
       case SecType.CASH:
-        return this.processStockTrade(element).then((): void => undefined);
+        statementType = StatementTypes.EquityStatement;
+        contract = await this.findOrCreateContract(ibContractFromElement(element));
+        netCash = proceeds;
+        break;
       case SecType.FOP:
       case SecType.OPT:
-        return this.processOptionTrade(element).then((): void => undefined);
+        statementType = StatementTypes.OptionStatement;
+        contract = await this.processSecurityInfoUnderlying(element);
+        underlying = await this.processSecurityInfo(element);
+        break;
       case SecType.BOND:
-        // console.log("processOneTrade", element);
-        return this.processBondTrade(element).then((): void => undefined);
+        statementType = StatementTypes.BondStatement;
+        contract = await this.findOrCreateContract(ibContractFromElement(element));
+        break;
       default:
         logger.error(MODULE + ".processOneTrade", "Unsupported assetCategory: " + element.assetCategory, element);
         throw Error("unsupported assetCategory: " + element.assetCategory);
+    }
+
+    const [statement] = await Statement.findOrCreate({
+      where: { transactionId: element.transactionID },
+      defaults: {
+        portfolio_id: this.portfolio.id,
+        statementType,
+        date,
+        currency: element.currency,
+        netCash,
+        description,
+        transactionId: element.transactionID,
+        fxRateToBase: element.fxRateToBase,
+        stock_id: contract?.id,
+      },
+    });
+    switch (statement.statementType) {
+      case StatementTypes.EquityStatement:
+        return EquityStatement.findOrCreate({
+          where: { id: statement.id },
+          defaults: {
+            id: statement.id,
+            quantity: element.quantity,
+            price: element.price,
+            proceeds,
+            fees,
+            realizedPnL: element.fifoPnlRealized,
+            status: transactionStatusFromElement(element),
+          },
+        }).then();
+      case StatementTypes.OptionStatement:
+        return OptionStatement.findOrCreate({
+          where: { id: statement.id },
+          defaults: {
+            id: statement.id,
+            quantity: element.quantity,
+            price: element.price,
+            proceeds,
+            fees: fees,
+            realizedPnL: element.fifoPnlRealized,
+            status: transactionStatusFromElement(element),
+            contract_id: underlying?.id,
+          },
+        }).then();
+      case StatementTypes.BondStatement:
+        return BondStatement.findOrCreate({
+          where: { id: statement.id },
+          defaults: {
+            id: statement.id,
+            quantity: element.quantity,
+            price: element.tradePrice,
+            proceeds,
+            fees: fees,
+            accruedInterests: element.accruedInt,
+            country: (element.isin as string).substring(0, 2),
+            realizedPnL: element.fifoPnlRealized,
+          },
+        }).then();
     }
   }
 
