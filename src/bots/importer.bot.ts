@@ -265,7 +265,7 @@ export class ImporterBot extends ITradingBot {
         });
       })
       .catch((e) => {
-        console.error(e);
+        console.error("processSecurityInfo failed:", e, element);
         logger.log(LogLevel.Error, MODULE + ".processSecurityInfo", element.securityID as string, e, element);
         return undefined;
       });

@@ -51,19 +51,27 @@ export const statementModelToStatementEntry = async (item: Statement): Promise<S
           { association: "option" /*, include: [{ model: Contract, as: "underlying" }] */ },
         ],
       }).then((thisStatement) => {
-        const option: StatementUnderlyingOption = {
-          ...contractModelToContractEntry(thisStatement!.contract),
-          ...optionContractModelToOptionContractEntry(thisStatement!.option),
-        };
-        return {
-          statementType: StatementTypes.OptionStatement,
-          ...baseStatement,
-          // underlying: contractModelToContractEntry(item.stock),
-          option,
-          quantity: thisStatement!.quantity,
-          pnl: thisStatement!.realizedPnL,
-          fees: thisStatement!.fees,
-        };
+        if (!thisStatement) {
+          throw Error(`Option statement #${item.id} not found.`);
+        } else if (!thisStatement.contract) {
+          throw Error(`Option statement #${item.id} contract not found.`);
+        } else if (!thisStatement.option) {
+          throw Error(`Option statement #${item.id} option not found.`);
+        } else {
+          const option: StatementUnderlyingOption = {
+            ...contractModelToContractEntry(thisStatement!.contract),
+            ...optionContractModelToOptionContractEntry(thisStatement!.option),
+          };
+          return {
+            statementType: StatementTypes.OptionStatement,
+            ...baseStatement,
+            // underlying: contractModelToContractEntry(item.stock),
+            option,
+            quantity: thisStatement!.quantity,
+            pnl: thisStatement!.realizedPnL,
+            fees: thisStatement!.fees,
+          };
+        }
       });
 
     case StatementTypes.DividendStatement:

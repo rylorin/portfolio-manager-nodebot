@@ -13,15 +13,12 @@
   "scripts": {
     "bot:updater": "node dist/index.js -watch -update",
     "build": "yarn run server:build && yarn run client:build",
-    "build:ib": "cd ./node_modules/@stoqey/ib && yarn install && yarn build",
-    "build:ib-no": "true",
     "build:watch": "yarn tsc --watch",
     "clean": "rm -rf dist",
     "client:build": "vite build",
     "client:dev": "vite",
     "doc": "typedoc --excludeInternal",
     "doc:dev": "typedoc --out ./doc-dev",
-    "postinstall": "patch-package && yarn build:ib-no",
     "lint": "eslint ./src",
     "prepare": "husky",
     "prepublishOnly": "yarn build",
@@ -30,7 +27,7 @@
     "serve": "vite preview",
     "server:build": "tsc --project tsconfig.server.json",
     "server:dev": "ts-node-dev --project tsconfig.server.json src/index -watch -server -account -import -trader",
-    "start": "node dist/index.js -server",
+    "start": "yarn && node dist/index.js -server -watch",
     "start:dev": "concurrently \"yarn server:dev\" \"yarn client:dev\""
   },
   "dependencies": {

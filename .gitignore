@@ -5,3 +5,4 @@ test.sh
 test.json
 .eslintcache
 logs/
+.DS_Store

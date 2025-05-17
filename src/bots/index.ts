@@ -2,7 +2,6 @@ import {
   ComboLeg,
   ContractDetails,
   IBApiNext,
-  IBApiNextError,
   Contract as IbContract,
   Order as IbOrder,
   SecType as IbSecType,
@@ -35,16 +34,15 @@ import { expirationToDateString } from "../models/date_utils";
 
 const MODULE = "BotIndex";
 
+const DEFAULT_TIMEOUT_SECONDS = 12;
+
 // eslint-disable-next-line @typescript-eslint/no-unsafe-argument,@typescript-eslint/no-unused-vars
 const sequelize_logging = (...args: any[]): void => logger.trace(MODULE + ".squelize", ...args);
 
-// interface OptionsSynthesis {
-//   value: number;
-//   engaged: number;
-//   risk: number;
-//   quantity: number;
-//   options: OptionContract[];
-// }
+export const timeoutPromise = async (secs: number, reason?: string): Promise<void> =>
+  new Promise(
+    (_, reject) => setTimeout(() => reject(new Error(reason ?? "timeout")), secs * 1_000), // Fail after some time
+  );
 
 export class ITradingBot extends EventEmitter {
   protected app: MyTradingBotApp;
@@ -202,333 +200,6 @@ export class ITradingBot extends EventEmitter {
         this.baseRates[this.portfolio.baseCurrency] = 1.0;
       });
   }
-
-  // public async _getContractPosition(contract: Contract): Promise<number> {
-  //   if (this.portfolio !== null && contract !== null) {
-  //     return Position.findOne({
-  //       where: {
-  //         portfolio_id: this.portfolio.id,
-  //         contract_id: contract.id,
-  //       },
-  //       // logging: sequelize_logging,
-  //     }).then((position) => {
-  //       return position ? position.quantity : 0;
-  //     });
-  //   } else {
-  //     return Promise.resolve(0);
-  //   }
-  // }
-
-  // public async _getContractPositionValueInBase(contract: Contract): Promise<number> {
-  //   return this._getContractPosition(contract).then(async (position) => {
-  //     return this.findOrCreateCurrency(contract.currency).then((currency) => {
-  //       // console.log("getContractPositionValueInBase", position, contract.livePrice, currency.rate);
-  //       return (position * contract.livePrice) / currency.rate;
-  //     });
-  //   });
-  // }
-
-  // private async findOrCreateCurrency(symbol: string): Promise<Currency> {
-  //   const currency = this.portfolio.baseRates.find((currency) => currency.currency == symbol);
-  //   if (!currency) {
-  //     return this.findOrCreateContract({
-  //       secId: SecType.CASH,
-  //       currency: symbol,
-  //       symbol: symbol + "." + this.portfolio.baseCurrency,
-  //     }).then(async (contract) =>
-  //       Currency.create({
-  //         base: this.portfolio.baseCurrency,
-  //         currency: symbol,
-  //         rate: contract.price!,
-  //       }),
-  //     );
-  //   } else {
-  //     return Promise.resolve(currency);
-  //   }
-  // }
-
-  // public async _getContractOrdersQuantity(benchmark: Contract, actionType?: OrderAction): Promise<number> {
-  //   const where: {
-  //     portfolio_id: number;
-  //     status: string[];
-  //     actionType?: OrderAction;
-  //   } = {
-  //     portfolio_id: this.portfolio.id,
-  //     status: ["Submitted", "PreSubmitted"],
-  //   };
-  //   if (actionType) where.actionType = actionType;
-  //   if (benchmark !== null) {
-  //     return OpenOrder.findAll({
-  //       where: where,
-  //       include: {
-  //         model: Contract,
-  //         where: {
-  //           id: benchmark.id,
-  //         },
-  //       },
-  //     }).then((orders: OpenOrder[]) => orders.reduce((p, order) => p + order.remainingQty, 0));
-  //   } else {
-  //     return Promise.resolve(0);
-  //   }
-  // }
-
-  // protected async _getContractOrderValueInBase(benchmark: Contract, actionType?: OrderAction): Promise<number> {
-  //   if (this.portfolio !== null && benchmark !== null) {
-  //     const where: {
-  //       portfolio_id: number;
-  //       actionType?: OrderAction;
-  //       status: string[];
-  //     } = {
-  //       portfolio_id: this.portfolio.id,
-  //       status: ["Submitted", "PreSubmitted"],
-  //     };
-  //     if (actionType) where.actionType = actionType;
-  //     return OpenOrder.findAll({
-  //       where: where,
-  //       include: {
-  //         model: Contract,
-  //         where: {
-  //           id: benchmark.id,
-  //         },
-  //       },
-  //     }).then(async (orders: OpenOrder[]) =>
-  //       Currency.findOne({
-  //         where: {
-  //           base: this.portfolio.baseCurrency,
-  //           currency: benchmark.currency,
-  //         },
-  //       }).then((currency) => {
-  //         if (currency) {
-  //           return orders.reduce(
-  //             (p, order) =>
-  //               p +
-  //               (order.remainingQty * benchmark.livePrice) /
-  //                 currency.rate /
-  //                 (order.actionType == OrderAction.BUY ? 1 : -1),
-  //             0,
-  //           );
-  //         } else throw Error("currency not found");
-  //       }),
-  //     );
-  //   } else {
-  //     return Promise.resolve(0);
-  //   }
-  // }
-
-  // private async _sumOptionsPositionsSynthesisInBase(
-  //   positions: Position[],
-  //   underlying?: number,
-  //   right?: OptionType,
-  // ): Promise<OptionsSynthesis> {
-  //   const result = { value: 0, engaged: 0, risk: 0, quantity: 0, options: [] as OptionContract[] };
-  //   const where: { id?: number; stock_id?: number; callOrPut?: OptionType } = {};
-  //   if (underlying) where.stock_id = underlying;
-  //   if (right) where.callOrPut = right;
-  //   for (const position of positions) {
-  //     where.id = position.contract.id;
-  //     // strange ... we might have more than one option matching criteria!
-  //     const opt = await OptionContract.findOne({
-  //       where: where,
-  //     });
-  //     if (opt != null) {
-  //       result.quantity += position.quantity * opt.multiplier;
-  //       result.value +=
-  //         (position.quantity * opt.multiplier * position.contract.livePrice) /
-  //         this.baseRates[position.contract.currency];
-  //       result.engaged +=
-  //         (position.quantity * opt.multiplier * opt.strike) / this.baseRates[position.contract.currency];
-  //       result.risk +=
-  //         (position.quantity *
-  //           opt.multiplier *
-  //           opt.strike *
-  //           (opt.delta ? opt.delta : opt.callOrPut == OptionType.Call ? +0.5 : -0.5)) /
-  //         this.baseRates[position.contract.currency];
-  //       result.options.push(opt);
-  //     }
-  //   }
-  //   return result;
-  // }
-
-  // protected async _getOptionsPositionsSynthesisInBase(
-  //   underlying?: number,
-  //   right?: OptionType,
-  //   short?: boolean,
-  //   long?: boolean,
-  // ): Promise<OptionsSynthesis> {
-  //   if (this.portfolio !== null) {
-  //     const where: { portfolio_id: number; quantity? } = {
-  //       portfolio_id: this.portfolio.id,
-  //     };
-  //     if (short && !long) where.quantity = { [Op.lt]: 0 };
-  //     if (!short && long) where.quantity = { [Op.gt]: 0 };
-  //     return (
-  //       Position.findAll({
-  //         where: where,
-  //         include: {
-  //           model: Contract,
-  //           where: {
-  //             secType: IbSecType.OPT,
-  //           },
-  //         },
-  //       })
-  //         // .then(async (positions: Position[]) => {
-  //         //   console.log('getOptionsPositionsSynthesisInBase',positions);
-  //         //   return positions;
-  //         // })
-  //         .then(async (positions: Position[]) => this._sumOptionsPositionsSynthesisInBase(positions, underlying, right))
-  //     );
-  //   } else {
-  //     logger.error(MODULE + ".getOptionsPositionsSynthesisInBase", "Portfolio not loaded");
-  //     return Promise.resolve({
-  //       engaged: 0,
-  //       value: 0,
-  //       risk: 0,
-  //       quantity: 0,
-  //       options: [],
-  //     });
-  //   }
-  // }
-
-  // protected async _getOptionsPositionsQuantity(underlying: Contract, right: OptionType): Promise<number> {
-  //   return this._getOptionsPositionsSynthesisInBase(underlying.id, right).then((r) => r.quantity);
-  // }
-
-  // public async _getOptionPositionsValueInBase(
-  //   underlying: number | undefined,
-  //   right: OptionType | undefined,
-  // ): Promise<number> {
-  //   return this._getOptionsPositionsSynthesisInBase(underlying, right).then((r) => r.value);
-  // }
-
-  // protected async _getOptionsPositionsEngagedInBase(underlying: number, right: OptionType): Promise<number> {
-  //   return this._getOptionsPositionsSynthesisInBase(underlying, right).then((r) => r.engaged);
-  // }
-
-  // public async _getOptionsPositionsRiskInBase(
-  //   underlying: number | undefined,
-  //   right: OptionType | undefined,
-  // ): Promise<number> {
-  //   return this._getOptionsPositionsSynthesisInBase(underlying, right).then((r) => r.risk);
-  // }
-
-  // protected async _getOptionShortPositionsValueInBase(underlying: number, right: OptionType): Promise<number> {
-  //   return this._getOptionsPositionsSynthesisInBase(underlying, right, true).then((r) => r.quantity);
-  // }
-
-  // private async _sumOptionsOrdersInBase(
-  //   orders: OpenOrder[],
-  //   underlying: number,
-  //   right?: OptionType,
-  // ): Promise<OptionsSynthesis> {
-  //   const result: OptionsSynthesis = { value: 0, engaged: 0, risk: 0, quantity: 0, options: [] };
-  //   for (const order of orders) {
-  //     const where: { id: number; stock_id: number; callOrPut?: OptionType } = {
-  //       id: order.contract.id,
-  //       stock_id: underlying,
-  //     };
-  //     if (right) where.callOrPut = right;
-  //     await OptionContract.findOne({
-  //       where: where,
-  //       include: { as: "contract", model: Contract, required: true },
-  //     }).then(async (opt) =>
-  //       Currency.findOne({
-  //         where: {
-  //           base: this.portfolio.baseCurrency,
-  //           currency: order.contract.currency,
-  //         },
-  //       }).then((currency) => {
-  //         if (opt !== null && currency) {
-  //           result.quantity += order.remainingQty * opt.multiplier;
-  //           result.value +=
-  //             (order.remainingQty *
-  //               opt.multiplier *
-  //               opt.contract.livePrice *
-  //               (order.actionType == OrderAction.BUY ? 1 : -1)) /
-  //             currency.rate;
-  //           result.engaged +=
-  //             (order.remainingQty * opt.multiplier * opt.strike * (order.actionType == OrderAction.BUY ? 1 : -1)) /
-  //             currency.rate;
-  //           result.risk +=
-  //             (order.remainingQty *
-  //               opt.multiplier *
-  //               opt.strike *
-  //               (opt.delta ? opt.delta : opt.callOrPut == OptionType.Call ? +0.5 : -0.5) *
-  //               (order.actionType == OrderAction.BUY ? 1 : -1)) /
-  //             currency.rate;
-  //           result.options.push(opt);
-  //         }
-  //       }),
-  //     );
-  //   }
-  //   return result;
-  // }
-
-  // protected async _getOptionsOrdersSynthesisInBase(
-  //   underlying: number,
-  //   right?: OptionType,
-  //   actionType?: OrderAction,
-  // ): Promise<OptionsSynthesis> {
-  //   if (this.portfolio !== null && underlying !== null) {
-  //     const where: {
-  //       portfolio_id: number;
-  //       status: string[];
-  //       actionType?: OrderAction;
-  //     } = {
-  //       portfolio_id: this.portfolio.id,
-  //       status: ["Submitted", "PreSubmitted"],
-  //     };
-  //     if (actionType) where.actionType = actionType;
-  //     return OpenOrder.findAll({
-  //       where: where,
-  //       include: {
-  //         model: Contract,
-  //         where: {
-  //           secType: IbSecType.OPT,
-  //         },
-  //       },
-  //     }).then(async (orders: OpenOrder[]) => this._sumOptionsOrdersInBase(orders, underlying, right));
-  //   } else {
-  //     return Promise.resolve({
-  //       engaged: 0,
-  //       value: 0,
-  //       risk: 0,
-  //       quantity: 0,
-  //       options: [],
-  //     });
-  //   }
-  // }
-
-  // protected async _getOptionsOrdersValueInBase(
-  //   underlying: number,
-  //   right: OptionType,
-  //   actionType?: OrderAction,
-  // ): Promise<number> {
-  //   return this._getOptionsOrdersSynthesisInBase(underlying, right, actionType).then((r) => r.value);
-  // }
-
-  // protected async _getOptionsOrdersEngagedInBase(
-  //   underlying: number,
-  //   right: OptionType,
-  //   actionType?: OrderAction,
-  // ): Promise<number> {
-  //   return this._getOptionsOrdersSynthesisInBase(underlying, right, actionType).then((r) => r.engaged);
-  // }
-
-  // protected async _getOptionsOrdersRiskInBase(
-  //   underlying: number,
-  //   right?: OptionType,
-  //   actionType?: OrderAction,
-  // ): Promise<number> {
-  //   return this._getOptionsOrdersSynthesisInBase(underlying, right, actionType).then((r) => r.risk);
-  // }
-
-  // public async _getOptionsOrdersQuantity(
-  //   underlying: Contract,
-  //   right: OptionType,
-  //   actionType: OrderAction,
-  // ): Promise<number> {
-  //   return this._getOptionsOrdersSynthesisInBase(underlying.id, right, actionType).then((r) => r.quantity);
-  // }
 
   public async getBalanceInBase(currency: string): Promise<number> {
     return Balance.findOne({
@@ -920,41 +591,40 @@ export class ITradingBot extends EventEmitter {
           "requesting contract details",
           ibContract,
         );
-        await this.api
-          .getContractDetails(ibContract)
-          .then((detailstab) => {
-            if (detailstab.length >= 1) {
-              details = detailstab[0];
-              ibContract = details.contract;
-              logger.log(
-                LogLevel.Trace,
-                MODULE + ".findOrCreateContract",
-                undefined,
-                "got contract details",
-                ibContract,
-              );
-            } else {
-              logger.log(
-                LogLevel.Warning,
-                MODULE + ".findOrCreateContract",
-                undefined,
-                "Contract details not found",
-                ibContract,
-              );
-            }
-          })
-          .catch((err: IBApiNextError) => {
-            const message = `getContractDetails failed for ${ibContract.secType} ${ibContract.symbol} ${ibContract.lastTradeDateOrContractMonth} ${ibContract.strike} ${ibContract.right} with error #${err.code}: '${err.error.message}'`;
-            logger.log(LogLevel.Error, MODULE + ".findOrCreateContract", undefined, message, ibContract);
-            throw {
-              name: "IBApiNextError",
-              message,
-              code: err.code,
-              parent: Error,
-              original: Error,
-            } as Error;
-          });
-        // }
+
+        const detailstab: ContractDetails[] = await Promise.race([
+          this.api.getContractDetails(ibContract),
+          timeoutPromise(DEFAULT_TIMEOUT_SECONDS, `Timeout fetching ${ibContract.symbol} contract`).then(() => null),
+        ]);
+
+        // await this.api
+        //   .getContractDetails(ibContract)
+        //   .then((detailstab) => {
+        if (detailstab.length >= 1) {
+          details = detailstab[0];
+          ibContract = details.contract;
+          logger.log(LogLevel.Trace, MODULE + ".findOrCreateContract", undefined, "got contract details", ibContract);
+        } else {
+          logger.log(
+            LogLevel.Error,
+            MODULE + ".findOrCreateContract",
+            undefined,
+            "Contract details not found",
+            ibContract,
+          );
+        }
+        // })
+        // .catch((err: IBApiNextError) => {
+        //   const message = `getContractDetails failed for ${ibContract.secType} ${ibContract.symbol} ${ibContract.lastTradeDateOrContractMonth} ${ibContract.strike} ${ibContract.right} with error #${err.code}: '${err.error.message}'`;
+        //   logger.log(LogLevel.Error, MODULE + ".findOrCreateContract", undefined, message, ibContract);
+        //   throw {
+        //     name: "IBApiNextError",
+        //     message,
+        //     code: err.code,
+        //     parent: Error,
+        //     original: Error,
+        //   } as Error;
+        // });
         if (details && ibContract.secType == IbSecType.STK) {
           contract = await this.createStockContract(ibContract, details, transaction);
         } else if (details && ibContract.secType == IbSecType.IND) {

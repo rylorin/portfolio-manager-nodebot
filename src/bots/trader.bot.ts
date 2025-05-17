@@ -8,7 +8,7 @@ import {
   TimeInForce,
 } from "@stoqey/ib";
 import { Op, Order } from "sequelize";
-import { ITradingBot } from ".";
+import { ITradingBot, timeoutPromise } from ".";
 import logger from "../logger";
 import { Balance, Contract, OpenOrder, OptionContract, OptionStatement, Position, Setting } from "../models";
 import { dateToExpiration, daysToExpiration, expirationToDate, expirationToDateString } from "../models/date_utils";
@@ -27,11 +27,6 @@ const DEFAULT_TIMEOUT_SECONDS = 20;
 
 // eslint-disable-next-line @typescript-eslint/no-unsafe-argument,@typescript-eslint/no-unused-vars
 const sequelize_logging = (...args: any[]): void => logger.trace(MODULE + ".squelize", ...args);
-
-const timeoutPromise = async (secs: number, reason?: string): Promise<void> =>
-  new Promise(
-    (_, reject) => setTimeout(() => reject(new Error(reason ?? "timeout")), secs * 1_000), // Fail after some time
-  );
 
 enum LongShort {
   Long = "L",
