@@ -42,7 +42,7 @@ router.get("/contracts/:contractId(\\d+)", (req, res): void => {
 /**
  * Catch all
  */
-router.get("*", (req, _res, next): void => {
+router.get("*splat", (req, _res, next): void => {
   console.log("unknown Repository path:", req.path);
   next();
 });

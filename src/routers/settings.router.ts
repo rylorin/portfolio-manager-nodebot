@@ -121,7 +121,7 @@ router.delete("/:itemId(\\d+)/", (req, res): void => {
 /**
  * Catch all url
  */
-router.get("*", (req, _res, next): void => {
+router.get("*splat", (req, _res, next): void => {
   console.log(`unknown ${MODULE} path: ${req.path}`);
   next();
 });

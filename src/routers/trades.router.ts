@@ -321,7 +321,7 @@ router.delete("/id/:tradeId(\\d+)/DeleteTrade", (req, res): void => {
 /**
  * Catch all url
  */
-router.get("*", (req, _res, next): void => {
+router.get("*splat", (req, _res, next): void => {
   console.log("unknown trades path:", req.path);
   next();
 });

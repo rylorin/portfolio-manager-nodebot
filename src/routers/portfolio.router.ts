@@ -120,7 +120,7 @@ router.use("/:portfolioId(\\d+)/settings", settings);
 /**
  * Catch all
  */
-router.get("*", (req, _res, next): void => {
+router.get("*splat", (req, _res, next): void => {
   console.log("unknown Portfolio path:", req.path);
   next();
 });

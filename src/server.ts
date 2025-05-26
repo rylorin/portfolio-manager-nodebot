@@ -22,7 +22,7 @@ const StartServer = (): void => {
   app.use(express.static("dist/app"));
 
   // Handle client routing, return all requests to the app
-  app.get("*", (req, res) => {
+  app.get("*splat", (req, res) => {
     console.log("unknown path:", req.path);
     res.sendFile(path.join(__dirname, "app/index.html"));
   });

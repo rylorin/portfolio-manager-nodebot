@@ -445,7 +445,7 @@ router.get("/:positionId(\\d+)/UnlinkTrade", (req, res): void => {
 /**
  * Catch all url
  */
-router.get("*", (req, _res, next): void => {
+router.get("*splat", (req, _res, next): void => {
   console.log("unknown position path:", req.path);
   next();
 });
