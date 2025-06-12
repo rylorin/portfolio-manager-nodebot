@@ -40,6 +40,7 @@ export default tseslint.config(
       // "@typescript-eslint/ban-types": "error",
       "@typescript-eslint/explicit-function-return-type": "error",
       "@typescript-eslint/explicit-module-boundary-types": "error",
+      "@typescript-eslint/no-empty-object-type": "warn",
       "@typescript-eslint/no-explicit-any": "off", // We allow explicit any
       "@typescript-eslint/no-floating-promises": "error",
       "@typescript-eslint/no-non-null-assertion": "off", // behavior mismatch between TSlint and TScompiler. I make a valid usage of non null assertions

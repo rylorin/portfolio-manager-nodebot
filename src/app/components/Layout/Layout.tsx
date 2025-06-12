@@ -1,8 +1,8 @@
-import { Box, Flex, Link, Spinner } from "@chakra-ui/react";
+import { Box, Flex, Link, Spinner, VStack } from "@chakra-ui/react";
 import React, { FunctionComponent } from "react";
 import { useNavigation } from "react-router-dom";
-import NavBar from "../../components/NavBar/NavBar";
 import links from "../../links";
+import NavBar from "./NavBar";
 
 interface LayoutProps {
   children: React.ReactNode;
@@ -11,19 +11,22 @@ interface LayoutProps {
 const Layout: FunctionComponent<LayoutProps> = ({ children, ..._rest }): React.ReactNode => {
   const navigation = useNavigation();
   return (
-    <>
-      <NavBar links={links} as="header" />
+    <VStack gap="1" margin={{ base: 0, md: 4 }}>
       <Flex
         display={navigation.state === "idle" ? "none" : "block"}
-        direction="column"
         justifyContent="center"
         alignItems="center"
         textAlign="center"
         height="100vh"
-        position="absolute"
+        width="100vw"
+        position="fixed"
+        top="0"
+        left="0"
+        bg="blue.200/70"
       >
-        <Spinner size="xl" />
+        <Spinner size="xl" position="absolute" top="50%" left="50%" />
       </Flex>
+      <NavBar links={links} as="header" />
       <Box as="main" id="top">
         {children}
       </Box>
@@ -33,7 +36,7 @@ const Layout: FunctionComponent<LayoutProps> = ({ children, ..._rest }): React.R
           rylorin
         </Link>
       </Flex>
-    </>
+    </VStack>
   );
 };
 
