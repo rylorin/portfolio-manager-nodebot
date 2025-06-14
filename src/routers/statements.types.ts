@@ -33,6 +33,7 @@ export type EquityStatementEntry = BaseStatement & {
   quantity: number;
   pnl: number;
   fees: number;
+  price: number;
 };
 
 export type OptionStatementEntry = BaseStatement & {
@@ -41,6 +42,7 @@ export type OptionStatementEntry = BaseStatement & {
   quantity: number;
   pnl: number;
   fees: number;
+  price: number;
 };
 
 export type BondStatementEntry = BaseStatement & {

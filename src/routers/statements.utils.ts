@@ -41,6 +41,7 @@ export const statementModelToStatementEntry = async (item: Statement): Promise<S
           quantity: thisStatement!.quantity,
           pnl: thisStatement!.realizedPnL,
           fees: thisStatement!.fees,
+          price: thisStatement!.price,
         };
       });
 
@@ -70,6 +71,7 @@ export const statementModelToStatementEntry = async (item: Statement): Promise<S
             quantity: thisStatement!.quantity,
             pnl: thisStatement!.realizedPnL,
             fees: thisStatement!.fees,
+            price: thisStatement!.price,
           };
         }
       });

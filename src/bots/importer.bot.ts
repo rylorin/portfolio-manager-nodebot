@@ -328,7 +328,7 @@ export class ImporterBot extends ITradingBot {
             defaults: {
               id: statement.id,
               quantity: element.quantity,
-              price: element.price,
+              price: element.tradePrice,
               proceeds: element.proceeds,
               fees: element.ibCommission,
               realizedPnL: element.fifoPnlRealized,
@@ -428,7 +428,7 @@ export class ImporterBot extends ITradingBot {
             defaults: {
               id: statement.id,
               quantity: element.quantity,
-              price: element.price,
+              price: element.tradePrice,
               proceeds: element.proceeds,
               fees: element.ibCommission,
               realizedPnL: element.fifoPnlRealized,
@@ -578,7 +578,15 @@ export class ImporterBot extends ITradingBot {
       case SecType.OPT:
         statementType = StatementTypes.OptionStatement;
         contract = await this.processSecurityInfoUnderlying(element);
+        if (!contract) {
+          logger.error(MODULE + ".processOneTrade", "Contract not found for option trade", element);
+          throw Error("Contract not found for option trade");
+        }
         underlying = await this.processSecurityInfo(element);
+        if (!underlying) {
+          logger.error(MODULE + ".processOneTrade", "Underlying not found for option trade", element);
+          throw Error("Underlying not found for option trade");
+        }
         break;
       case SecType.BOND:
         statementType = StatementTypes.BondStatement;
@@ -610,7 +618,7 @@ export class ImporterBot extends ITradingBot {
           defaults: {
             id: statement.id,
             quantity: element.quantity,
-            price: element.price,
+            price: element.tradePrice,
             proceeds,
             fees,
             realizedPnL: element.fifoPnlRealized,
@@ -623,12 +631,12 @@ export class ImporterBot extends ITradingBot {
           defaults: {
             id: statement.id,
             quantity: element.quantity,
-            price: element.price,
+            price: element.tradePrice,
             proceeds,
             fees: fees,
             realizedPnL: element.fifoPnlRealized,
             status: transactionStatusFromElement(element),
-            contract_id: underlying?.id,
+            contract_id: underlying.id,
           },
         }).then();
       case StatementTypes.BondStatement:
