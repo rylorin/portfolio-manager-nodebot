@@ -1,6 +1,6 @@
-import { DeleteIcon } from "@chakra-ui/icons";
-import { IconButton, Table, TableCaption, TableContainer, Tbody, Td, Thead, Tr } from "@chakra-ui/react";
+import { IconButton, Table, TableCaption } from "@chakra-ui/react";
 import { FunctionComponent, default as React } from "react";
+import { FaTrashCan as DeleteIcon } from "react-icons/fa6";
 import { Form, useLoaderData, useParams } from "react-router-dom";
 import { OrderEntry } from "../../../../routers/";
 import { ordersIndexLoader } from "./loaders";
@@ -22,45 +22,39 @@ const OrdersIndex: FunctionComponent<Props> = ({ title = "Orders index", content
 
   return (
     <>
-      <TableContainer>
-        <Table variant="simple" size="sm" className="table-tiny">
-          <TableCaption>
-            {title} ({theOrders.length})
-          </TableCaption>
-          <Thead>
-            <Tr>
-              <Td>Id</Td>
-              <Td>Action</Td>
-              <Td>Total Qty</Td>
-              <Td>Symbol</Td>
-              <Td>Status</Td>
-              <Td>Actions</Td>
-            </Tr>
-          </Thead>
-          <Tbody>
-            {theOrders.map((item) => (
-              <Tr key={item.id}>
-                <Td isNumeric>{item.id}</Td>
-                <Td>{item.actionType}</Td>
-                <Td>{item.totalQty}</Td>
-                <Td>{item.contract.symbol}</Td>
-                <Td>{item.status}</Td>
-                <Td>
-                  <Form method="post" action={`DeleteOrder/${item.id}`} className="inline">
-                    <IconButton
-                      aria-label="Delete order"
-                      icon={<DeleteIcon />}
-                      size="xs"
-                      variant="ghost"
-                      type="submit"
-                    />
-                  </Form>
-                </Td>
-              </Tr>
-            ))}
-          </Tbody>
-        </Table>
-      </TableContainer>
+      <Table.Root variant="line" size="sm" className="table-tiny">
+        <TableCaption>
+          {title} ({theOrders.length})
+        </TableCaption>
+        <Table.Header>
+          <Table.Row>
+            <Table.Cell>Id</Table.Cell>
+            <Table.Cell>Action</Table.Cell>
+            <Table.Cell>Total Qty</Table.Cell>
+            <Table.Cell>Symbol</Table.Cell>
+            <Table.Cell>Status</Table.Cell>
+            <Table.Cell>Actions</Table.Cell>
+          </Table.Row>
+        </Table.Header>
+        <Table.Body>
+          {theOrders.map((item) => (
+            <Table.Row key={item.id}>
+              <Table.Cell textAlign="end">{item.id}</Table.Cell>
+              <Table.Cell>{item.actionType}</Table.Cell>
+              <Table.Cell>{item.totalQty}</Table.Cell>
+              <Table.Cell>{item.contract.symbol}</Table.Cell>
+              <Table.Cell>{item.status}</Table.Cell>
+              <Table.Cell>
+                <Form method="post" action={`DeleteOrder/${item.id}`} className="inline">
+                  <IconButton aria-label="Delete order" size="xs" variant="ghost" type="submit">
+                    <DeleteIcon />
+                  </IconButton>
+                </Form>
+              </Table.Cell>
+            </Table.Row>
+          ))}
+        </Table.Body>
+      </Table.Root>
     </>
   );
 };

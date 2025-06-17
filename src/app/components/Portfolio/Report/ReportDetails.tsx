@@ -24,8 +24,8 @@ const ReportDetails: FunctionComponent<Props> = ({ ..._rest }): React.ReactNode 
     <>
       <Box>
         <Spacer />
-        <Link to={ReportLink.toIndex(portfolioId)} as={RouterLink}>
-          Index
+        <Link asChild>
+          <RouterLink to={ReportLink.toIndex(portfolioId)}>Index</RouterLink>
         </Link>
         <Spacer />
       </Box>

@@ -1,4 +1,4 @@
-import { Link, Table, TableCaption, TableContainer, Tbody, Td, Tfoot, Thead, Tr } from "@chakra-ui/react";
+import { Link, Table, TableCaption } from "@chakra-ui/react";
 import React, { FunctionComponent } from "react";
 import { Link as RouterLink, useLoaderData, useParams } from "react-router-dom";
 import { TradeEntry } from "../../../../routers/trades.types";
@@ -24,72 +24,72 @@ const TradesTable: FunctionComponent<Props> = ({ title = "Trades index", content
 
   return (
     <>
-      <TableContainer>
-        <Table variant="simple" size="sm">
-          <TableCaption>
-            {title} ({theTrades.length})
-          </TableCaption>
-          <Thead>
-            <Tr>
-              <Td>Id</Td>
-              <Td>Symbol</Td>
-              <Td>Strategy</Td>
-              <Td>Open</Td>
-              <Td>Expiration</Td>
-              <Td>Days</Td>
-              <Td>Risk</Td>
-              <Td>PnL</Td>
-              <Td>APY</Td>
-            </Tr>
-          </Thead>
-          <Tbody>
-            {theTrades.map((item) => (
-              <Tr key={item.id}>
-                <Td>
-                  {item.id > 0 && (
-                    <Link to={TradeLink.toItem(portfolioId, item.id)} as={RouterLink}>
-                      {item.id}
-                    </Link>
-                  )}
-                </Td>
-                <Td>
-                  <Link to={ContractLink.toItem(portfolioId, item.underlying.id)} as={RouterLink}>
-                    {item.underlying.symbol}
+      <Table.Root variant="line" size="sm">
+        <TableCaption>
+          {title} ({theTrades.length})
+        </TableCaption>
+        <Table.Header>
+          <Table.Row>
+            <Table.Cell>Id</Table.Cell>
+            <Table.Cell>Symbol</Table.Cell>
+            <Table.Cell>Strategy</Table.Cell>
+            <Table.Cell>Open</Table.Cell>
+            <Table.Cell>Expiration</Table.Cell>
+            <Table.Cell>Days</Table.Cell>
+            <Table.Cell>Risk</Table.Cell>
+            <Table.Cell>PnL</Table.Cell>
+            <Table.Cell>APY</Table.Cell>
+          </Table.Row>
+        </Table.Header>
+        <Table.Body>
+          {theTrades.map((item) => (
+            <Table.Row key={item.id}>
+              <Table.Cell>
+                {item.id > 0 && (
+                  <Link asChild>
+                    <RouterLink to={TradeLink.toItem(portfolioId, item.id)}>{item.id}</RouterLink>
                   </Link>
-                </Td>
-                <Td>{tradeStrategy2String(item.strategy)}</Td>
-                <Td>{new Date(item.openingDate).toLocaleDateString()}</Td>
-                <Td>{item.expectedExpiry && new Date(item.expectedExpiry).toLocaleDateString()}</Td>
-                <Td isNumeric>{formatNumber(item.expectedDuration)}</Td>
-                <Td isNumeric>{formatNumber(item.risk)}</Td>
-                <Td isNumeric>
-                  <Number value={item.pnlInBase} />
-                </Td>
-                <Td isNumeric>
-                  <Number value={item.apy} decimals={1} isPercent />
-                </Td>
-              </Tr>
-            ))}
-          </Tbody>
-          <Tfoot>
-            <Tr fontWeight="bold">
-              <Td>Total</Td>
-              <Td></Td>
-              <Td></Td>
-              <Td></Td>
-              <Td></Td>
-              <Td></Td>
-              <Td isNumeric>
-                <Number value={theTrades.reduce((p: number, item) => (p += item.risk || 0), 0)} />
-              </Td>
-              <Td isNumeric>
-                <Number value={theTrades.reduce((p: number, item) => (p += item.pnlInBase || 0), 0)} />
-              </Td>
-              <Td></Td>
-            </Tr>
-          </Tfoot>
-        </Table>
-      </TableContainer>
+                )}
+              </Table.Cell>
+              <Table.Cell>
+                <Link asChild>
+                  <RouterLink to={ContractLink.toItem(portfolioId, item.underlying.id)}>
+                    {item.underlying.symbol}
+                  </RouterLink>
+                </Link>
+              </Table.Cell>
+              <Table.Cell>{tradeStrategy2String(item.strategy)}</Table.Cell>
+              <Table.Cell>{new Date(item.openingDate).toLocaleDateString()}</Table.Cell>
+              <Table.Cell>{item.expectedExpiry && new Date(item.expectedExpiry).toLocaleDateString()}</Table.Cell>
+              <Table.Cell textAlign="end">{formatNumber(item.expectedDuration)}</Table.Cell>
+              <Table.Cell textAlign="end">{formatNumber(item.risk)}</Table.Cell>
+              <Table.Cell textAlign="end">
+                <Number value={item.pnlInBase} />
+              </Table.Cell>
+              <Table.Cell textAlign="end">
+                <Number value={item.apy} decimals={1} isPercent />
+              </Table.Cell>
+            </Table.Row>
+          ))}
+        </Table.Body>
+        <Table.Footer>
+          <Table.Row fontWeight="bold">
+            <Table.Cell>Total</Table.Cell>
+            <Table.Cell></Table.Cell>
+            <Table.Cell></Table.Cell>
+            <Table.Cell></Table.Cell>
+            <Table.Cell></Table.Cell>
+            <Table.Cell></Table.Cell>
+            <Table.Cell textAlign="end">
+              <Number value={theTrades.reduce((p: number, item) => (p += item.risk || 0), 0)} />
+            </Table.Cell>
+            <Table.Cell textAlign="end">
+              <Number value={theTrades.reduce((p: number, item) => (p += item.pnlInBase || 0), 0)} />
+            </Table.Cell>
+            <Table.Cell></Table.Cell>
+          </Table.Row>
+        </Table.Footer>
+      </Table.Root>
     </>
   );
 };

@@ -1,7 +1,7 @@
-import { ArrowBackIcon, CheckIcon } from "@chakra-ui/icons";
 import { Flex, IconButton, Select, Text } from "@chakra-ui/react";
 import { Field, Formik, FormikProps } from "formik";
 import React, { FunctionComponent } from "react";
+import { FaArrowLeft as ArrowBackIcon, FaCheck as CheckIcon } from "react-icons/fa6";
 import { Form, useLoaderData, useNavigate, useSubmit } from "react-router-dom";
 import { CashStrategy } from "../../../../models/types";
 import { ContractEntry, PortfolioEntry } from "../../../../routers";
@@ -113,11 +113,14 @@ const PortfolioEdit: FunctionComponent<PortfolioShowProps> = ({ ..._rest }): Rea
             <Flex justifyContent="center" gap="2" mt="1">
               <IconButton
                 aria-label="Back"
-                icon={<ArrowBackIcon />}
                 variant="ghost"
                 onClick={async () => navigate(-1)} // eslint-disable-line @typescript-eslint/no-misused-promises
-              />
-              <IconButton aria-label="Save" icon={<CheckIcon />} variant="ghost" type="submit" />
+              >
+                <ArrowBackIcon />
+              </IconButton>
+              <IconButton aria-label="Save" variant="ghost" type="submit">
+                <CheckIcon />
+              </IconButton>
             </Flex>
           </Form>
         );

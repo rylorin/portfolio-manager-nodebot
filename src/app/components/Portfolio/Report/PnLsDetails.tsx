@@ -1,7 +1,7 @@
-import { SearchIcon } from "@chakra-ui/icons";
-import { IconButton, Link, Tooltip } from "@chakra-ui/react";
+import { IconButton, Link } from "@chakra-ui/react";
 import { createColumnHelper } from "@tanstack/react-table";
 import { default as React } from "react";
+import { FaSearch as SearchIcon } from "react-icons/fa";
 import { Link as RouterLink, useParams } from "react-router-dom";
 import { ContractType, StatementTypes } from "../../../../models/types";
 import {
@@ -14,6 +14,7 @@ import {
   StatementUnderlyingOption,
 } from "../../../../routers";
 import Number from "../../Number/Number";
+import Tooltip from "../../ui/tooltip";
 import { StatementLink } from "../Statement/links";
 import { DataTable } from "./DataTable";
 
@@ -91,15 +92,19 @@ const PnLsDetails = ({ theReports, ..._rest }: Props): React.ReactNode => {
   const columns = [
     columnHelper.accessor("id", {
       cell: (info) => (
-        <Link to={StatementLink.toItem(portfolioId, info.getValue())} as={RouterLink}>
-          <IconButton aria-label="Show detail" icon={<SearchIcon />} size="xs" variant="ghost" />
+        <Link asChild>
+          <RouterLink to={StatementLink.toItem(portfolioId, info.getValue())}>
+            <IconButton aria-label="Show detail" size="xs" variant="ghost">
+              <SearchIcon />
+            </IconButton>
+          </RouterLink>
         </Link>
       ),
       header: "#",
     }),
     columnHelper.accessor("date", {
       cell: (info) => (
-        <Tooltip label={info.getValue().toLocaleTimeString()} placement="auto" hasArrow={true}>
+        <Tooltip content={info.getValue().toLocaleTimeString()} placement="auto" hasArrow={true}>
           {info.getValue().toLocaleDateString()}
         </Tooltip>
       ),

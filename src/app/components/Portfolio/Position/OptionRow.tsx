@@ -1,6 +1,7 @@
-import { DeleteIcon, EditIcon, SearchIcon } from "@chakra-ui/icons";
-import { IconButton, Link, Td, Tr } from "@chakra-ui/react";
+import { IconButton, Link, Table } from "@chakra-ui/react";
 import { FunctionComponent, default as React } from "react";
+import { FaSearch as SearchIcon } from "react-icons/fa";
+import { FaTrashCan as DeleteIcon, FaPencil as EditIcon } from "react-icons/fa6";
 import { Form, Link as RouterLink } from "react-router-dom";
 import { OptionPositionEntry } from "../../../../routers/positions.types";
 import { formatNumber } from "../../../utils";
@@ -30,42 +31,48 @@ const OptionRow: FunctionComponent<Props> = ({ portfolioId, item, ..._rest }): R
 
   return (
     <>
-      <Tr id={`${item.id}`}>
-        <Td isNumeric>{formatNumber(item.quantity)}</Td>
-        <Td>
-          <Link to={ContractLink.toItem(portfolioId, item.underlying.id)} as={RouterLink}>
-            {item.option.symbol}
+      <Table.Row id={`${item.id}`}>
+        <Table.Cell textAlign="end">{formatNumber(item.quantity)}</Table.Cell>
+        <Table.Cell>
+          <Link asChild>
+            <RouterLink to={ContractLink.toItem(portfolioId, item.underlying.id)}>{item.option.symbol}</RouterLink>
           </Link>
-        </Td>
-        <Td isNumeric>{formatNumber(item.option.strike, 1)}</Td>
-        <Td>{item.option.expiration}</Td>
-        <Td>{item.option.type == "P" ? "Put" : "Call"}</Td>
-        <Td>{item.contract.currency}</Td>
-        <Td isNumeric>
+        </Table.Cell>
+        <Table.Cell textAlign="end">{formatNumber(item.option.strike, 1)}</Table.Cell>
+        <Table.Cell>{item.option.expiration}</Table.Cell>
+        <Table.Cell>{item.option.type == "P" ? "Put" : "Call"}</Table.Cell>
+        <Table.Cell>{item.contract.currency}</Table.Cell>
+        <Table.Cell textAlign="end">
           <Number value={getITM(item)} decimals={1} color={getColor(item)} />
-        </Td>
-        <Td isNumeric>{formatNumber(item.cost)}</Td>
-        <Td isNumeric>{formatNumber(item.value)}</Td>
-        <Td isNumeric>
+        </Table.Cell>
+        <Table.Cell textAlign="end">{formatNumber(item.cost)}</Table.Cell>
+        <Table.Cell textAlign="end">{formatNumber(item.value)}</Table.Cell>
+        <Table.Cell textAlign="end">
           <Number value={item.pnl} />
-        </Td>
-        <Td isNumeric>
+        </Table.Cell>
+        <Table.Cell textAlign="end">
           <Number value={item.apy} decimals={1} isPercent />
-        </Td>
-        <Td isNumeric>{formatNumber(item.engaged)}</Td>
-        <Td isNumeric>{formatNumber(item.risk)}</Td>
-        <Td>
+        </Table.Cell>
+        <Table.Cell textAlign="end">{formatNumber(item.engaged)}</Table.Cell>
+        <Table.Cell textAlign="end">{formatNumber(item.risk)}</Table.Cell>
+        <Table.Cell>
           <RouterLink to={`${PositionLink.toItem(portfolioId, item.id)}`}>
-            <IconButton aria-label="Show position" icon={<SearchIcon />} size="xs" variant="ghost" />
+            <IconButton aria-label="Show position" size="xs" variant="ghost">
+              <SearchIcon />
+            </IconButton>
           </RouterLink>
           <RouterLink to={`${PositionLink.editItem(portfolioId, item.id)}`}>
-            <IconButton aria-label="Edit position" icon={<EditIcon />} size="xs" variant="ghost" />
+            <IconButton aria-label="Edit position" size="xs" variant="ghost">
+              <EditIcon />
+            </IconButton>
           </RouterLink>
           <Form method="post" action={`DeletePosition/${item.id}`} className="inline">
-            <IconButton aria-label="Delete position" icon={<DeleteIcon />} size="xs" variant="ghost" type="submit" />
+            <IconButton aria-label="Delete position" size="xs" variant="ghost" type="submit">
+              <DeleteIcon />
+            </IconButton>
           </Form>
-        </Td>
-      </Tr>
+        </Table.Cell>
+      </Table.Row>
     </>
   );
 };

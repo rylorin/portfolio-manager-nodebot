@@ -13,20 +13,20 @@ const TradeLayout: FunctionComponent<TradeLayoutProps> = ({ children, ..._rest }
   return (
     <VStack align="left">
       <Box>
-        <Link to={TradeLink.toIndex(portfolioId)} as={RouterLink}>
-          Open
+        <Link asChild>
+          <RouterLink to={TradeLink.toIndex(portfolioId)}>Open</RouterLink>
         </Link>
         {" | "}
-        <Link to={TradeLink.toClosedYtd(portfolioId)} as={RouterLink}>
-          YTD
+        <Link asChild>
+          <RouterLink to={TradeLink.toClosedYtd(portfolioId)}>YTD</RouterLink>
         </Link>
         {" | "}
-        <Link to={TradeLink.toClosed12m(portfolioId)} as={RouterLink}>
-          12M
+        <Link asChild>
+          <RouterLink to={TradeLink.toClosed12m(portfolioId)}>12M</RouterLink>
         </Link>
         {" | "}
-        <Link to={TradeLink.toClosed(portfolioId)} as={RouterLink}>
-          All
+        <Link asChild>
+          <RouterLink to={TradeLink.toClosed(portfolioId)}>All</RouterLink>
         </Link>
       </Box>
       {children}

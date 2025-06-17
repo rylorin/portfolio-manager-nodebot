@@ -1,4 +1,4 @@
-import { Link, Table, TableCaption, TableContainer, Tbody, Td, Thead, Tr } from "@chakra-ui/react";
+import { Link, Table, TableCaption } from "@chakra-ui/react";
 import { FunctionComponent, default as React } from "react";
 import { Link as RouterLink, useLoaderData, useParams } from "react-router-dom";
 import { ReportEntry } from "../../../../routers/reports.types";
@@ -44,8 +44,10 @@ const ReportsIndex: FunctionComponent<Props> = ({ ..._rest }): React.ReactNode =
     return (
       <>
         {report && (
-          <Link to={StatementLink.toMonth(portfolioId, year, month)} as={RouterLink}>
-            <Number value={value} />
+          <Link asChild>
+            <RouterLink to={StatementLink.toMonth(portfolioId, year, month)}>
+              <Number value={value} />
+            </RouterLink>
           </Link>
         )}
       </>
@@ -66,8 +68,10 @@ const ReportsIndex: FunctionComponent<Props> = ({ ..._rest }): React.ReactNode =
       );
     return (
       <>
-        <Link to={ReportLink.toDetails(portfolioId, year)} as={RouterLink}>
-          <Number value={value} />
+        <Link asChild>
+          <RouterLink to={ReportLink.toDetails(portfolioId, year)}>
+            <Number value={value} />
+          </RouterLink>
         </Link>
       </>
     );
@@ -104,45 +108,43 @@ const ReportsIndex: FunctionComponent<Props> = ({ ..._rest }): React.ReactNode =
         labels={theReports.map((item) => `${item.year}-${item.month}`)}
         datasets={datasets}
       />
-      <TableContainer>
-        <Table variant="simple" size="sm" className="table-tiny">
-          <TableCaption>Available reports ({theReports.length})</TableCaption>
-          <Thead>
-            <Tr>
-              <Td>Year</Td>
-              {months.map((month) => {
+      <Table.Root variant="line" size="sm" className="table-tiny">
+        <TableCaption>Available reports ({theReports.length})</TableCaption>
+        <Table.Header>
+          <Table.Row>
+            <Table.Cell>Year</Table.Cell>
+            {months.map((month) => {
+              return (
+                <Table.Cell key={month} textAlign="end">
+                  {month}
+                </Table.Cell>
+              );
+            })}
+            <Table.Cell textAlign="end">Total</Table.Cell>
+          </Table.Row>
+        </Table.Header>
+        <Table.Body>
+          {years.map((year) => (
+            <Table.Row key={year}>
+              <Table.Cell>
+                <Link asChild>
+                  <RouterLink to={ReportLink.toSummary(portfolioId, year)}>{year}</RouterLink>
+                </Link>
+              </Table.Cell>
+              {months.map((month, i) => {
                 return (
-                  <Td key={month} isNumeric>
-                    {month}
-                  </Td>
+                  <Table.Cell key={year + "-" + month} textAlign="end">
+                    <Cell year={year} month={i + 1} />
+                  </Table.Cell>
                 );
               })}
-              <Td isNumeric>Total</Td>
-            </Tr>
-          </Thead>
-          <Tbody>
-            {years.map((year) => (
-              <Tr key={year}>
-                <Td>
-                  <Link to={ReportLink.toSummary(portfolioId, year)} as={RouterLink}>
-                    {year}
-                  </Link>
-                </Td>
-                {months.map((month, i) => {
-                  return (
-                    <Td key={year + "-" + month} isNumeric>
-                      <Cell year={year} month={i + 1} />
-                    </Td>
-                  );
-                })}
-                <Td isNumeric>
-                  <TotalCell year={year} />
-                </Td>
-              </Tr>
-            ))}
-          </Tbody>
-        </Table>
-      </TableContainer>
+              <Table.Cell textAlign="end">
+                <TotalCell year={year} />
+              </Table.Cell>
+            </Table.Row>
+          ))}
+        </Table.Body>
+      </Table.Root>
     </>
   );
 };

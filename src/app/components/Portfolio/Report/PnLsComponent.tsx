@@ -49,8 +49,10 @@ const OneAssetTable = ({
           .filter((report) => PnLs[assetType](report.tradesSummary))
           .map((report) => (
             <HStack key={`${report.year}-${report.month}-${assetType}`}>
-              <Link to={StatementLink.toMonth(portfolioId, report.year, report.month)} as={RouterLink}>
-                <Text width="120px">{formatMonth(report.year, report.month)}</Text>
+              <Link asChild>
+                <RouterLink to={StatementLink.toMonth(portfolioId, report.year, report.month)}>
+                  <Text width="120px">{formatMonth(report.year, report.month)}</Text>
+                </RouterLink>
               </Link>
               <Number value={PnLs[assetType](report.tradesSummary)} width="120px" />
               {addToTotal(PnLs[assetType](report.tradesSummary))}

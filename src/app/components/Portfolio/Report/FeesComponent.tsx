@@ -30,8 +30,10 @@ const Fees = ({ theReports, ..._rest }: Props): React.ReactNode => {
         </HStack>
         {theReports.map((report) => (
           <HStack alignContent="left" key={`${report.year}-${report.month}`}>
-            <Link to={StatementLink.toMonth(portfolioId, report.year, report.month)} as={RouterLink}>
-              <Text width="120px">{formatMonth(report.year, report.month)}</Text>
+            <Link asChild>
+              <RouterLink to={StatementLink.toMonth(portfolioId, report.year, report.month)}>
+                <Text width="120px">{formatMonth(report.year, report.month)}</Text>
+              </RouterLink>
             </Link>
             <Number value={report.feesSummary.totalAmountInBase} width="120px" />
             <Spacer />

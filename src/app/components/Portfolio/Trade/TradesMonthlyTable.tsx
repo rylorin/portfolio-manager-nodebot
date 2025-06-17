@@ -1,4 +1,4 @@
-import { HStack, Link, StackDivider, Text, VStack } from "@chakra-ui/react";
+import { HStack, Link, StackSeparator as StackDivider, Text, VStack } from "@chakra-ui/react";
 import React, { FunctionComponent } from "react";
 import { Link as RouterLink, useParams } from "react-router-dom";
 import { TradeMonthlyRow, TradeMonthlySynthesys, TradeMonthlySynthesysEntry } from "../../../../routers/trades.types";
@@ -23,8 +23,8 @@ const MinorRow: FunctionComponent<minorRowProps> = ({ major, index, content, ...
     <HStack>
       <Text width="100px"></Text>
       <Text width="100px">
-        <Link to={TradeLink.toClosedOpened(portfolioId, major, index)} as={RouterLink}>
-          {index}
+        <Link asChild>
+          <RouterLink to={TradeLink.toClosedOpened(portfolioId, major, index)}>{index}</RouterLink>
         </Link>
       </Text>
       <Number value={content.count} color="-" width="100px" />
@@ -50,8 +50,8 @@ const MajorRow: FunctionComponent<majorRowProps> = ({ index, content, ..._rest }
     <>
       <HStack fontWeight="bold">
         <Text width="100px">
-          <Link to={TradeLink.toClosedMonth(portfolioId, index)} as={RouterLink}>
-            {index}
+          <Link asChild>
+            <RouterLink to={TradeLink.toClosedMonth(portfolioId, index)}>{index}</RouterLink>
           </Link>
         </Text>
         <Text width="100px"></Text>
@@ -122,7 +122,7 @@ const TradesMonthlyTable: FunctionComponent<TradesMonthlyTableProps> = ({
   ..._rest
 }): React.ReactNode => {
   return (
-    <VStack divider={<StackDivider borderColor="gray.200" />}>
+    <VStack separator={<StackDivider borderColor="gray.200" />}>
       <HStack>
         <Text width="100px" align="center">
           Close

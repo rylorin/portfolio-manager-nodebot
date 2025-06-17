@@ -1,4 +1,3 @@
-import { ChakraBaseProvider } from "@chakra-ui/react";
 import React from "react";
 import { createRoot } from "react-dom/client";
 import { Outlet, RouterProvider, createBrowserRouter } from "react-router-dom";
@@ -86,9 +85,9 @@ import {
   tradesShowLoader,
 } from "./components/Portfolio/Trade/loaders";
 import { portfolioIndexLoader } from "./components/Portfolio/loaders";
+import { Provider } from "./components/ui/provider";
 import ErrorPage from "./error-page";
 import "./globals.css";
-import theme from "./theme";
 
 const router = createBrowserRouter(
   [
@@ -352,8 +351,8 @@ const router = createBrowserRouter(
 
 createRoot(document.getElementById("root")).render(
   <React.StrictMode>
-    <ChakraBaseProvider theme={theme}>
+    <Provider>
       <RouterProvider router={router} />
-    </ChakraBaseProvider>
+    </Provider>
   </React.StrictMode>,
 );

@@ -44,8 +44,10 @@ const OneCountryTable = ({
             .filter((summary: DididendSummary) => summary.country == country)
             .map((item) => (
               <HStack key={`${report.year}-${report.month}`}>
-                <Link to={StatementLink.toMonth(portfolioId, report.year, report.month)} as={RouterLink}>
-                  <Text width="120px">{formatMonth(report.year, report.month)}</Text>
+                <Link asChild>
+                  <RouterLink to={StatementLink.toMonth(portfolioId, report.year, report.month)}>
+                    <Text width="120px">{formatMonth(report.year, report.month)}</Text>
+                  </RouterLink>
                 </Link>
                 <Number value={item.grossAmountInBase} width="120px" />
                 <Number value={item.taxes} width="120px" />

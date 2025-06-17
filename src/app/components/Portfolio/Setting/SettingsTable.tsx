@@ -1,7 +1,9 @@
 import { SettingEntry } from "@/routers";
-import { DeleteIcon, EditIcon, PlusSquareIcon, SearchIcon } from "@chakra-ui/icons";
-import { IconButton, Link, Table, TableCaption, TableContainer, Tbody, Td, Tfoot, Thead, Tr } from "@chakra-ui/react";
+import { IconButton, Link, Table, TableCaption } from "@chakra-ui/react";
 import { FunctionComponent, default as React } from "react";
+import { FaSearch as SearchIcon } from "react-icons/fa";
+import { FaTrashCan as DeleteIcon, FaPencil as EditIcon } from "react-icons/fa6";
+import { RiAddCircleLine as PlusSquareIcon } from "react-icons/ri";
 import { Form, Link as RouterLink, useLoaderData, useParams } from "react-router-dom";
 import { cspStrategy2String, strategy2String } from "../../../../models/setting.types";
 import Number from "../../Number/Number";
@@ -24,98 +26,104 @@ const SettingsTable: FunctionComponent<Props> = ({ content, ..._rest }): React.R
 
   return (
     <>
-      <TableContainer>
-        <Table variant="simple" size="sm" className="table-tiny">
-          <TableCaption>Settings index ({theSettings.length})</TableCaption>
-          <Thead>
-            <Tr>
-              <Td>Symbol</Td>
-              <Td>Lookup</Td>
-              <Td>Prem.</Td>
-              <Td>CSP strat.</Td>
-              <Td>Ratio</Td>
-              <Td>CSP delta</Td>
-              <Td>CSP Roll</Td>
-              <Td>CC strat.</Td>
-              <Td>CC delta</Td>
-              <Td>CC Roll</Td>
-              <Td>Actions</Td>
-            </Tr>
-          </Thead>
-          <Tbody>
-            {theSettings
-              .sort((a, b) => a.underlying.symbol.localeCompare(b.underlying.symbol))
-              .map((item) => (
-                <Tr key={item.id}>
-                  <Td>{item.underlying.symbol}</Td>
-                  <Td isNumeric>
-                    <Number value={item.lookupDays} color="-" />
-                  </Td>
-                  <Td isNumeric>
-                    <Number value={item.minPremium} decimals={2} color="-" />
-                  </Td>
-                  <Td>{cspStrategy2String(item.cspStrategy)}</Td>
-                  <Td isNumeric>
-                    <Number value={item.navRatio} isPercent color="-" />
-                  </Td>
-                  <Td isNumeric>
-                    <Number value={item.cspDelta} decimals={2} color="-" />
-                  </Td>
-                  <Td>{strategy2String(item.rollPutStrategy)}</Td>
-                  <Td>{strategy2String(item.ccStrategy)}</Td>
-                  <Td isNumeric>
-                    <Number value={item.ccDelta} decimals={2} color="-" />
-                  </Td>
-                  <Td>{strategy2String(item.rollCallStrategy)}</Td>
+      <Table.Root variant="line" size="sm" className="table-tiny">
+        <TableCaption>Settings index ({theSettings.length})</TableCaption>
+        <Table.Header>
+          <Table.Row>
+            <Table.Cell>Symbol</Table.Cell>
+            <Table.Cell>Lookup</Table.Cell>
+            <Table.Cell>Prem.</Table.Cell>
+            <Table.Cell>CSP strat.</Table.Cell>
+            <Table.Cell>Ratio</Table.Cell>
+            <Table.Cell>CSP delta</Table.Cell>
+            <Table.Cell>CSP Roll</Table.Cell>
+            <Table.Cell>CC strat.</Table.Cell>
+            <Table.Cell>CC delta</Table.Cell>
+            <Table.Cell>CC Roll</Table.Cell>
+            <Table.Cell>Actions</Table.Cell>
+          </Table.Row>
+        </Table.Header>
+        <Table.Body>
+          {theSettings
+            .sort((a, b) => a.underlying.symbol.localeCompare(b.underlying.symbol))
+            .map((item) => (
+              <Table.Row key={item.id}>
+                <Table.Cell>{item.underlying.symbol}</Table.Cell>
+                <Table.Cell textAlign="end">
+                  <Number value={item.lookupDays} color="-" />
+                </Table.Cell>
+                <Table.Cell textAlign="end">
+                  <Number value={item.minPremium} decimals={2} color="-" />
+                </Table.Cell>
+                <Table.Cell>{cspStrategy2String(item.cspStrategy)}</Table.Cell>
+                <Table.Cell textAlign="end">
+                  <Number value={item.navRatio} isPercent color="-" />
+                </Table.Cell>
+                <Table.Cell textAlign="end">
+                  <Number value={item.cspDelta} decimals={2} color="-" />
+                </Table.Cell>
+                <Table.Cell>{strategy2String(item.rollPutStrategy)}</Table.Cell>
+                <Table.Cell>{strategy2String(item.ccStrategy)}</Table.Cell>
+                <Table.Cell textAlign="end">
+                  <Number value={item.ccDelta} decimals={2} color="-" />
+                </Table.Cell>
+                <Table.Cell>{strategy2String(item.rollCallStrategy)}</Table.Cell>
 
-                  <Td>
-                    <Link to={SettingLink.toSetting(portfolioId, item.id)} as={RouterLink}>
-                      <IconButton aria-label="Show setting" icon={<SearchIcon />} size="xs" variant="ghost" />
-                    </Link>
-                    <Link to={SettingLink.toSettingEdit(portfolioId, item.id)} as={RouterLink}>
-                      <IconButton aria-label="Edit setting" icon={<EditIcon />} size="xs" variant="ghost" />
-                    </Link>
-                    <Form method="post" action={SettingLink.toSettingDelete(portfolioId, item.id)} className="inline">
-                      <IconButton
-                        aria-label="Delete setting"
-                        icon={<DeleteIcon />}
-                        size="xs"
-                        variant="ghost"
-                        type="submit"
-                      />
-                    </Form>
-                  </Td>
-                </Tr>
-              ))}
-          </Tbody>
-          <Tfoot>
-            <Tr>
-              <Td fontWeight="bold">Total</Td>
-              <Td></Td>
-              <Td></Td>
-              <Td></Td>
-              <Td isNumeric>
-                <Number
-                  value={theSettings.reduce((p, item) => (p += item.navRatio), 0)}
-                  isPercent
-                  fontWeight="bold"
-                  color="-"
-                />
-              </Td>
-              <Td></Td>
-              <Td></Td>
-              <Td></Td>
-              <Td></Td>
-              <Td></Td>
-              <Td>
-                <Link to={SettingLink.toSettingNew(portfolioId)} as={RouterLink}>
-                  <IconButton aria-label="Add setting" icon={<PlusSquareIcon />} size="xs" variant="ghost" />
-                </Link>
-              </Td>
-            </Tr>
-          </Tfoot>
-        </Table>
-      </TableContainer>
+                <Table.Cell>
+                  <Link asChild>
+                    <RouterLink to={SettingLink.toSetting(portfolioId, item.id)}>
+                      <IconButton aria-label="Show setting" size="xs" variant="ghost">
+                        <SearchIcon />
+                      </IconButton>
+                    </RouterLink>
+                  </Link>
+                  <Link asChild>
+                    <RouterLink to={SettingLink.toSettingEdit(portfolioId, item.id)}>
+                      <IconButton aria-label="Edit setting" size="xs" variant="ghost">
+                        <EditIcon />
+                      </IconButton>
+                    </RouterLink>
+                  </Link>
+                  <Form method="post" action={SettingLink.toSettingDelete(portfolioId, item.id)} className="inline">
+                    <IconButton aria-label="Delete setting" size="xs" variant="ghost" type="submit">
+                      <DeleteIcon />
+                    </IconButton>
+                  </Form>
+                </Table.Cell>
+              </Table.Row>
+            ))}
+        </Table.Body>
+        <Table.Footer>
+          <Table.Row>
+            <Table.Cell fontWeight="bold">Total</Table.Cell>
+            <Table.Cell></Table.Cell>
+            <Table.Cell></Table.Cell>
+            <Table.Cell></Table.Cell>
+            <Table.Cell textAlign="end">
+              <Number
+                value={theSettings.reduce((p, item) => (p += item.navRatio), 0)}
+                isPercent
+                fontWeight="bold"
+                color="-"
+              />
+            </Table.Cell>
+            <Table.Cell></Table.Cell>
+            <Table.Cell></Table.Cell>
+            <Table.Cell></Table.Cell>
+            <Table.Cell></Table.Cell>
+            <Table.Cell></Table.Cell>
+            <Table.Cell>
+              <Link asChild>
+                <RouterLink to={SettingLink.toSettingNew(portfolioId)}>
+                  <IconButton aria-label="Add setting" size="xs" variant="ghost">
+                    <PlusSquareIcon />
+                  </IconButton>
+                </RouterLink>
+              </Link>
+            </Table.Cell>
+          </Table.Row>
+        </Table.Footer>
+      </Table.Root>
     </>
   );
 };

@@ -1,7 +1,8 @@
-import { Td, Tr, useColorModeValue } from "@chakra-ui/react";
+import { Table } from "@chakra-ui/react";
 import { FunctionComponent, default as React } from "react";
 import { formatNumber } from "../../../utils";
 import Number from "../../Number/Number";
+import { useColorModeValue } from "../../ui/color-mode";
 
 export interface TotalEntry {
   id: string;
@@ -23,34 +24,34 @@ const SubTotalRow: FunctionComponent<Props> = ({ subTotal, ..._rest }): React.Re
 
   return (
     <>
-      <Tr id={`${subTotal.id}`} bg={bg}>
-        <Td isNumeric fontWeight="semibold">
+      <Table.Row id={`${subTotal.id}`} bg={bg}>
+        <Table.Cell textAlign="end" fontWeight="semibold">
           {formatNumber(subTotal.units)}
-        </Td>
-        <Td></Td>
-        <Td></Td>
-        <Td fontWeight="semibold">{subTotal.expiration}</Td>
-        <Td></Td>
-        <Td>Base</Td>
-        <Td></Td>
-        <Td isNumeric fontWeight="semibold">
+        </Table.Cell>
+        <Table.Cell></Table.Cell>
+        <Table.Cell></Table.Cell>
+        <Table.Cell fontWeight="semibold">{subTotal.expiration}</Table.Cell>
+        <Table.Cell></Table.Cell>
+        <Table.Cell>Base</Table.Cell>
+        <Table.Cell></Table.Cell>
+        <Table.Cell textAlign="end" fontWeight="semibold">
           {formatNumber(subTotal.cost)}
-        </Td>
-        <Td isNumeric fontWeight="semibold">
+        </Table.Cell>
+        <Table.Cell textAlign="end" fontWeight="semibold">
           {formatNumber(subTotal.value)}
-        </Td>
-        <Td isNumeric fontWeight="semibold">
+        </Table.Cell>
+        <Table.Cell textAlign="end" fontWeight="semibold">
           <Number value={subTotal.pnl} />
-        </Td>
-        <Td></Td>
-        <Td isNumeric fontWeight="semibold">
+        </Table.Cell>
+        <Table.Cell></Table.Cell>
+        <Table.Cell textAlign="end" fontWeight="semibold">
           <Number value={subTotal.engaged} />
-        </Td>
-        <Td isNumeric fontWeight="semibold">
+        </Table.Cell>
+        <Table.Cell textAlign="end" fontWeight="semibold">
           <Number value={subTotal.risk} />
-        </Td>
-        <Td></Td>
-      </Tr>
+        </Table.Cell>
+        <Table.Cell></Table.Cell>
+      </Table.Row>
     </>
   );
 };

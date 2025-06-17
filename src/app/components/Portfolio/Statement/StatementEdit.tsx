@@ -1,7 +1,8 @@
-import { ArrowBackIcon, CheckIcon } from "@chakra-ui/icons";
-import { Flex, IconButton, Link, Select, Text, VStack } from "@chakra-ui/react";
+// eslint-disable-file @typescript-eslint/no-unsafe-call
+import { createListCollection, Flex, IconButton, Link, Portal, Select, Text, VStack } from "@chakra-ui/react";
 import { Field, Formik, FormikProps } from "formik";
 import { FunctionComponent, default as React } from "react";
+import { FaArrowLeft as ArrowBackIcon, FaCheck as CheckIcon } from "react-icons/fa6";
 import {
   Form as RouterForm,
   Link as RouterLink,
@@ -12,6 +13,7 @@ import {
 } from "react-router-dom";
 import { StatementTypes } from "../../../../models/statement.types";
 import { StatementEntry } from "../../../../routers/statements.types";
+import { SelectRoot, SelectValueText, toArray } from "../../ui/select";
 import { ContractLink } from "../Contract/links";
 
 type Props = Record<string, never>;
@@ -26,6 +28,11 @@ const StatementEdit: FunctionComponent<Props> = ({ ..._rest }): React.ReactNode 
   const theStatement = useLoaderData() as StatementEntry;
   const navigate = useNavigate();
   const submit = useSubmit();
+
+  // eslint-disable-next-line @typescript-eslint/no-unsafe-call
+  const statementTypes = createListCollection<{ label: string; value: string }>({
+    items: toArray(StatementTypes),
+  });
 
   return (
     <Formik
@@ -102,8 +109,10 @@ const StatementEdit: FunctionComponent<Props> = ({ ..._rest }): React.ReactNode 
                     Underlying:
                   </Text>
                   <Text w="200px" textAlign="right">
-                    <Link to={ContractLink.toItem(portfolioId, theStatement.underlying.id)} as={RouterLink}>
-                      {theStatement.underlying.symbol}
+                    <Link asChild>
+                      <RouterLink to={ContractLink.toItem(portfolioId, theStatement.underlying.id)}>
+                        {theStatement.underlying.symbol}
+                      </RouterLink>
                     </Link>
                   </Text>
                 </Flex>
@@ -112,15 +121,32 @@ const StatementEdit: FunctionComponent<Props> = ({ ..._rest }): React.ReactNode 
                 <Text w="90px" as="b" textAlign="right">
                   Type:
                 </Text>
-                {/* <Select w="200px" name="status" variant="outline" value={formik.values.status}> */}
-                <Field as={Select} name="statementType" w="200px" type="number" variant="outline">
-                  {Object.entries(StatementTypes).map((v, k) => (
-                    <option value={v[1]} key={`k${k}`}>
-                      {v[0]} ({v[1]})
-                    </option>
-                  ))}
+                <Field name="statementType" w="200px" type="number" variant="outline" as="span" display="inline-flex">
+                  <SelectRoot collection={statementTypes} w="200px">
+                    <Select.Control>
+                      <Select.Trigger>
+                        <SelectValueText placeholder={formik.values.statementType} />
+                      </Select.Trigger>
+                    </Select.Control>
+                    <Portal>
+                      <Select.Positioner>
+                        <Select.Content>
+                          {/* eslint-disable-next-line @typescript-eslint/no-unsafe-call */}
+                          {statementTypes.items.map((item) => (
+                            <Select.Item item={item} key={item.value}>
+                              <>
+                                <Select.ItemText>
+                                  {item.label} ({item.value})
+                                </Select.ItemText>
+                                <Select.ItemIndicator />
+                              </>
+                            </Select.Item>
+                          ))}
+                        </Select.Content>
+                      </Select.Positioner>
+                    </Portal>
+                  </SelectRoot>{" "}
                 </Field>
-                {/* </Select> */}
               </Flex>
               <Flex justifyContent="center" gap="2">
                 <Text w="90px" as="b" textAlign="right">
@@ -137,12 +163,12 @@ const StatementEdit: FunctionComponent<Props> = ({ ..._rest }): React.ReactNode 
                   <Text w="90px" as="b" textAlign="right">
                     Country:
                   </Text>
-                  <Field as={Select} name="country" w="200px" variant="outline">
-                    <option value="">---</option>
+                  <Field as={Select.Root} name="country" w="200px" variant="outline">
+                    <Select.Item value="">---</Select.Item>
                     {["US", "NL", "IE"].map((v) => (
-                      <option value={v} key={v}>
+                      <Select.Item value={v} key={v}>
                         {v}
-                      </option>
+                      </Select.Item>
                     ))}
                   </Field>
                 </Flex>
@@ -154,12 +180,12 @@ const StatementEdit: FunctionComponent<Props> = ({ ..._rest }): React.ReactNode 
                   <Text w="90px" as="b" textAlign="right">
                     Country:
                   </Text>
-                  <Field as={Select} name="country" w="200px" variant="outline">
-                    <option value="">---</option>
+                  <Field as={Select.Root} name="country" w="200px" variant="outline">
+                    <Select.Item value="">---</Select.Item>
                     {["US", "NL", "IE"].map((v) => (
-                      <option value={v} key={v}>
+                      <Select.Item value={v} key={v}>
                         {v}
-                      </option>
+                      </Select.Item>
                     ))}
                   </Field>
                 </Flex>
@@ -171,12 +197,12 @@ const StatementEdit: FunctionComponent<Props> = ({ ..._rest }): React.ReactNode 
                   <Text w="90px" as="b" textAlign="right">
                     Country:
                   </Text>
-                  <Field as={Select} name="country" w="200px" variant="outline">
-                    <option value="">---</option>
+                  <Field as={Select.Root} name="country" w="200px" variant="outline">
+                    <Select.Item value="">---</Select.Item>
                     {["US", "NL", "IE"].map((v) => (
-                      <option value={v} key={v}>
+                      <Select.Item value={v} key={v}>
                         {v}
-                      </option>
+                      </Select.Item>
                     ))}
                   </Field>
                 </Flex>
@@ -195,11 +221,14 @@ const StatementEdit: FunctionComponent<Props> = ({ ..._rest }): React.ReactNode 
               <Flex justifyContent="center" gap="2" mt="1">
                 <IconButton
                   aria-label="Back"
-                  icon={<ArrowBackIcon />}
                   variant="ghost"
                   onClick={async () => navigate(-1)} // eslint-disable-line @typescript-eslint/no-misused-promises
-                />
-                <IconButton aria-label="Save" icon={<CheckIcon />} variant="ghost" type="submit" />
+                >
+                  <ArrowBackIcon />
+                </IconButton>
+                <IconButton aria-label="Save" variant="ghost" type="submit">
+                  <CheckIcon />
+                </IconButton>
               </Flex>
             </VStack>
           </RouterForm>

@@ -15,12 +15,12 @@ const PositionsIndex: FunctionComponent<Props> = ({ ..._rest }): React.ReactNode
     <>
       <Box>
         <Spacer />
-        <Link to={"../all"} as={RouterLink}>
-          All
+        <Link asChild>
+          <RouterLink to={"../all"}>All</RouterLink>
         </Link>
         {" | "}
-        <Link to={"../options"} as={RouterLink}>
-          Options
+        <Link asChild>
+          <RouterLink to={"../options"}>Options</RouterLink>
         </Link>
         <Spacer />
       </Box>

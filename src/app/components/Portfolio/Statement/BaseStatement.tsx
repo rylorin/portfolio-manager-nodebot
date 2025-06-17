@@ -35,8 +35,10 @@ const BaseStatement = ({ portfolioId, statement }: Props): React.ReactNode => {
           Date:
         </Text>
         <Text w="200px" textAlign="right">
-          <Link to={StatementLink.toDate(portfolioId, new Date(statement.date))} as={RouterLink}>
-            {new Date(statement.date).toLocaleString()}
+          <Link asChild>
+            <RouterLink to={StatementLink.toDate(portfolioId, new Date(statement.date))}>
+              {new Date(statement.date).toLocaleString()}
+            </RouterLink>
           </Link>
         </Text>
       </Flex>
@@ -61,8 +63,8 @@ const BaseStatement = ({ portfolioId, statement }: Props): React.ReactNode => {
           Trade:
         </Text>
         <Text w="200px" textAlign="right">
-          <Link to={TradeLink.toItem(portfolioId, statement.trade_id)} as={RouterLink}>
-            {statement.trade_id}
+          <Link asChild>
+            <RouterLink to={TradeLink.toItem(portfolioId, statement.trade_id)}>{statement.trade_id}</RouterLink>
           </Link>
         </Text>
       </Flex>
@@ -80,8 +82,10 @@ const BaseStatement = ({ portfolioId, statement }: Props): React.ReactNode => {
             Underlying:
           </Text>
           <Text w="200px" textAlign="right">
-            <Link to={ContractLink.toItem(portfolioId, statement.underlying.id)} as={RouterLink}>
-              {statement.underlying.symbol}
+            <Link asChild>
+              <RouterLink to={ContractLink.toItem(portfolioId, statement.underlying.id)}>
+                {statement.underlying.symbol}
+              </RouterLink>
             </Link>
           </Text>
         </Flex>

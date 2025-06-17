@@ -1,7 +1,6 @@
-import { EditIcon } from "@chakra-ui/icons";
-import { Flex, Text, VStack } from "@chakra-ui/layout";
-import { IconButton } from "@chakra-ui/react";
+import { Flex, IconButton, Text, VStack } from "@chakra-ui/react";
 import React, { FunctionComponent } from "react";
+import { FaPencil as EditIcon } from "react-icons/fa6";
 import { Link as RouterLink, useLoaderData } from "react-router-dom";
 import { cashStrategy2String } from "../../../../models/types";
 import { obfuscate } from "../../../utils";
@@ -78,7 +77,11 @@ const PortfolioShow: FunctionComponent<PortfolioShowProps> = ({ ..._rest }): Rea
       )}
 
       <Flex justifyContent="center" gap="2" mt="1">
-        <IconButton aria-label="Edit" icon={<EditIcon />} variant="ghost" as={RouterLink} to="edit" />
+        <IconButton aria-label="Edit" variant="ghost" asChild>
+          <RouterLink to="edit">
+            <EditIcon />
+          </RouterLink>
+        </IconButton>
       </Flex>
 
       <SettingsTable content={thisPortfolio.settings} />

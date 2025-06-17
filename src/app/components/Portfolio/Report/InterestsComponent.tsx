@@ -47,8 +47,10 @@ const OneCountryTable = ({
             .filter((summary: InterestsSummary) => summary.country == country)
             .map((item) => (
               <HStack key={`${report.year}-${report.month}-${item.country}`}>
-                <Link to={StatementLink.toMonth(portfolioId, report.year, report.month)} as={RouterLink}>
-                  <Text width="120px">{formatMonth(report.year, report.month)}</Text>
+                <Link asChild>
+                  <RouterLink to={StatementLink.toMonth(portfolioId, report.year, report.month)}>
+                    <Text width="120px">{formatMonth(report.year, report.month)}</Text>
+                  </RouterLink>
                 </Link>
                 <Number value={item.grossCredit} width="120px" />
                 <Number value={item.netDebit} width="120px" />

@@ -1,6 +1,6 @@
-import { ArrowBackIcon, DeleteIcon, EditIcon } from "@chakra-ui/icons";
 import { Center, Flex, IconButton, Link, Text, VStack } from "@chakra-ui/react";
 import { FunctionComponent, default as React } from "react";
+import { FaArrowLeft as ArrowBackIcon, FaTrashCan as DeleteIcon, FaPencil as EditIcon } from "react-icons/fa6";
 import { Link as RouterLink, useLoaderData, useNavigate, useParams } from "react-router-dom";
 import { PositionEntry } from "../../../../routers/positions.types";
 import { formatNumber } from "../../../utils";
@@ -40,8 +40,10 @@ const PositionShow: FunctionComponent<PositionShowProps> = ({ ..._rest }): React
             Symbol:
           </Text>
           <Text w="200px" textAlign="right">
-            <Link to={ContractLink.toItem(portfolioId, thisPosition.contract.id)} as={RouterLink}>
-              {thisPosition.contract.symbol}
+            <Link asChild>
+              <RouterLink to={ContractLink.toItem(portfolioId, thisPosition.contract.id)}>
+                {thisPosition.contract.symbol}
+              </RouterLink>
             </Link>
           </Text>
         </Flex>
@@ -120,8 +122,10 @@ const PositionShow: FunctionComponent<PositionShowProps> = ({ ..._rest }): React
             Trade:
           </Text>
           <Text w="200px" textAlign="right">
-            <Link to={TradeLink.toItem(portfolioId, thisPosition.trade_unit_id)} as={RouterLink}>
-              {thisPosition.trade_unit_id}
+            <Link asChild>
+              <RouterLink to={TradeLink.toItem(portfolioId, thisPosition.trade_unit_id)}>
+                {thisPosition.trade_unit_id}
+              </RouterLink>
             </Link>
           </Text>
         </Flex>
@@ -129,12 +133,15 @@ const PositionShow: FunctionComponent<PositionShowProps> = ({ ..._rest }): React
         <Flex justifyContent="center" gap="2" mt="1">
           <IconButton
             aria-label="Back"
-            icon={<ArrowBackIcon />}
             variant="ghost"
             onClick={async () => navigate(-1)} // eslint-disable-line @typescript-eslint/no-misused-promises
-          />
+          >
+            <ArrowBackIcon />
+          </IconButton>
           <RouterLink to={`${PositionLink.editItem(portfolioId, thisPosition.id)}`}>
-            <IconButton aria-label="Edit position" icon={<EditIcon />} variant="ghost" type="submit" />
+            <IconButton aria-label="Edit position" variant="ghost" type="submit">
+              <EditIcon />
+            </IconButton>
           </RouterLink>
           <RouterLink to="delete_but_edit">
             <Center w="40px" h="40px">

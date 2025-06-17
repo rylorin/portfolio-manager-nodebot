@@ -1,4 +1,4 @@
-import { Box, Link, Spacer, Table, TableCaption, TableContainer, Tbody, Td, Tfoot, Thead, Tr } from "@chakra-ui/react";
+import { Box, Link, Spacer, Table, TableCaption } from "@chakra-ui/react";
 import { FunctionComponent, default as React } from "react";
 import { Link as RouterLink, useLoaderData, useParams } from "react-router-dom";
 import { OptionPositionEntry } from "../../../../routers/positions.types";
@@ -96,69 +96,73 @@ const OptionsPositions: FunctionComponent<PositionsIndexProps> = ({ ..._rest }):
     <>
       <Box>
         <Spacer />
-        <Link to={"../all"} as={RouterLink}>
-          All
+        <Link asChild>
+          <RouterLink to={"../all"}>All</RouterLink>
         </Link>
         {" | "}
-        <Link to={"../options"} as={RouterLink}>
-          Options
+        <Link asChild>
+          <RouterLink to={"../options"}>Options</RouterLink>
         </Link>
         <Spacer />
       </Box>
-      <TableContainer>
-        <Table variant="simple" size="sm" className="table-tiny">
-          <TableCaption>
-            Statements index ({thePositions.reduce((p, item) => ("option" in item ? p + 1 : p), 0 as number)})
-          </TableCaption>
-          <Thead>
-            <Tr>
-              <Td>Units</Td>
-              <Td>Symbol</Td>
-              <Td>Strike</Td>
-              <Td>Expiration</Td>
-              <Td>Type</Td>
-              <Td>Curr.</Td>
-              <Td>ITM</Td>
-              <Td>Cost</Td>
-              <Td>Value</Td>
-              <Td>PNL</Td>
-              <Td>APY</Td>
-              <Td>Engaged</Td>
-              <Td>At risk</Td>
-              <Td>Actions</Td>
-            </Tr>
-          </Thead>
-          <Tbody>
-            {positions.map((item) => (
-              <DataRow portfolioId={parseInt(portfolioId)} item={item} key={item.id} />
-            ))}
-          </Tbody>
-          <Tfoot>
-            <Tr fontWeight="bold">
-              <Td isNumeric>{formatNumber(thePositions.reduce((p, v) => p + Math.abs(v.quantity), 0))}</Td>
-              <Td></Td>
-              <Td></Td>
-              <Td>Total</Td>
-              <Td></Td>
-              <Td>Base</Td>
-              <Td></Td>
-              <Td isNumeric>{formatNumber(thePositions.reduce((p, v) => (p += (v.cost || 0) * v.baseRate), 0))}</Td>
-              <Td isNumeric>{formatNumber(thePositions.reduce((p, v) => (p += (v.value || 0) * v.baseRate), 0))}</Td>
-              <Td isNumeric>
-                <Number value={thePositions.reduce((p, v) => (p += (v.value - v.cost || 0) * v.baseRate), 0)} />
-              </Td>
-              <Td></Td>
-              <Td isNumeric>
-                <Number value={thePositions.reduce((p, v) => (p += v.engaged < 0 ? v.engaged * v.baseRate : 0), 0)} />
-              </Td>
-              <Td isNumeric>
-                <Number value={thePositions.reduce((p, v) => (p += v.risk < 0 ? v.risk * v.baseRate : 0), 0)} />
-              </Td>
-              <Td></Td>
-            </Tr>
-          </Tfoot>
-        </Table>
-      </TableContainer>
+      <Table.Root variant="line" size="sm" className="table-tiny">
+        <TableCaption>
+          Statements index ({thePositions.reduce((p, item) => ("option" in item ? p + 1 : p), 0 as number)})
+        </TableCaption>
+        <Table.Header>
+          <Table.Row>
+            <Table.Cell>Units</Table.Cell>
+            <Table.Cell>Symbol</Table.Cell>
+            <Table.Cell>Strike</Table.Cell>
+            <Table.Cell>Expiration</Table.Cell>
+            <Table.Cell>Type</Table.Cell>
+            <Table.Cell>Curr.</Table.Cell>
+            <Table.Cell>ITM</Table.Cell>
+            <Table.Cell>Cost</Table.Cell>
+            <Table.Cell>Value</Table.Cell>
+            <Table.Cell>PNL</Table.Cell>
+            <Table.Cell>APY</Table.Cell>
+            <Table.Cell>Engaged</Table.Cell>
+            <Table.Cell>At risk</Table.Cell>
+            <Table.Cell>Actions</Table.Cell>
+          </Table.Row>
+        </Table.Header>
+        <Table.Body>
+          {positions.map((item) => (
+            <DataRow portfolioId={parseInt(portfolioId)} item={item} key={item.id} />
+          ))}
+        </Table.Body>
+        <Table.Footer>
+          <Table.Row fontWeight="bold">
+            <Table.Cell textAlign="end">
+              {formatNumber(thePositions.reduce((p, v) => p + Math.abs(v.quantity), 0))}
+            </Table.Cell>
+            <Table.Cell></Table.Cell>
+            <Table.Cell></Table.Cell>
+            <Table.Cell>Total</Table.Cell>
+            <Table.Cell></Table.Cell>
+            <Table.Cell>Base</Table.Cell>
+            <Table.Cell></Table.Cell>
+            <Table.Cell textAlign="end">
+              {formatNumber(thePositions.reduce((p, v) => (p += (v.cost || 0) * v.baseRate), 0))}
+            </Table.Cell>
+            <Table.Cell textAlign="end">
+              {formatNumber(thePositions.reduce((p, v) => (p += (v.value || 0) * v.baseRate), 0))}
+            </Table.Cell>
+            <Table.Cell textAlign="end">
+              <Number value={thePositions.reduce((p, v) => (p += (v.value - v.cost || 0) * v.baseRate), 0)} />
+            </Table.Cell>
+            <Table.Cell></Table.Cell>
+            <Table.Cell textAlign="end">
+              <Number value={thePositions.reduce((p, v) => (p += v.engaged < 0 ? v.engaged * v.baseRate : 0), 0)} />
+            </Table.Cell>
+            <Table.Cell textAlign="end">
+              <Number value={thePositions.reduce((p, v) => (p += v.risk < 0 ? v.risk * v.baseRate : 0), 0)} />
+            </Table.Cell>
+            <Table.Cell></Table.Cell>
+          </Table.Row>
+        </Table.Footer>
+      </Table.Root>
     </>
   );
 };

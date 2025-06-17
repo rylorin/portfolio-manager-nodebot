@@ -13,16 +13,16 @@ const ReportLayout: FunctionComponent<ReportLayoutProps> = ({ children, ..._rest
   return (
     <VStack align="left">
       <Box>
-        <Link to={ReportLink.toYtd(portfolioId)} as={RouterLink}>
-          YTD
+        <Link asChild>
+          <RouterLink to={ReportLink.toYtd(portfolioId)}>YTD</RouterLink>
         </Link>
         {" | "}
-        <Link to={ReportLink.to12m(portfolioId)} as={RouterLink}>
-          12M
+        <Link asChild>
+          <RouterLink to={ReportLink.to12m(portfolioId)}>12M</RouterLink>
         </Link>
         {" | "}
-        <Link to={ReportLink.toAll(portfolioId)} as={RouterLink}>
-          All
+        <Link asChild>
+          <RouterLink to={ReportLink.toAll(portfolioId)}>All</RouterLink>
         </Link>
       </Box>
       {children}

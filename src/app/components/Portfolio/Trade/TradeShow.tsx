@@ -1,6 +1,6 @@
-import { ArrowBackIcon, DeleteIcon, EditIcon } from "@chakra-ui/icons";
 import { Flex, IconButton, Link, Text, VStack } from "@chakra-ui/react";
 import React, { FunctionComponent } from "react";
+import { FaArrowLeft as ArrowBackIcon, FaTrashCan as DeleteIcon, FaPencil as EditIcon } from "react-icons/fa6";
 import { Form, Link as RouterLink, useLoaderData, useNavigate, useParams } from "react-router-dom";
 import { TradeStatus } from "../../../../models/trade.types";
 import { PositionEntry } from "../../../../routers/positions.types";
@@ -36,8 +36,10 @@ const TradeShow: FunctionComponent<Props> = ({ ..._rest }): React.ReactNode => {
             Open date:
           </Text>
           <Text w="200px" textAlign="right">
-            <Link to={StatementLink.toDate(portfolioId, new Date(item.openingDate))} as={RouterLink}>
-              {new Date(item.openingDate).toLocaleString()}
+            <Link asChild>
+              <RouterLink to={StatementLink.toDate(portfolioId, new Date(item.openingDate))}>
+                {new Date(item.openingDate).toLocaleString()}
+              </RouterLink>
             </Link>
           </Text>
         </Flex>
@@ -67,8 +69,10 @@ const TradeShow: FunctionComponent<Props> = ({ ..._rest }): React.ReactNode => {
           </Text>
           <Text w="200px" textAlign="right">
             {item.closingDate && (
-              <Link to={StatementLink.toDate(portfolioId, new Date(item.closingDate))} as={RouterLink}>
-                {new Date(item.closingDate).toLocaleString()}
+              <Link asChild>
+                <RouterLink to={StatementLink.toDate(portfolioId, new Date(item.closingDate))}>
+                  {new Date(item.closingDate).toLocaleString()}
+                </RouterLink>
               </Link>
             )}
           </Text>
@@ -102,8 +106,10 @@ const TradeShow: FunctionComponent<Props> = ({ ..._rest }): React.ReactNode => {
             Symbol:
           </Text>
           <Text w="200px" textAlign="right">
-            <Link to={ContractLink.toItem(portfolioId, item.underlying.id)} as={RouterLink}>
-              {item.underlying.symbol}
+            <Link asChild>
+              <RouterLink to={ContractLink.toItem(portfolioId, item.underlying.id)}>
+                {item.underlying.symbol}
+              </RouterLink>
             </Link>
           </Text>
         </Flex>
@@ -165,21 +171,26 @@ const TradeShow: FunctionComponent<Props> = ({ ..._rest }): React.ReactNode => {
           </Text>
           <Text w="200px">{item.comment}</Text>
         </Flex>
-
         <Flex justifyContent="center" gap="2" mt="1">
           <IconButton
             aria-label="Back"
-            icon={<ArrowBackIcon />}
             variant="ghost"
             onClick={async () => navigate(-1)} // eslint-disable-line @typescript-eslint/no-misused-promises
-          />
-          <IconButton aria-label="Edit" icon={<EditIcon />} variant="ghost" as={RouterLink} to="edit" />
+          >
+            <ArrowBackIcon />
+          </IconButton>
+          <IconButton aria-label="Edit" variant="ghost" asChild>
+            <RouterLink to={`edit`}>
+              <EditIcon />
+            </RouterLink>
+          </IconButton>
           <Form method="post" action="delete" className="inline">
-            <IconButton aria-label="Delete" icon={<DeleteIcon />} variant="ghost" type="submit" />
+            <IconButton aria-label="Delete" variant="ghost" type="submit">
+              <DeleteIcon />
+            </IconButton>
           </Form>
         </Flex>
-
-        {item.positions?.length && <PositionsTable content={item.positions} currency={item.currency} />}
+        {item.positions?.length ? <PositionsTable content={item.positions} currency={item.currency} /> : null}
         {item.statements?.length && <StatementsTable content={item.statements} currency={item.currency} />}
         {item.virtuals?.length && (
           <PositionsTable

@@ -1,9 +1,9 @@
-import { Box, Flex, Text } from "@chakra-ui/layout";
+import { Text, VStack } from "@chakra-ui/react";
 import { FunctionComponent, default as React, useEffect, useState } from "react";
 import { useParams } from "react-router-dom";
 import { Portfolio as PortfolioModel } from "../../../../models/portfolio.model";
 import { obfuscate } from "../../../utils";
-import SideBar from "../../NavBar/SideBar";
+import SideBar from "./SideBar";
 import { links } from "./links";
 
 interface PortfolioLayoutProps {
@@ -22,15 +22,12 @@ const PortfolioLayout: FunctionComponent<PortfolioLayoutProps> = ({ children, ..
   }, []);
 
   return (
-    <Flex wrap="wrap" mt="1" justify="center">
-      <Box maxW="container.lg" flexBasis="100%" display="inline">
-        <Text as="h1" textAlign="center">
-          Portfolio {thisPortfolio.name} ({obfuscate(thisPortfolio.account)}-{thisPortfolio.baseCurrency})
-        </Text>
-        {children}
-      </Box>
-      <SideBar links={links(portfolioId)} />
-    </Flex>
+    <VStack>
+      <Text as="h1" textAlign="center">
+        Portfolio {thisPortfolio.name} ({obfuscate(thisPortfolio.account)}-{thisPortfolio.baseCurrency})
+      </Text>
+      <SideBar links={links(portfolioId)}>{children}</SideBar>
+    </VStack>
   );
 };
 

@@ -1,8 +1,9 @@
-import { Badge, Box, Text, Tooltip } from "@chakra-ui/react";
+import { Badge, Box, Text } from "@chakra-ui/react";
 import React from "react";
 import { TradeStatus } from "../../../../models/trade.types";
 import { TradeEntry } from "../../../../routers/trades.types";
 import { formatNumber } from "../../../utils";
+import Tooltip from "../../ui/tooltip";
 import { tradeStatus2String } from "./utils";
 
 interface Props {
@@ -35,14 +36,14 @@ const StatusBox = ({ item }: Props): React.ReactNode => {
       </Text>
       <Box color="gray.500" fontWeight="semibold" letterSpacing="wide" fontSize="xs" textTransform="uppercase" ml={1}>
         &bull;{" "}
-        <Tooltip label={new Date(item.openingDate).toLocaleString()} hasArrow={true}>
+        <Tooltip content={new Date(item.openingDate).toLocaleString()} hasArrow={true}>
           {new Date(item.openingDate).toLocaleDateString()}
         </Tooltip>
         {item.closingDate && (
           <>
             {" "}
             &bull;{" "}
-            <Tooltip label={new Date(item.closingDate).toLocaleString()} hasArrow={true}>
+            <Tooltip content={new Date(item.closingDate).toLocaleString()} hasArrow={true}>
               {new Date(item.closingDate).toLocaleDateString()}
             </Tooltip>
           </>

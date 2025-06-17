@@ -1,32 +1,21 @@
-import {
-  ArrowUpIcon,
-  DeleteIcon,
-  EditIcon,
-  PlusSquareIcon,
-  QuestionOutlineIcon,
-  SearchIcon,
-  SmallCloseIcon,
-} from "@chakra-ui/icons";
-import {
-  IconButton,
-  Link,
-  Table,
-  TableCaption,
-  TableContainer,
-  Tbody,
-  Td,
-  Tfoot,
-  Thead,
-  Tooltip,
-  Tr,
-} from "@chakra-ui/react";
+import { IconButton, Link, Table, TableCaption } from "@chakra-ui/react";
 import { FunctionComponent, default as React } from "react";
+import { FaSearch as SearchIcon } from "react-icons/fa";
+import { FaTrashCan as DeleteIcon, FaPencil as EditIcon } from "react-icons/fa6";
+import {
+  RiArrowUpCircleLine as ArrowUpIcon,
+  RiAddCircleLine as PlusSquareIcon,
+  RiQuestionLine as QuestionOutlineIcon,
+  RiCloseCircleLine as SmallCloseIcon,
+} from "react-icons/ri";
 import { Form, Link as RouterLink, useLoaderData, useParams } from "react-router-dom";
 import { StatementEntry } from "../../../../routers/statements.types";
 import Number from "../../Number/Number";
+import { Tooltip } from "../../ui/tooltip";
 import { ContractLink } from "../Contract/links";
 import { TradeLink } from "../Trade/links";
 import { StatementLink } from "./links";
+import StatementsExport from "./StatementsExport";
 
 interface Props {
   content?: StatementEntry[];
@@ -71,153 +60,136 @@ const StatementsTable: FunctionComponent<Props> = ({ content, currency, title, .
 
   return (
     <>
-      <TableContainer>
-        <Table variant="simple" size="sm" className="table-tiny">
-          <TableCaption>
-            {title || "Statements index"} ({theStatements.length})
-          </TableCaption>
-          <Thead>
-            <Tr>
-              <Td>Date</Td>
-              <Td>Curr.</Td>
-              <Td>Amount</Td>
-              <Td>PnL</Td>
-              <Td>Fees</Td>
-              <Td>Under.</Td>
-              <Td>Trade</Td>
-              <Td>Description</Td>
-              <Td>Actions</Td>
-            </Tr>
-          </Thead>
-          <Tbody>
-            {theStatements
-              .sort((a: StatementEntry, b: StatementEntry) => a.date - b.date)
-              .map((item) => (
-                <Tr key={item.id}>
-                  <Td>
-                    <Tooltip label={new Date(item.date).toLocaleTimeString()} placement="auto" hasArrow={true}>
-                      <Link to={StatementLink.toItem(portfolioId, item.id)} as={RouterLink}>
+      <Table.Root variant="line" size="sm" className="table-tiny">
+        <TableCaption>
+          {title || "Statements index"} ({theStatements.length})
+        </TableCaption>
+        <Table.Header>
+          <Table.Row>
+            <Table.Cell>Date</Table.Cell>
+            <Table.Cell>Curr.</Table.Cell>
+            <Table.Cell>Amount</Table.Cell>
+            <Table.Cell>PnL</Table.Cell>
+            <Table.Cell>Fees</Table.Cell>
+            <Table.Cell>Under.</Table.Cell>
+            <Table.Cell>Trade</Table.Cell>
+            <Table.Cell>Description</Table.Cell>
+            <Table.Cell>Actions</Table.Cell>
+          </Table.Row>
+        </Table.Header>
+        <Table.Body>
+          {theStatements
+            .sort((a: StatementEntry, b: StatementEntry) => a.date - b.date)
+            .map((item) => (
+              <Table.Row key={item.id}>
+                <Table.Cell>
+                  <Tooltip content={new Date(item.date).toLocaleTimeString()} placement="auto" hasArrow={true}>
+                    <Link asChild>
+                      <RouterLink to={StatementLink.toItem(portfolioId, item.id)}>
                         {new Date(item.date).toLocaleDateString()}
-                      </Link>
-                    </Tooltip>
-                  </Td>
-                  <Td>
-                    <Tooltip label={item.fxRateToBase} placement="auto" hasArrow={true}>
-                      {item.currency}
-                    </Tooltip>
-                  </Td>
-                  <Td isNumeric>
-                    <Number value={item.amount} decimals={2} />
-                  </Td>
-                  <Td isNumeric>
-                    <Number value={"pnl" in item ? item.pnl : 0} decimals={2} />
-                  </Td>
-                  <Td isNumeric>{"fees" in item && <Number value={item.fees} decimals={2} />}</Td>
-                  <Td>
-                    {"underlying" in item && item.underlying && (
-                      <Link to={ContractLink.toItem(portfolioId, item.underlying.id)} as={RouterLink}>
+                      </RouterLink>
+                    </Link>
+                  </Tooltip>
+                </Table.Cell>
+                <Table.Cell>
+                  <Tooltip content={item.fxRateToBase} placement="auto" hasArrow={true}>
+                    {item.currency}
+                  </Tooltip>
+                </Table.Cell>
+                <Table.Cell textAlign="end">
+                  <Number value={item.amount} decimals={2} />
+                </Table.Cell>
+                <Table.Cell textAlign="end">
+                  <Number value={"pnl" in item ? item.pnl : 0} decimals={2} />
+                </Table.Cell>
+                <Table.Cell textAlign="end">{"fees" in item && <Number value={item.fees} decimals={2} />}</Table.Cell>
+                <Table.Cell>
+                  {"underlying" in item && item.underlying && (
+                    <Link asChild>
+                      <RouterLink to={ContractLink.toItem(portfolioId, item.underlying.id)}>
                         {item.underlying.symbol}
+                      </RouterLink>
+                    </Link>
+                  )}
+                </Table.Cell>
+                <Table.Cell>
+                  {item.trade_id && (
+                    <>
+                      <Link asChild>
+                        <RouterLink to={TradeLink.toItem(portfolioId, item.trade_id)}>{item.trade_id}</RouterLink>
                       </Link>
-                    )}
-                  </Td>
-                  <Td>
-                    {item.trade_id && (
-                      <>
-                        <Link to={TradeLink.toItem(portfolioId, item.trade_id)} as={RouterLink}>
-                          {item.trade_id}
-                        </Link>
-                        <Form method="post" action={`StatementUnlinkTrade/${item.id}`} className="inline">
-                          <IconButton
-                            aria-label="Remove trade association"
-                            icon={<SmallCloseIcon />}
-                            size="xs"
-                            variant="ghost"
-                            type="submit"
-                          />
+                      <Form method="post" action={`StatementUnlinkTrade/${item.id}`} className="inline">
+                        <IconButton aria-label="Remove trade association" size="xs" variant="ghost" type="submit">
+                          <SmallCloseIcon />
+                        </IconButton>
+                      </Form>
+                    </>
+                  )}
+                  {"underlying" in item && !item.trade_id && (
+                    <>
+                      <Form method="post" action={`StatementCreateTrade/${item.id}`} className="inline">
+                        <IconButton aria-label="New trade" size="xs" variant="ghost" type="submit">
+                          <PlusSquareIcon />
+                        </IconButton>
+                      </Form>
+                      <Form method="post" action={`StatementGuessTrade/${item.id}`} className="inline">
+                        <IconButton aria-label="Guess trade" size="xs" variant="ghost" type="submit">
+                          <QuestionOutlineIcon />
+                        </IconButton>
+                      </Form>
+                      {previousId && (
+                        <Form method="post" action={`StatementAddToTrade/${item.id}/${previousId}`} className="inline">
+                          <IconButton aria-label="Above trade" size="xs" variant="ghost" type="submit">
+                            <ArrowUpIcon />
+                          </IconButton>
                         </Form>
-                      </>
-                    )}
-                    {"underlying" in item && !item.trade_id && (
-                      <>
-                        <Form method="post" action={`StatementCreateTrade/${item.id}`} className="inline">
-                          <IconButton
-                            aria-label="New trade"
-                            icon={<PlusSquareIcon />}
-                            size="xs"
-                            variant="ghost"
-                            type="submit"
-                          />
-                        </Form>
-                        <Form method="post" action={`StatementGuessTrade/${item.id}`} className="inline">
-                          <IconButton
-                            aria-label="Guess trade"
-                            icon={<QuestionOutlineIcon />}
-                            size="xs"
-                            variant="ghost"
-                            type="submit"
-                          />
-                        </Form>
-                        {previousId && (
-                          <Form
-                            method="post"
-                            action={`StatementAddToTrade/${item.id}/${previousId}`}
-                            className="inline"
-                          >
-                            <IconButton
-                              aria-label="Above trade"
-                              icon={<ArrowUpIcon />}
-                              size="xs"
-                              variant="ghost"
-                              type="submit"
-                            />
-                          </Form>
-                        )}
-                      </>
-                    )}
-                  </Td>
-                  <Td>{item.description}</Td>
-                  <Td>
-                    <Link to={StatementLink.toItem(portfolioId, item.id)} as={RouterLink}>
-                      <IconButton aria-label="Show detail" icon={<SearchIcon />} size="xs" variant="ghost" />
-                    </Link>
-                    <Link to={StatementLink.edit(portfolioId, item.id)} as={RouterLink}>
-                      <IconButton aria-label="Edit details" icon={<EditIcon />} size="xs" variant="ghost" />
-                    </Link>
-                    <Form method="post" action={`DeleteStatement/${item.id}`} className="inline">
-                      <IconButton
-                        aria-label="Delete statement"
-                        icon={<DeleteIcon />}
-                        size="xs"
-                        variant="ghost"
-                        type="submit"
-                      />
-                    </Form>
-                  </Td>
-                  {savePrevious(item)}
-                </Tr>
-              ))}
-          </Tbody>
-          <Tfoot>
-            <Tr fontWeight="bold">
-              <Td>Total</Td>
-              <Td>{currencyMismatch ? "Base" : currency}</Td>
-              <Td isNumeric>
-                <Number value={currencyMismatch ? totalAmount : totalAmountInCurrency} />
-              </Td>
-              <Td isNumeric>
-                <Number value={currencyMismatch ? totalPnL : totalPnLInCurrency} />
-              </Td>
-              <Td isNumeric>
-                <Number value={currencyMismatch ? totalFees : totalFeesInCurrency} />
-              </Td>
-              <Td></Td>
-              <Td></Td>
-              <Td></Td>
-              <Td></Td>
-            </Tr>
-          </Tfoot>
-        </Table>
-      </TableContainer>
+                      )}
+                    </>
+                  )}
+                </Table.Cell>
+                <Table.Cell>{item.description}</Table.Cell>
+                <Table.Cell>
+                  <RouterLink to={StatementLink.toItem(portfolioId, item.id)}>
+                    <IconButton aria-label="Show detail" size="xs" variant="ghost">
+                      <SearchIcon />
+                    </IconButton>
+                  </RouterLink>
+                  <RouterLink to={StatementLink.edit(portfolioId, item.id)}>
+                    <IconButton aria-label="Edit details" size="xs" variant="ghost">
+                      <EditIcon />
+                    </IconButton>
+                  </RouterLink>
+                  <Form method="post" action={`DeleteStatement/${item.id}`} className="inline">
+                    <IconButton aria-label="Delete statement" size="xs" variant="ghost" type="submit">
+                      <DeleteIcon />
+                    </IconButton>
+                  </Form>
+                </Table.Cell>
+                {savePrevious(item)}
+              </Table.Row>
+            ))}
+        </Table.Body>
+        <Table.Footer>
+          <Table.Row fontWeight="bold">
+            <Table.Cell>Total</Table.Cell>
+            <Table.Cell>{currencyMismatch ? "Base" : currency}</Table.Cell>
+            <Table.Cell textAlign="end">
+              <Number value={currencyMismatch ? totalAmount : totalAmountInCurrency} />
+            </Table.Cell>
+            <Table.Cell textAlign="end">
+              <Number value={currencyMismatch ? totalPnL : totalPnLInCurrency} />
+            </Table.Cell>
+            <Table.Cell textAlign="end">
+              <Number value={currencyMismatch ? totalFees : totalFeesInCurrency} />
+            </Table.Cell>
+            <Table.Cell></Table.Cell>
+            <Table.Cell></Table.Cell>
+            <Table.Cell></Table.Cell>
+            <Table.Cell></Table.Cell>
+          </Table.Row>
+        </Table.Footer>
+      </Table.Root>
+      <StatementsExport content={content} />
     </>
   );
 };

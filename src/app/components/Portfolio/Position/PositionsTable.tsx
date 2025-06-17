@@ -1,6 +1,12 @@
-import { ArrowUpIcon, DeleteIcon, EditIcon, QuestionOutlineIcon, SearchIcon, SmallCloseIcon } from "@chakra-ui/icons";
-import { IconButton, Link, Table, TableCaption, TableContainer, Tbody, Td, Tfoot, Thead, Tr } from "@chakra-ui/react";
+import { IconButton, Link, Table, TableCaption } from "@chakra-ui/react";
 import { FunctionComponent, default as React } from "react";
+import { FaSearch as SearchIcon } from "react-icons/fa";
+import { FaTrashCan as DeleteIcon, FaPencil as EditIcon } from "react-icons/fa6";
+import {
+  RiArrowUpCircleLine as ArrowUpIcon,
+  RiQuestionLine as QuestionOutlineIcon,
+  RiCloseCircleLine as SmallCloseIcon,
+} from "react-icons/ri";
 import { Form, Link as RouterLink, useLoaderData, useParams } from "react-router-dom";
 import { ContractType } from "../../../../models/contract.types";
 import { OptionPositionEntry, PositionEntry } from "../../../../routers/positions.types";
@@ -90,156 +96,144 @@ const PositionsTable: FunctionComponent<Props> = ({
 
   return (
     <>
-      <TableContainer>
-        <Table variant="simple" size="sm" className="table-tiny">
-          <TableCaption>
-            {title} ({thePositions.length})
-          </TableCaption>
-          <Thead>
-            <Tr>
-              <Td>Units</Td>
-              <Td>Symbol</Td>
-              <Td>Name</Td>
-              <Td>Trade</Td>
-              <Td>Curr.</Td>
-              <Td>Price</Td>
-              <Td>Value</Td>
-              <Td>PRU</Td>
-              <Td>Cost</Td>
-              <Td>PNL</Td>
-              <Td>PNL%</Td>
-              <Td>Actions</Td>
-            </Tr>
-          </Thead>
-          <Tbody>
-            {thePositions.sort(comparePositions).map((item) => (
-              <Tr key={item.id}>
-                <Td isNumeric>{formatNumber(item.quantity)}</Td>
-                <Td>
-                  <Link to={ContractLink.toItem(portfolioId, getUnderlyingId(item))} as={RouterLink}>
+      <Table.Root variant="line" size="sm" className="table-tiny">
+        <TableCaption>
+          {title} ({thePositions.length})
+        </TableCaption>
+        <Table.Header>
+          <Table.Row>
+            <Table.Cell>Units</Table.Cell>
+            <Table.Cell>Symbol</Table.Cell>
+            <Table.Cell>Name</Table.Cell>
+            <Table.Cell>Trade</Table.Cell>
+            <Table.Cell>Curr.</Table.Cell>
+            <Table.Cell>Price</Table.Cell>
+            <Table.Cell>Value</Table.Cell>
+            <Table.Cell>PRU</Table.Cell>
+            <Table.Cell>Cost</Table.Cell>
+            <Table.Cell>PNL</Table.Cell>
+            <Table.Cell>PNL%</Table.Cell>
+            <Table.Cell>Actions</Table.Cell>
+          </Table.Row>
+        </Table.Header>
+        <Table.Body>
+          {thePositions.sort(comparePositions).map((item) => (
+            <Table.Row key={item.id}>
+              <Table.Cell textAlign="end">{formatNumber(item.quantity)}</Table.Cell>
+              <Table.Cell>
+                <Link asChild>
+                  <RouterLink to={ContractLink.toItem(portfolioId, getUnderlyingId(item))}>
                     {item.contract.symbol}
-                  </Link>
-                </Td>
-                <Td>{item.contract.name}</Td>
-                <Td isNumeric>
-                  {item.trade_unit_id && (
-                    <>
-                      <Link to={`/portfolio/${portfolioId}/trades/id/${item.trade_unit_id}`} as={RouterLink}>
+                  </RouterLink>
+                </Link>
+              </Table.Cell>
+              <Table.Cell>{item.contract.name}</Table.Cell>
+              <Table.Cell textAlign="end">
+                {item.trade_unit_id && (
+                  <>
+                    <Link asChild>
+                      <RouterLink to={`/portfolio/${portfolioId}/trades/id/${item.trade_unit_id}`}>
                         {item.trade_unit_id}
-                      </Link>
-                      <Form method="post" action={`${item.id}/PositionUnlinkTrade`} className="inline">
-                        <IconButton
-                          aria-label="Remove trade association"
-                          icon={<SmallCloseIcon />}
-                          size="xs"
-                          variant="ghost"
-                          type="submit"
-                        />
+                      </RouterLink>
+                    </Link>
+                    <Form method="post" action={`${item.id}/PositionUnlinkTrade`} className="inline">
+                      <IconButton aria-label="Remove trade association" size="xs" variant="ghost" type="submit">
+                        <SmallCloseIcon />
+                      </IconButton>
+                    </Form>
+                  </>
+                )}
+                {!item.trade_unit_id && (
+                  <>
+                    <Form method="post" action={`PositionGuessTrade/${item.id}`} className="inline">
+                      <IconButton aria-label="Guess trade" size="xs" variant="ghost" type="submit">
+                        <QuestionOutlineIcon />
+                      </IconButton>
+                    </Form>
+                    {previousId && (
+                      <Form method="post" action={`PositionAddToTrade/${item.id}/${previousId}`} className="inline">
+                        <IconButton aria-label="Copy above trade" size="xs" variant="ghost" type="submit">
+                          <ArrowUpIcon />
+                        </IconButton>
                       </Form>
-                    </>
-                  )}
-                  {!item.trade_unit_id && (
-                    <>
-                      <Form method="post" action={`PositionGuessTrade/${item.id}`} className="inline">
-                        <IconButton
-                          aria-label="Guess trade"
-                          icon={<QuestionOutlineIcon />}
-                          size="xs"
-                          variant="ghost"
-                          type="submit"
-                        />
-                      </Form>
-                      {previousId && (
-                        <Form method="post" action={`PositionAddToTrade/${item.id}/${previousId}`} className="inline">
-                          <IconButton
-                            aria-label="Copy above trade"
-                            icon={<ArrowUpIcon />}
-                            size="xs"
-                            variant="ghost"
-                            type="submit"
-                          />
-                        </Form>
-                      )}
-                    </>
-                  )}
-                </Td>
-                <Td>{item.contract.currency}</Td>
-                <Td isNumeric>{formatNumber(item.price, 2)}</Td>
-                <Td isNumeric>{formatNumber(item.value)}</Td>
-                <Td isNumeric>{formatNumber(item.pru, 2)}</Td>
-                <Td isNumeric>{formatNumber(item.cost)}</Td>
-                <Td isNumeric>
-                  <Number value={item.pnl} />
-                </Td>
-                <Td isNumeric>
-                  <Number value={(item.pnl / item.cost) * Math.sign(item.quantity)} decimals={1} isPercent />
-                </Td>
-                <Td>
-                  <RouterLink to={`${PositionLink.toItem(portfolioId, item.id)}`}>
-                    <IconButton aria-label="Show position" icon={<SearchIcon />} size="xs" variant="ghost" />
-                  </RouterLink>
-                  <RouterLink to={`${PositionLink.editItem(portfolioId, item.id)}`}>
-                    <IconButton aria-label="Edit position" icon={<EditIcon />} size="xs" variant="ghost" />
-                  </RouterLink>
-                  <Form method="post" action={`DeletePosition/${item.id}`} className="inline">
-                    <IconButton
-                      aria-label="Delete position"
-                      icon={<DeleteIcon />}
-                      size="xs"
-                      variant="ghost"
-                      type="submit"
-                    />
-                  </Form>
-                  {savePrevious(item.trade_unit_id)}
-                </Td>
-              </Tr>
-            ))}
-          </Tbody>
-          <Tfoot>
-            <Tr fontWeight="bold">
-              <Td isNumeric>
-                <Number value={thePositions.reduce((p, v) => (p += v.quantity), 0)} />
-              </Td>
-              <Td>Total</Td>
-              <Td></Td>
-              <Td></Td>
-              <Td>{currency ?? "Base"}</Td>
-              <Td></Td>
-              <Td isNumeric>
-                <Number
-                  value={thePositions.reduce(
-                    (p, v) =>
-                      (p += (v.value || 0) * (currency ? (currency == v.contract.currency ? 1 : 0) : v.baseRate)),
-                    0,
-                  )}
-                />
-              </Td>
-              <Td></Td>
-              <Td isNumeric>
-                <Number
-                  value={thePositions.reduce(
-                    (p, v) =>
-                      (p += (v.cost || 0) * (currency ? (currency == v.contract.currency ? 1 : 0) : v.baseRate)),
-                    0,
-                  )}
-                />
-              </Td>
-              <Td isNumeric>
-                <Number
-                  value={thePositions.reduce(
-                    (p, v) =>
-                      (p +=
-                        (v.value - v.cost || 0) * (currency ? (currency == v.contract.currency ? 1 : 0) : v.baseRate)),
-                    0,
-                  )}
-                />
-              </Td>
-              <Td></Td>
-              <Td></Td>
-            </Tr>
-          </Tfoot>
-        </Table>
-      </TableContainer>
+                    )}
+                  </>
+                )}
+              </Table.Cell>
+              <Table.Cell>{item.contract.currency}</Table.Cell>
+              <Table.Cell textAlign="end">{formatNumber(item.price, 2)}</Table.Cell>
+              <Table.Cell textAlign="end">{formatNumber(item.value)}</Table.Cell>
+              <Table.Cell textAlign="end">{formatNumber(item.pru, 2)}</Table.Cell>
+              <Table.Cell textAlign="end">{formatNumber(item.cost)}</Table.Cell>
+              <Table.Cell textAlign="end">
+                <Number value={item.pnl} />
+              </Table.Cell>
+              <Table.Cell textAlign="end">
+                <Number value={(item.pnl / item.cost) * Math.sign(item.quantity)} decimals={1} isPercent />
+              </Table.Cell>
+              <Table.Cell>
+                <RouterLink to={`${PositionLink.toItem(portfolioId, item.id)}`}>
+                  <IconButton aria-label="Show position" size="xs" variant="ghost">
+                    <SearchIcon />
+                  </IconButton>
+                </RouterLink>
+                <RouterLink to={`${PositionLink.editItem(portfolioId, item.id)}`}>
+                  <IconButton aria-label="Edit position" size="xs" variant="ghost">
+                    <EditIcon />
+                  </IconButton>
+                </RouterLink>
+                <Form method="post" action={`DeletePosition/${item.id}`} className="inline">
+                  <IconButton aria-label="Delete position" size="xs" variant="ghost" type="submit">
+                    <DeleteIcon />
+                  </IconButton>
+                </Form>
+                {savePrevious(item.trade_unit_id)}
+              </Table.Cell>
+            </Table.Row>
+          ))}
+        </Table.Body>
+        <Table.Footer>
+          <Table.Row fontWeight="bold">
+            <Table.Cell textAlign="end">
+              <Number value={thePositions.reduce((p, v) => (p += v.quantity), 0)} />
+            </Table.Cell>
+            <Table.Cell>Total</Table.Cell>
+            <Table.Cell></Table.Cell>
+            <Table.Cell></Table.Cell>
+            <Table.Cell>{currency ?? "Base"}</Table.Cell>
+            <Table.Cell></Table.Cell>
+            <Table.Cell textAlign="end">
+              <Number
+                value={thePositions.reduce(
+                  (p, v) => (p += (v.value || 0) * (currency ? (currency == v.contract.currency ? 1 : 0) : v.baseRate)),
+                  0,
+                )}
+              />
+            </Table.Cell>
+            <Table.Cell></Table.Cell>
+            <Table.Cell textAlign="end">
+              <Number
+                value={thePositions.reduce(
+                  (p, v) => (p += (v.cost || 0) * (currency ? (currency == v.contract.currency ? 1 : 0) : v.baseRate)),
+                  0,
+                )}
+              />
+            </Table.Cell>
+            <Table.Cell textAlign="end">
+              <Number
+                value={thePositions.reduce(
+                  (p, v) =>
+                    (p +=
+                      (v.value - v.cost || 0) * (currency ? (currency == v.contract.currency ? 1 : 0) : v.baseRate)),
+                  0,
+                )}
+              />
+            </Table.Cell>
+            <Table.Cell></Table.Cell>
+            <Table.Cell></Table.Cell>
+          </Table.Row>
+        </Table.Footer>
+      </Table.Root>
     </>
   );
 };

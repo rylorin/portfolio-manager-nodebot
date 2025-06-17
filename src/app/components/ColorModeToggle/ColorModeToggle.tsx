@@ -1,7 +1,7 @@
-import { MoonIcon, SunIcon } from "@chakra-ui/icons";
-import { Box, IconButton, ResponsiveValue, useColorMode, useColorModeValue } from "@chakra-ui/react";
-import * as CSS from "csstype";
-import React, { FunctionComponent } from "react";
+import { Box, IconButton, SystemStyleObject } from "@chakra-ui/react";
+import { type FunctionComponent } from "react";
+import { LuMoon as MoonIcon, LuSun as SunIcon } from "react-icons/lu";
+import { useColorMode, useColorModeValue } from "../ui/color-mode";
 
 interface ColorModeToggleProps {
   /**
@@ -27,9 +27,9 @@ interface ColorModeToggleProps {
   /**
    * Display property of the component
    */
-  display?: ResponsiveValue<CSS.Property.Display>;
+  display?: SystemStyleObject["display"];
   /**
-   * Hide below given dimenion
+   * Hide below given dimension
    */
   hideBelow?: string;
   /**
@@ -38,10 +38,10 @@ interface ColorModeToggleProps {
   hideFrom?: string;
 }
 
-const ColorModeToggle: FunctionComponent<ColorModeToggleProps> = (props): React.ReactNode => {
+const ColorModeToggle: FunctionComponent<ColorModeToggleProps> = (props) => {
   const { toggleColorMode } = useColorMode();
-  const displayLightModeToggle = useColorModeValue("none", "display");
-  const displayDarkModeToggle = useColorModeValue("display", "none");
+  const displayLightModeToggle = useColorModeValue("none", "block");
+  const displayDarkModeToggle = useColorModeValue("block", "none");
 
   return (
     <Box {...props}>
@@ -49,13 +49,17 @@ const ColorModeToggle: FunctionComponent<ColorModeToggleProps> = (props): React.
         aria-label="Dark mode"
         display={displayDarkModeToggle}
         onClick={toggleColorMode}
-        icon={<MoonIcon />}
+        children={<MoonIcon />}
+        variant="ghost"
+        size="sm"
       />
       <IconButton
         aria-label="Light mode"
         display={displayLightModeToggle}
         onClick={toggleColorMode}
-        icon={<SunIcon />}
+        children={<SunIcon />}
+        variant="ghost"
+        size="sm"
       />
     </Box>
   );

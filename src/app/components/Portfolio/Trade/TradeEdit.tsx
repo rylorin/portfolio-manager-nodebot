@@ -1,29 +1,45 @@
-import { ArrowBackIcon, CheckIcon } from "@chakra-ui/icons";
-import { Flex, IconButton, Select, Text, Textarea, VStack } from "@chakra-ui/react";
+import { createListCollection, Flex, IconButton, Select, Text, Textarea, VStack } from "@chakra-ui/react";
 import { Field, Formik, FormikProps } from "formik";
 import React, { FunctionComponent } from "react";
+import { FaArrowLeft as ArrowBackIcon, FaCheck as CheckIcon } from "react-icons/fa6";
 import { Form, useLoaderData, useNavigate, useSubmit } from "react-router-dom";
 import { TradeStatus, TradeStrategy } from "../../../../models/trade.types";
 import { TradeEntry } from "../../../../routers/";
 import { formatNumber } from "../../../utils";
 import Number from "../../Number/Number";
+import { SelectContent, SelectRoot, SelectValueText, toArray } from "../../ui/select";
+import { tradeStatus2String, tradeStrategy2String } from "./utils";
 
 type Props = Record<string, never>;
+type ItemType = { label: string; value: string }; // eslint-disable-line @typescript-eslint/consistent-type-definitions
 
 const TradeEdit: FunctionComponent<Props> = ({ ..._rest }): React.ReactNode => {
   const thisTrade = useLoaderData() as TradeEntry;
   const navigate = useNavigate();
   const submit = useSubmit();
 
+  // eslint-disable-next-line @typescript-eslint/no-unsafe-call
+  const tradeStatus = createListCollection<ItemType>({
+    items: toArray<ItemType>(TradeStatus),
+    itemToString: (item: ItemType): string => item.label,
+    itemToValue: (item: ItemType): string => item.value,
+  });
+  console.log("Trade status collection", tradeStatus.items);
+  // eslint-disable-next-line @typescript-eslint/no-unsafe-call
+  const tradeStrategy = createListCollection<ItemType>({
+    items: toArray(TradeStrategy),
+  });
+
   return (
     <Formik
       initialValues={thisTrade}
       onSubmit={(values, _actions): void => {
+        console.log("submit values", values);
         submit(
           values,
           // {
           //   ...values,
-          // Select values are returned as string, therefore we have to convert them to numbers, if needed
+          //   // Select values are returned as string, therefore we have to convert them to numbers, if needed
           //   status: parseInt(values.status as unknown as string),
           //   strategy: parseInt(values.strategy as unknown as string),
           // },
@@ -71,28 +87,46 @@ const TradeEdit: FunctionComponent<Props> = ({ ..._rest }): React.ReactNode => {
                 <Text w="90px" as="b" textAlign="right">
                   Status:
                 </Text>
-                {/* <Select w="200px" name="status" variant="outline" value={formik.values.status}> */}
-                <Field as={Select} name="status" w="200px" type="number" variant="outline">
-                  {Object.entries(TradeStatus).map((v, k) => (
-                    <option value={v[1]} key={`k${k}`}>
-                      {v[0]} ({v[1]})
-                    </option>
-                  ))}
+                <Field as="span" name="status" w="200px" type="number" variant="outline">
+                  <SelectRoot
+                    collection={tradeStatus}
+                    w="200px"
+                    onValueChange={(details) => {
+                      console.log("Status changed to", details);
+                      void formik.setFieldValue("status", details.value[0] as TradeStatus);
+                      // formik.setFieldTouched("status", true, false);
+                    }}
+                  >
+                    <Select.Control>
+                      <Select.Trigger>
+                        <SelectValueText placeholder={tradeStatus2String(formik.values.status)} />
+                      </Select.Trigger>
+                    </Select.Control>
+                    <SelectContent collection={tradeStatus} />
+                  </SelectRoot>
                 </Field>
-                {/* </Select> */}
               </Flex>
               <Flex justifyContent="center" gap="2">
                 <Text w="90px" as="b" textAlign="right">
                   Strategy:
                 </Text>
-                <Field as={Select} name="strategy" w="200px" type="number" variant="outline">
-                  {/* <Select name="strategy" w="200px" variant="outline" value={formik.values.strategy}> */}
-                  {Object.entries(TradeStrategy).map((v, k) => (
-                    <option value={v[1]} key={`k${k}`}>
-                      {v[0]} ({v[1]})
-                    </option>
-                  ))}
-                  {/* </Select> */}
+                <Field as="span" name="strategy" w="200px" type="number" variant="outline">
+                  <SelectRoot
+                    collection={tradeStrategy}
+                    w="200px"
+                    onValueChange={(details) => {
+                      console.log("Strategy changed to", details);
+                      void formik.setFieldValue("strategy", details.value[0] as TradeStrategy);
+                      // formik.setFieldTouched("strategy", true, false);
+                    }}
+                  >
+                    <Select.Control>
+                      <Select.Trigger>
+                        <SelectValueText placeholder={tradeStrategy2String(formik.values.strategy)} />
+                      </Select.Trigger>
+                    </Select.Control>
+                    <SelectContent collection={tradeStrategy} />
+                  </SelectRoot>
                 </Field>
               </Flex>
               <Flex justifyContent="center" gap="2">
@@ -155,11 +189,14 @@ const TradeEdit: FunctionComponent<Props> = ({ ..._rest }): React.ReactNode => {
               <Flex justifyContent="center" gap="2" mt="1">
                 <IconButton
                   aria-label="Back"
-                  icon={<ArrowBackIcon />}
                   variant="ghost"
                   onClick={async () => navigate(-1)} // eslint-disable-line @typescript-eslint/no-misused-promises
-                />
-                <IconButton aria-label="Save" icon={<CheckIcon />} variant="ghost" type="submit" />
+                >
+                  <ArrowBackIcon />
+                </IconButton>
+                <IconButton aria-label="Save" variant="ghost" type="submit">
+                  <CheckIcon />
+                </IconButton>
               </Flex>
             </VStack>
           </Form>
