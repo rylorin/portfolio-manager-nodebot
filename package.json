@@ -22,7 +22,7 @@
     "lint": "eslint ./src",
     "prepare": "husky",
     "prepublishOnly": "yarn build",
-    "qc": "yarn lint && tsc --noEmit && prettier --check . && stylelint \"**/*.css\"",
+    "qc": "prettier --check . && stylelint \"**/*.css\" && yarn lint && tsc --noEmit",
     "release": "yarn lint && yarn qc && yarn doc && yarn build && yarn run storybook:build",
     "serve": "vite preview",
     "server:build": "tsc --project tsconfig.server.json",

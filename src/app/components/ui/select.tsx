@@ -88,11 +88,10 @@ export const SelectValueText = React.forwardRef<HTMLSpanElement, SelectValueText
     return (
       <ChakraSelect.ValueText {...rest} ref={ref}>
         <ChakraSelect.Context>
-          {(select) => {
+          {async (select) => {
             const items = select.selectedItems as CollectionItem[];
             if (items.length === 0) return props.placeholder;
             if (collection) return collection(items);
-
             if (items.length === 1) return select.collection.stringifyItem(items[0]);
             return `${items.length} selected`;
           }}
