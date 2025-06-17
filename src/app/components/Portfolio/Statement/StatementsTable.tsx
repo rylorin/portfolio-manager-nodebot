@@ -83,7 +83,7 @@ const StatementsTable: FunctionComponent<Props> = ({ content, currency, title, .
             .map((item) => (
               <Table.Row key={item.id}>
                 <Table.Cell>
-                  <Tooltip content={new Date(item.date).toLocaleTimeString()} placement="auto" hasArrow={true}>
+                  <Tooltip content={new Date(item.date).toLocaleTimeString()} showArrow>
                     <Link asChild>
                       <RouterLink to={StatementLink.toItem(portfolioId, item.id)}>
                         {new Date(item.date).toLocaleDateString()}
@@ -92,7 +92,7 @@ const StatementsTable: FunctionComponent<Props> = ({ content, currency, title, .
                   </Tooltip>
                 </Table.Cell>
                 <Table.Cell>
-                  <Tooltip content={item.fxRateToBase} placement="auto" hasArrow={true}>
+                  <Tooltip content={item.fxRateToBase} showArrow>
                     {item.currency}
                   </Tooltip>
                 </Table.Cell>

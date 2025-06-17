@@ -2,7 +2,6 @@
 
 import { Toaster as ChakraToaster, Portal, Spinner, Stack, Toast, createToaster } from "@chakra-ui/react";
 
-// eslint-disable-next-line @typescript-eslint/no-unsafe-call
 export const toaster = createToaster({
   placement: "bottom-end",
   pauseOnPageIdle: true,

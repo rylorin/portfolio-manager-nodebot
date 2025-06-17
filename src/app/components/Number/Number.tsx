@@ -30,7 +30,7 @@ const Number: FunctionComponent<NumberProps> = ({
     style = { color: "red.500" };
   }
   return (
-    <Text {...style} {...rest} align="right" as="span">
+    <Text {...style} {...rest} alignContent="end" as="span">
       {rounded}
     </Text>
   );

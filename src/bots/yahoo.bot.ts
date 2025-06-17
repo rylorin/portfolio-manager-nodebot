@@ -1,11 +1,12 @@
 import { OptionType, SecType } from "@stoqey/ib";
 import { Op } from "sequelize";
 import { ExtendedCookieJar, default as yahooFinance } from "yahoo-finance2";
-import { Quote } from "yahoo-finance2/dist/esm/src/modules/quote";
 import { ITradingBot } from ".";
 import { greeks, option_implied_volatility } from "../black_scholes";
 import logger, { LogLevel } from "../logger";
 import { AnyContract, Contract, Currency, OptionContract, StockContract } from "../models";
+// import { Quote } from "./node_modules/yahoo-finance2/dist/cjs/src/modules/quote.d.ts";
+type Quote = Record<string, any>; // using Record<string, any> as a workaround for missing types in yahoo-finance2
 
 const MODULE = "YahooBot";
 
@@ -182,7 +183,7 @@ export class YahooUpdateBot extends ITradingBot {
                         option.strike,
                         NO_RISK_INTEREST_RATE,
                         (option.dte + 1) / 365,
-                        r.quote?.regularMarketPrice,
+                        r.quote?.regularMarketPrice as number,
                       );
                     } catch (_e: unknown) {
                       await StockContract.findByPk(option.stock.id).then((stock) => {

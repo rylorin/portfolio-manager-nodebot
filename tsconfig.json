@@ -10,8 +10,8 @@
     "isolatedModules": true,
     "jsx": "react-jsx", // Mise à jour pour JSX moderne
     "lib": ["ESNext", "DOM", "DOM.Iterable", "ES2021.String"],
-    "module": "CommonJS", // Compatibilité Node.js
-    "moduleResolution": "Node",
+    "module": "preserve",
+    "moduleResolution": "bundler",
     "noImplicitAny": false, // TODO: Passez à true après typage complet
     "noImplicitReturns": true,
     "noFallthroughCasesInSwitch": true, // Empêche les erreurs dans les switch/case
@@ -20,7 +20,6 @@
     "outDir": "./dist",
     "paths": {
       "@/*": ["./src/*"]
-      // "react": ["./node_modules/@types/react"]
     },
     "resolveJsonModule": true,
     "rootDir": "./src",

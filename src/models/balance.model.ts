@@ -1,4 +1,4 @@
-import { CreationOptional, InferAttributes, InferCreationAttributes } from "sequelize";
+import { type CreationOptional, InferAttributes, InferCreationAttributes } from "sequelize";
 import { BelongsTo, Column, DataType, ForeignKey, Model, Table } from "sequelize-typescript";
 import { Portfolio } from "./portfolio.model";
 

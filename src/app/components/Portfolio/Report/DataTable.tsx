@@ -44,7 +44,7 @@ export function DataTable<Data extends object>({ data, columns, title }: DataTab
                 <Table.Header
                   key={header.id}
                   onClick={header.column.getToggleSortingHandler()}
-                  isNumeric={meta?.isNumeric}
+                  alignContent={meta?.isNumeric ? "end" : "start"}
                 >
                   {flexRender(header.column.columnDef.header, header.getContext())}
 
@@ -85,7 +85,7 @@ export function DataTable<Data extends object>({ data, columns, title }: DataTab
               // see https://tanstack.com/table/v8/docs/api/core/column-def#meta to type this correctly
               const meta: any = header.column.columnDef.meta;
               return (
-                <Table.Header key={header.id} isNumeric={meta?.isNumeric}>
+                <Table.Header key={header.id} alignContent={meta?.isNumeric ? "end" : "start"}>
                   {flexRender(header.column.columnDef.footer, header.getContext())}
                 </Table.Header>
               );

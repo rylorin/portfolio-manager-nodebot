@@ -1,3 +1,4 @@
+import { StatementTypes } from "../../../../models/statement.types";
 import { TradeStatus, TradeStrategy } from "../../../../models/trade.types";
 
 export const tradeStatus2String = (status: TradeStatus): string => {
@@ -23,4 +24,18 @@ export const tradeStrategy2String = (strategy: TradeStrategy): string => {
   // );
   // return result;
   return Object.entries(TradeStrategy).find((item) => item[1] == strategy)[0];
+};
+
+export const statementTypeToString = (value: StatementTypes): string => {
+  // const result = Object.entries(TradeStrategy).find((item) => item[1] == strategy)[0];
+  // console.log(
+  //   "tradeStrategy2String",
+  //   strategy,
+  //   Object.keys(TradeStrategy),
+  //   Object.values(TradeStrategy),
+  //   Object.entries(TradeStrategy),
+  //   result,
+  // );
+  // return result;
+  return Object.entries(StatementTypes).find((item) => item[1] == value)[0];
 };

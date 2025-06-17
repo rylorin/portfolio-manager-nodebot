@@ -1,5 +1,5 @@
 import { OptionType } from "@stoqey/ib";
-import { CreationOptional, ForeignKey, InferAttributes, InferCreationAttributes, NonAttribute } from "sequelize";
+import { CreationOptional, type ForeignKey, InferAttributes, InferCreationAttributes, NonAttribute } from "sequelize";
 import { BelongsTo, Column, DataType, Model, Table } from "sequelize-typescript";
 import { Contract } from "./contract.model";
 

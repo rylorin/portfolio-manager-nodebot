@@ -1,4 +1,10 @@
-import { CreationOptional, ForeignKey, InferAttributes, InferCreationAttributes, NonAttribute } from "sequelize";
+import {
+  type CreationOptional,
+  type ForeignKey,
+  InferAttributes,
+  InferCreationAttributes,
+  NonAttribute,
+} from "sequelize";
 import { BelongsTo, Column, DataType, Model, Table } from "sequelize-typescript";
 import { Contract } from "./contract.model";
 

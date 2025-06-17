@@ -1,6 +1,6 @@
 "use client";
 
-import type { CollectionItem } from "@chakra-ui/react";
+import type { CollectionItem, ListCollection } from "@chakra-ui/react";
 import { Select as ChakraSelect, Portal } from "@chakra-ui/react";
 import * as React from "react";
 import { CloseButton } from "./close-button";
@@ -40,7 +40,7 @@ const SelectClearTrigger = React.forwardRef<HTMLButtonElement, ChakraSelect.Clea
 interface SelectContentProps extends ChakraSelect.ContentProps {
   portalled?: boolean;
   portalRef?: React.RefObject<HTMLElement>;
-  collection: { items: ItemType[] };
+  collection: ListCollection;
 }
 
 export const SelectContent = React.forwardRef<HTMLDivElement, SelectContentProps>(function SelectContent(props, ref) {
@@ -54,7 +54,7 @@ export const SelectContent = React.forwardRef<HTMLDivElement, SelectContentProps
               <ChakraSelect.Item item={item} key={item.value}>
                 <>
                   <ChakraSelect.ItemText>
-                    {item.label} ({item.value})
+                    {item.label === item.value ? item.value : `${item.label} (${item.value})`}
                   </ChakraSelect.ItemText>
                   <ChakraSelect.ItemIndicator />
                 </>
@@ -92,7 +92,7 @@ export const SelectValueText = React.forwardRef<HTMLSpanElement, SelectValueText
             const items = select.selectedItems as CollectionItem[];
             if (items.length === 0) return props.placeholder;
             if (collection) return collection(items);
-            // eslint-disable-next-line @typescript-eslint/no-unsafe-return,@typescript-eslint/no-unsafe-call
+
             if (items.length === 1) return select.collection.stringifyItem(items[0]);
             return `${items.length} selected`;
           }}
@@ -136,18 +136,9 @@ export const SelectItemGroup = React.forwardRef<HTMLDivElement, SelectItemGroupP
 export const SelectLabel = ChakraSelect.Label;
 export const SelectItemText = ChakraSelect.ItemText;
 
-export function toArray<T extends { label: string; value: any }>(x: T): T[] {
+export function toArray<T extends { label: string; value: any }>(x: Record<string, unknown>): T[] {
   return Object.entries(x).reduce((p, v) => {
     const [label, value] = v;
     return [...p, { label, value } as T];
   }, [] as T[]);
 }
-
-// export const toArrayNumber = (x) =>
-//   Object.entries(x).reduce(
-//     (p, v) => {
-//       const [key, value] = v;
-//       return [...p, { label: value.toString(), value: key }];
-//     },
-//     [] as { label: string; value: number }[],
-//   );

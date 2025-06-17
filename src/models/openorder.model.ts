@@ -1,5 +1,5 @@
 import { OrderAction, OrderStatus } from "@stoqey/ib";
-import { CreationOptional, ForeignKey, InferAttributes, InferCreationAttributes } from "sequelize";
+import { type CreationOptional, type ForeignKey, InferAttributes, InferCreationAttributes } from "sequelize";
 import { BelongsTo, Column, DataType, Model, Table } from "sequelize-typescript";
 import { Contract } from ".";
 import { Portfolio } from "./portfolio.model";

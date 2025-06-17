@@ -1,4 +1,4 @@
-import { createListCollection, Flex, IconButton, Select, Text, Textarea, VStack } from "@chakra-ui/react";
+import { createListCollection, Flex, IconButton, Text, Textarea, VStack } from "@chakra-ui/react";
 import { Field, Formik, FormikProps } from "formik";
 import React, { FunctionComponent } from "react";
 import { FaArrowLeft as ArrowBackIcon, FaCheck as CheckIcon } from "react-icons/fa6";
@@ -7,7 +7,7 @@ import { TradeStatus, TradeStrategy } from "../../../../models/trade.types";
 import { TradeEntry } from "../../../../routers/";
 import { formatNumber } from "../../../utils";
 import Number from "../../Number/Number";
-import { SelectContent, SelectRoot, SelectValueText, toArray } from "../../ui/select";
+import { SelectContent, SelectRoot, SelectTrigger, SelectValueText, toArray } from "../../ui/select";
 import { tradeStatus2String, tradeStrategy2String } from "./utils";
 
 type Props = Record<string, never>;
@@ -18,14 +18,13 @@ const TradeEdit: FunctionComponent<Props> = ({ ..._rest }): React.ReactNode => {
   const navigate = useNavigate();
   const submit = useSubmit();
 
-  // eslint-disable-next-line @typescript-eslint/no-unsafe-call
   const tradeStatus = createListCollection<ItemType>({
     items: toArray<ItemType>(TradeStatus),
     itemToString: (item: ItemType): string => item.label,
     itemToValue: (item: ItemType): string => item.value,
   });
   console.log("Trade status collection", tradeStatus.items);
-  // eslint-disable-next-line @typescript-eslint/no-unsafe-call
+
   const tradeStrategy = createListCollection<ItemType>({
     items: toArray(TradeStrategy),
   });
@@ -93,15 +92,13 @@ const TradeEdit: FunctionComponent<Props> = ({ ..._rest }): React.ReactNode => {
                     w="200px"
                     onValueChange={(details) => {
                       console.log("Status changed to", details);
-                      void formik.setFieldValue("status", details.value[0] as TradeStatus);
+                      void formik.setFieldValue("status", details.value[0] as unknown as TradeStatus);
                       // formik.setFieldTouched("status", true, false);
                     }}
                   >
-                    <Select.Control>
-                      <Select.Trigger>
-                        <SelectValueText placeholder={tradeStatus2String(formik.values.status)} />
-                      </Select.Trigger>
-                    </Select.Control>
+                    <SelectTrigger>
+                      <SelectValueText placeholder={tradeStatus2String(formik.values.status)} />
+                    </SelectTrigger>
                     <SelectContent collection={tradeStatus} />
                   </SelectRoot>
                 </Field>
@@ -116,15 +113,13 @@ const TradeEdit: FunctionComponent<Props> = ({ ..._rest }): React.ReactNode => {
                     w="200px"
                     onValueChange={(details) => {
                       console.log("Strategy changed to", details);
-                      void formik.setFieldValue("strategy", details.value[0] as TradeStrategy);
+                      void formik.setFieldValue("strategy", details.value[0] as unknown as TradeStrategy);
                       // formik.setFieldTouched("strategy", true, false);
                     }}
                   >
-                    <Select.Control>
-                      <Select.Trigger>
-                        <SelectValueText placeholder={tradeStrategy2String(formik.values.strategy)} />
-                      </Select.Trigger>
-                    </Select.Control>
+                    <SelectTrigger>
+                      <SelectValueText placeholder={tradeStrategy2String(formik.values.strategy)} />
+                    </SelectTrigger>
                     <SelectContent collection={tradeStrategy} />
                   </SelectRoot>
                 </Field>

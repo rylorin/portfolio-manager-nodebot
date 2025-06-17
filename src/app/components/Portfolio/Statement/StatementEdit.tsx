@@ -1,5 +1,5 @@
 // eslint-disable-file @typescript-eslint/no-unsafe-call
-import { createListCollection, Flex, IconButton, Link, Portal, Select, Text, VStack } from "@chakra-ui/react";
+import { createListCollection, Flex, IconButton, Link, ListCollection, Text, VStack } from "@chakra-ui/react";
 import { Field, Formik, FormikProps } from "formik";
 import { FunctionComponent, default as React } from "react";
 import { FaArrowLeft as ArrowBackIcon, FaCheck as CheckIcon } from "react-icons/fa6";
@@ -12,11 +12,19 @@ import {
   useSubmit,
 } from "react-router-dom";
 import { StatementTypes } from "../../../../models/statement.types";
-import { StatementEntry } from "../../../../routers/statements.types";
-import { SelectRoot, SelectValueText, toArray } from "../../ui/select";
+import {
+  BondStatementEntry,
+  InterestStatementEntry,
+  StatementEntry,
+  TaxStatementEntry,
+} from "../../../../routers/statements.types";
+import { SelectContent, SelectRoot, SelectTrigger, SelectValueText, toArray } from "../../ui/select";
 import { ContractLink } from "../Contract/links";
+import { statementTypeToString } from "../Trade/utils";
 
 type Props = Record<string, never>;
+
+type ItemType = { label: string; value: string }; // eslint-disable-line @typescript-eslint/consistent-type-definitions
 
 /**
  * Statements list component
@@ -29,9 +37,15 @@ const StatementEdit: FunctionComponent<Props> = ({ ..._rest }): React.ReactNode 
   const navigate = useNavigate();
   const submit = useSubmit();
 
-  // eslint-disable-next-line @typescript-eslint/no-unsafe-call
-  const statementTypes = createListCollection<{ label: string; value: string }>({
+  const statementTypes: ListCollection = createListCollection<{ label: string; value: string }>({
     items: toArray(StatementTypes),
+  });
+
+  const countries: ListCollection = createListCollection<ItemType>({
+    items: ["US", "NL", "IE"].map((country) => ({
+      label: country,
+      value: country,
+    })),
   });
 
   return (
@@ -123,29 +137,11 @@ const StatementEdit: FunctionComponent<Props> = ({ ..._rest }): React.ReactNode 
                 </Text>
                 <Field name="statementType" w="200px" type="number" variant="outline" as="span" display="inline-flex">
                   <SelectRoot collection={statementTypes} w="200px">
-                    <Select.Control>
-                      <Select.Trigger>
-                        <SelectValueText placeholder={formik.values.statementType} />
-                      </Select.Trigger>
-                    </Select.Control>
-                    <Portal>
-                      <Select.Positioner>
-                        <Select.Content>
-                          {/* eslint-disable-next-line @typescript-eslint/no-unsafe-call */}
-                          {statementTypes.items.map((item) => (
-                            <Select.Item item={item} key={item.value}>
-                              <>
-                                <Select.ItemText>
-                                  {item.label} ({item.value})
-                                </Select.ItemText>
-                                <Select.ItemIndicator />
-                              </>
-                            </Select.Item>
-                          ))}
-                        </Select.Content>
-                      </Select.Positioner>
-                    </Portal>
-                  </SelectRoot>{" "}
+                    <SelectTrigger>
+                      <SelectValueText placeholder={statementTypeToString(formik.values.statementType)} />
+                    </SelectTrigger>
+                    <SelectContent collection={statementTypes} />
+                  </SelectRoot>
                 </Field>
               </Flex>
               <Flex justifyContent="center" gap="2">
@@ -163,13 +159,22 @@ const StatementEdit: FunctionComponent<Props> = ({ ..._rest }): React.ReactNode 
                   <Text w="90px" as="b" textAlign="right">
                     Country:
                   </Text>
-                  <Field as={Select.Root} name="country" w="200px" variant="outline">
-                    <Select.Item value="">---</Select.Item>
-                    {["US", "NL", "IE"].map((v) => (
-                      <Select.Item value={v} key={v}>
-                        {v}
-                      </Select.Item>
-                    ))}
+                  <Field
+                    as={SelectRoot}
+                    name="country"
+                    variant="outline"
+                    collection={countries}
+                    w="200px"
+                    onValueChange={(details) => {
+                      console.log("country changed to", details);
+                      void formik.setFieldValue("country", details.value[0]);
+                      // formik.setFieldTouched("status", true, false);
+                    }}
+                  >
+                    <SelectTrigger>
+                      <SelectValueText placeholder={(formik.values as BondStatementEntry).country} />
+                    </SelectTrigger>
+                    <SelectContent collection={countries} />
                   </Field>
                 </Flex>
               )}
@@ -180,13 +185,23 @@ const StatementEdit: FunctionComponent<Props> = ({ ..._rest }): React.ReactNode 
                   <Text w="90px" as="b" textAlign="right">
                     Country:
                   </Text>
-                  <Field as={Select.Root} name="country" w="200px" variant="outline">
-                    <Select.Item value="">---</Select.Item>
-                    {["US", "NL", "IE"].map((v) => (
-                      <Select.Item value={v} key={v}>
-                        {v}
-                      </Select.Item>
-                    ))}
+                  <Field as="span" name="country" variant="outline" w="200px">
+                    <SelectRoot
+                      name="country"
+                      variant="outline"
+                      collection={countries}
+                      w="200px"
+                      onValueChange={(details) => {
+                        console.log("country changed to", details);
+                        void formik.setFieldValue("country", details.value[0]);
+                        // formik.setFieldTouched("status", true, false);
+                      }}
+                    >
+                      <SelectTrigger>
+                        <SelectValueText placeholder={(formik.values as InterestStatementEntry).country} />
+                      </SelectTrigger>
+                      <SelectContent collection={countries} />
+                    </SelectRoot>
                   </Field>
                 </Flex>
               )}
@@ -197,13 +212,22 @@ const StatementEdit: FunctionComponent<Props> = ({ ..._rest }): React.ReactNode 
                   <Text w="90px" as="b" textAlign="right">
                     Country:
                   </Text>
-                  <Field as={Select.Root} name="country" w="200px" variant="outline">
-                    <Select.Item value="">---</Select.Item>
-                    {["US", "NL", "IE"].map((v) => (
-                      <Select.Item value={v} key={v}>
-                        {v}
-                      </Select.Item>
-                    ))}
+                  <Field
+                    as={SelectRoot}
+                    name="country"
+                    variant="outline"
+                    collection={countries}
+                    w="200px"
+                    onValueChange={(details) => {
+                      console.log("country changed to", details);
+                      void formik.setFieldValue("country", details.value[0]);
+                      // formik.setFieldTouched("status", true, false);
+                    }}
+                  >
+                    <SelectTrigger>
+                      <SelectValueText placeholder={(formik.values as TaxStatementEntry).country} />
+                    </SelectTrigger>
+                    <SelectContent collection={countries} />
                   </Field>
                 </Flex>
               )}

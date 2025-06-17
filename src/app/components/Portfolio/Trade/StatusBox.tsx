@@ -36,14 +36,14 @@ const StatusBox = ({ item }: Props): React.ReactNode => {
       </Text>
       <Box color="gray.500" fontWeight="semibold" letterSpacing="wide" fontSize="xs" textTransform="uppercase" ml={1}>
         &bull;{" "}
-        <Tooltip content={new Date(item.openingDate).toLocaleString()} hasArrow={true}>
+        <Tooltip content={new Date(item.openingDate).toLocaleString()} showArrow>
           {new Date(item.openingDate).toLocaleDateString()}
         </Tooltip>
         {item.closingDate && (
           <>
             {" "}
             &bull;{" "}
-            <Tooltip content={new Date(item.closingDate).toLocaleString()} hasArrow={true}>
+            <Tooltip content={new Date(item.closingDate).toLocaleString()} showArrow>
               {new Date(item.closingDate).toLocaleDateString()}
             </Tooltip>
           </>

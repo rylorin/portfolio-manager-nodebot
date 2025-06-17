@@ -1,4 +1,4 @@
-import { Association, CreationOptional, InferAttributes, InferCreationAttributes } from "sequelize";
+import { Association, type CreationOptional, InferAttributes, InferCreationAttributes } from "sequelize";
 import { BelongsTo, Column, DataType, ForeignKey, HasMany, Model, Table } from "sequelize-typescript";
 import { Balance, Contract, Currency, OpenOrder, Position, Setting, Statement } from "./";
 import { CashStrategy } from "./types";

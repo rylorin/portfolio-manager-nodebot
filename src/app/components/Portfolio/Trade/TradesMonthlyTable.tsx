@@ -124,31 +124,31 @@ const TradesMonthlyTable: FunctionComponent<TradesMonthlyTableProps> = ({
   return (
     <VStack separator={<StackDivider borderColor="gray.200" />}>
       <HStack>
-        <Text width="100px" align="center">
+        <Text width="100px" alignContent="center">
           Close
         </Text>
-        <Text width="100px" align="center">
+        <Text width="100px" alignContent="center">
           Open
         </Text>
-        <Text width="100px" align="center">
+        <Text width="100px" alignContent="center">
           #
         </Text>
-        <Text width="100px" align="center">
+        <Text width="100px" alignContent="center">
           Success
         </Text>
-        <Text width="100px" align="center">
+        <Text width="100px" alignContent="center">
           Duration
         </Text>
-        <Text width="100px" align="center">
+        <Text width="100px" alignContent="center">
           Min
         </Text>
-        <Text width="100px" align="center">
+        <Text width="100px" alignContent="center">
           Average
         </Text>
-        <Text width="100px" align="center">
+        <Text width="100px" alignContent="center">
           Max
         </Text>
-        <Text width="100px" align="center">
+        <Text width="100px" alignContent="center">
           PnL
         </Text>
       </HStack>

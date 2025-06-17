@@ -84,7 +84,7 @@ const DividendsDetails = ({ theReports, ..._rest }: Props): React.ReactNode => {
     }),
     columnHelper.accessor("date", {
       cell: (info) => (
-        <Tooltip content={info.getValue().toLocaleTimeString()} placement="auto" hasArrow={true}>
+        <Tooltip content={info.getValue().toLocaleTimeString()} showArrow>
           {info.getValue().toLocaleDateString()}
         </Tooltip>
       ),

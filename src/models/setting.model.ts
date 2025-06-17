@@ -1,5 +1,5 @@
 import {
-  CreationOptional,
+  type CreationOptional,
   ForeignKey,
   HasOneGetAssociationMixin,
   InferAttributes,
