@@ -23,7 +23,6 @@ const TradeEdit: FunctionComponent<Props> = ({ ..._rest }): React.ReactNode => {
     itemToString: (item: ItemType): string => item.label,
     itemToValue: (item: ItemType): string => item.value,
   });
-  console.log("Trade status collection", tradeStatus.items);
 
   const tradeStrategy = createListCollection<ItemType>({
     items: toArray(TradeStrategy),
