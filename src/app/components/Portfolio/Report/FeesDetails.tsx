@@ -1,7 +1,7 @@
 import { IconButton, Link } from "@chakra-ui/react";
 import { createColumnHelper } from "@tanstack/react-table";
 import { default as React } from "react";
-import { FaSearch as SearchIcon } from "react-icons/fa";
+import { LuSearch as SearchIcon } from "react-icons/lu";
 import { Link as RouterLink, useParams } from "react-router-dom";
 import { StatementTypes } from "../../../../models/types";
 import { FeeStatementEntry, ReportEntry } from "../../../../routers";

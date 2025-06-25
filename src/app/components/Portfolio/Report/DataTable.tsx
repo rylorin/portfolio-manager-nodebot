@@ -1,4 +1,4 @@
-import { Table, TableCaption, chakra } from "@chakra-ui/react";
+import { Table, chakra } from "@chakra-ui/react";
 import {
   ColumnDef,
   SortingState,
@@ -8,7 +8,7 @@ import {
   useReactTable,
 } from "@tanstack/react-table";
 import * as React from "react";
-import { FaAngleDown as TriangleDownIcon, FaAngleUp as TriangleUpIcon } from "react-icons/fa6";
+import { LuChevronDown as TriangleDownIcon, LuChevronUp as TriangleUpIcon } from "react-icons/lu";
 
 export interface DataTableProps<Data extends object> {
   data: Data[];
@@ -31,33 +31,26 @@ export function DataTable<Data extends object>({ data, columns, title }: DataTab
 
   return (
     <Table.Root variant="line" size="sm" className="table-tiny">
-      <TableCaption>
+      <Table.Caption>
         {title || "index"} ({data.length})
-      </TableCaption>
+      </Table.Caption>
       <Table.Header>
         {table.getHeaderGroups().map((headerGroup) => (
           <Table.Row key={headerGroup.id}>
             {headerGroup.headers.map((header) => {
-              // see https://tanstack.com/table/v8/docs/api/core/column-def#meta to type this correctly
-              const meta: any = header.column.columnDef.meta;
               return (
-                <Table.Header
-                  key={header.id}
-                  onClick={header.column.getToggleSortingHandler()}
-                  alignContent={meta?.isNumeric ? "end" : "start"}
-                >
+                <Table.ColumnHeader key={header.id} onClick={header.column.getToggleSortingHandler()}>
                   {flexRender(header.column.columnDef.header, header.getContext())}
-
                   <chakra.span pl="4">
                     {header.column.getIsSorted() ? (
                       header.column.getIsSorted() === "desc" ? (
-                        <TriangleDownIcon aria-label="sorted descending" />
+                        <TriangleDownIcon aria-label="sorted descending" className="inline" />
                       ) : (
-                        <TriangleUpIcon aria-label="sorted ascending" />
+                        <TriangleUpIcon aria-label="sorted ascending" className="inline" />
                       )
                     ) : null}
                   </chakra.span>
-                </Table.Header>
+                </Table.ColumnHeader>
               );
             })}
           </Table.Row>

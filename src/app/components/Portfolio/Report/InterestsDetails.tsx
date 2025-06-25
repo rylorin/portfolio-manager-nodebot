@@ -1,7 +1,7 @@
 import { IconButton, Link } from "@chakra-ui/react";
 import { createColumnHelper } from "@tanstack/react-table";
 import { default as React } from "react";
-import { FaSearch as SearchIcon } from "react-icons/fa";
+import { LuSearch as SearchIcon } from "react-icons/lu";
 import { Link as RouterLink, useParams } from "react-router-dom";
 import { StatementTypes } from "../../../../models/types";
 import { InterestStatementEntry, ReportEntry, WithHoldingStatementEntry } from "../../../../routers";
@@ -92,7 +92,6 @@ const InterestsDetails = ({ theReports, ..._rest }: Props): React.ReactNode => {
         <Link asChild>
           <RouterLink to={StatementLink.toItem(portfolioId, info.getValue())}>
             <IconButton aria-label="Show detail" size="xs" variant="ghost">
-              <SearchIcon />
               <SearchIcon />
             </IconButton>
           </RouterLink>
