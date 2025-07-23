@@ -433,8 +433,8 @@ export class TradeBot extends ITradingBot {
               order: [["createdAt", "DESC"]],
             });
 
-            // update once a day or so
-            if (!last || last.createdAt.getTime() < Date.now() - 24 * 3_600_000 * (1 + Math.random())) {
+            // update every 5-10 days
+            if (!last || last.createdAt.getTime() < Date.now() - 5 * 24 * 3_600_000 * (1 + Math.random())) {
               // Refresh option chain
               logger.info(
                 MODULE + ".addOptionsChains",

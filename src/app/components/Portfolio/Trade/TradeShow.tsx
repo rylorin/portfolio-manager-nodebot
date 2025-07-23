@@ -190,15 +190,15 @@ const TradeShow: FunctionComponent<Props> = ({ ..._rest }): React.ReactNode => {
             </IconButton>
           </Form>
         </Flex>
-        {item.positions?.length ? <PositionsTable content={item.positions} currency={item.currency} /> : null}
-        {item.statements?.length && <StatementsTable content={item.statements} currency={item.currency} />}
-        {item.virtuals?.length && (
+        {item.positions?.length > 0 ? <PositionsTable content={item.positions} currency={item.currency} /> : null}
+        {item.statements?.length > 0 ? <StatementsTable content={item.statements} currency={item.currency} /> : null}
+        {item.virtuals?.length > 0 ? (
           <PositionsTable
             content={item.virtuals.filter((pos) => pos.quantity) as PositionEntry[]}
             title="Virtual positions"
             currency={item.currency}
           />
-        )}
+        ) : null}
       </VStack>
     </>
   );
