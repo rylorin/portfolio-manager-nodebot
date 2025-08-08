@@ -1,12 +1,13 @@
 import { IconButton, Link, Table, TableCaption } from "@chakra-ui/react";
 import { FunctionComponent, default as React } from "react";
-import { FaSearch as SearchIcon } from "react-icons/fa";
-import { FaTrashCan as DeleteIcon, FaPencil as EditIcon } from "react-icons/fa6";
 import {
-  RiArrowUpCircleLine as ArrowUpIcon,
-  RiQuestionLine as QuestionOutlineIcon,
-  RiCloseCircleLine as SmallCloseIcon,
-} from "react-icons/ri";
+  LuCircleArrowUp as ArrowUpIcon,
+  LuTrash2 as DeleteIcon,
+  LuPencil as EditIcon,
+  LuFileQuestion as QuestionOutlineIcon,
+  LuSearch as SearchIcon,
+  LuCircleMinus as SmallCloseIcon,
+} from "react-icons/lu";
 import { Form, Link as RouterLink, useLoaderData, useParams } from "react-router-dom";
 import { ContractType } from "../../../../models/contract.types";
 import { OptionPositionEntry, PositionEntry } from "../../../../routers/positions.types";

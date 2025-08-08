@@ -99,6 +99,7 @@ const router = createBrowserRouter(
         </Layout>
       ),
       errorElement: <ErrorPage />,
+      hydrateFallbackElement: <>Loading...</>,
       children: [
         { index: true, element: <>(Home)</> },
         { path: "/blog", element: <>(Blog)</> },

@@ -1,6 +1,6 @@
 import { Flex, IconButton, Link, Text, VStack } from "@chakra-ui/react";
 import React, { FunctionComponent } from "react";
-import { FaArrowLeft as ArrowBackIcon, FaTrashCan as DeleteIcon, FaPencil as EditIcon } from "react-icons/fa6";
+import { LuArrowLeft as ArrowBackIcon, LuTrash2 as DeleteIcon, LuPencil as EditIcon } from "react-icons/lu";
 import { Form, Link as RouterLink, useLoaderData, useNavigate, useParams } from "react-router-dom";
 import { TradeStatus } from "../../../../models/trade.types";
 import { PositionEntry } from "../../../../routers/positions.types";

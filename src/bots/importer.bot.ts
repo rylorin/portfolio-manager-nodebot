@@ -80,8 +80,8 @@ const transactionStatusFromElement = (element: any): StatementStatus => {
   }
 };
 
-const getCurrencyFromElement = (element: any): string => {
-  switch (element.currency) {
+const getCurrencyFromElement = (currency: string): string => {
+  switch (currency) {
     case "USD":
       return "$";
     case "EUR":
@@ -89,7 +89,7 @@ const getCurrencyFromElement = (element: any): string => {
     case "GBP":
       return "£";
     default:
-      return element.currency as string;
+      return currency.toUpperCase(); // Return the currency code as is for other currencies;
   }
 };
 
@@ -122,13 +122,13 @@ const transactionDescriptionFromElement = (element: any): string => {
     description +
     " " +
     (element.assetCategory == "BOND"
-      ? Math.round(element.quantity / 1000) + "k" + getCurrencyFromElement(element)
+      ? Math.round(element.quantity / 1000) + "k" + getCurrencyFromElement(element.currency as string)
       : element.quantity) +
     " " +
     (element.assetCategory == "STK" ? element.symbol : element.description) +
     "@" +
     element.tradePrice +
-    (element.assetCategory == "BOND" ? "%" : getCurrencyFromElement(element))
+    (element.assetCategory == "BOND" ? "%" : getCurrencyFromElement(element.currency as string))
   );
 };
 
@@ -551,13 +551,18 @@ export class ImporterBot extends ITradingBot {
     let netCash = parseFloat(element.netCash as string);
     let description = transactionDescriptionFromElement(element);
     if (element.currency !== element.ibCommissionCurrency) {
-      logger.warn(
-        MODULE + ".processStockTrade",
-        "transaction and commission currencies differs, convertion needed",
-        element,
-      );
-      description += ` Fee: ${fees} ${element.ibCommissionCurrency}`;
-      fees = 0;
+      description += ` Fee: ${fees}${getCurrencyFromElement(element.ibCommissionCurrency as string)}`;
+      // Hope that commission is portfolio currency's based when it different from transaction's commission
+      if (this.portfolio.baseCurrency == element.ibCommissionCurrency) {
+        fees = parseFloat(element.ibCommission as string) / parseFloat(element.fxRateToBase as string);
+      } else {
+        logger.error(
+          MODULE + ".processStockTrade",
+          "transaction and commission currencies differs, convertion needed",
+          element,
+        );
+        console.log(element);
+      }
     }
 
     let contract: Contract;

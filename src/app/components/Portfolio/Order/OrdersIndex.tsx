@@ -1,6 +1,6 @@
 import { IconButton, Table, TableCaption } from "@chakra-ui/react";
 import { FunctionComponent, default as React } from "react";
-import { FaTrashCan as DeleteIcon } from "react-icons/fa6";
+import { LuTrash2 as DeleteIcon } from "react-icons/lu";
 import { Form, useLoaderData, useParams } from "react-router-dom";
 import { OrderEntry } from "../../../../routers/";
 import { ordersIndexLoader } from "./loaders";

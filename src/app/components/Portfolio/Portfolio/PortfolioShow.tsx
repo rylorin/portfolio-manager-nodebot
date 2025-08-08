@@ -1,6 +1,6 @@
 import { Flex, IconButton, Text, VStack } from "@chakra-ui/react";
 import React, { FunctionComponent } from "react";
-import { FaPencil as EditIcon } from "react-icons/fa6";
+import { LuPencil as EditIcon } from "react-icons/lu";
 import { Link as RouterLink, useLoaderData } from "react-router-dom";
 import { cashStrategy2String } from "../../../../models/types";
 import { obfuscate } from "../../../utils";

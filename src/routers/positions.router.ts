@@ -35,6 +35,7 @@ export const preparePositions = async (portfolio: Portfolio): Promise<(PositionE
   return portfolio.positions.reduce(
     async (p, item: Position) => {
       return p.then(async (positions) => {
+        // console.log(JSON.stringify(item));
         switch (item.contract?.secType) {
           case SecType.STK: {
             const price = getPrice(item.contract);
@@ -47,11 +48,6 @@ export const preparePositions = async (portfolio: Portfolio): Promise<(PositionE
               quantity: item.quantity,
               contract: {
                 ...contractModelToContractEntry(item.contract),
-                // id: item.contract.id,
-                // secType: item.contract.secType,
-                // symbol: item.contract.symbol,
-                // name: item.contract.name,
-                // currency: item.contract.currency,
                 multiplier: 1,
                 price: getPrice(item.contract) || undefined,
                 expiration: undefined,
@@ -80,7 +76,6 @@ export const preparePositions = async (portfolio: Portfolio): Promise<(PositionE
               ],
             }).then((option) => {
               if (!option) throw Error("Option contract not found");
-              // console.log("option:", JSON.stringify(option));
               const price = getPrice(item.contract);
               const value = price ? price * item.quantity * option.multiplier : undefined;
               const engaged =
@@ -97,11 +92,6 @@ export const preparePositions = async (portfolio: Portfolio): Promise<(PositionE
                 quantity: item.quantity,
                 contract: {
                   ...contractModelToContractEntry(item.contract),
-                  // id: item.contract.id,
-                  // secType: item.contract.secType,
-                  // symbol: item.contract.symbol,
-                  // name: item.contract.name,
-                  // currency: item.contract.currency,
                   multiplier: option.multiplier,
                   price: getPrice(item.contract) || undefined,
                   expiration: undefined,
@@ -133,7 +123,6 @@ export const preparePositions = async (portfolio: Portfolio): Promise<(PositionE
                 portfolio_id: item.portfolio_id,
                 contract_id: item.contract_id,
               };
-              // console.log(item.contract.currency, result);
               positions.push(result);
               return positions;
             });

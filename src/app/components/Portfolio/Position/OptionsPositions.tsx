@@ -6,6 +6,7 @@ import { formatNumber } from "../../../utils";
 import Number from "../../Number/Number";
 import OptionRow from "./OptionRow";
 import SubTotalRow, { TotalEntry } from "./SubTotalRow";
+import { positionsOptionsLoader } from "./loaders";
 
 type ItemRowType = OptionPositionEntry | TotalEntry;
 
@@ -16,6 +17,73 @@ interface DataRowProps {
   item: ItemRowType;
 }
 
+const compareItems = (a: OptionPositionEntry, b: OptionPositionEntry): number => {
+  let result: number;
+  if (!a && !b) return 0;
+  else if (!a) return -1;
+  else if (!b) return 1;
+  result = a.option.expiration.localeCompare(b.option.expiration);
+  if (!result) {
+    result = a.option.symbol.localeCompare(b.option.symbol);
+    if (!result) result = a.option.strike - b.option.strike;
+  }
+  return result;
+};
+
+const getPositions = (positions: OptionPositionEntry[]): ItemRowType[] => {
+  const result: ItemRowType[] = [];
+  let subTotal: TotalEntry;
+
+  positions
+    .filter((item) => item.quantity)
+    .sort((a, b) => compareItems(a, b))
+    .forEach((item) => {
+      if (!subTotal) {
+        subTotal = {
+          id: item.option.expiration,
+          expiration: item.option.expiration,
+          units: 0,
+          cost: 0,
+          value: 0,
+          engaged: 0,
+          risk: 0,
+          pnl: 0,
+        };
+      } else if (item.option.expiration != subTotal.expiration) {
+        // new expiration, emit subtotal
+        result.push(subTotal);
+        subTotal = {
+          id: item.option.expiration,
+          expiration: item.option.expiration,
+          units: 0,
+          cost: 0,
+          value: 0,
+          engaged: 0,
+          risk: 0,
+          pnl: 0,
+        };
+      }
+      // console.log(item);
+      // increment totals
+      subTotal.units += Math.abs(item.quantity);
+      subTotal.cost += item.cost * item.baseRate;
+      subTotal.value += item.value * item.baseRate;
+      subTotal.engaged += item.engaged < 0 ? item.engaged * item.baseRate : 0;
+      subTotal.risk += item.risk < 0 ? item.risk * item.baseRate : 0;
+      subTotal.pnl += item.pnl * item.baseRate;
+      // console.log(subTotal);
+      result.push(item);
+    });
+  if (subTotal) result.push(subTotal);
+  return result;
+};
+
+const DataRow: FunctionComponent<DataRowProps> = ({ portfolioId, item, ..._rest }): React.ReactNode => {
+  // console.log(item);
+  if ("option" in item) return <OptionRow item={item} portfolioId={portfolioId} />;
+  else return <SubTotalRow subTotal={item} />;
+};
+
 /**
  * Statements list component
  * @param param0
@@ -23,73 +91,8 @@ interface DataRowProps {
  */
 const OptionsPositions: FunctionComponent<PositionsIndexProps> = ({ ..._rest }): React.ReactNode => {
   const { portfolioId } = useParams();
-  const thePositions = useLoaderData() as OptionPositionEntry[];
-
-  const compareItems = (a: OptionPositionEntry, b: OptionPositionEntry): number => {
-    let result: number;
-    if (!a && !b) return 0;
-    else if (!a) return -1;
-    else if (!b) return 1;
-    result = a.option.expiration.localeCompare(b.option.expiration);
-    if (!result) {
-      result = a.option.symbol.localeCompare(b.option.symbol);
-      if (!result) result = a.option.strike - b.option.strike;
-    }
-    return result;
-  };
-
-  const getPositions = (positions: OptionPositionEntry[]): ItemRowType[] => {
-    const result: ItemRowType[] = [];
-    let subTotal: TotalEntry;
-
-    positions
-      .filter((item) => item.quantity)
-      .sort((a, b) => compareItems(a, b))
-      .forEach((item) => {
-        if (!subTotal) {
-          subTotal = {
-            id: item.option.expiration,
-            expiration: item.option.expiration,
-            units: 0,
-            cost: 0,
-            value: 0,
-            engaged: 0,
-            risk: 0,
-            pnl: 0,
-          };
-        } else if (item.option.expiration != subTotal.expiration) {
-          // new expiration, emit subtotal
-          result.push(subTotal);
-          subTotal = {
-            id: item.option.expiration,
-            expiration: item.option.expiration,
-            units: 0,
-            cost: 0,
-            value: 0,
-            engaged: 0,
-            risk: 0,
-            pnl: 0,
-          };
-        }
-        // console.log(item);
-        // increment totals
-        subTotal.units += Math.abs(item.quantity);
-        subTotal.cost += item.cost * item.baseRate;
-        subTotal.value += item.value * item.baseRate;
-        subTotal.engaged += item.engaged < 0 ? item.engaged * item.baseRate : 0;
-        subTotal.risk += item.risk < 0 ? item.risk * item.baseRate : 0;
-        subTotal.pnl += item.pnl * item.baseRate;
-        // console.log(subTotal);
-        result.push(item);
-      });
-    if (subTotal) result.push(subTotal);
-    return result;
-  };
-
-  const DataRow: FunctionComponent<DataRowProps> = ({ portfolioId, item, ..._rest }): React.ReactNode => {
-    if ("option" in item) return <OptionRow item={item} portfolioId={portfolioId} />;
-    else return <SubTotalRow subTotal={item} />;
-  };
+  const thePositions = useLoaderData<typeof positionsOptionsLoader>();
+  // console.log("OptionsPositions", thePositions);
 
   const positions = getPositions(thePositions);
   return (

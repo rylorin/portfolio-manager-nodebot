@@ -31,14 +31,14 @@
     "start:dev": "concurrently \"yarn server:dev\" \"yarn client:dev\""
   },
   "dependencies": {
-    "@chakra-ui/react": "^3.22.0",
+    "@chakra-ui/react": "^3.24.02",
     "@emotion/react": "^11.14.0",
     "@stoqey/ib": "^1.5.1",
     "@tanstack/react-table": "^8.21.3",
     "chakra-react-select": "^6.1.0",
     "chart.js": "^4.5.0",
     "cors": "^2.8.5",
-    "dotenv": "^17.2.0",
+    "dotenv": "^17.2.1",
     "express": "^4.21.2",
     "fast-xml-parser": "^5.2.5",
     "formik": "^2.4.6",
@@ -49,7 +49,7 @@
     "react-chartjs-2": "^5.3.0",
     "react-dom": "^18.3.1",
     "react-icons": "^5.5.0",
-    "react-router-dom": "^7.7.0",
+    "react-router-dom": "^7.7.1",
     "reflect-metadata": "^0.2.2",
     "sequelize": "^6.37.7",
     "sequelize-typescript": "^2.1.6",
@@ -71,7 +71,7 @@
     "@vitejs/plugin-react": "^4.7.0",
     "babel-loader": "^10.0.0",
     "concurrently": "^9.2.0",
-    "eslint": "^9.31.0",
+    "eslint": "^9.32.0",
     "eslint-config-prettier": "^10.1.8",
     "eslint-plugin-prettier": "^5.5.3",
     "eslint-plugin-react": "^7.37.5",
@@ -81,15 +81,15 @@
     "patch-package": "^8.0.0",
     "prettier": "^3.6.2",
     "rxjs": "7.8.1",
-    "stylelint": "^16.22.0",
-    "stylelint-config-standard": "^38.0.0",
+    "stylelint": "^16.23.0",
+    "stylelint-config-standard": "^39.0.0",
     "ts-node-dev": "^2.0.0",
     "typescript": "^5.8.3",
     "typescript-eslint": "^8.38.0",
-    "vite": "^7.0.5",
-    "webpack": "^5.100.02"
+    "vite": "^7.0.6",
+    "webpack": "^5.101.0"
   },
   "engines": {
-    "node": "^20.18.1"
+    "node": "^20.19.2"
   }
 }

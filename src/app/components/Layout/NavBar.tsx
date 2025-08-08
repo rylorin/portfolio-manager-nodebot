@@ -1,6 +1,6 @@
 import { Box, Flex, IconButton, Spacer, Stack } from "@chakra-ui/react";
 import React, { FunctionComponent, ReactNode } from "react";
-import { FaMixer as CloseIcon, FaBars as HamburgerIcon } from "react-icons/fa6";
+import { LuChevronsRightLeft as CloseIcon, LuAlignJustify as HamburgerIcon } from "react-icons/lu";
 import { Link as RouterLink } from "react-router-dom";
 import logo from "../../logo.svg";
 import ColorModeToggle from "../ColorModeToggle/ColorModeToggle";

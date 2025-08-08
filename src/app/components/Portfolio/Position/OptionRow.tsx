@@ -1,7 +1,6 @@
 import { IconButton, Link, Table } from "@chakra-ui/react";
 import { FunctionComponent, default as React } from "react";
-import { FaSearch as SearchIcon } from "react-icons/fa";
-import { FaTrashCan as DeleteIcon, FaPencil as EditIcon } from "react-icons/fa6";
+import { LuTrash2 as DeleteIcon, LuPencil as EditIcon, LuSearch as SearchIcon } from "react-icons/lu";
 import { Form, Link as RouterLink } from "react-router-dom";
 import { OptionPositionEntry } from "../../../../routers/positions.types";
 import { formatNumber } from "../../../utils";

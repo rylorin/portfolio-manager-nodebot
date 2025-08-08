@@ -37,7 +37,6 @@ export const statementModelToStatementEntry = async (item: Statement): Promise<S
         return {
           statementType: StatementTypes.EquityStatement,
           ...baseStatement,
-          // underlying: contractModelToContractEntry(item.stock),
           quantity: thisStatement!.quantity,
           pnl: thisStatement!.realizedPnL,
           fees: thisStatement!.fees,
@@ -153,7 +152,6 @@ export const statementModelToStatementEntry = async (item: Statement): Promise<S
           statementType: StatementTypes.BondStatement,
           ...baseStatement,
           country,
-          // underlying: contractModelToContractEntry(item.stock),
           quantity: thisStatement.quantity,
           pnl: thisStatement.realizedPnL,
           fees: thisStatement.fees,

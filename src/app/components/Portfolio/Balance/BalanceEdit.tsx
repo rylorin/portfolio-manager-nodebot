@@ -1,7 +1,7 @@
 import { Flex, IconButton, Text, VStack } from "@chakra-ui/react";
 import { Field, Formik, FormikProps } from "formik";
 import React, { FunctionComponent } from "react";
-import { FaArrowLeft as ArrowBackIcon, FaCheck as CheckIcon } from "react-icons/fa6";
+import { LuArrowLeft as ArrowBackIcon, LuCheck as CheckIcon } from "react-icons/lu";
 import { Form, useLoaderData, useNavigate, useSubmit } from "react-router-dom";
 import { BalanceEntry } from "../../../../routers/";
 

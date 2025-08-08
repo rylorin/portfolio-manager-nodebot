@@ -1,6 +1,6 @@
 import { IconButton, Link, Table, TableCaption } from "@chakra-ui/react";
 import React from "react";
-import { FaSearch as SearchIcon } from "react-icons/fa";
+import { LuSearch as SearchIcon } from "react-icons/lu";
 import { Link as RouterLink, useLoaderData } from "react-router-dom";
 import { Portfolio as PortfolioModel } from "../../../models/portfolio.model";
 import { obfuscate } from "../../utils";

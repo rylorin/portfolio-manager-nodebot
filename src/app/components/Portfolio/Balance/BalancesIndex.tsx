@@ -1,7 +1,6 @@
 import { IconButton, Table, TableCaption } from "@chakra-ui/react";
 import { FunctionComponent, default as React } from "react";
-import { FaSearch as SearchIcon } from "react-icons/fa";
-import { FaTrashCan as DeleteIcon, FaPencil as EditIcon } from "react-icons/fa6";
+import { LuTrash2 as DeleteIcon, LuPencil as EditIcon, LuSearch as SearchIcon } from "react-icons/lu";
 import { Form, Link as RouterLink, useLoaderData, useParams } from "react-router-dom";
 import { BalanceEntry } from "../../../../routers/balances.types";
 import Number from "../../Number/Number";

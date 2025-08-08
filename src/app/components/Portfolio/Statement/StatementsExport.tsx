@@ -124,14 +124,14 @@ const StatementsExport: FunctionComponent<Props> = ({ content, ..._rest }): Reac
         </Accordion.ItemTrigger>
         <Accordion.ItemContent>
           <Accordion.ItemBody>
-            <Text>
+            <Text textStyle="sm">
               Date;Type;Note;Symbole boursier;ISIN;Nom du titre;Parts;Montant brut;Frais;Impôts / Taxes;Valeur;Devise de
               l'opération
             </Text>
             {theStatements
               .sort((a: StatementEntry, b: StatementEntry) => a.date - b.date)
               .map((item) => (
-                <Text key={item.id}>
+                <Text key={item.id} textStyle="sm">
                   {formatDate(item.date)};{statementType(item)};"{item.description}";{statementSymbol(item)};
                   {statementIsin(item)};{statementSymbolName(item)};{statementUnits(item)};{statementPrice(item)};
                   {statementFees(item)};0;
