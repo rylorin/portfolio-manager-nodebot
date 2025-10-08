@@ -1,6 +1,7 @@
 import React from "react";
 import { createRoot } from "react-dom/client";
 import { Outlet, RouterProvider, createBrowserRouter } from "react-router-dom";
+import ErrorBoundary from "./components/ErrorBoundary";
 import Layout from "./components/Layout/Layout";
 import BalanceEdit from "./components/Portfolio/Balance/BalanceEdit";
 import BalanceShow from "./components/Portfolio/Balance/BalanceShow";
@@ -352,8 +353,10 @@ const router = createBrowserRouter(
 
 createRoot(document.getElementById("root")).render(
   <React.StrictMode>
-    <Provider>
-      <RouterProvider router={router} />
-    </Provider>
+    <ErrorBoundary>
+      <Provider>
+        <RouterProvider router={router} />
+      </Provider>
+    </ErrorBoundary>
   </React.StrictMode>,
 );

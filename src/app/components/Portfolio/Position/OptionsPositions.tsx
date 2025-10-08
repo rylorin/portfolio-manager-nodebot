@@ -124,7 +124,7 @@ const OptionsPositions: FunctionComponent<PositionsIndexProps> = ({ ..._rest }):
             <Table.Cell>Cost</Table.Cell>
             <Table.Cell>Value</Table.Cell>
             <Table.Cell>PNL</Table.Cell>
-            <Table.Cell>APY</Table.Cell>
+            <Table.Cell>APR</Table.Cell>
             <Table.Cell>Engaged</Table.Cell>
             <Table.Cell>At risk</Table.Cell>
             <Table.Cell>Actions</Table.Cell>

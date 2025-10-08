@@ -18,7 +18,7 @@ import {
   StatementEntry,
   TaxStatementEntry,
 } from "../../../../routers/statements.types";
-import { SelectContent, SelectRoot, SelectTrigger, SelectValueText, toArray } from "../../ui/select";
+import { SelectContent, SelectRoot, SelectTrigger, toArray } from "../../ui/select";
 import { ContractLink } from "../Contract/links";
 import { statementTypeToString } from "../Trade/utils";
 
@@ -137,9 +137,7 @@ const StatementEdit: FunctionComponent<Props> = ({ ..._rest }): React.ReactNode 
                 </Text>
                 <Field name="statementType" w="200px" type="number" variant="outline" as="span" display="inline-flex">
                   <SelectRoot collection={statementTypes} w="200px">
-                    <SelectTrigger>
-                      <SelectValueText placeholder={statementTypeToString(formik.values.statementType)} />
-                    </SelectTrigger>
+                    <SelectTrigger placeholder={statementTypeToString(formik.values.statementType)} />
                     <SelectContent collection={statementTypes} />
                   </SelectRoot>
                 </Field>
@@ -171,9 +169,7 @@ const StatementEdit: FunctionComponent<Props> = ({ ..._rest }): React.ReactNode 
                       // formik.setFieldTouched("status", true, false);
                     }}
                   >
-                    <SelectTrigger>
-                      <SelectValueText placeholder={(formik.values as BondStatementEntry).country} />
-                    </SelectTrigger>
+                    <SelectTrigger placeholder={(formik.values as BondStatementEntry).country} />
                     <SelectContent collection={countries} />
                   </Field>
                 </Flex>
@@ -197,9 +193,7 @@ const StatementEdit: FunctionComponent<Props> = ({ ..._rest }): React.ReactNode 
                         // formik.setFieldTouched("status", true, false);
                       }}
                     >
-                      <SelectTrigger>
-                        <SelectValueText placeholder={(formik.values as InterestStatementEntry).country} />
-                      </SelectTrigger>
+                      <SelectTrigger placeholder={(formik.values as InterestStatementEntry).country} />
                       <SelectContent collection={countries} />
                     </SelectRoot>
                   </Field>
@@ -224,9 +218,7 @@ const StatementEdit: FunctionComponent<Props> = ({ ..._rest }): React.ReactNode 
                       // formik.setFieldTouched("status", true, false);
                     }}
                   >
-                    <SelectTrigger>
-                      <SelectValueText placeholder={(formik.values as TaxStatementEntry).country} />
-                    </SelectTrigger>
+                    <SelectTrigger placeholder={(formik.values as TaxStatementEntry).country} />
                     <SelectContent collection={countries} />
                   </Field>
                 </Flex>

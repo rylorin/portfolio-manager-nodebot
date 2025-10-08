@@ -38,7 +38,7 @@ const TradesTable: FunctionComponent<Props> = ({ title = "Trades index", content
             <Table.Cell>Days</Table.Cell>
             <Table.Cell>Risk</Table.Cell>
             <Table.Cell>PnL</Table.Cell>
-            <Table.Cell>APY</Table.Cell>
+            <Table.Cell>APR</Table.Cell>
           </Table.Row>
         </Table.Header>
         <Table.Body>

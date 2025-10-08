@@ -27,9 +27,14 @@ const StartServer = (): void => {
     res.sendFile(path.join(__dirname, "app/index.html"));
   });
 
-  app.listen(PORT, () => {
-    console.log(`Server listening at http://localhost:${PORT}`);
-  });
+  try {
+    app.listen(PORT, () => {
+      console.log(`Server listening at http://localhost:${PORT}`);
+    });
+  } catch (err) {
+    console.error("Failed to start server:", err);
+    process.exit(1);
+  }
 };
 
 export default StartServer;

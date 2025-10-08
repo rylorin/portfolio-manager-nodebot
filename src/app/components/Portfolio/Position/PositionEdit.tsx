@@ -114,7 +114,7 @@ const PositionEdit: FunctionComponent<PositionEditProps> = ({ ..._rest }): React
               {"apy" in thisPosition && (
                 <Flex justifyContent="center" gap="2">
                   <Text w="90px" as="b" textAlign="right">
-                    APY:
+                    APR:
                   </Text>
                   <Text w="200px" textAlign="right">
                     <Number value={thisPosition.apy as number} decimals={2} isPercent />

@@ -7,7 +7,7 @@ import { TradeStatus, TradeStrategy } from "../../../../models/trade.types";
 import { TradeEntry } from "../../../../routers/";
 import { formatNumber } from "../../../utils";
 import Number from "../../Number/Number";
-import { SelectContent, SelectRoot, SelectTrigger, SelectValueText, toArray } from "../../ui/select";
+import { SelectContent, SelectRoot, SelectTrigger, toArray } from "../../ui/select";
 import { tradeStatus2String, tradeStrategy2String } from "./utils";
 
 type Props = Record<string, never>;
@@ -95,9 +95,7 @@ const TradeEdit: FunctionComponent<Props> = ({ ..._rest }): React.ReactNode => {
                       // formik.setFieldTouched("status", true, false);
                     }}
                   >
-                    <SelectTrigger>
-                      <SelectValueText placeholder={tradeStatus2String(formik.values.status)} />
-                    </SelectTrigger>
+                    <SelectTrigger placeholder={tradeStatus2String(formik.values.status)} />
                     <SelectContent collection={tradeStatus} />
                   </SelectRoot>
                 </Field>
@@ -116,9 +114,7 @@ const TradeEdit: FunctionComponent<Props> = ({ ..._rest }): React.ReactNode => {
                       // formik.setFieldTouched("strategy", true, false);
                     }}
                   >
-                    <SelectTrigger>
-                      <SelectValueText placeholder={tradeStrategy2String(formik.values.strategy)} />
-                    </SelectTrigger>
+                    <SelectTrigger placeholder={tradeStrategy2String(formik.values.strategy)} />
                     <SelectContent collection={tradeStrategy} />
                   </SelectRoot>
                 </Field>
@@ -165,7 +161,7 @@ const TradeEdit: FunctionComponent<Props> = ({ ..._rest }): React.ReactNode => {
               </Flex>
               <Flex justifyContent="center" gap="2">
                 <Text w="90px" as="b" textAlign="right">
-                  APY:
+                  APR:
                 </Text>
                 <Text w="200px" textAlign="right">
                   <Number value={thisTrade.apy} isPercent />

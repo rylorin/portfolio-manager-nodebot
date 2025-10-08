@@ -9,15 +9,17 @@ type ItemType = { label: string; value: string }; // eslint-disable-line @typesc
 
 interface SelectTriggerProps extends ChakraSelect.ControlProps {
   clearable?: boolean;
-  children: React.ReactNode;
+  placeholder: string;
 }
 
 export const SelectTrigger = React.forwardRef<HTMLButtonElement, SelectTriggerProps>(
   function SelectTrigger(props, ref) {
-    const { children, clearable, ...rest } = props;
+    const { clearable, placeholder, ...rest } = props;
     return (
       <ChakraSelect.Control {...rest}>
-        <ChakraSelect.Trigger ref={ref}>{children}</ChakraSelect.Trigger>
+        <ChakraSelect.Trigger ref={ref}>
+          <SelectValueText placeholder={placeholder} />
+        </ChakraSelect.Trigger>
         <ChakraSelect.IndicatorGroup>
           {clearable && <SelectClearTrigger />}
           <ChakraSelect.Indicator />

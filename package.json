@@ -17,6 +17,7 @@
     "clean": "rm -rf dist",
     "client:build": "vite build",
     "client:dev": "vite",
+    "dev": "concurrently \"yarn server:dev\" \"yarn client:dev\"",
     "doc": "typedoc --excludeInternal",
     "doc:dev": "typedoc --out ./doc-dev",
     "lint": "eslint ./src",
@@ -27,8 +28,7 @@
     "serve": "vite preview",
     "server:build": "tsc --project tsconfig.server.json",
     "server:dev": "ts-node-dev --project tsconfig.server.json src/index -watch -server -account -import -trader",
-    "start": "yarn && node dist/index.js -server -watch",
-    "start:dev": "concurrently \"yarn server:dev\" \"yarn client:dev\""
+    "start": "yarn && node dist/index.js -server -watch"
   },
   "dependencies": {
     "@chakra-ui/react": "^3.24.02",

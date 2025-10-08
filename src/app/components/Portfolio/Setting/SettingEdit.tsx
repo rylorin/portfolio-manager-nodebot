@@ -1,10 +1,11 @@
-import { Flex, IconButton, Select, Text, VStack } from "@chakra-ui/react";
+import { Flex, IconButton, Text, VStack } from "@chakra-ui/react";
 import { Field, Formik, FormikProps } from "formik";
 import React, { FunctionComponent } from "react";
 import { LuArrowLeft as ArrowBackIcon, LuCheck as CheckIcon } from "react-icons/lu";
 import { Form, useLoaderData, useNavigate, useSubmit } from "react-router-dom";
 import { cspStrategy2String, CspStrategySetting, StrategySetting } from "../../../../models/types";
 import { SettingEntry } from "../../../../routers/";
+import { SelectRoot } from "../../ui/select";
 import { settingEditLoader } from "./loaders";
 
 type Props = Record<string, never>;
@@ -39,7 +40,7 @@ const SettingEdit: FunctionComponent<Props> = ({ ..._rest }): React.ReactNode =>
                 <Text w="180px" as="b" textAlign="right">
                   Symbol:
                 </Text>
-                <Field as={Select} name="stock_id" w="200px" type="number" variant="outline">
+                <Field as={SelectRoot} name="stock_id" w="200px" type="number" variant="outline">
                   {setting.underlying && (
                     <option value={setting.underlying.id} key={`k${setting.underlying.id}`}>
                       {setting.underlying.symbol} ({setting.underlying.id})
@@ -77,7 +78,7 @@ const SettingEdit: FunctionComponent<Props> = ({ ..._rest }): React.ReactNode =>
                 <Text w="180px" as="b" textAlign="right">
                   CSP strat.:
                 </Text>
-                <Field as={Select} name="cspStrategy" w="200px" type="number" variant="outline">
+                <Field as={SelectRoot} name="cspStrategy" w="200px" type="number" variant="outline">
                   {Object.entries(CspStrategySetting).map((v, k) => (
                     <option value={v[1]} key={`k${k}`}>
                       {v[0]} ({v[1]})
@@ -105,7 +106,7 @@ const SettingEdit: FunctionComponent<Props> = ({ ..._rest }): React.ReactNode =>
                 <Text w="180px" as="b" textAlign="right">
                   Put Roll strat.:
                 </Text>
-                <Field as={Select} name="rollPutStrategy" w="200px" type="number" variant="outline">
+                <Field as={SelectRoot} name="rollPutStrategy" w="200px" type="number" variant="outline">
                   {Object.entries(StrategySetting).map((v, k) => (
                     <option value={v[1]} key={`k${k}`}>
                       {v[0]} ({v[1]})
@@ -126,7 +127,7 @@ const SettingEdit: FunctionComponent<Props> = ({ ..._rest }): React.ReactNode =>
                 <Text w="180px" as="b" textAlign="right">
                   Covered calls strat.:
                 </Text>
-                <Field as={Select} name="ccStrategy" w="200px" type="number" variant="outline">
+                <Field as={SelectRoot} name="ccStrategy" w="200px" type="number" variant="outline">
                   {Object.entries(StrategySetting).map((v, k) => (
                     <option value={v[1]} key={`k${k}`}>
                       {v[0]} ({v[1]})
@@ -146,7 +147,7 @@ const SettingEdit: FunctionComponent<Props> = ({ ..._rest }): React.ReactNode =>
                 <Text w="180px" as="b" textAlign="right">
                   Covered calls Roll:
                 </Text>
-                <Field as={Select} name="rollCallStrategy" w="200px" type="number" variant="outline">
+                <Field as={SelectRoot} name="rollCallStrategy" w="200px" type="number" variant="outline">
                   {Object.entries(StrategySetting).map((v, k) => (
                     <option value={v[1]} key={`k${k}`}>
                       {v[0]} ({v[1]})
