@@ -1,7 +1,8 @@
-import { OptionType, SecType } from "@stoqey/ib";
+import { IBApiNext, OptionType, SecType } from "@stoqey/ib";
 import { Op } from "sequelize";
-import { ExtendedCookieJar, default as yahooFinance } from "yahoo-finance2";
+import YahooFinance from "yahoo-finance2";
 import { ITradingBot } from ".";
+import { MyTradingBotApp } from "..";
 import { greeks, option_implied_volatility } from "../black_scholes";
 import logger, { LogLevel } from "../logger";
 import { AnyContract, Contract, Currency, OptionContract, StockContract } from "../models";
@@ -32,8 +33,16 @@ interface Row {
 }
 
 export class YahooUpdateBot extends ITradingBot {
+  private readonly name = "YahooUpdateBot";
+  private readonly yahooFinance;
   private requestsQ: MappedQuote[] = [];
   private lastFetch = 0;
+
+  constructor(app: MyTradingBotApp, api: IBApiNext, account: string) {
+    super(app, api, account);
+    // const cookieJar = new ExtendedCookieJar();
+    this.yahooFinance = new YahooFinance();
+  }
 
   public async enqueueContract(contract: AnyContract): Promise<void> {
     let quote: MappedQuote | undefined = undefined;
@@ -256,11 +265,8 @@ export class YahooUpdateBot extends ITradingBot {
       this.lastFetch = Date.now();
       let quotes: Quote[];
       try {
-        quotes = await yahooFinance.quote(
-          q.map((a) => a.symbol),
-          {},
-          { validateResult: false },
-        );
+        // eslint-disable-next-line @typescript-eslint/no-unsafe-call
+        quotes = await this.yahooFinance.quote(q.map((a) => a.symbol));
       } catch (e: any) {
         quotes = e.result;
       }
@@ -426,10 +432,6 @@ export class YahooUpdateBot extends ITradingBot {
 
   public start(): void {
     this.on("process", () => this.processWrapper());
-
-    const cookieJar = new ExtendedCookieJar();
-    yahooFinance.setGlobalConfig({ validation: { logErrors: true }, cookieJar });
-    // this.printObject(await yahooFinance.quote("EURUSD=X"));
 
     setTimeout(() => this.emit("process"), 1 * 60 * 1000); // start after 1 min
   }

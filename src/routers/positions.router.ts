@@ -81,7 +81,8 @@ export const preparePositions = async (portfolio: Portfolio): Promise<(PositionE
               const engaged =
                 option.strike *
                 option.multiplier *
-                (option.callOrPut == OptionType.Put ? item.quantity : -item.quantity);
+                (option.callOrPut == OptionType.Put ? item.quantity : -item.quantity) *
+                (item.quantity > 0 ? 0 : 1);
               const duration = Math.max((option.expiryDate.getTime() - item.createdAt.getTime()) / 1000 / 3600 / 24, 1);
               const apy = engaged && duration ? (item.cost / engaged / duration) * 360 : undefined;
               const baseRate =
