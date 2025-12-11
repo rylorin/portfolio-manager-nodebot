@@ -116,32 +116,34 @@ const StatementsExport: FunctionComponent<Props> = ({ content, ..._rest }): Reac
   const theStatements = content || (useLoaderData() as StatementEntry[]);
 
   return (
-    <Accordion.Root collapsible variant="subtle" size="sm">
-      <Accordion.Item value="export">
-        <Accordion.ItemTrigger>
-          <Span flex="1">Portfolio Performance export</Span>
-          <Accordion.ItemIndicator />
-        </Accordion.ItemTrigger>
-        <Accordion.ItemContent>
-          <Accordion.ItemBody>
-            <Text textStyle="sm">
-              Date;Type;Note;Symbole boursier;ISIN;Nom du titre;Parts;Montant brut;Frais;Impôts / Taxes;Valeur;Devise de
-              l'opération
-            </Text>
-            {theStatements
-              .sort((a: StatementEntry, b: StatementEntry) => a.date - b.date)
-              .map((item) => (
-                <Text key={item.id} textStyle="sm">
-                  {formatDate(item.date)};{statementType(item)};"{item.description}";{statementSymbol(item)};
-                  {statementIsin(item)};{statementSymbolName(item)};{statementUnits(item)};{statementPrice(item)};
-                  {statementFees(item)};0;
-                  {statementAmount(item)};{item.currency}
-                </Text>
-              ))}
-          </Accordion.ItemBody>
-        </Accordion.ItemContent>
-      </Accordion.Item>
-    </Accordion.Root>
+    <>
+      <Accordion.Root collapsible variant="subtle" size="sm">
+        <Accordion.Item value="export">
+          <Accordion.ItemTrigger>
+            <Span flex="1">Portfolio Performance export</Span>
+            <Accordion.ItemIndicator />
+          </Accordion.ItemTrigger>
+          <Accordion.ItemContent>
+            <Accordion.ItemBody>
+              <Text textStyle="sm">
+                Date;Type;Note;Symbole boursier;ISIN;Nom du titre;Parts;Montant brut;Frais;Impôts / Taxes;Valeur;Devise
+                de l'opération
+              </Text>
+              {theStatements
+                .sort((a: StatementEntry, b: StatementEntry) => a.date - b.date)
+                .map((item) => (
+                  <Text key={item.id} textStyle="sm">
+                    {formatDate(item.date)};{statementType(item)};"{item.description}";{statementSymbol(item)};
+                    {statementIsin(item)};{statementSymbolName(item)};{statementUnits(item)};{statementPrice(item)};
+                    {statementFees(item)};0;
+                    {statementAmount(item)};{item.currency}
+                  </Text>
+                ))}
+            </Accordion.ItemBody>
+          </Accordion.ItemContent>
+        </Accordion.Item>
+      </Accordion.Root>
+    </>
   );
 };
 

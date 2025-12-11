@@ -388,7 +388,7 @@ export class ITradingBot extends EventEmitter {
           ibContract.comboLegs!.reduce(
             async (p, leg) =>
               p.then(async (contract) =>
-                this.findOrCreateContract({ conId: leg.conId }, transaction).then(() => contract),
+                this.findOrCreateContract({ ibContract: { conId: leg.conId }, transaction }).then(() => contract),
               ),
             Promise.resolve(contract),
           ),
@@ -427,7 +427,7 @@ export class ITradingBot extends EventEmitter {
       symbol: details.underSymbol,
       currency: ibContract.currency,
     };
-    return this.findOrCreateContract(underlying, transaction).then(async (future) => {
+    return this.findOrCreateContract({ ibContract: underlying, transaction }).then(async (future) => {
       future_values.underlying_id = future.id;
       return FutureContract.findOne({
         where: {
@@ -498,7 +498,7 @@ export class ITradingBot extends EventEmitter {
     details: ContractDetails,
     transaction?: Transaction,
   ): Promise<Contract> {
-    logger.log(LogLevel.Trace, MODULE + ".createOptionContract", undefined, ibContract, details);
+    // console.debug("createOptionContract", ibContract, details);
     const contract_values = {
       // Contract part of the option
       conId: ibContract.conId!,
@@ -525,7 +525,7 @@ export class ITradingBot extends EventEmitter {
       symbol: details.underSymbol,
       currency: ibContract.currency,
     };
-    return this.findOrCreateContract(underlying, transaction).then(async (stock) => {
+    return this.findOrCreateContract({ ibContract: underlying, transaction }).then(async (stock) => {
       opt_values.stock_id = stock.id;
       return OptionContract.findOne({
         where: {
@@ -548,6 +548,7 @@ export class ITradingBot extends EventEmitter {
             transaction: transaction /* logging: console.log, */,
           }).then(async (contract) => {
             opt_values.id = contract.id;
+            // console.debug("createOptionContract", opt_values);
             return OptionContract.create(opt_values, {
               transaction: transaction /* logging: false, */,
             }).then(async () => Promise.resolve(contract));
@@ -557,7 +558,16 @@ export class ITradingBot extends EventEmitter {
     });
   }
 
-  protected async findOrCreateContract(ibContract: IbContract, transaction?: Transaction): Promise<Contract> {
+  protected async findOrCreateContract({
+    ibContract,
+    transaction,
+    force,
+  }: {
+    ibContract: IbContract;
+    transaction?: Transaction;
+    force?: boolean;
+  }): Promise<Contract> {
+    // console.debug("findOrCreateContract", ibContract, force);
     logger.log(LogLevel.Trace, MODULE + ".findOrCreateContract", undefined, ibContract);
     const transaction_: Transaction | undefined = transaction; // the Transaction object that we eventually received
     let contract: Contract | null = null;
@@ -595,11 +605,19 @@ export class ITradingBot extends EventEmitter {
         const detailstab: ContractDetails[] = await Promise.race([
           this.api.getContractDetails(ibContract),
           timeoutPromise(DEFAULT_TIMEOUT_SECONDS, `Timeout fetching ${ibContract.symbol} contract`).then(() => null),
-        ]);
+        ]).catch((reason) => {
+          if (force) {
+            console.debug("Error caught, continuing with:", ibContract);
+            return [
+              {
+                contract: ibContract,
+                underConId: (ibContract as any).underConId,
+                underSymbol: (ibContract as any).underSymbol,
+              },
+            ];
+          } else throw reason;
+        });
 
-        // await this.api
-        //   .getContractDetails(ibContract)
-        //   .then((detailstab) => {
         if (detailstab.length >= 1) {
           details = detailstab[0];
           ibContract = details.contract;
@@ -613,18 +631,7 @@ export class ITradingBot extends EventEmitter {
             ibContract,
           );
         }
-        // })
-        // .catch((err: IBApiNextError) => {
-        //   const message = `getContractDetails failed for ${ibContract.secType} ${ibContract.symbol} ${ibContract.lastTradeDateOrContractMonth} ${ibContract.strike} ${ibContract.right} with error #${err.code}: '${err.error.message}'`;
-        //   logger.log(LogLevel.Error, MODULE + ".findOrCreateContract", undefined, message, ibContract);
-        //   throw {
-        //     name: "IBApiNextError",
-        //     message,
-        //     code: err.code,
-        //     parent: Error,
-        //     original: Error,
-        //   } as Error;
-        // });
+
         if (details && ibContract.secType == IbSecType.STK) {
           contract = await this.createStockContract(ibContract, details, transaction);
         } else if (details && ibContract.secType == IbSecType.IND) {
@@ -661,11 +668,6 @@ export class ITradingBot extends EventEmitter {
           MODULE + ".findOrCreateContract",
           `findOrCreateContract failed for ${ibContract.conId} ${ibContract.secType} ${ibContract.symbol} ${ibContract.lastTradeDateOrContractMonth} ${ibContract.strike} ${ibContract.right}:`,
         );
-        // this.printObject(ibContract);
-        // console.error(err);
-        // console.error("transaction_", transaction_);
-        // console.error("transaction", transaction);
-
         // if (err.name == "SequelizeTimeoutError") this.app.stop();
       }
       // rollback changes

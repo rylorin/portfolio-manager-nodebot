@@ -455,7 +455,9 @@ export class TradeBot extends ITradingBot {
                   .then(async (result) =>
                     result.reduce(
                       async (p, item) =>
-                        p.then(async () => this.findOrCreateContract(item.contract).then((contract) => contract)),
+                        p.then(async () =>
+                          this.findOrCreateContract({ ibContract: item.contract }).then((contract) => contract),
+                        ),
                       Promise.resolve(null as unknown as Contract),
                     ),
                   )

@@ -26,23 +26,26 @@ const MODULE = "ImporterBot";
 const sequelize_logging = (...args: any[]): void => logger.trace(MODULE + ".squelize", ...args);
 
 const ibContractFromElement = (element: any): IbContract => {
-  const ibContract: IbContract = {
+  const ibContract = {
     secType: element.assetCategory,
-    conId: element.conid,
+    conId: parseInt(element.conid), // eslint-disable-line @typescript-eslint/no-unsafe-argument
     symbol:
       element.assetCategory == SecType.OPT || element.assetCategory == SecType.FOP
         ? element.underlyingSymbol
         : element.symbol,
     primaryExch: element.listingExchange,
     currency: element.currency,
-    strike: element.strike,
+    strike: parseFloat(element.strike), // eslint-disable-line @typescript-eslint/no-unsafe-argument
     lastTradeDateOrContractMonth: element.expiry,
-    multiplier: element.multiplier,
+    multiplier: parseInt(element.multiplier), // eslint-disable-line @typescript-eslint/no-unsafe-argument
     right: element.putCall,
     description: element.description,
     localSymbol: element.symbol,
     secIdType: element.securityIDType,
     secId: element.securityIDType == "ISIN" ? element.isin : undefined,
+    // the following are not part of the IB contract but will be used as details if the contract details are unknown from the API
+    underConId: parseInt(element.underlyingConid), // eslint-disable-line @typescript-eslint/no-unsafe-argument
+    underSymbol: element.underlyingSymbol,
   };
   return ibContract;
 };
@@ -197,7 +200,11 @@ export class ImporterBot extends ITradingBot {
   // eslint-disable-next-line @typescript-eslint/explicit-module-boundary-types
   protected async processSecurityInfoUnderlying(element: any): Promise<Contract | undefined> {
     if (element.underlyingConid) {
-      return this.findOrCreateContract(ibUnderlyingContractFromElement(element));
+      const ibContract = ibUnderlyingContractFromElement(element);
+      return this.findOrCreateContract({ ibContract }).catch((e) => {
+        console.error("processSecurityInfoUnderlying failed:", e, "element:", element);
+        throw e;
+      });
     } else return Promise.resolve(undefined as undefined);
   }
 
@@ -218,7 +225,7 @@ export class ImporterBot extends ITradingBot {
           "contract",
           ibContract,
         );
-        return this.findOrCreateContract(ibContract).then(async (contract) => {
+        return this.findOrCreateContract({ ibContract, force: true }).then(async (contract) => {
           if (contract.secType == SecType.STK) {
             const contract_data = {
               symbol: element.symbol,
@@ -265,7 +272,7 @@ export class ImporterBot extends ITradingBot {
         });
       })
       .catch((e) => {
-        console.error("processSecurityInfo failed:", e, element);
+        console.error("processSecurityInfo failed:", e, "element:", element);
         logger.log(LogLevel.Error, MODULE + ".processSecurityInfo", element.securityID as string, e, element);
         return undefined;
       });
@@ -307,7 +314,7 @@ export class ImporterBot extends ITradingBot {
   protected async _processStockTrade(element: any): Promise<void> {
     logger.log(LogLevel.Trace, MODULE + ".processStockTrade", element.symbol as string, element);
     // if (element.symbol == "SHYL") console.log(element);
-    return this.findOrCreateContract(ibContractFromElement(element)).then(async (contract) =>
+    return this.findOrCreateContract({ ibContract: ibContractFromElement(element) }).then(async (contract) =>
       Statement.findOrCreate({
         where: { transactionId: element.transactionID },
         defaults: {
@@ -508,7 +515,7 @@ export class ImporterBot extends ITradingBot {
   protected async _processBondTrade(element: any): Promise<BondStatement | null> {
     logger.log(LogLevel.Trace, MODULE + ".processBondTrade", element.securityID as string, element);
     // this.printObject(element);
-    return this.findOrCreateContract(ibContractFromElement(element)).then(async (contract) =>
+    return this.findOrCreateContract({ ibContract: ibContractFromElement(element) }).then(async (contract) =>
       Statement.findOrCreate({
         where: { transactionId: element.transactionID },
         defaults: {
@@ -572,11 +579,11 @@ export class ImporterBot extends ITradingBot {
       case SecType.STK:
       case SecType.FUT:
         statementType = StatementTypes.EquityStatement;
-        contract = await this.findOrCreateContract(ibContractFromElement(element));
+        contract = await this.findOrCreateContract({ ibContract: ibContractFromElement(element) });
         break;
       case SecType.CASH:
         statementType = StatementTypes.EquityStatement;
-        contract = await this.findOrCreateContract(ibContractFromElement(element));
+        contract = await this.findOrCreateContract({ ibContract: ibContractFromElement(element) });
         netCash = proceeds;
         break;
       case SecType.FOP:
@@ -595,7 +602,7 @@ export class ImporterBot extends ITradingBot {
         break;
       case SecType.BOND:
         statementType = StatementTypes.BondStatement;
-        contract = await this.findOrCreateContract(ibContractFromElement(element));
+        contract = await this.findOrCreateContract({ ibContract: ibContractFromElement(element) });
         break;
       default:
         logger.error(MODULE + ".processOneTrade", "Unsupported assetCategory: " + element.assetCategory, element);
@@ -780,7 +787,11 @@ export class ImporterBot extends ITradingBot {
         console.error("undefined cash trasaction type:", element);
         throw Error("undefined cash trasaction type: " + element.type);
     }
-    return (element.assetCategory ? this.findOrCreateContract(ibContractFromElement(element)) : Promise.resolve(null))
+    return (
+      element.assetCategory
+        ? this.findOrCreateContract({ ibContract: ibContractFromElement(element) })
+        : Promise.resolve(null)
+    )
       .then(async (contract: Contract | null | undefined) =>
         Statement.findOrCreate({
           where: { transactionId: element.transactionID },
@@ -884,7 +895,11 @@ export class ImporterBot extends ITradingBot {
   protected async processCorporateAction(element: any): Promise<Statement> {
     // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
     logger.log(LogLevel.Trace, MODULE + ".processCorporateAction", element.symbol, element);
-    return (element.assetCategory ? this.findOrCreateContract(ibContractFromElement(element)) : Promise.resolve(null))
+    return (
+      element.assetCategory
+        ? this.findOrCreateContract({ ibContract: ibContractFromElement(element) })
+        : Promise.resolve(null)
+    )
       .then(async (contract: Contract | null | undefined) => {
         return Statement.findOrCreate({
           where: { transactionId: element.transactionID },

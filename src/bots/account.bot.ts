@@ -91,7 +91,7 @@ export class AccountUpdateBot extends ITradingBot {
       return order.contract.comboLegs!.reduce(
         async (p, leg) =>
           p.then(async () =>
-            this.findOrCreateContract({ conId: leg.conId }, transaction).then(async (contract) => {
+            this.findOrCreateContract({ ibContract: { conId: leg.conId }, transaction }).then(async (contract) => {
               const where = {
                 permId: order.order.permId!,
                 portfolioId: this.portfolio.id,
@@ -138,7 +138,7 @@ export class AccountUpdateBot extends ITradingBot {
 
   protected async handleUpdateOpenOrder(order: IbOpenOrder, transaction: Transaction): Promise<void> {
     logger.log(LogLevel.Info, MODULE + ".handleUpdateOpenOrder", undefined, order.order.permId, order.contract.symbol);
-    await this.findOrCreateContract(order.contract, transaction).then(async (contract: Contract) => {
+    await this.findOrCreateContract({ ibContract: order.contract, transaction }).then(async (contract: Contract) => {
       logger.log(LogLevel.Trace, MODULE + ".handleUpdateOpenOrder", contract.symbol, "contract found", contract.id);
       return OpenOrder.findOrCreate({
         where: {
@@ -229,32 +229,34 @@ export class AccountUpdateBot extends ITradingBot {
       quantity: pos.pos,
       cost: pos.avgCost! * pos.pos,
     };
-    return this.findOrCreateContract(pos.contract).then(async (contract): Promise<Position | undefined> => {
-      if (defaults.quantity) {
-        return Position.findOrCreate({
-          where: { contract_id: contract.id },
-          defaults: { ...defaults, contract_id: contract.id },
-        })
-          .then(async ([position, created]) => {
-            if (created) return position;
-            else {
-              return position.update(defaults);
-            }
+    return this.findOrCreateContract({ ibContract: pos.contract }).then(
+      async (contract): Promise<Position | undefined> => {
+        if (defaults.quantity) {
+          return Position.findOrCreate({
+            where: { contract_id: contract.id },
+            defaults: { ...defaults, contract_id: contract.id },
           })
-          .then(async (position): Promise<Position | undefined> => {
-            // update contract price, then return position
-            if (pos.marketValue) {
-              contract.price = pos.marketValue / pos.pos / (pos.contract.multiplier || 1);
-              contract.changed("price", true); // force update
-            }
-            return contract.save({ logging: undefined }).then(() => position);
-          });
-      } else {
-        return Position.destroy({ where: { portfolio_id: defaults.portfolio_id, contract_id: contract.id } }).then(
-          (_count): undefined => undefined,
-        );
-      }
-    });
+            .then(async ([position, created]) => {
+              if (created) return position;
+              else {
+                return position.update(defaults);
+              }
+            })
+            .then(async (position): Promise<Position | undefined> => {
+              // update contract price, then return position
+              if (pos.marketValue) {
+                contract.price = pos.marketValue / pos.pos / (pos.contract.multiplier || 1);
+                contract.changed("price", true); // force update
+              }
+              return contract.save({ logging: undefined }).then(() => position);
+            });
+        } else {
+          return Position.destroy({ where: { portfolio_id: defaults.portfolio_id, contract_id: contract.id } }).then(
+            (_count): undefined => undefined,
+          );
+        }
+      },
+    );
   }
 
   protected async updateCashPosition(pos: { currency: string; balance: number }): Promise<Balance> {

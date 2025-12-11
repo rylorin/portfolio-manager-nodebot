@@ -80,7 +80,7 @@ export const statementModelToStatementEntry = async (item: Statement): Promise<S
         return {
           statementType: StatementTypes.DividendStatement,
           ...baseStatement,
-          country: thisStatement!.country || "??",
+          country: thisStatement?.country || "??",
           // underlying: contractModelToContractEntry(item.stock),
           pnl: item.netCash,
         };
