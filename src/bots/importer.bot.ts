@@ -36,7 +36,7 @@ const ibContractFromElement = (element: any): IbContract => {
     primaryExch: element.listingExchange,
     currency: element.currency,
     strike: parseFloat(element.strike), // eslint-disable-line @typescript-eslint/no-unsafe-argument
-    lastTradeDateOrContractMonth: element.expiry,
+    lastTradeDateOrContractMonth: element.expiry?.replaceAll("-", ""), // eslint-disable-line @typescript-eslint/no-unsafe-call
     multiplier: parseInt(element.multiplier), // eslint-disable-line @typescript-eslint/no-unsafe-argument
     right: element.putCall,
     description: element.description,
