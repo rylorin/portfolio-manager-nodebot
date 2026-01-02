@@ -50,6 +50,8 @@ const statementSymbol = (item: StatementEntry): string => {
   switch (item.statementType) {
     case "Trade":
     case "Dividend":
+    case "Tax":
+    case "WithHolding":
       return item.underlying?.symbol || "N/A";
     case "TradeOption":
       return item.option?.symbol || "N/A";
@@ -62,6 +64,8 @@ const statementIsin = (item: StatementEntry): string => {
   switch (item.statementType) {
     case "Trade":
     case "Dividend":
+    case "Tax":
+    case "WithHolding":
       return item.underlying?.isin;
     default:
       return "";
@@ -72,6 +76,8 @@ const statementSymbolName = (item: StatementEntry): string => {
   switch (item.statementType) {
     case "Trade":
     case "Dividend":
+    case "Tax":
+    case "WithHolding":
       return item.underlying?.name || "N/A";
     case "TradeOption":
       return item.option?.name || "N/A";
@@ -97,12 +103,12 @@ const statementAmount = (item: StatementEntry): string => {
 };
 
 const statementFees = (item: StatementEntry): string => {
-  const amount = `${"fees" in item ? item.fees : 0}`;
+  const amount = `${"fees" in item ? -item.fees : 0}`;
   return amount.replace(".", ",");
 };
 
 const statementUnits = (item: StatementEntry): string => {
-  const amount = `${"quantity" in item ? item.quantity : 0}`;
+  const amount = `${"quantity" in item ? Math.abs(item.quantity) : 0}`;
   return amount.replace(".", ",");
 };
 
@@ -126,17 +132,16 @@ const StatementsExport: FunctionComponent<Props> = ({ content, ..._rest }): Reac
           <Accordion.ItemContent>
             <Accordion.ItemBody>
               <Text textStyle="sm">
-                Date;Type;Note;Symbole boursier;ISIN;Nom du titre;Parts;Montant brut;Frais;Impôts / Taxes;Valeur;Devise
-                de l'opération
+                Date;Type;Valeur;Devise de l'opération;Montant brut;Montant brut en devise;Taux de change;Frais;Impôts /
+                Taxes;Parts;ISIN;WKN;Symbole boursier;Nom du titre;Note
               </Text>
               {theStatements
                 .sort((a: StatementEntry, b: StatementEntry) => a.date - b.date)
                 .map((item) => (
                   <Text key={item.id} textStyle="sm">
-                    {formatDate(item.date)};{statementType(item)};"{item.description}";{statementSymbol(item)};
-                    {statementIsin(item)};{statementSymbolName(item)};{statementUnits(item)};{statementPrice(item)};
-                    {statementFees(item)};0;
-                    {statementAmount(item)};{item.currency}
+                    {formatDate(item.date)};{statementType(item)};{statementAmount(item)};{item.currency};;
+                    {statementPrice(item)};;{statementFees(item)};0;{statementUnits(item)};{statementIsin(item)};;
+                    {statementSymbol(item)};{statementSymbolName(item)};"{item.description}"
                   </Text>
                 ))}
             </Accordion.ItemBody>
