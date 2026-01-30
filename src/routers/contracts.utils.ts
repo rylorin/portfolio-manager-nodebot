@@ -63,8 +63,8 @@ export const optionContractModelToOptionContractEntry = (option: OptionContract)
     dte: option.dte,
 
     // Make JSON compatible
-    createdAt: option.createdAt.getTime(),
-    updatedAt: option.createdAt.getTime(),
+    createdAt: option.createdAt?.getTime(),
+    updatedAt: option.createdAt?.getTime(),
 
     // Associations
     contract: undefined,

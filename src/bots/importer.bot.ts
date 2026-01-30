@@ -227,14 +227,14 @@ export class ImporterBot extends ITradingBot {
         );
         return this.findOrCreateContract({ ibContract, force: true }).then(async (contract) => {
           if (contract.secType == SecType.STK) {
-            const contract_data = {
+            const contract_data: any = {
               symbol: element.symbol,
               name: element.description,
               currency: element.currency,
-              isin: element.isin,
-              // isin: "XY0123456789",
+              // isin: element.isin,
               exchange: element.listingExchange,
             };
+            if (element.isin?.length > 0) contract_data.isin = element.isin;
             return contract.update(contract_data, {});
           } else if (contract.secType == SecType.BOND) {
             // IB API does not provide any usefull information for BONDs therefore we update it using XML information
@@ -820,7 +820,8 @@ export class ImporterBot extends ITradingBot {
               //   idx = (element.description as string).indexOf("(");
               //   country = (element.description as string).substring(idx + 1, idx + 3);
               // }
-              const country = (element.isin as string).substring(0, 2);
+              const isin = element.isin as string;
+              const country = isin && isin.length > 2 ? isin.substring(0, 2) : "XX";
               return TaxStatement.findOrCreate({
                 where: { id: statement.id },
                 defaults: { id: statement.id, country },
@@ -831,7 +832,8 @@ export class ImporterBot extends ITradingBot {
           case StatementTypes.DividendStatement:
             {
               // console.log(element);
-              const country = (element.isin as string).substring(0, 2);
+              const isin = element.isin as string;
+              const country = isin && isin.length > 2 ? isin.substring(0, 2) : "XX";
               return DividendStatement.findOrCreate({
                 where: { id: statement.id },
                 defaults: { id: statement.id, country },

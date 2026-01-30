@@ -1,5 +1,5 @@
 export const ReportLink = {
-  toIndex: (portfolioId: number | string): string => (portfolioId ? `/portfolio/${portfolioId}/reports/ytd` : "#"),
+  toIndex: (portfolioId: number | string): string => (portfolioId ? `/portfolio/${portfolioId}/reports/12m/` : "#"),
   toYtd: (portfolioId: number | string): string => (portfolioId ? `/portfolio/${portfolioId}/reports/ytd` : "#"),
   to12m: (portfolioId: number | string): string => (portfolioId ? `/portfolio/${portfolioId}/reports/12m` : "#"),
   toAll: (portfolioId: number | string): string => (portfolioId ? `/portfolio/${portfolioId}/reports/index` : "#"),
