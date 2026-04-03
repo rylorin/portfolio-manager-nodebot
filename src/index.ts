@@ -7,8 +7,14 @@ import { IBApiNextApp } from "@stoqey/ib/dist/tools/common/ib-api-next-app";
 import path from "path";
 import { Sequelize, SequelizeOptions } from "sequelize-typescript";
 import { AccountUpdateBot, YahooUpdateBot } from "./bots";
-import { ImporterBot } from "./bots/importer.bot";
-import { TradeBot } from "./bots/trader.bot";
+import { JobManager } from "./jobs";
+import { CashSecuredPutsStrategiesJob } from "./jobs/cashSecuredPutsStrategies";
+import { CashStrategyJob } from "./jobs/cashStrategy";
+import { CoveredCallsStrategiesJob } from "./jobs/coveredCallsStrategies";
+import { OptionChainMaintenanceJob } from "./jobs/optionChain";
+import { PricesUpdateJob } from "./jobs/pricesUpdate";
+import { ReportLoaderJob } from "./jobs/reportLoader";
+import { RollStrategiesJob } from "./jobs/rollStrategies";
 import logger from "./logger";
 import {
   BagContract,
@@ -77,6 +83,7 @@ const EXAMPLE_TEXT = path.basename(__filename) + path.basename(__filename) + "-p
 
 export class MyTradingBotApp extends IBApiNextApp {
   public sequelize: Sequelize;
+  jobManager: JobManager;
 
   constructor() {
     super(DESCRIPTION_TEXT, USAGE_TEXT, OPTION_ARGUMENTS, EXAMPLE_TEXT);
@@ -88,6 +95,10 @@ export class MyTradingBotApp extends IBApiNextApp {
   public start(): void {
     super.start();
     this.connect();
+    let accountId: string;
+    if (this.cmdLineArgs.accountId) accountId = this.cmdLineArgs.accountId as string;
+    else if (process.env.IB_ACCOUNT) accountId = process.env.IB_ACCOUNT;
+    else throw Error("Please define accountId");
     const sequelize_settings: SequelizeOptions = {
       dialect: "sqlite",
       storage: __dirname + "/../../db/var/db/data.db",
@@ -132,23 +143,17 @@ export class MyTradingBotApp extends IBApiNextApp {
       .authenticate()
       .then(async () => this.sequelize.sync())
       .then(() => {
-        let accountId: string;
-        if (this.cmdLineArgs.accountId) accountId = this.cmdLineArgs.accountId as string;
-        else if (process.env.IB_ACCOUNT) accountId = process.env.IB_ACCOUNT;
-        else throw Error("Please define accountId");
-
         if (this.cmdLineArgs.server) {
           StartServer();
         }
 
-        if (this.cmdLineArgs.import) new ImporterBot(this, this.api, accountId).start();
         const yahooBot: YahooUpdateBot = new YahooUpdateBot(this, this.api, accountId);
         if (this.cmdLineArgs.account)
           new AccountUpdateBot(this, this.api, accountId)
             .start()
-            .then(() => {
-              if (this.cmdLineArgs.trader) new TradeBot(this, this.api, accountId).start();
-            })
+            // .then(() => {
+            //   if (this.cmdLineArgs.trader) new TradeBot(this, this.api, accountId).start();
+            // })
             .catch((error: Error) => this.error(error.message));
         if (this.cmdLineArgs.yahoo) yahooBot.start();
       })
@@ -156,6 +161,15 @@ export class MyTradingBotApp extends IBApiNextApp {
         logger.error("Database initialization or bot startup failed", { error: err.message, stack: err.stack });
         process.exit(1); // Exit on critical failure
       });
+    this.jobManager = new JobManager();
+    this.jobManager.addJob(new OptionChainMaintenanceJob(this, this.api, accountId));
+    this.jobManager.addJob(new PricesUpdateJob(this, this.api, accountId));
+    this.jobManager.addJob(new CashStrategyJob(this, this.api, accountId));
+    this.jobManager.addJob(new RollStrategiesJob(this, this.api, accountId));
+    this.jobManager.addJob(new CoveredCallsStrategiesJob(this, this.api, accountId));
+    this.jobManager.addJob(new CashSecuredPutsStrategiesJob(this, this.api, accountId));
+    if (this.cmdLineArgs.import) this.jobManager.addJob(new ReportLoaderJob(this, this.api, accountId));
+    this.jobManager.startAll().catch((error) => console.error("failed to start job manager", error));
   }
 
   /**

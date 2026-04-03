@@ -173,7 +173,7 @@ export class ITradingBot extends EventEmitter {
     return order;
   }
 
-  protected async init(): Promise<void> {
+  public async init(): Promise<void> {
     return Portfolio.findOne({
       where: {
         account: this.accountNumber,

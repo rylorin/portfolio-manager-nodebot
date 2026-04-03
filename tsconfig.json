@@ -34,5 +34,8 @@
     "useUnknownInCatchVariables": true // Bonne pratique pour une meilleure gestion des erreurs
   },
   "exclude": ["node_modules", "dist", "**/*.test.ts", "**/*.spec.ts"], // Ajout des tests et du dossier dist
-  "include": ["./src"]
+  "include": ["./src"],
+  "ts-node": {
+    "require": ["tsconfig-paths/register"]
+  }
 }

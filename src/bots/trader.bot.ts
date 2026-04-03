@@ -160,7 +160,7 @@ export class TradeBot extends ITradingBot {
       );
   }
 
-  private async expireOptions(): Promise<void> {
+  public async expireOptions(): Promise<void> {
     logger.info(MODULE + ".expireOptions", "Expiring old options contracts");
     return OptionContract.findAll({ where: { lastTradeDate: { [Op.lt]: dateToExpiration() } } }).then(async (options) =>
       options.reduce(
@@ -363,7 +363,7 @@ export class TradeBot extends ITradingBot {
     });
   }
 
-  private async updateCurrencyContracts(): Promise<void> {
+  public async updateCurrencyContracts(): Promise<void> {
     logger.info(MODULE + ".updateCurrencyContracts", "Updating currencies' contracts");
     return Contract.findAll({ where: { secType: SecType.CASH } })
       .then(async (contracts) => this.findUpdatedContracts(contracts.map((item) => item.id)))
@@ -372,7 +372,7 @@ export class TradeBot extends ITradingBot {
       );
   }
 
-  private async updatePositionsContracts(): Promise<Contract[]> {
+  public async updatePositionsContracts(): Promise<Contract[]> {
     logger.info(MODULE + ".updatePositions", "Updating positions' contracts");
     return Position.findAll({
       where: { portfolio_id: this.portfolio.id },
@@ -405,7 +405,7 @@ export class TradeBot extends ITradingBot {
       });
   }
 
-  private async updateSettingsContracts(settings: Setting[]): Promise<Setting[]> {
+  public async updateSettingsContracts(settings: Setting[]): Promise<Setting[]> {
     logger.info(MODULE + ".updateSettingsContracts", "Updating settings' contracts");
     return this.findUpdatedContracts(settings.map((item) => item.underlying)).then(() => settings);
   }
@@ -488,7 +488,7 @@ export class TradeBot extends ITradingBot {
       .then(() => setting);
   }
 
-  private async addOptionsChains(): Promise<void> {
+  public async addOptionsChains(): Promise<void> {
     logger.info(MODULE + ".addOptionsChains", "Add or Update options' chains");
     return this.portfolio.settings.reduce(
       async (p, setting) => p.then(async () => this.addOneOptionsChains(setting).then()),
@@ -600,7 +600,7 @@ export class TradeBot extends ITradingBot {
     }
   }
 
-  private async runRollStrategies(): Promise<void> {
+  public async runRollStrategies(): Promise<void> {
     logger.info(MODULE + ".runRollStrategies", "Running Roll strategies");
     return Position.findAll({
       where: { portfolio_id: this.portfolio.id },
@@ -685,7 +685,7 @@ export class TradeBot extends ITradingBot {
     }
   }
 
-  private async runCCStrategies(): Promise<void> {
+  public async runCCStrategies(): Promise<void> {
     logger.info(MODULE + ".run", "Running Covered Calls strategies");
     return Position.findAll({
       where: { portfolio_id: this.portfolio.id },
@@ -815,14 +815,14 @@ export class TradeBot extends ITradingBot {
     }
   }
 
-  private async runCSPStrategies(): Promise<void> {
+  public async runCSPStrategies(): Promise<void> {
     logger.info(MODULE + ".runCSPStrategies", "Running Cash Secured Put strategies");
     return this.portfolio.settings
       .filter((item) => item.cspStrategy)
       .reduce(async (p, setting) => p.then(async () => this.runOneCSPStrategy(setting)), Promise.resolve());
   }
 
-  private async runCashStrategy(): Promise<void> {
+  public async runCashStrategy(): Promise<void> {
     logger.info(MODULE + ".runCashStrategy", "Running Cash strategy");
     if (!this.portfolio.cashStrategy) {
       // Off => nothing to do

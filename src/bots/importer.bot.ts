@@ -1180,7 +1180,7 @@ export class ImporterBot extends ITradingBot {
       .catch((error) => console.error("importer bot fetch report:", error));
   }
 
-  protected async process(): Promise<void> {
+  public async process(): Promise<void> {
     return (
       fetch(
         `https://gdcdyn.interactivebrokers.com/Universal/servlet/FlexStatementService.SendRequest?t=${this.token}&q=${this.query}&v=3`,
