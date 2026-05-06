@@ -137,15 +137,15 @@ export class JobManager {
 
 export const jobManager = new JobManager();
 
-// Graceful shutdown handling
-process.on("SIGINT", () => {
-  console.log("\n🛑 SIGINT received, shutting down gracefully...");
-  jobManager.stopAll().catch((reason: any) => console.error(reason));
-  process.exit("SIGINT");
-});
+const signalHandler = (signal: NodeJS.Signals): void => {
+  console.log(`\n🛑 ${signal} received, shutting down gracefully...`);
+  jobManager
+    .stopAll()
+    .then(() => process.exit())
+    .catch((reason: any) => console.error(reason));
+};
 
-process.on("SIGTERM", () => {
-  console.log("\n🛑 SIGTERM received, shutting down gracefully...");
-  jobManager.stopAll().catch((reason: any) => console.error(reason));
-  process.exit("SIGTERM");
-});
+// Graceful shutdown handling
+process.on("SIGINT", signalHandler);
+
+process.on("SIGTERM", signalHandler);

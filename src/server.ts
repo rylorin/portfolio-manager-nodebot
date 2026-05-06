@@ -29,7 +29,7 @@ const StartServer = (): void => {
 
   try {
     app.listen(PORT, () => {
-      console.log(`Server listening at http://localhost:${PORT}`);
+      console.log(`✅ Server listening at http://localhost:${PORT}`);
     });
   } catch (err) {
     console.error("Failed to start server:", err);
