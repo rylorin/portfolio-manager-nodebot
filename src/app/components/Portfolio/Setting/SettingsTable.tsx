@@ -104,7 +104,7 @@ const SettingsTable: FunctionComponent<Props> = ({ content, ..._rest }): React.R
             <Table.Cell></Table.Cell>
             <Table.Cell textAlign="end">
               <Number
-                value={theSettings.reduce((p, item) => (p += item.navRatio), 0)}
+                value={theSettings.reduce((p, item) => p + item.navRatio, 0)}
                 isPercent
                 fontWeight="bold"
                 color="-"

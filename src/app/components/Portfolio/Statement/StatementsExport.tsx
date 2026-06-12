@@ -9,20 +9,21 @@ interface Props {
 
 const formatDate = (d: number): string => {
   const date = new Date(d);
-  const year = date.getFullYear();
-  const month = date.getMonth() + 1; // getMonth() returns 0-11, so we add 1 to get 1-12
-  const day = date.getDate();
-  const hours = date.getHours();
-  const minutes = date.getMinutes();
-  const seconds = date.getSeconds();
+  // const year = date.getFullYear();
+  // const month = date.getMonth() + 1; // getMonth() returns 0-11, so we add 1 to get 1-12
+  // const day = date.getDate();
+  // const hours = date.getHours();
+  // const minutes = date.getMinutes();
+  // const seconds = date.getSeconds();
   // Format the date as YYYY-MM-DD
   return date.toISOString();
-  return `${year}${month < 10 ? "0" : ""}${month}${day < 10 ? "0" : ""}${day} ${hours < 10 ? "0" : ""}${hours}${minutes < 10 ? "0" : ""}${minutes}${seconds < 10 ? "0" : ""}${seconds}`;
+  // return `${year}${month < 10 ? "0" : ""}${month}${day < 10 ? "0" : ""}${day} ${hours < 10 ? "0" : ""}${hours}${minutes < 10 ? "0" : ""}${minutes}${seconds < 10 ? "0" : ""}${seconds}`;
 };
 
 const statementType = (item: StatementEntry): string => {
   switch (item.statementType) {
     case "Trade":
+      return item.amount < 0 ? "Achat" : "Vente"; // this will lead to incorrect quantities but PP doesn't support sells with negative amounts
     case "TradeOption":
       return item.quantity > 0 ? "Achat" : "Vente";
     case "OtherFee":

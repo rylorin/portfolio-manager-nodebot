@@ -403,7 +403,7 @@ export class YahooUpdateBot extends ITradingBot {
     console.log("YahooUpdateBot process begin");
     // console.log(Date.now(), this.lastFetch, (Date.now() - this.lastFetch));
     if (Date.now() - this.lastFetch > YAHOO_PRICE_FREQ * 1000) {
-      let contracts: MappedQuote[] = [];
+      let contracts: MappedQuote[];
       contracts = this.requestsQ.splice(0, BATCH_SIZE_YAHOO_PRICE);
       if (contracts.length < BATCH_SIZE_YAHOO_PRICE) {
         const c = await this.findCurrencies(BATCH_SIZE_YAHOO_PRICE - contracts.length);

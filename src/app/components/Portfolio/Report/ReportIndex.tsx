@@ -92,7 +92,7 @@ const ReportsIndex: FunctionComponent<Props> = ({ ..._rest }): React.ReactNode =
     },
     {
       label: "Dividends",
-      data: theReports.map((item) => item.dividendsSummary.reduce((p, v) => (p += v.netAmountInBase), 0)),
+      data: theReports.map((item) => item.dividendsSummary.reduce((p, v) => p + v.netAmountInBase, 0)),
     },
     {
       label: "Interests",

@@ -196,7 +196,7 @@ const PositionsTable: FunctionComponent<Props> = ({
         <Table.Footer>
           <Table.Row fontWeight="bold">
             <Table.Cell textAlign="end">
-              <Number value={thePositions.reduce((p, v) => (p += v.quantity), 0)} />
+              <Number value={thePositions.reduce((p, v) => p + v.quantity, 0)} />
             </Table.Cell>
             <Table.Cell>Total</Table.Cell>
             <Table.Cell></Table.Cell>
@@ -206,7 +206,7 @@ const PositionsTable: FunctionComponent<Props> = ({
             <Table.Cell textAlign="end">
               <Number
                 value={thePositions.reduce(
-                  (p, v) => (p += (v.value || 0) * (currency ? (currency == v.contract.currency ? 1 : 0) : v.baseRate)),
+                  (p, v) => p + (v.value || 0) * (currency ? (currency == v.contract.currency ? 1 : 0) : v.baseRate),
                   0,
                 )}
               />
@@ -215,7 +215,7 @@ const PositionsTable: FunctionComponent<Props> = ({
             <Table.Cell textAlign="end">
               <Number
                 value={thePositions.reduce(
-                  (p, v) => (p += (v.cost || 0) * (currency ? (currency == v.contract.currency ? 1 : 0) : v.baseRate)),
+                  (p, v) => p + (v.cost || 0) * (currency ? (currency == v.contract.currency ? 1 : 0) : v.baseRate),
                   0,
                 )}
               />
@@ -224,8 +224,7 @@ const PositionsTable: FunctionComponent<Props> = ({
               <Number
                 value={thePositions.reduce(
                   (p, v) =>
-                    (p +=
-                      (v.value - v.cost || 0) * (currency ? (currency == v.contract.currency ? 1 : 0) : v.baseRate)),
+                    p + (v.value - v.cost || 0) * (currency ? (currency == v.contract.currency ? 1 : 0) : v.baseRate),
                   0,
                 )}
               />

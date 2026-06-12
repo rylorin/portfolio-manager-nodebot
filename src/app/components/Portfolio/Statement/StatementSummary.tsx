@@ -90,27 +90,27 @@ const StatementSummary: FunctionComponent<StatementSummaryProps> = ({ ..._rest }
             <Table.Cell>Total</Table.Cell>
             <Table.Cell textAlign="end">
               <Number
-                value={Object.values(theSynthesys).reduce((p: number, v: SynthesysEntry) => (p += v.options || 0), 0)}
+                value={Object.values(theSynthesys).reduce((p: number, v: SynthesysEntry) => p + v.options || 0, 0)}
               />
             </Table.Cell>
             <Table.Cell textAlign="end">
               <Number
-                value={Object.values(theSynthesys).reduce((p: number, v: SynthesysEntry) => (p += v.stocks || 0), 0)}
+                value={Object.values(theSynthesys).reduce((p: number, v: SynthesysEntry) => p + v.stocks || 0, 0)}
               />
             </Table.Cell>
             <Table.Cell textAlign="end">
               <Number
-                value={Object.values(theSynthesys).reduce((p: number, v: SynthesysEntry) => (p += v.dividends || 0), 0)}
+                value={Object.values(theSynthesys).reduce((p: number, v: SynthesysEntry) => p + v.dividends || 0, 0)}
               />
             </Table.Cell>
             <Table.Cell textAlign="end">
               <Number
-                value={Object.values(theSynthesys).reduce((p: number, v: SynthesysEntry) => (p += v.interests || 0), 0)}
+                value={Object.values(theSynthesys).reduce((p: number, v: SynthesysEntry) => p + v.interests || 0, 0)}
               />
             </Table.Cell>
             <Table.Cell textAlign="end">
               <Number
-                value={Object.values(theSynthesys).reduce((p: number, v: SynthesysEntry) => (p += v.total || 0), 0)}
+                value={Object.values(theSynthesys).reduce((p: number, v: SynthesysEntry) => p + v.total || 0, 0)}
               />
             </Table.Cell>
           </Table.Row>

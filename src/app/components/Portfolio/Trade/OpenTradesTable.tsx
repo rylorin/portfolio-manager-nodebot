@@ -81,10 +81,10 @@ const TradesTable: FunctionComponent<Props> = ({ title = "Trades index", content
             <Table.Cell></Table.Cell>
             <Table.Cell></Table.Cell>
             <Table.Cell textAlign="end">
-              <Number value={theTrades.reduce((p: number, item) => (p += item.risk || 0), 0)} />
+              <Number value={theTrades.reduce((p: number, item) => p + item.risk || 0, 0)} />
             </Table.Cell>
             <Table.Cell textAlign="end">
-              <Number value={theTrades.reduce((p: number, item) => (p += item.pnlInBase || 0), 0)} />
+              <Number value={theTrades.reduce((p: number, item) => p + item.pnlInBase || 0, 0)} />
             </Table.Cell>
             <Table.Cell></Table.Cell>
           </Table.Row>

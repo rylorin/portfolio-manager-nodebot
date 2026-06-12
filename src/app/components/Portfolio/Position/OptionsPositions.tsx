@@ -147,20 +147,20 @@ const OptionsPositions: FunctionComponent<PositionsIndexProps> = ({ ..._rest }):
             <Table.Cell>Base</Table.Cell>
             <Table.Cell></Table.Cell>
             <Table.Cell textAlign="end">
-              {formatNumber(thePositions.reduce((p, v) => (p += (v.cost || 0) * v.baseRate), 0))}
+              {formatNumber(thePositions.reduce((p, v) => p + (v.cost || 0) * v.baseRate, 0))}
             </Table.Cell>
             <Table.Cell textAlign="end">
-              {formatNumber(thePositions.reduce((p, v) => (p += (v.value || 0) * v.baseRate), 0))}
+              {formatNumber(thePositions.reduce((p, v) => p + (v.value || 0) * v.baseRate, 0))}
             </Table.Cell>
             <Table.Cell textAlign="end">
-              <Number value={thePositions.reduce((p, v) => (p += (v.value - v.cost || 0) * v.baseRate), 0)} />
+              <Number value={thePositions.reduce((p, v) => p + (v.value - v.cost || 0) * v.baseRate, 0)} />
             </Table.Cell>
             <Table.Cell></Table.Cell>
             <Table.Cell textAlign="end">
-              <Number value={thePositions.reduce((p, v) => (p += v.engaged < 0 ? v.engaged * v.baseRate : 0), 0)} />
+              <Number value={thePositions.reduce((p, v) => (p + v.engaged < 0 ? v.engaged * v.baseRate : 0), 0)} />
             </Table.Cell>
             <Table.Cell textAlign="end">
-              <Number value={thePositions.reduce((p, v) => (p += v.risk < 0 ? v.risk * v.baseRate : 0), 0)} />
+              <Number value={thePositions.reduce((p, v) => (p + v.risk < 0 ? v.risk * v.baseRate : 0), 0)} />
             </Table.Cell>
             <Table.Cell></Table.Cell>
           </Table.Row>

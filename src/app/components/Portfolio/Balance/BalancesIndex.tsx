@@ -60,7 +60,7 @@ const BalancesIndex: FunctionComponent<BalancesIndexProps> = ({ ..._rest }): Rea
             <Table.Cell fontWeight="bold">Total</Table.Cell>
             <Table.Cell textAlign="end">
               <Number
-                value={theBalances.reduce((p, item) => (p += (item.quantity || 0) * item.baseRate), 0)}
+                value={theBalances.reduce((p, item) => p + (item.quantity || 0) * item.baseRate, 0)}
                 fontWeight="bold"
               />
             </Table.Cell>
