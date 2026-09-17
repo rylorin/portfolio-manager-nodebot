@@ -6,3 +6,5 @@ test.json
 .eslintcache
 logs/
 .DS_Store
+/.kilo/
+/.claude/
